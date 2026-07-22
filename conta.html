@@ -4,39 +4,36 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>A minha conta — TECNOVA Digital</title>
+<meta name="description" content="Entre ou crie a sua conta TECNOVA Digital para ver e usar os seus cupões de desconto.">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#16100b">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css">
 <style>
-:root{
-  --ink:#16100b;--ink-2:#211812;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
-  --cream:#f6efe2;--cream-dim:#c9bda6;--wa:#25d366;--bad:#e0715c;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--ink);color:var(--cream);font-family:'Manrope',sans-serif;min-height:100vh}
-h1,h2,.serif{font-family:'Playfair Display',serif}
-a{color:var(--gold)}
-.wrap{max-width:480px;margin:0 auto;padding:26px}
-header{display:flex;align-items:center;gap:12px;padding:20px 0 30px}
-.logo-mark{width:36px;height:40px;display:grid;place-items:center;background:linear-gradient(160deg,var(--gold-soft),var(--gold));clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);color:var(--ink);font-family:'Playfair Display',serif;font-weight:800}
-.logo-name{letter-spacing:.28em;font-weight:800;color:var(--gold-soft);font-size:.85rem}
-.logo-name small{display:block;letter-spacing:.4em;font-size:.5rem;color:var(--cream-dim)}
-.card{background:var(--ink-2);border:1px solid rgba(217,178,110,.18);border-radius:20px;padding:30px}
-.tabs{display:flex;gap:8px;margin-bottom:22px}
-.tab{flex:1;text-align:center;padding:11px;border-radius:10px;font-weight:700;font-size:.85rem;cursor:pointer;color:var(--cream-dim);border:1px solid rgba(217,178,110,.16)}
+:root{ --bad:#e0715c; }
+
+.auth-hero{padding:150px 0 40px;text-align:center}
+.auth-hero h1{font-size:clamp(1.9rem,4vw,2.6rem);font-weight:800;margin:16px 0 6px}
+.auth-hero p{color:var(--cream-dim)}
+
+.auth-wrap{max-width:460px;margin:0 auto;padding:0 24px 110px}
+.card{background:var(--ink-2);border:1px solid rgba(217,178,110,.18);border-radius:22px;padding:34px;box-shadow:0 30px 70px rgba(0,0,0,.35)}
+
+.tabs{display:flex;gap:8px;margin-bottom:24px}
+.tab{flex:1;text-align:center;padding:12px;border-radius:10px;font-weight:700;font-size:.9rem;cursor:pointer;color:var(--cream-dim);border:1px solid rgba(217,178,110,.16);transition:all .2s}
 .tab.active{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+
 label{display:block;font-size:.78rem;color:var(--gold-soft);margin:14px 0 6px;font-weight:700}
 input,select{
-  width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(217,178,110,.25);
+  width:100%;padding:13px 14px;border-radius:10px;border:1px solid rgba(217,178,110,.25);
   background:#0f0b07;color:var(--cream);font-size:.92rem;font-family:inherit;
 }
 input:focus,select:focus{outline:none;border-color:var(--gold)}
+
 .photo-picker{display:flex;align-items:center;gap:14px;margin-top:14px}
 .photo-preview{
   width:64px;height:64px;border-radius:50%;flex:none;cursor:pointer;
@@ -45,23 +42,20 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
 }
 .photo-preview img{width:100%;height:100%;object-fit:cover;display:block}
 .photo-hint{font-size:.78rem;color:var(--cream-dim)}
-.btn{
-  width:100%;margin-top:22px;padding:14px;border:none;border-radius:999px;
-  background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--ink);
-  font-weight:800;font-size:.95rem;cursor:pointer;
-}
-.btn:disabled{opacity:.6;cursor:wait}
+
+.auth-card .btn{width:100%;justify-content:center;margin-top:22px;padding:15px}
 .msg{margin-top:14px;font-size:.85rem;padding:10px 14px;border-radius:10px;display:none}
 .msg.err{display:block;background:rgba(224,113,92,.12);color:#f0a292;border:1px solid rgba(224,113,92,.35)}
 .msg.ok{display:block;background:rgba(37,211,102,.1);color:#8fe3ac;border:1px solid rgba(37,211,102,.35)}
 .hidden{display:none!important}
 
 /* dashboard */
-.profile{display:flex;align-items:center;gap:14px;margin-bottom:24px}
-.avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(160deg,var(--gold-soft),var(--gold));color:var(--ink);display:grid;place-items:center;font-weight:800;font-family:'Playfair Display',serif;font-size:1.3rem;flex:none;overflow:hidden}
+.profile{display:flex;align-items:center;gap:16px;margin-bottom:26px;padding-bottom:22px;border-bottom:1px solid rgba(217,178,110,.14)}
+.avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(160deg,var(--gold-soft),var(--gold));color:var(--ink);display:grid;place-items:center;font-weight:800;font-family:'Playfair Display',serif;font-size:1.4rem;flex:none;overflow:hidden}
 .avatar img{width:100%;height:100%;object-fit:cover;display:block}
-.profile b{display:block;font-size:1.02rem}
-.profile span{font-size:.8rem;color:var(--cream-dim)}
+.profile b{display:block;font-size:1.1rem;font-family:'Playfair Display',serif}
+.profile span{font-size:.82rem;color:var(--cream-dim)}
+.dash-title{font-size:1.05rem;margin-bottom:14px}
 .voucher{
   border:1px dashed var(--gold-dim);border-radius:14px;padding:16px;margin-top:12px;
   display:flex;justify-content:space-between;align-items:center;gap:10px;
@@ -72,73 +66,151 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
 .badge.ativo{background:rgba(37,211,102,.15);color:#8fe3ac}
 .badge.usado{background:rgba(217,178,110,.12);color:var(--cream-dim)}
 .empty{color:var(--cream-dim);font-size:.88rem;text-align:center;padding:22px 0}
-.logout{display:block;text-align:center;margin-top:22px;color:var(--cream-dim);font-size:.82rem;cursor:pointer;text-decoration:underline}
-.back{display:inline-block;margin-bottom:18px;color:var(--cream-dim);font-size:.82rem;text-decoration:none}
+.logout{display:block;text-align:center;margin-top:24px;color:var(--cream-dim);font-size:.82rem;cursor:pointer;text-decoration:underline}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <span class="logo-mark">T</span>
-    <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
-  </header>
-  <a class="back" href="index.html">← Voltar ao site</a>
-
-  <!-- LOGIN / REGISTO -->
-  <div id="authBox" class="card">
-    <div class="tabs">
-      <div class="tab active" id="tabLogin" onclick="showTab('login')">Entrar</div>
-      <div class="tab" id="tabRegister" onclick="showTab('register')">Criar conta</div>
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="index.html">
+      <span class="logo-mark">T</span>
+      <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
+    </a>
+    <nav class="links" id="navLinks">
+      <a href="index.html">Início</a>
+      <a href="servicos.html">O que fazemos</a>
+      <a href="pacotes.html">Pacotes</a>
+      <a href="modelos.html">Modelos</a>
+      <a href="renovacao.html">Já tem site?</a>
+      <a href="sobre.html">Sobre</a>
+      <a href="conta.html" id="navAccount" class="on">Entrar / Criar conta</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn btn-gold" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Quero%20um%20site%20para%20o%20meu%20neg%C3%B3cio." target="_blank" rel="noopener">Pedir orçamento</a>
+      <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
+  </div>
+</header>
+<main>
 
-    <form id="formLogin">
-      <label>Email</label>
-      <input type="email" id="loginEmail" required placeholder="oseuemail@exemplo.com">
-      <label>Palavra-passe</label>
-      <input type="password" id="loginPass" required placeholder="••••••••">
-      <button class="btn" type="submit">Entrar na minha conta</button>
-    </form>
+<section class="auth-hero">
+  <div class="wrap">
+    <p class="eyebrow" style="justify-content:center">A sua conta</p>
+    <h1>Entre ou crie a sua conta</h1>
+    <p>Veja os seus cupões de desconto e o histórico com a TECNOVA Digital.</p>
+  </div>
+</section>
 
-    <form id="formRegister" class="hidden">
-      <label>Foto de perfil (opcional)</label>
-      <div class="photo-picker">
-        <label for="regFoto" class="photo-preview" id="regFotoPreview">📷</label>
-        <input type="file" id="regFoto" accept="image/*" class="hidden">
-        <span class="photo-hint">Toque no círculo para escolher uma foto. Se não escolher, usamos um avatar.</span>
+<section style="padding-top:0">
+  <div class="auth-wrap">
+
+    <!-- LOGIN / REGISTO -->
+    <div id="authBox" class="card auth-card">
+      <div class="tabs">
+        <div class="tab active" id="tabLogin" onclick="showTab('login')">Entrar</div>
+        <div class="tab" id="tabRegister" onclick="showTab('register')">Criar conta</div>
       </div>
-      <label>Nome</label>
-      <input type="text" id="regNome" required placeholder="O seu nome">
-      <label>Email</label>
-      <input type="email" id="regEmail" required placeholder="oseuemail@exemplo.com">
-      <label>Telemóvel</label>
-      <input type="tel" id="regTel" required placeholder="+351 9xx xxx xxx">
-      <label>Sexo</label>
-      <select id="regSexo">
-        <option value="" selected>Prefiro não dizer</option>
-        <option value="masculino">Masculino</option>
-        <option value="feminino">Feminino</option>
-      </select>
-      <label>Palavra-passe</label>
-      <input type="password" id="regPass" required placeholder="mínimo 6 caracteres">
-      <button class="btn" type="submit">Criar a minha conta</button>
-    </form>
 
-    <div id="authMsg" class="msg"></div>
-  </div>
+      <form id="formLogin">
+        <label>Email</label>
+        <input type="email" id="loginEmail" required placeholder="oseuemail@exemplo.com">
+        <label>Palavra-passe</label>
+        <input type="password" id="loginPass" required placeholder="••••••••">
+        <button class="btn btn-gold" type="submit">Entrar na minha conta</button>
+      </form>
 
-  <!-- DASHBOARD DO CLIENTE -->
-  <div id="dashBox" class="card hidden">
-    <div class="profile">
-      <div class="avatar" id="avatarLetter">?</div>
-      <div><b id="dashNome">—</b><span id="dashEmail">—</span></div>
+      <form id="formRegister" class="hidden">
+        <label>Foto de perfil (opcional)</label>
+        <div class="photo-picker">
+          <label for="regFoto" class="photo-preview" id="regFotoPreview">📷</label>
+          <input type="file" id="regFoto" accept="image/*" class="hidden">
+          <span class="photo-hint">Toque no círculo para escolher uma foto. Se não escolher, usamos um avatar.</span>
+        </div>
+        <label>Nome</label>
+        <input type="text" id="regNome" required placeholder="O seu nome">
+        <label>Email</label>
+        <input type="email" id="regEmail" required placeholder="oseuemail@exemplo.com">
+        <label>Telemóvel</label>
+        <input type="tel" id="regTel" required placeholder="+351 9xx xxx xxx">
+        <label>Sexo</label>
+        <select id="regSexo">
+          <option value="" selected>Prefiro não dizer</option>
+          <option value="masculino">Masculino</option>
+          <option value="feminino">Feminino</option>
+        </select>
+        <label>Palavra-passe</label>
+        <input type="password" id="regPass" required placeholder="mínimo 6 caracteres">
+        <button class="btn btn-gold" type="submit">Criar a minha conta</button>
+      </form>
+
+      <div id="authMsg" class="msg"></div>
     </div>
-    <h2 style="font-size:1.05rem;margin:0 0 10px">Os meus cupons</h2>
-    <div id="vouchersList"><p class="empty">A carregar…</p></div>
-    <span class="logout" onclick="logout()">Sair da conta</span>
+
+    <!-- DASHBOARD DO CLIENTE -->
+    <div id="dashBox" class="card hidden">
+      <div class="profile">
+        <div class="avatar" id="avatarLetter">?</div>
+        <div><b id="dashNome">—</b><span id="dashEmail">—</span></div>
+      </div>
+      <h2 class="dash-title">Os meus cupões</h2>
+      <div id="vouchersList"><p class="empty">A carregar…</p></div>
+      <span class="logout" onclick="logout()">Sair da conta</span>
+    </div>
+
   </div>
-</div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="logo" href="index.html">
+          <span class="logo-mark">T</span>
+          <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
+        </a>
+        <p>Sites &amp; Apps que trabalham por si. Sites profissionais, marcações pelo WhatsApp e cartões de fidelidade digital para negócios locais.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navegação</h4>
+        <a href="servicos.html">O que fazemos</a>
+        <a href="pacotes.html">Pacotes</a>
+        <a href="modelos.html">Modelos</a>
+        <a href="renovacao.html">Já tem site?</a>
+        <a href="sobre.html">Sobre</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contacto</h4>
+        <a href="https://wa.me/351933113525" target="_blank" rel="noopener">WhatsApp +351 933 113 525</a>
+        <a href="conta.html">Entrar / Criar conta</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      TECNOVA Digital · Wesley Vianna · <a href="https://wa.me/351933113525" target="_blank" rel="noopener">WhatsApp +351 933 113 525</a>
+    </div>
+  </div>
+</footer>
+
+<a class="wa-float" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Vim%20do%20site%20da%20TECNOVA." target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#062b14"><path d="M17.5 14.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.14-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.5 0 1.47 1.07 2.9 1.22 3.1.15.2 2.1 3.2 5.1 4.49.71.3 1.27.49 1.7.63.72.23 1.37.2 1.88.12.58-.09 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35zM12 2a10 10 0 0 0-8.66 15L2 22l5.15-1.35A10 10 0 1 0 12 2z"/></svg>
+</a>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 
 <script>
+const burger = document.getElementById('burger');
+const navLinks = document.getElementById('navLinks');
+if(burger){
+  burger.addEventListener('click', ()=> navLinks.classList.toggle('open'));
+  navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLinks.classList.remove('open')));
+}
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+
 function showTab(t){
   document.getElementById('tabLogin').classList.toggle('active', t==='login');
   document.getElementById('tabRegister').classList.toggle('active', t==='register');
