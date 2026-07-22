@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Administrativo — TECNOVA Digital</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+:root{
+  --ink:#16100b;--ink-2:#211812;--ink-3:#2b2016;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
+  --cream:#f6efe2;--cream-dim:#c9bda6;--wa:#25d366;--bad:#e0715c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ink);color:var(--cream);font-family:'Manrope',sans-serif;min-height:100vh}
+h1,h2,.serif{font-family:'Playfair Display',serif}
+.wrap{max-width:960px;margin:0 auto;padding:26px}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 28px;flex-wrap:wrap;gap:14px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo-mark{width:36px;height:40px;display:grid;place-items:center;background:linear-gradient(160deg,var(--gold-soft),var(--gold));clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);color:var(--ink);font-family:'Playfair Display',serif;font-weight:800}
+.logo-name{letter-spacing:.28em;font-weight:800;color:var(--gold-soft);font-size:.85rem}
+.logo-name small{display:block;letter-spacing:.4em;font-size:.5rem;color:var(--cream-dim)}
+.tag{background:rgba(217,178,110,.14);color:var(--gold);font-size:.7rem;font-weight:800;padding:5px 12px;border-radius:999px;letter-spacing:.1em}
+.logout{color:var(--cream-dim);font-size:.82rem;cursor:pointer;text-decoration:underline;background:none;border:none;font-family:inherit}
+
+.card{background:var(--ink-2);border:1px solid rgba(217,178,110,.16);border-radius:18px;padding:26px;margin-bottom:22px}
+.grid-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.stat{background:var(--ink-2);border:1px solid rgba(217,178,110,.16);border-radius:16px;padding:20px;text-align:center}
+.stat b{display:block;font-family:'Playfair Display',serif;font-size:1.9rem;color:var(--gold)}
+.stat span{font-size:.78rem;color:var(--cream-dim)}
+
+label{display:block;font-size:.78rem;color:var(--gold-soft);margin:12px 0 6px;font-weight:700}
+input,select{
+  width:100%;padding:11px 13px;border-radius:10px;border:1px solid rgba(217,178,110,.25);
+  background:#0f0b07;color:var(--cream);font-size:.9rem;font-family:inherit;
+}
+input:focus,select:focus{outline:none;border-color:var(--gold)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.btn{
+  padding:12px 22px;border:none;border-radius:999px;font-weight:800;font-size:.88rem;cursor:pointer;
+  background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--ink);margin-top:16px;
+}
+.btn.line{background:transparent;border:1px solid var(--gold-dim);color:var(--gold-soft)}
+.msg{margin-top:12px;font-size:.85rem;padding:10px 14px;border-radius:10px;display:none}
+.msg.err{display:block;background:rgba(224,113,92,.12);color:#f0a292;border:1px solid rgba(224,113,92,.35)}
+.msg.ok{display:block;background:rgba(37,211,102,.1);color:#8fe3ac;border:1px solid rgba(37,211,102,.35)}
+
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{text-align:left;color:var(--gold-soft);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;padding:10px 8px;border-bottom:1px solid rgba(217,178,110,.2)}
+td{padding:10px 8px;border-bottom:1px solid rgba(217,178,110,.08);color:var(--cream-dim)}
+tr:last-child td{border-bottom:none}
+.badge{font-size:.68rem;font-weight:800;padding:5px 11px;border-radius:999px;white-space:nowrap}
+.badge.ativo{background:rgba(37,211,102,.15);color:#8fe3ac}
+.badge.usado{background:rgba(217,178,110,.12);color:var(--cream-dim)}
+.code-txt{font-family:'Playfair Display',serif;color:var(--gold);letter-spacing:.05em}
+.empty{color:var(--cream-dim);font-size:.85rem;text-align:center;padding:16px 0}
+.hidden{display:none!important}
+.search{max-width:320px;margin-bottom:14px}
+
+/* gate */
+#gate{max-width:420px;margin:80px auto 0;text-align:center}
+#gate p{color:var(--cream-dim);font-size:.9rem;margin-top:10px}
+#gate a{color:var(--gold)}
+.table-wrap{overflow-x:auto}
+</style>
+</head>
+<body>
+
+<!-- BLOQUEIO DE ACESSO -->
+<div id="gate" class="wrap hidden">
+  <div class="brand" style="justify-content:center;margin-bottom:20px">
+    <span class="logo-mark">T</span>
+    <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
+  </div>
+  <h2 class="serif">Acesso restrito</h2>
+  <p id="gateText">Este painel é só para a administração da TECNOVA Digital.</p>
+  <p><a href="conta.html">Entrar com a minha conta →</a></p>
+</div>
+
+<!-- PAINEL -->
+<div id="painel" class="wrap hidden">
+  <header>
+    <div class="brand">
+      <span class="logo-mark">T</span>
+      <div><span class="logo-name">TECNOVA<small>DIGITAL</small></span></div>
+      <span class="tag">ADMIN</span>
+    </div>
+    <button class="logout" onclick="auth.signOut()">Sair</button>
+  </header>
+
+  <div class="grid-stats">
+    <div class="stat"><b id="statClientes">–</b><span>Clientes registados</span></div>
+    <div class="stat"><b id="statAtivos">–</b><span>Cupons ativos</span></div>
+    <div class="stat"><b id="statUsados">–</b><span>Cupons já usados</span></div>
+  </div>
+
+  <!-- Gerar cupom -->
+  <div class="card">
+    <h2 style="font-size:1.1rem;margin:0 0 4px">Gerar novo cupom</h2>
+    <p style="font-size:.82rem;color:var(--cream-dim);margin:0">Cada código é único e só pode ser usado uma única vez, apenas pelo cliente escolhido.</p>
+    <label>Cliente</label>
+    <select id="selCliente"><option value="">A carregar clientes…</option></select>
+    <div class="row2">
+      <div>
+        <label>Tipo de desconto</label>
+        <select id="selTipo">
+          <option value="percentagem">Percentagem (%)</option>
+          <option value="valor">Valor fixo (€)</option>
+        </select>
+      </div>
+      <div>
+        <label>Valor</label>
+        <input type="number" id="inpValor" placeholder="Ex: 15" min="1" step="1">
+      </div>
+    </div>
+    <button class="btn" onclick="gerarCupom()">Gerar cupom</button>
+    <div id="gerarMsg" class="msg"></div>
+  </div>
+
+  <!-- Validar cupom -->
+  <div class="card">
+    <h2 style="font-size:1.1rem;margin:0 0 4px">Validar cupom no momento do uso</h2>
+    <p style="font-size:.82rem;color:var(--cream-dim);margin:0">Escreva o código que o cliente mostrou e confirme para o marcar como usado.</p>
+    <label>Código</label>
+    <input type="text" id="inpValidar" placeholder="Ex: TEC-4F8K2Q" style="text-transform:uppercase">
+    <button class="btn line" onclick="validarCupom()">Verificar código</button>
+    <div id="validarMsg" class="msg"></div>
+  </div>
+
+  <!-- Clientes -->
+  <div class="card">
+    <h2 style="font-size:1.1rem;margin-bottom:14px">Clientes registados</h2>
+    <input class="search" id="buscaCliente" placeholder="Pesquisar por nome ou email…" oninput="filtrarClientes()">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nome</th><th>Email</th><th>Telemóvel</th><th>Registado em</th></tr></thead>
+        <tbody id="tabelaClientes"><tr><td colspan="4" class="empty">A carregar…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Cupons emitidos -->
+  <div class="card">
+    <h2 style="font-size:1.1rem;margin-bottom:14px">Cupons emitidos</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Código</th><th>Cliente</th><th>Desconto</th><th>Estado</th><th>Criado em</th></tr></thead>
+        <tbody id="tabelaVouchers"><tr><td colspan="5" class="empty">A carregar…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let clientesCache = [];
+
+auth.onAuthStateChanged(async (user)=>{
+  if(!user){
+    document.getElementById('gate').classList.remove('hidden');
+    document.getElementById('gateText').textContent = 'Precisa de iniciar sessão com a conta de administrador.';
+    document.getElementById('painel').classList.add('hidden');
+    return;
+  }
+  if(!ADMIN_EMAILS.includes(user.email)){
+    document.getElementById('gate').classList.remove('hidden');
+    document.getElementById('gateText').textContent = 'A conta ' + user.email + ' não tem acesso ao painel administrativo.';
+    document.getElementById('painel').classList.add('hidden');
+    return;
+  }
+  document.getElementById('gate').classList.add('hidden');
+  document.getElementById('painel').classList.remove('hidden');
+  carregarClientes();
+  carregarVouchers();
+});
+
+function gerarCodigo(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = 'TEC-';
+  for(let i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+async function carregarClientes(){
+  const snap = await db.collection('clientes').orderBy('criadoEm','desc').get();
+  clientesCache = [];
+  const sel = document.getElementById('selCliente');
+  sel.innerHTML = '<option value="">Escolha um cliente…</option>';
+  snap.forEach(doc=>{
+    const d = doc.data();
+    clientesCache.push({uid:doc.id, ...d});
+    sel.innerHTML += `<option value="${doc.id}">${d.nome} — ${d.email}</option>`;
+  });
+  document.getElementById('statClientes').textContent = clientesCache.length;
+  renderClientes(clientesCache);
+}
+
+function renderClientes(lista){
+  const tb = document.getElementById('tabelaClientes');
+  if(lista.length===0){ tb.innerHTML = '<tr><td colspan="4" class="empty">Ainda não há clientes registados.</td></tr>'; return; }
+  tb.innerHTML = lista.map(c=>{
+    const data = c.criadoEm && c.criadoEm.toDate ? c.criadoEm.toDate().toLocaleDateString('pt-PT') : '—';
+    return `<tr><td>${c.nome||'—'}</td><td>${c.email||'—'}</td><td>${c.telefone||'—'}</td><td>${data}</td></tr>`;
+  }).join('');
+}
+
+function filtrarClientes(){
+  const q = document.getElementById('buscaCliente').value.toLowerCase();
+  renderClientes(clientesCache.filter(c =>
+    (c.nome||'').toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q)
+  ));
+}
+
+async function carregarVouchers(){
+  const snap = await db.collection('vouchers').orderBy('criadoEm','desc').get();
+  const tb = document.getElementById('tabelaVouchers');
+  let ativos=0, usados=0;
+  if(snap.empty){ tb.innerHTML = '<tr><td colspan="5" class="empty">Ainda não foram gerados cupons.</td></tr>'; }
+  else{
+    tb.innerHTML = '';
+    snap.forEach(doc=>{
+      const v = doc.data();
+      if(v.usado) usados++; else ativos++;
+      const desc = v.tipo==='percentagem' ? `${v.valor}%` : `${v.valor}€`;
+      const data = v.criadoEm && v.criadoEm.toDate ? v.criadoEm.toDate().toLocaleDateString('pt-PT') : '—';
+      tb.innerHTML += `<tr>
+        <td class="code-txt">${v.code}</td>
+        <td>${v.clienteNome||v.clienteEmail||'—'}</td>
+        <td>${desc}</td>
+        <td><span class="badge ${v.usado?'usado':'ativo'}">${v.usado?'Usado':'Ativo'}</span></td>
+        <td>${data}</td>
+      </tr>`;
+    });
+  }
+  document.getElementById('statAtivos').textContent = ativos;
+  document.getElementById('statUsados').textContent = usados;
+}
+
+async function gerarCupom(){
+  const uid = document.getElementById('selCliente').value;
+  const tipo = document.getElementById('selTipo').value;
+  const valor = document.getElementById('inpValor').value;
+  const msg = document.getElementById('gerarMsg');
+  if(!uid || !valor){ msg.className='msg err'; msg.textContent='Escolha o cliente e o valor do desconto.'; return; }
+  const cliente = clientesCache.find(c=>c.uid===uid);
+  const code = gerarCodigo();
+  try{
+    await db.collection('vouchers').doc(code).set({
+      code, clienteUid: uid, clienteNome: cliente.nome, clienteEmail: cliente.email,
+      tipo, valor: Number(valor), usado:false,
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    msg.className='msg ok';
+    msg.textContent = `Cupom ${code} criado para ${cliente.nome}.`;
+    document.getElementById('inpValor').value='';
+    carregarVouchers();
+  }catch(err){
+    msg.className='msg err'; msg.textContent='Não foi possível criar o cupom. Tente novamente.';
+  }
+}
+
+async function validarCupom(){
+  const code = document.getElementById('inpValidar').value.trim().toUpperCase();
+  const msg = document.getElementById('validarMsg');
+  if(!code){ msg.className='msg err'; msg.textContent='Escreva um código.'; return; }
+  try{
+    const ref = db.collection('vouchers').doc(code);
+    const v = await db.runTransaction(async (tx)=>{
+      const doc = await tx.get(ref);
+      if(!doc.exists) throw new Error('nao-encontrado');
+      const data = doc.data();
+      if(data.usado) throw Object.assign(new Error('ja-usado'), {data});
+      tx.update(ref, { usado:true, usadoEm: firebase.firestore.FieldValue.serverTimestamp() });
+      return data;
+    });
+    msg.className='msg ok';
+    const desc = v.tipo==='percentagem' ? `${v.valor}%` : `${v.valor}€`;
+    msg.textContent = `Código válido! ${desc} de desconto para ${v.clienteNome}. Marcado como usado agora.`;
+    document.getElementById('inpValidar').value='';
+    carregarVouchers();
+  }catch(err){
+    if(err.message === 'nao-encontrado'){ msg.className='msg err'; msg.textContent='Código não encontrado.'; }
+    else if(err.message === 'ja-usado'){ msg.className='msg err'; msg.textContent = `Este código já foi usado por ${err.data.clienteNome} e não pode ser usado outra vez.`; }
+    else{ msg.className='msg err'; msg.textContent='Erro ao verificar o código.'; }
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A minha conta — TECNOVA Digital</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16100b">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+:root{
+  --ink:#16100b;--ink-2:#211812;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
+  --cream:#f6efe2;--cream-dim:#c9bda6;--wa:#25d366;--bad:#e0715c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ink);color:var(--cream);font-family:'Manrope',sans-serif;min-height:100vh}
+h1,h2,.serif{font-family:'Playfair Display',serif}
+a{color:var(--gold)}
+.wrap{max-width:480px;margin:0 auto;padding:26px}
+header{display:flex;align-items:center;gap:12px;padding:20px 0 30px}
+.logo-mark{width:36px;height:40px;display:grid;place-items:center;background:linear-gradient(160deg,var(--gold-soft),var(--gold));clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);color:var(--ink);font-family:'Playfair Display',serif;font-weight:800}
+.logo-name{letter-spacing:.28em;font-weight:800;color:var(--gold-soft);font-size:.85rem}
+.logo-name small{display:block;letter-spacing:.4em;font-size:.5rem;color:var(--cream-dim)}
+.card{background:var(--ink-2);border:1px solid rgba(217,178,110,.18);border-radius:20px;padding:30px}
+.tabs{display:flex;gap:8px;margin-bottom:22px}
+.tab{flex:1;text-align:center;padding:11px;border-radius:10px;font-weight:700;font-size:.85rem;cursor:pointer;color:var(--cream-dim);border:1px solid rgba(217,178,110,.16)}
+.tab.active{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+label{display:block;font-size:.78rem;color:var(--gold-soft);margin:14px 0 6px;font-weight:700}
+input{
+  width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(217,178,110,.25);
+  background:#0f0b07;color:var(--cream);font-size:.92rem;font-family:inherit;
+}
+input:focus{outline:none;border-color:var(--gold)}
+.btn{
+  width:100%;margin-top:22px;padding:14px;border:none;border-radius:999px;
+  background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--ink);
+  font-weight:800;font-size:.95rem;cursor:pointer;
+}
+.btn:disabled{opacity:.6;cursor:wait}
+.msg{margin-top:14px;font-size:.85rem;padding:10px 14px;border-radius:10px;display:none}
+.msg.err{display:block;background:rgba(224,113,92,.12);color:#f0a292;border:1px solid rgba(224,113,92,.35)}
+.msg.ok{display:block;background:rgba(37,211,102,.1);color:#8fe3ac;border:1px solid rgba(37,211,102,.35)}
+.hidden{display:none!important}
+
+/* dashboard */
+.profile{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+.avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(160deg,var(--gold-soft),var(--gold));color:var(--ink);display:grid;place-items:center;font-weight:800;font-family:'Playfair Display',serif;font-size:1.3rem;flex:none}
+.profile b{display:block;font-size:1.02rem}
+.profile span{font-size:.8rem;color:var(--cream-dim)}
+.voucher{
+  border:1px dashed var(--gold-dim);border-radius:14px;padding:16px;margin-top:12px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+}
+.voucher .code{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--gold);letter-spacing:.05em}
+.voucher .desc{font-size:.78rem;color:var(--cream-dim)}
+.badge{font-size:.68rem;font-weight:800;padding:5px 11px;border-radius:999px;white-space:nowrap}
+.badge.ativo{background:rgba(37,211,102,.15);color:#8fe3ac}
+.badge.usado{background:rgba(217,178,110,.12);color:var(--cream-dim)}
+.empty{color:var(--cream-dim);font-size:.88rem;text-align:center;padding:22px 0}
+.logout{display:block;text-align:center;margin-top:22px;color:var(--cream-dim);font-size:.82rem;cursor:pointer;text-decoration:underline}
+.back{display:inline-block;margin-bottom:18px;color:var(--cream-dim);font-size:.82rem;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="logo-mark">T</span>
+    <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
+  </header>
+  <a class="back" href="index.html">← Voltar ao site</a>
+
+  <!-- LOGIN / REGISTO -->
+  <div id="authBox" class="card">
+    <div class="tabs">
+      <div class="tab active" id="tabLogin" onclick="showTab('login')">Entrar</div>
+      <div class="tab" id="tabRegister" onclick="showTab('register')">Criar conta</div>
+    </div>
+
+    <form id="formLogin">
+      <label>Email</label>
+      <input type="email" id="loginEmail" required placeholder="oseuemail@exemplo.com">
+      <label>Palavra-passe</label>
+      <input type="password" id="loginPass" required placeholder="••••••••">
+      <button class="btn" type="submit">Entrar na minha conta</button>
+    </form>
+
+    <form id="formRegister" class="hidden">
+      <label>Nome</label>
+      <input type="text" id="regNome" required placeholder="O seu nome">
+      <label>Email</label>
+      <input type="email" id="regEmail" required placeholder="oseuemail@exemplo.com">
+      <label>Telemóvel</label>
+      <input type="tel" id="regTel" required placeholder="+351 9xx xxx xxx">
+      <label>Palavra-passe</label>
+      <input type="password" id="regPass" required placeholder="mínimo 6 caracteres">
+      <button class="btn" type="submit">Criar a minha conta</button>
+    </form>
+
+    <div id="authMsg" class="msg"></div>
+  </div>
+
+  <!-- DASHBOARD DO CLIENTE -->
+  <div id="dashBox" class="card hidden">
+    <div class="profile">
+      <div class="avatar" id="avatarLetter">?</div>
+      <div><b id="dashNome">—</b><span id="dashEmail">—</span></div>
+    </div>
+    <h2 style="font-size:1.05rem;margin:0 0 10px">Os meus cupons</h2>
+    <div id="vouchersList"><p class="empty">A carregar…</p></div>
+    <span class="logout" onclick="logout()">Sair da conta</span>
+  </div>
+</div>
+
+<script>
+function showTab(t){
+  document.getElementById('tabLogin').classList.toggle('active', t==='login');
+  document.getElementById('tabRegister').classList.toggle('active', t==='register');
+  document.getElementById('formLogin').classList.toggle('hidden', t!=='login');
+  document.getElementById('formRegister').classList.toggle('hidden', t!=='register');
+  document.getElementById('authMsg').className='msg';
+}
+
+function showMsg(text, type){
+  const el = document.getElementById('authMsg');
+  el.textContent = text;
+  el.className = 'msg ' + type;
+}
+
+// ---------- Registo ----------
+document.getElementById('formRegister').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const nome = document.getElementById('regNome').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const tel = document.getElementById('regTel').value.trim();
+  const pass = document.getElementById('regPass').value;
+  try{
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    await db.collection('clientes').doc(cred.user.uid).set({
+      nome, email, telefone: tel,
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showMsg('Conta criada com sucesso! A entrar…', 'ok');
+  }catch(err){
+    showMsg(traduzErro(err), 'err');
+  }
+});
+
+// ---------- Login ----------
+document.getElementById('formLogin').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  try{
+    await auth.signInWithEmailAndPassword(email, pass);
+  }catch(err){
+    showMsg(traduzErro(err), 'err');
+  }
+});
+
+function traduzErro(err){
+  const map = {
+    'auth/email-already-in-use':'Este email já tem conta. Tente entrar.',
+    'auth/invalid-email':'Email inválido.',
+    'auth/weak-password':'A palavra-passe precisa de pelo menos 6 caracteres.',
+    'auth/user-not-found':'Não encontrámos nenhuma conta com este email.',
+    'auth/wrong-password':'Palavra-passe incorreta.',
+    'auth/invalid-credential':'Email ou palavra-passe incorretos.'
+  };
+  return map[err.code] || 'Ocorreu um erro. Tente novamente.';
+}
+
+function logout(){ auth.signOut(); }
+
+// ---------- Estado da sessão ----------
+auth.onAuthStateChanged(async (user)=>{
+  if(user){
+    document.getElementById('authBox').classList.add('hidden');
+    document.getElementById('dashBox').classList.remove('hidden');
+    const doc = await db.collection('clientes').doc(user.uid).get();
+    const dados = doc.exists ? doc.data() : {nome:user.email, email:user.email};
+    document.getElementById('dashNome').textContent = dados.nome || user.email;
+    document.getElementById('dashEmail').textContent = dados.email || user.email;
+    document.getElementById('avatarLetter').textContent = (dados.nome||user.email).charAt(0).toUpperCase();
+    carregarVouchers(user.uid);
+  }else{
+    document.getElementById('authBox').classList.remove('hidden');
+    document.getElementById('dashBox').classList.add('hidden');
+  }
+});
+
+async function carregarVouchers(uid){
+  const el = document.getElementById('vouchersList');
+  try{
+    const snap = await db.collection('vouchers').where('clienteUid','==',uid).get();
+    if(snap.empty){
+      el.innerHTML = '<p class="empty">Ainda não tem nenhum cupom. Fale connosco no WhatsApp!</p>';
+      return;
+    }
+    el.innerHTML = '';
+    snap.forEach(doc=>{
+      const v = doc.data();
+      const descTxt = v.tipo === 'percentagem' ? `${v.valor}% de desconto` : `${v.valor}€ de desconto`;
+      el.innerHTML += `
+        <div class="voucher">
+          <div>
+            <div class="code">${v.code}</div>
+            <div class="desc">${descTxt}</div>
+          </div>
+          <span class="badge ${v.usado ? 'usado' : 'ativo'}">${v.usado ? 'Usado' : 'Ativo'}</span>
+        </div>`;
+    });
+  }catch(err){
+    el.innerHTML = '<p class="empty">Não foi possível carregar os cupons agora.</p>';
+  }
+}
+</script>
+</body>
+</html>

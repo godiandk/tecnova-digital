@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pacotes e Preços — TECNOVA Digital</title>
+<meta name="description" content="Pacotes claros e sem surpresas. Essencial 350€, Profissional 650€, Premium 990€.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16100b">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css">
+<style>
+.pack-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:24px;margin-top:50px;align-items:stretch}
+.pack{background:var(--ink-2);border:1px solid rgba(217,178,110,.16);border-radius:22px;padding:36px 30px;display:flex;flex-direction:column;position:relative}
+.pack.featured{border:2px solid var(--gold);background:linear-gradient(180deg,rgba(217,178,110,.09),var(--ink-2) 45%);box-shadow:0 30px 70px rgba(0,0,0,.45)}
+.pack-tag{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--ink);font-size:.68rem;font-weight:800;letter-spacing:.18em;padding:6px 18px;border-radius:999px;white-space:nowrap}
+.pack h3{font-size:1.05rem;letter-spacing:.22em;color:var(--cream-dim);font-family:'Manrope',sans-serif;font-weight:800}
+.pack-price{font-family:'Playfair Display',serif;font-size:3rem;color:var(--gold);margin:10px 0 4px;font-weight:700}
+.pack-time{font-size:.78rem;color:var(--cream-dim);margin-bottom:22px}
+.pack ul{list-style:none;margin-bottom:28px;flex:1}
+.pack li{padding:9px 0;font-size:.9rem;color:var(--cream-dim);display:flex;gap:12px;align-items:flex-start;border-bottom:1px dashed rgba(217,178,110,.12)}
+.pack li::before{content:"";margin-top:7px;width:8px;height:8px;flex:none;background:var(--gold);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.pack .btn{justify-content:center}
+.pack-conds{margin-top:34px;text-align:center;color:var(--cream-dim);font-size:.88rem}
+.pack-conds b{color:var(--gold-soft)}
+.faq{margin-top:70px}
+.faq-item{border-bottom:1px solid rgba(217,178,110,.14);padding:20px 0}
+.faq-item summary{cursor:pointer;font-weight:700;color:var(--gold-soft);list-style:none;display:flex;justify-content:space-between}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:"+";color:var(--gold);font-size:1.3rem}
+.faq-item[open] summary::after{content:"–"}
+.faq-item p{color:var(--cream-dim);margin-top:12px;font-size:.92rem}
+</style></head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="index.html">
+      <span class="logo-mark">T</span>
+      <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
+    </a>
+    <nav class="links" id="navLinks">
+      <a class="" href="index.html">Início</a>
+      <a class="" href="servicos.html">O que fazemos</a>
+      <a class="on" href="pacotes.html">Pacotes</a>
+      <a class="" href="modelos.html">Modelos</a>
+      <a class="" href="renovacao.html">Já tem site?</a>
+      <a class="" href="sobre.html">Sobre</a>
+      <a href="conta.html">Entrar / Criar conta</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn btn-gold" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Quero%20um%20site%20para%20o%20meu%20neg%C3%B3cio." target="_blank" rel="noopener">Pedir orçamento</a>
+      <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+<main>
+
+<section class="page-hero">
+  <div class="wrap">
+    <p class="eyebrow">Investimento</p>
+    <h1>Pacotes claros. <i>Sem surpresas.</i></h1>
+    <p class="lead">Escolha o pacote certo para a fase atual do seu negócio. Pode sempre evoluir mais tarde.</p>
+  </div>
+</section>
+
+<section style="padding-top:50px">
+  <div class="wrap">
+    <div class="pack-grid">
+      <div class="pack reveal">
+        <h3>ESSENCIAL</h3>
+        <div class="pack-price">350€</div>
+        <div class="pack-time">Entrega em 5 dias úteis</div>
+        <ul>
+          <li>Site profissional de 3 a 5 páginas</li>
+          <li>Botão WhatsApp com mensagem automática</li>
+          <li>Design elegante, perfeito no telemóvel</li>
+        </ul>
+        <a class="btn btn-line" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Tenho%20interesse%20no%20pacote%20ESSENCIAL%20(350%E2%82%AC)." target="_blank" rel="noopener">Quero o Essencial</a>
+      </div>
+      <div class="pack featured reveal">
+        <span class="pack-tag">★ MAIS ESCOLHIDO</span>
+        <h3>PROFISSIONAL</h3>
+        <div class="pack-price">650€</div>
+        <div class="pack-time">Entrega em 10 dias úteis</div>
+        <ul>
+          <li>Tudo do Essencial +</li>
+          <li>Preçário completo organizado por categorias</li>
+          <li>Marcação online (pedido cai no WhatsApp)</li>
+          <li>Chat automático de atendimento no site</li>
+          <li>Página de detalhe para cada serviço</li>
+        </ul>
+        <a class="btn btn-gold" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Tenho%20interesse%20no%20pacote%20PROFISSIONAL%20(650%E2%82%AC)." target="_blank" rel="noopener">Quero o Profissional</a>
+      </div>
+      <div class="pack reveal">
+        <h3>PREMIUM</h3>
+        <div class="pack-price">990€</div>
+        <div class="pack-time">Entrega em 15 dias úteis</div>
+        <ul>
+          <li>Tudo do Profissional +</li>
+          <li>Aplicação própria (abre direto do site, sem lojas)</li>
+          <li>Conta de clientes com login e senha</li>
+          <li>Cartão de fidelidade digital com selos</li>
+          <li>Cupões de desconto e aniversário + painel de gestão</li>
+        </ul>
+        <a class="btn btn-line" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Tenho%20interesse%20no%20pacote%20PREMIUM%20(990%E2%82%AC)." target="_blank" rel="noopener">Quero o Premium</a>
+      </div>
+    </div>
+    <p class="pack-conds reveal">
+      <b>Condições:</b> 50% para iniciar · 50% na entrega, só depois de aprovar tudo<br>
+      Domínio próprio .pt: +30€/ano (opcional) · Manutenção mensal com <b>1.º mês grátis</b>
+    </p>
+
+    <div class="faq">
+      <p class="eyebrow reveal">Perguntas frequentes</p>
+      <h2 class="reveal" style="font-size:1.8rem">Antes de decidir</h2>
+      <details class="faq-item reveal">
+        <summary>Preciso de domínio ou hospedagem à parte?</summary>
+        <p>Pode usar domínio próprio .pt por +30€/ano (opcional), ou começar sem custo extra com um endereço temporário até decidir.</p>
+      </details>
+      <details class="faq-item reveal">
+        <summary>E se eu já tiver site?</summary>
+        <p>Temos o Pacote Renovação, pensado exatamente para isso — veja a página <a href="renovacao.html">Já tem site?</a>.</p>
+      </details>
+      <details class="faq-item reveal">
+        <summary>Como funciona o pagamento?</summary>
+        <p>50% para iniciar o projeto e 50% na entrega — só paga o restante depois de ver o site no ar e aprovar tudo.</p>
+      </details>
+      <details class="faq-item reveal">
+        <summary>Preciso de manutenção depois?</summary>
+        <p>Não é obrigatório, mas recomendamos — o 1.º mês é sempre grátis para experimentar sem compromisso.</p>
+      </details>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="logo" href="index.html">
+          <span class="logo-mark">T</span>
+          <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
+        </a>
+        <p>Sites &amp; Apps que trabalham por si. Sites profissionais, marcações pelo WhatsApp e cartões de fidelidade digital para negócios locais.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navegação</h4>
+        <a href="servicos.html">O que fazemos</a>
+        <a href="pacotes.html">Pacotes</a>
+        <a href="modelos.html">Modelos</a>
+        <a href="renovacao.html">Já tem site?</a>
+        <a href="sobre.html">Sobre</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contacto</h4>
+        <a href="https://wa.me/351933113525" target="_blank" rel="noopener">WhatsApp +351 933 113 525</a>
+        <a href="conta.html">Entrar / Criar conta</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      TECNOVA Digital · Wesley Vianna · <a href="https://wa.me/351933113525" target="_blank" rel="noopener">WhatsApp +351 933 113 525</a>
+    </div>
+  </div>
+</footer>
+
+<a class="wa-float" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Vim%20do%20site%20da%20TECNOVA." target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#062b14"><path d="M17.5 14.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.14-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.5 0 1.47 1.07 2.9 1.22 3.1.15.2 2.1 3.2 5.1 4.49.71.3 1.27.49 1.7.63.72.23 1.37.2 1.88.12.58-.09 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35zM12 2a10 10 0 0 0-8.66 15L2 22l5.15-1.35A10 10 0 1 0 12 2z"/></svg>
+</a>
+
+<script>
+const burger = document.getElementById('burger');
+const navLinks = document.getElementById('navLinks');
+if(burger){
+  burger.addEventListener('click', ()=> navLinks.classList.toggle('open'));
+  navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLinks.classList.remove('open')));
+}
+const io=new IntersectionObserver(es=>{
+  es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})
+},{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+</script>
+</body>
+</html>
