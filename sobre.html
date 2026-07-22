@@ -52,7 +52,7 @@
       <a class="" href="modelos.html">Modelos</a>
       <a class="" href="renovacao.html">Já tem site?</a>
       <a class="on" href="sobre.html">Sobre</a>
-      <a href="conta.html">Entrar / Criar conta</a>
+      <a href="conta.html" id="navAccount">Entrar / Criar conta</a>
     </nav>
     <div class="nav-right">
       <a class="btn btn-gold" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Quero%20um%20site%20para%20o%20meu%20neg%C3%B3cio." target="_blank" rel="noopener">Pedir orçamento</a>
@@ -136,6 +136,12 @@
 <a class="wa-float" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Vim%20do%20site%20da%20TECNOVA." target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
   <svg width="28" height="28" viewBox="0 0 24 24" fill="#062b14"><path d="M17.5 14.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.14-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.5 0 1.47 1.07 2.9 1.22 3.1.15.2 2.1 3.2 5.1 4.49.71.3 1.27.49 1.7.63.72.23 1.37.2 1.88.12.58-.09 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35zM12 2a10 10 0 0 0-8.66 15L2 22l5.15-1.35A10 10 0 1 0 12 2z"/></svg>
 </a>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="auth-nav.js"></script>
 
 <script>
 const burger = document.getElementById('burger');
