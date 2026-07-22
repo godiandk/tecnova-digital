@@ -10,12 +10,12 @@
 // ============================================================
 
 const firebaseConfig = {
-  apiKey: "COLA_AQUI_A_TUA_API_KEY",
-  authDomain: "COLA_AQUI.firebaseapp.com",
-  projectId: "COLA_AQUI",
-  storageBucket: "COLA_AQUI.appspot.com",
-  messagingSenderId: "COLA_AQUI",
-  appId: "COLA_AQUI"
+  apiKey: "AIzaSyAK82iVEqwbA2KxDzDQQ8ZqIQ9gAvUEYzo",
+  authDomain: "tecnova-digital-159e3.firebaseapp.com",
+  projectId: "tecnova-digital-159e3",
+  storageBucket: "tecnova-digital-159e3.firebasestorage.app",
+  messagingSenderId: "880317651454",
+  appId: "1:880317651454:web:21ca08b9e90d3bda3088af"
 };
 
 // Lista de emails que têm acesso ao painel administrativo (admin.html).
