@@ -82,6 +82,11 @@
 .ms-btn{align-self:flex-start;background:#c987b9;color:#150e17;font-size:.68rem;font-weight:800;padding:8px 16px;border-radius:999px}
 
 .soon-tag{position:absolute;top:12px;right:12px;background:rgba(22,16,11,.75);color:var(--gold-soft);font-size:.62rem;font-weight:800;letter-spacing:.08em;padding:5px 10px;border-radius:6px;z-index:2}
+
+/* screenshots reais nos cartões de modelo */
+.browser-frame{display:block;text-decoration:none}
+.bf-shot{height:calc(100% - 28px);background-size:cover;background-position:center;transition:transform .5s ease}
+.model-card:hover .bf-shot{transform:scale(1.05)}
 </style></head>
 <body>
 <header>
@@ -125,14 +130,10 @@
     <div class="model-grid">
 
       <div class="model-card reveal">
-        <div class="browser-frame mock-barbearia">
+        <a class="browser-frame" href="modelo-barbearia.html">
           <div class="bf-bar"><span></span><span></span><span></span></div>
-          <div class="bf-body">
-            <div class="mb-nav"><span class="mb-logo">BARBEARIA IMPÉRIO</span><div class="mb-links"><span></span><span></span><span></span></div></div>
-            <div class="mb-title">Estilo clássico,<br><i>atitude moderna.</i></div>
-            <span class="mb-btn">Marcar corte</span>
-          </div>
-        </div>
+          <div class="bf-shot" style="background-image:url('img/modelos/barbearia/hero.jpg')"></div>
+        </a>
         <div class="model-info">
           <div class="kicker">Barbearia</div>
           <h3>Barbearia Império</h3>
@@ -142,14 +143,10 @@
       </div>
 
       <div class="model-card reveal">
-        <div class="browser-frame mock-estetica">
+        <a class="browser-frame" href="modelo-estetica.html">
           <div class="bf-bar"><span style="background:rgba(58,37,48,.15)"></span><span style="background:rgba(58,37,48,.15)"></span><span style="background:rgba(58,37,48,.15)"></span></div>
-          <div class="bf-body">
-            <div class="me-nav"><span class="me-logo">BELLA PELE</span><div class="me-links"><span></span><span></span><span></span></div></div>
-            <div class="me-title">Cuide da sua pele<br>como merece.</div>
-            <span class="me-btn">Agendar tratamento</span>
-          </div>
-        </div>
+          <div class="bf-shot" style="background-image:url('img/modelos/estetica/hero.jpg')"></div>
+        </a>
         <div class="model-info">
           <div class="kicker">Clínica de Estética</div>
           <h3>Clínica Bella Pele</h3>
@@ -158,15 +155,11 @@
         </div>
       </div>
 
-      <div class="model-card reveal" style="position:relative">
-        <div class="browser-frame mock-restaurante">
+      <div class="model-card reveal">
+        <a class="browser-frame" href="modelo-restaurante.html">
           <div class="bf-bar"><span></span><span></span><span></span></div>
-          <div class="bf-body">
-            <div class="mr-title">Sabores que <i>contam histórias.</i></div>
-            <div class="mr-row"><div class="mr-card"></div><div class="mr-card"></div><div class="mr-card"></div></div>
-            <span class="mr-btn">Reservar mesa</span>
-          </div>
-        </div>
+          <div class="bf-shot" style="background-image:url('img/modelos/restaurante/hero.jpg')"></div>
+        </a>
         <div class="model-info">
           <div class="kicker">Restaurante &amp; Café</div>
           <h3>Sabor &amp; Tradição</h3>
@@ -175,15 +168,11 @@
         </div>
       </div>
 
-      <div class="model-card reveal" style="position:relative">
-        <div class="browser-frame mock-ginasio">
+      <div class="model-card reveal">
+        <a class="browser-frame" href="modelo-ginasio.html">
           <div class="bf-bar"><span></span><span></span><span></span></div>
-          <div class="bf-body">
-            <div class="mg-title">TREINE <i>SEM LIMITES</i></div>
-            <div class="mg-bar"></div>
-            <span class="mg-btn">Marcar aula</span>
-          </div>
-        </div>
+          <div class="bf-shot" style="background-image:url('img/modelos/ginasio/hero.jpg')"></div>
+        </a>
         <div class="model-info">
           <div class="kicker">Ginásio &amp; Personal Trainer</div>
           <h3>Studio Performance</h3>
@@ -192,15 +181,11 @@
         </div>
       </div>
 
-      <div class="model-card reveal" style="position:relative">
-        <div class="browser-frame mock-oficina">
+      <div class="model-card reveal">
+        <a class="browser-frame" href="modelo-oficina.html">
           <div class="bf-bar"><span></span><span></span><span></span></div>
-          <div class="bf-body">
-            <div class="mo-title">A sua viatura em <i>boas mãos.</i></div>
-            <div><span class="mo-chip">Revisão</span><span class="mo-chip">Pneus</span><span class="mo-chip">Diagnóstico</span></div>
-            <span class="mo-btn">Marcar revisão</span>
-          </div>
-        </div>
+          <div class="bf-shot" style="background-image:url('img/modelos/oficina/hero.jpg')"></div>
+        </a>
         <div class="model-info">
           <div class="kicker">Oficina Automóvel</div>
           <h3>AutoCentro Norte</h3>
@@ -209,15 +194,11 @@
         </div>
       </div>
 
-      <div class="model-card reveal" style="position:relative">
-        <div class="browser-frame mock-salao">
+      <div class="model-card reveal">
+        <a class="browser-frame" href="modelo-salao.html">
           <div class="bf-bar"><span></span><span></span><span></span></div>
-          <div class="bf-body">
-            <div class="ms-title">Beleza que <i>se sente.</i></div>
-            <div class="ms-dots"><span></span><span></span><span></span></div>
-            <span class="ms-btn">Marcar horário</span>
-          </div>
-        </div>
+          <div class="bf-shot" style="background-image:url('img/modelos/salao/hero.jpg')"></div>
+        </a>
         <div class="model-info">
           <div class="kicker">Salão de Beleza</div>
           <h3>Studio Glow</h3>
