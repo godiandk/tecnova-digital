@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-labelledby="tecnovaLogoTitle">
+  <title id="tecnovaLogoTitle">Tecnova Digital</title>
+  <polygon points="100,10 175,55 175,145 100,190 25,145 25,55"
+           fill="none" stroke="#d4a54a" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M 62 60 L 62 78 L 88 78 L 88 150 L 112 150 L 112 78 L 138 78 L 138 60 Z"
+        fill="#d4a54a"/>
+</svg>

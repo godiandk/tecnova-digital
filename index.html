@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tecnova Digital — Tecnologia e Marketing Digital</title>
+<meta name="description" content="Tecnova Digital: desenvolvimento web, marketing digital, automação e inteligência artificial para transformar o seu negócio.">
+<link rel="icon" type="image/svg+xml" href="img/logo.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="./">
+      <img src="img/logo.svg" alt="" class="brand-mark" width="36" height="36">
+      <span>TECNOVA <em>DIGITAL</em></span>
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="main-nav" id="mainNav">
+      <ul>
+        <li><a href="#inicio">Início</a></li>
+        <li><a href="#servicos">Serviços</a></li>
+        <li><a href="#sobre">Sobre</a></li>
+        <li><a href="#portfolio">Portfólio</a></li>
+        <li><a href="#contato" class="btn btn-gold">Fale Conosco</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero" id="inicio">
+    <div class="container hero-inner">
+      <p class="eyebrow">Tecnologia · Marketing · Automação</p>
+      <h1>Transformamos ideias em <span class="gold">resultados digitais</span></h1>
+      <p class="hero-sub">A Tecnova Digital une desenvolvimento de software, marketing de performance e inteligência artificial para acelerar o crescimento do seu negócio.</p>
+      <div class="hero-cta">
+        <a href="#contato" class="btn btn-gold btn-lg">Solicitar orçamento</a>
+        <a href="#servicos" class="btn btn-outline btn-lg">Conhecer serviços</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="servicos">
+    <div class="container">
+      <p class="eyebrow center">O que fazemos</p>
+      <h2 class="section-title center">Nossos serviços</h2>
+      <div class="grid services-grid">
+        <article class="card">
+          <div class="card-icon">💻</div>
+          <h3>Desenvolvimento Web &amp; Sistemas</h3>
+          <p>Sites institucionais, landing pages, e-commerces e sistemas sob medida, com foco em performance e conversão.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon">📈</div>
+          <h3>Marketing Digital &amp; Performance</h3>
+          <p>Gestão de tráfego pago, SEO e estratégias de conteúdo para gerar leads qualificados e vendas recorrentes.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon">🤖</div>
+          <h3>Automação &amp; Inteligência Artificial</h3>
+          <p>Chatbots, integrações e fluxos automatizados que reduzem custo operacional e aceleram o atendimento.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon">📱</div>
+          <h3>Aplicativos Mobile</h3>
+          <p>Apps nativos e híbridos para Android e iOS, do MVP à publicação nas lojas.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon">🎨</div>
+          <h3>Identidade Visual &amp; Branding</h3>
+          <p>Construção e evolução de marcas fortes, com identidade visual consistente em todos os pontos de contato.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon">🧭</div>
+          <h3>Consultoria Digital</h3>
+          <p>Diagnóstico e plano de ação para empresas que querem estruturar ou acelerar sua presença digital.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-alt" id="sobre">
+    <div class="container about-inner">
+      <div class="about-photo">
+        <div class="photo-frame" aria-hidden="true">
+          <span>WV</span>
+        </div>
+      </div>
+      <div class="about-text">
+        <p class="eyebrow">Quem lidera a Tecnova</p>
+        <h2 class="section-title">Wesley Vianna</h2>
+        <p class="role">Fundador &amp; CEO — Tecnova Digital</p>
+        <p>À frente da Tecnova Digital, Wesley Vianna conduz a empresa com foco em resultado real para o cliente: unir tecnologia, estratégia e execução para transformar negócios através do digital.</p>
+        <p>A missão da Tecnova é simples: entregar soluções digitais que geram retorno mensurável, com transparência e proximidade em cada etapa do projeto.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="portfolio">
+    <div class="container">
+      <p class="eyebrow center">Cases</p>
+      <h2 class="section-title center">Portfólio</h2>
+      <p class="section-sub center">Em breve, apresentaremos aqui os projetos e resultados entregues pela Tecnova Digital.</p>
+      <div class="grid portfolio-grid">
+        <div class="portfolio-placeholder">Case em breve</div>
+        <div class="portfolio-placeholder">Case em breve</div>
+        <div class="portfolio-placeholder">Case em breve</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-alt" id="contato">
+    <div class="container contact-inner">
+      <p class="eyebrow center">Vamos conversar</p>
+      <h2 class="section-title center">Entre em contato</h2>
+      <p class="section-sub center">Preencha o formulário ou fale diretamente com a nossa equipe.</p>
+
+      <form class="contact-form" id="contactForm">
+        <div class="form-row">
+          <input type="text" name="nome" placeholder="Seu nome" required>
+          <input type="email" name="email" placeholder="Seu e-mail" required>
+        </div>
+        <input type="text" name="assunto" placeholder="Assunto">
+        <textarea name="mensagem" rows="5" placeholder="Como podemos ajudar?" required></textarea>
+        <button type="submit" class="btn btn-gold btn-lg">Enviar mensagem</button>
+        <p class="form-note" id="formNote" hidden>Obrigado! Em breve entraremos em contato.</p>
+      </form>
+
+      <div class="contact-alt">
+        <a href="mailto:contato@tecnovadigital.com.br" class="contact-link">contato@tecnovadigital.com.br</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="brand footer-brand">
+      <img src="img/logo.svg" alt="" width="28" height="28">
+      <span>TECNOVA <em>DIGITAL</em></span>
+    </div>
+    <p>&copy; <span id="year"></span> Tecnova Digital. Todos os direitos reservados.</p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
