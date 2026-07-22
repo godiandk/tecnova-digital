@@ -28,8 +28,8 @@ Depois de feito uma vez, fica pronto para sempre.
 3. Vai aparecer um bloco de código chamado `firebaseConfig` — copia-o.
 4. Abre o ficheiro **`firebase-config.js`** (dentro desta pasta) e cola os
    valores dentro das aspas, substituindo o que está escrito.
-5. No mesmo ficheiro, troca `wesley@tecnovadigital.pt` pelo **teu email real**
-   dentro de `ADMIN_EMAILS` — é esse email que vai ter acesso ao painel.
+5. `ADMIN_EMAILS` já está com `wly.vianna@gmail.com` — troca se quiseres usar
+   outro email para administrar o painel.
 
 ## Passo 3 — Criar a tua conta de administrador
 
@@ -89,19 +89,19 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /clientes/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
-      allow read: if request.auth != null && request.auth.token.email in ['TEU_EMAIL_AQUI'];
+      allow read: if request.auth != null && request.auth.token.email in ['wly.vianna@gmail.com'];
     }
     match /vouchers/{code} {
       allow read: if request.auth != null &&
         (resource.data.clienteUid == request.auth.uid ||
-         request.auth.token.email in ['TEU_EMAIL_AQUI']);
-      allow write: if request.auth != null && request.auth.token.email in ['TEU_EMAIL_AQUI'];
+         request.auth.token.email in ['wly.vianna@gmail.com']);
+      allow write: if request.auth != null && request.auth.token.email in ['wly.vianna@gmail.com'];
     }
   }
 }
 ```
 
-Troca `TEU_EMAIL_AQUI` pelo teu email (o mesmo do `ADMIN_EMAILS`) e clica
+Troca `wly.vianna@gmail.com` pelo teu email (o mesmo do `ADMIN_EMAILS`) e clica
 **Publicar**.
 
 ---

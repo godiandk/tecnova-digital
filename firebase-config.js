@@ -21,7 +21,7 @@ const firebaseConfig = {
 // Lista de emails que têm acesso ao painel administrativo (admin.html).
 // Coloca aqui o TEU email (o mesmo que vais usar para criar conta no site).
 const ADMIN_EMAILS = [
-  "wesley@tecnovadigital.pt"   // <-- troca pelo teu email real
+  "wly.vianna@gmail.com"
 ];
 
 // Não precisas mexer daqui para baixo.
