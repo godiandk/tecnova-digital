@@ -43,7 +43,8 @@ img{max-width:100%;display:block}
 .logo-mark{width:34px;height:38px;display:grid;place-items:center;background:linear-gradient(160deg,var(--gold-soft),var(--gold));clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);color:var(--ink);font-family:'Playfair Display',serif;font-weight:800;font-size:1.05rem}
 .ab-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(217,178,110,.1);border:1px solid rgba(217,178,110,.3);color:var(--gold-soft);border-radius:999px;padding:8px 14px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit}
 .ab-btn:hover{background:rgba(217,178,110,.18)}
-.ab-avatar{width:34px;height:34px;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,var(--gold-soft),var(--gold));color:var(--ink);display:grid;place-items:center;font-weight:800;font-family:'Playfair Display',serif;flex:none}
+.ab-avatar{width:34px;height:34px;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,var(--gold-soft),var(--gold));color:var(--ink);display:grid;place-items:center;font-weight:800;font-family:'Playfair Display',serif;flex:none;cursor:pointer;border:2px solid transparent;transition:border-color .2s}
+.ab-avatar:hover,.ab-avatar:active{border-color:var(--gold-soft)}
 .ab-avatar img{width:100%;height:100%;object-fit:cover}
 
 /* ---- Ecrãs ---- */
@@ -342,6 +343,22 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   });
   document.querySelectorAll("[data-goto]").forEach(function(b){
     b.addEventListener("click", function(){ show(b.getAttribute("data-goto")); });
+  });
+
+  // Tocar no avatar (topo direito) → abre a Conta e as Configurações
+  document.getElementById("abAvatar").addEventListener("click", function(){
+    show("conta");
+    setTimeout(function(){
+      var dash=document.getElementById("dashBox");
+      if(dash && !dash.classList.contains("hidden")){
+        var body=document.getElementById("setBody");
+        if(body && !body.classList.contains("open")){
+          body.classList.add("open");
+          var ch=document.getElementById("setChevron"); if(ch) ch.textContent="▴";
+        }
+        body.scrollIntoView({behavior:"smooth",block:"center"});
+      }
+    }, 60);
   });
 
   /* ---- Pedir site → WhatsApp ---- */
