@@ -107,8 +107,8 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
 <section class="auth-hero">
   <div class="wrap">
     <p class="eyebrow" style="justify-content:center">A sua conta</p>
-    <h1>Entre ou crie a sua conta</h1>
-    <p>Veja os seus cupões de desconto e o histórico com a TECNOVA Digital.</p>
+    <h1 id="authHeroTitle">Entre ou crie a sua conta</h1>
+    <p id="authHeroSub">Veja os seus cupões de desconto e o histórico com a TECNOVA Digital.</p>
   </div>
 </section>
 
@@ -482,12 +482,17 @@ auth.onAuthStateChanged(async (user)=>{
     const dados = doc.exists ? doc.data() : {nome:user.email, email:user.email};
     document.getElementById('dashNome').textContent = dados.nome || user.email;
     document.getElementById('dashEmail').textContent = dados.email || user.email;
+    var primeiro = (dados.nome || user.email || '').split(' ')[0];
+    document.getElementById('authHeroTitle').textContent = 'Olá, ' + primeiro + ' 👋';
+    document.getElementById('authHeroSub').textContent = 'Bem-vindo de volta à sua conta TECNOVA Digital.';
     window.tecnovaApplyAvatar(document.getElementById('avatarLetter'), dados, dados.nome||user.email);
     initSettings(user, dados);
     carregarVouchers(user.uid);
   }else{
     document.getElementById('authBox').classList.remove('hidden');
     document.getElementById('dashBox').classList.add('hidden');
+    document.getElementById('authHeroTitle').textContent = 'Entre ou crie a sua conta';
+    document.getElementById('authHeroSub').textContent = 'Veja os seus cupões de desconto e o histórico com a TECNOVA Digital.';
   }
 });
 
