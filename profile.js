@@ -1,7 +1,12 @@
 /* TECNOVA Digital — utilitários de perfil (avatar, personagens, foto) */
 (function () {
-  // Personagens/avatares prontos (funcionam já, sem imagens externas)
-  window.TECNOVA_CHARS = ["👨‍💼","👩‍💼","🧑‍💻","👨‍🎨","👩‍🎨","🧔","👱‍♀️","😎","🦸","🦸‍♀️","🧑‍🚀","🤵"];
+  // Personagens/avatares ilustrados (imagens da marca, preto/dourado)
+  window.TECNOVA_CHARS = [
+    "img/avatares/av1.jpg","img/avatares/av2.jpg","img/avatares/av3.jpg",
+    "img/avatares/av4.jpg","img/avatares/av5.jpg","img/avatares/av6.jpg",
+    "img/avatares/av7.jpg","img/avatares/av8.jpg","img/avatares/av9.jpg",
+    "img/avatares/av10.jpg"
+  ];
 
   // Comprime/recorta uma imagem para um quadrado 240px (data URL JPEG)
   window.tecnovaCompress = function (file) {
@@ -28,9 +33,13 @@
   window.tecnovaApplyAvatar = function (el, dados, fallback) {
     if (!el) return;
     if (dados && dados.foto) { el.innerHTML = '<img src="' + dados.foto + '" alt="">'; return; }
+    if (dados && dados.avatarChar) {
+      var v = dados.avatarChar;
+      if (/^img\//.test(v) || /^data:/.test(v)) { el.innerHTML = '<img src="' + v + '" alt="">'; return; }
+      el.innerHTML = ""; el.textContent = v; return; // compatibilidade com emojis antigos
+    }
     el.innerHTML = "";
-    if (dados && dados.avatarChar) { el.textContent = dados.avatarChar; }
-    else if (dados && dados.sexo === "feminino") { el.textContent = "👩"; }
+    if (dados && dados.sexo === "feminino") { el.textContent = "👩"; }
     else if (dados && dados.sexo === "masculino") { el.textContent = "👨"; }
     else { el.textContent = ((fallback || "T").charAt(0) || "T").toUpperCase(); }
   };

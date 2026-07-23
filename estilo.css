@@ -209,6 +209,7 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
 .mini-btn:hover{background:rgba(217,178,110,.18)}
 .mini-btn.danger{border-color:rgba(224,113,92,.4);color:#f0a292}
 .char-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:14px 0}
-.char-grid button{aspect-ratio:1;border-radius:50%;border:1px solid rgba(217,178,110,.25);background:var(--ink);font-size:1.4rem;cursor:pointer;display:grid;place-items:center;padding:0}
+.char-grid button{aspect-ratio:1;border-radius:50%;border:1px solid rgba(217,178,110,.25);background:var(--ink);font-size:1.4rem;cursor:pointer;display:grid;place-items:center;padding:0;overflow:hidden}
+.char-grid button img{width:100%;height:100%;object-fit:cover}
 .char-grid button:hover,.char-grid button.sel{border-color:var(--gold);background:rgba(217,178,110,.14)}
 @media(max-width:520px){.char-grid{grid-template-columns:repeat(4,1fr)}}

@@ -146,7 +146,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .mini-btn:hover{background:rgba(217,178,110,.18)}
 .mini-btn.danger{border-color:rgba(224,113,92,.4);color:#f0a292}
 .char-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:14px 0}
-.char-grid button{aspect-ratio:1;border-radius:50%;border:1px solid rgba(217,178,110,.25);background:var(--ink);font-size:1.4rem;cursor:pointer;display:grid;place-items:center;padding:0}
+.char-grid button{aspect-ratio:1;border-radius:50%;border:1px solid rgba(217,178,110,.25);background:var(--ink);font-size:1.4rem;cursor:pointer;display:grid;place-items:center;padding:0;overflow:hidden}
+.char-grid button img{width:100%;height:100%;object-fit:cover}
 .char-grid button:hover,.char-grid button.sel{border-color:var(--gold);background:rgba(217,178,110,.14)}
 @media(max-width:520px){.char-grid{grid-template-columns:repeat(4,1fr)}}
 
@@ -261,8 +262,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
       <div class="photo-picker">
         <label for="regFoto" class="photo-preview" id="regFotoPreview" style="margin:0">📷</label>
         <input type="file" id="regFoto" accept="image/*" class="hidden">
-        <span class="photo-hint">Toque para escolher. Se não escolher, usamos um avatar.</span>
+        <span class="photo-hint">Envie a sua foto, ou escolha um personagem abaixo.</span>
       </div>
+      <button type="button" class="mini-btn" id="regCharsBtn" style="margin-top:10px">🙂 Escolher um personagem</button>
+      <div class="char-grid hidden" id="regCharGrid"></div>
       <label>Nome</label><input type="text" id="regNome" required placeholder="O seu nome">
       <label>Email</label><input type="email" id="regEmail" required placeholder="oseuemail@exemplo.com">
       <label>Telemóvel</label><input type="tel" id="regTel" required placeholder="+351 9xx xxx xxx">
@@ -402,12 +405,29 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
       reader.readAsDataURL(file);
     });
   }
+  var regAvatarChar=null;
   document.getElementById("regFoto").addEventListener("change", async function(e){
     var file=e.target.files[0]; if(!file) return;
-    try{ fotoComprimida=await comprimirFoto(file);
+    try{ fotoComprimida=await comprimirFoto(file); regAvatarChar=null;
+      document.querySelectorAll('#regCharGrid button').forEach(function(b){b.classList.remove('sel');});
       document.getElementById("regFotoPreview").innerHTML='<img src="'+fotoComprimida+'" alt="">';
     }catch(err){ authMsg(err.message,"err"); e.target.value=""; fotoComprimida=null; }
   });
+  (function(){
+    var grid=document.getElementById("regCharGrid");
+    (window.TECNOVA_CHARS||[]).forEach(function(ch){
+      var b=document.createElement('button');b.type='button';
+      if(/^img\//.test(ch)||/^data:/.test(ch)){ b.innerHTML='<img src="'+ch+'" alt="">'; } else { b.textContent=ch; }
+      b.addEventListener('click',function(){
+        regAvatarChar=ch; fotoComprimida=null; document.getElementById('regFoto').value='';
+        grid.querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});
+        b.classList.add('sel');
+        window.tecnovaApplyAvatar(document.getElementById('regFotoPreview'),{avatarChar:ch},'T');
+      });
+      grid.appendChild(b);
+    });
+    document.getElementById('regCharsBtn').addEventListener('click',function(){grid.classList.toggle('hidden');});
+  })();
 
   document.getElementById("formRegister").addEventListener("submit", async function(e){
     e.preventDefault();
@@ -421,6 +441,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
       await cred.user.updateProfile({displayName:nome});
       var dados={nome:nome,email:email,telefone:tel,sexo:sexo,criadoEm:firebase.firestore.FieldValue.serverTimestamp()};
       if(fotoComprimida) dados.foto=fotoComprimida;
+      else if(regAvatarChar) dados.avatarChar=regAvatarChar;
       await db.collection("clientes").doc(cred.user.uid).set(dados);
       authMsg("Conta criada com sucesso! A entrar…","ok");
     }catch(err){ authMsg(traduzErro(err),"err"); }
@@ -449,7 +470,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   function buildCharGrid(){
     var grid=document.getElementById('charGrid'); if(grid.childElementCount) return;
     (window.TECNOVA_CHARS||[]).forEach(function(ch){
-      var b=document.createElement('button');b.type='button';b.textContent=ch;
+      var b=document.createElement('button');b.type='button';
+      if(/^img\//.test(ch)||/^data:/.test(ch)){ b.innerHTML='<img src="'+ch+'" alt="">'; } else { b.textContent=ch; }
       b.addEventListener('click',function(){
         setDirtyAvatar={foto:null,avatarChar:ch};
         grid.querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});
