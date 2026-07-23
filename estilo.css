@@ -159,3 +159,33 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
   .nav-drop.open .nav-drop-menu{display:block;visibility:visible;transform:none}
   .nav-drop-menu a{padding:12px 0 12px 28px;text-align:left}
 }
+
+/* ---------- Botão flutuante "APP" + modal de instalação ---------- */
+.app-float{
+  position:fixed;left:22px;bottom:22px;z-index:60;display:flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--ink);
+  border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:.78rem;letter-spacing:.04em;
+  padding:12px 17px;border-radius:999px;box-shadow:0 12px 30px rgba(217,178,110,.4);transition:transform .2s;
+}
+.app-float:hover{transform:scale(1.06)}
+.app-float .af-ic{font-size:1.1rem;line-height:1}
+.app-modal{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.72)}
+.app-modal[hidden]{display:none}
+.app-modal-box{background:var(--ink-2);border:1px solid rgba(217,178,110,.25);border-radius:22px;max-width:430px;width:100%;padding:34px 28px;text-align:center;position:relative;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.app-modal-close{position:absolute;top:12px;right:16px;background:none;border:none;color:var(--cream-dim);font-size:1.8rem;cursor:pointer;line-height:1}
+.app-modal-logo{width:66px;height:72px;margin:0 auto 16px;display:grid;place-items:center;background:linear-gradient(160deg,var(--gold-soft),var(--gold));clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);color:var(--ink);font-family:'Playfair Display',serif;font-weight:800;font-size:1.9rem}
+.app-modal-box h3{font-size:1.3rem;margin-bottom:8px}
+.app-modal-box>p{color:var(--cream-dim);font-size:.9rem;margin-bottom:22px}
+.app-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.app-choice button{padding:18px 12px;border-radius:14px;border:1px solid rgba(217,178,110,.3);background:var(--ink);color:var(--cream);font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:6px;align-items:center;position:relative}
+.app-choice button:hover,.app-choice button.rec{border-color:var(--gold);background:rgba(217,178,110,.08)}
+.app-choice button .os-ic{font-size:1.9rem;line-height:1}
+.app-choice button .rec-tag{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--ink);font-size:.56rem;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.app-steps{margin-top:22px;text-align:left;display:none}
+.app-steps.show{display:block;animation:appFade .3s ease}
+@keyframes appFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.app-steps ol{margin:0;padding-left:20px;color:var(--cream-dim);font-size:.9rem;line-height:1.8}
+.app-steps ol b{color:var(--cream)}
+.app-steps .app-ok{background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.35);color:#8fe3ac;padding:12px 14px;border-radius:10px;font-size:.88rem}
+.app-steps .app-warn{background:rgba(217,178,110,.08);border:1px solid rgba(217,178,110,.3);color:var(--gold-soft);padding:12px 14px;border-radius:10px;font-size:.86rem}
+.app-back{margin-top:16px;background:none;border:none;color:var(--cream-dim);font-size:.82rem;cursor:pointer;text-decoration:underline;font-family:inherit}
