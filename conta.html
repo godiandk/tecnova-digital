@@ -165,6 +165,37 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
       </div>
       <h2 class="dash-title">Os meus cupões</h2>
       <div id="vouchersList"><p class="empty">A carregar…</p></div>
+
+      <div class="settings-card">
+        <button type="button" class="set-toggle" id="setToggle">⚙️ Configurações da conta <span id="setChevron">▾</span></button>
+        <div class="set-body" id="setBody">
+          <label>Foto / avatar</label>
+          <div class="avatar-edit">
+            <div class="big" id="setAvatar">?</div>
+            <div class="avatar-actions">
+              <label class="mini-btn" for="setFoto">📷 Enviar foto</label>
+              <input type="file" id="setFoto" accept="image/*" class="hidden">
+              <button type="button" class="mini-btn" id="setCharsBtn">🙂 Personagens</button>
+              <button type="button" class="mini-btn danger" id="setRemove">Remover</button>
+            </div>
+          </div>
+          <div class="char-grid hidden" id="charGrid"></div>
+
+          <label>Nome</label>
+          <input type="text" id="setNome" placeholder="O seu nome">
+          <label>Telemóvel</label>
+          <input type="tel" id="setTel" placeholder="+351 9xx xxx xxx">
+          <label>Sexo</label>
+          <select id="setSexo"><option value="">Prefiro não dizer</option><option value="masculino">Masculino</option><option value="feminino">Feminino</option></select>
+          <button type="button" class="btn btn-gold" id="setSave" style="width:100%;justify-content:center;margin-top:16px">Guardar alterações</button>
+          <div class="msg" id="setMsg"></div>
+
+          <label style="margin-top:20px">Segurança</label>
+          <button type="button" class="mini-btn" id="setPass">Alterar palavra-passe (por email)</button>
+          <div class="msg" id="passMsg"></div>
+        </div>
+      </div>
+
       <span class="logout" onclick="logout()">Sair da conta</span>
     </div>
 
@@ -210,6 +241,7 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="profile.js"></script>
 
 <script>
 if('serviceWorker' in navigator){
@@ -318,6 +350,101 @@ function traduzErro(err){
 
 function logout(){ auth.signOut(); }
 
+// ---------- Configurações da conta ----------
+let setUser = null, setData = {}, setDirtyAvatar = undefined; // undefined = sem alteração de avatar
+
+function initSettings(user, dados){
+  setUser = user; setData = Object.assign({}, dados); setDirtyAvatar = undefined;
+  document.getElementById('setNome').value = dados.nome || '';
+  document.getElementById('setTel').value = dados.telefone || '';
+  document.getElementById('setSexo').value = dados.sexo || '';
+  window.tecnovaApplyAvatar(document.getElementById('setAvatar'), dados, dados.nome||user.email);
+  buildCharGrid();
+}
+
+function currentPreviewData(){
+  // reflete a alteração pendente de avatar no preview
+  var d = Object.assign({}, setData);
+  if(setDirtyAvatar !== undefined){ d.foto = setDirtyAvatar.foto; d.avatarChar = setDirtyAvatar.avatarChar; }
+  return d;
+}
+function refreshAvatarPreview(){
+  window.tecnovaApplyAvatar(document.getElementById('setAvatar'), currentPreviewData(), (setData.nome||(setUser&&setUser.email)||'T'));
+}
+
+function buildCharGrid(){
+  var grid = document.getElementById('charGrid');
+  if(grid.childElementCount) return;
+  (window.TECNOVA_CHARS||[]).forEach(function(ch){
+    var b = document.createElement('button'); b.type='button'; b.textContent=ch;
+    b.addEventListener('click', function(){
+      setDirtyAvatar = { foto:null, avatarChar:ch };
+      grid.querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});
+      b.classList.add('sel');
+      refreshAvatarPreview();
+    });
+    grid.appendChild(b);
+  });
+}
+
+document.getElementById('setToggle').addEventListener('click', function(){
+  var body = document.getElementById('setBody');
+  var open = body.classList.toggle('open');
+  document.getElementById('setChevron').textContent = open ? '▴' : '▾';
+});
+document.getElementById('setCharsBtn').addEventListener('click', function(){
+  document.getElementById('charGrid').classList.toggle('hidden');
+});
+document.getElementById('setFoto').addEventListener('change', async function(e){
+  var file = e.target.files[0]; if(!file) return;
+  var m = document.getElementById('setMsg');
+  try{
+    var data = await window.tecnovaCompress(file);
+    setDirtyAvatar = { foto:data, avatarChar:null };
+    document.getElementById('charGrid').querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});
+    refreshAvatarPreview();
+    m.className='msg ok'; m.textContent='Foto pronta — clique em "Guardar alterações".';
+  }catch(err){ m.className='msg err'; m.textContent=err.message; e.target.value=''; }
+});
+document.getElementById('setRemove').addEventListener('click', function(){
+  setDirtyAvatar = { foto:null, avatarChar:null };
+  document.getElementById('charGrid').querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});
+  refreshAvatarPreview();
+});
+document.getElementById('setSave').addEventListener('click', async function(){
+  if(!setUser) return;
+  var m = document.getElementById('setMsg');
+  var upd = {
+    nome: document.getElementById('setNome').value.trim(),
+    telefone: document.getElementById('setTel').value.trim(),
+    sexo: document.getElementById('setSexo').value
+  };
+  if(setDirtyAvatar !== undefined){
+    upd.foto = setDirtyAvatar.foto || firebase.firestore.FieldValue.delete();
+    upd.avatarChar = setDirtyAvatar.avatarChar || firebase.firestore.FieldValue.delete();
+  }
+  m.className='msg'; m.textContent='';
+  try{
+    await db.collection('clientes').doc(setUser.uid).set(upd, {merge:true});
+    if(upd.nome) await setUser.updateProfile({displayName: upd.nome});
+    // atualiza estado local + previews
+    setData.nome=upd.nome; setData.telefone=upd.telefone; setData.sexo=upd.sexo;
+    if(setDirtyAvatar!==undefined){ setData.foto=setDirtyAvatar.foto||null; setData.avatarChar=setDirtyAvatar.avatarChar||null; setDirtyAvatar=undefined; }
+    document.getElementById('dashNome').textContent = setData.nome || setUser.email;
+    window.tecnovaApplyAvatar(document.getElementById('avatarLetter'), setData, setData.nome||setUser.email);
+    refreshAvatarPreview();
+    m.className='msg ok'; m.textContent='✅ Alterações guardadas!';
+  }catch(err){ m.className='msg err'; m.textContent='Não foi possível guardar. Tente novamente.'; }
+});
+document.getElementById('setPass').addEventListener('click', async function(){
+  var pm = document.getElementById('passMsg');
+  if(!setUser || !setUser.email){ return; }
+  try{
+    await auth.sendPasswordResetEmail(setUser.email);
+    pm.className='msg ok'; pm.textContent='📧 Enviámos um link de alteração de palavra-passe para '+setUser.email+'.';
+  }catch(err){ pm.className='msg err'; pm.textContent='Não foi possível enviar o email agora.'; }
+});
+
 // ---------- Estado da sessão ----------
 auth.onAuthStateChanged(async (user)=>{
   if(user){
@@ -327,16 +454,8 @@ auth.onAuthStateChanged(async (user)=>{
     const dados = doc.exists ? doc.data() : {nome:user.email, email:user.email};
     document.getElementById('dashNome').textContent = dados.nome || user.email;
     document.getElementById('dashEmail').textContent = dados.email || user.email;
-    const avatarEl = document.getElementById('avatarLetter');
-    if(dados.foto){
-      avatarEl.innerHTML = `<img src="${dados.foto}" alt="">`;
-    }else if(dados.sexo === 'feminino'){
-      avatarEl.textContent = '👩';
-    }else if(dados.sexo === 'masculino'){
-      avatarEl.textContent = '👨';
-    }else{
-      avatarEl.textContent = (dados.nome||user.email).charAt(0).toUpperCase();
-    }
+    window.tecnovaApplyAvatar(document.getElementById('avatarLetter'), dados, dados.nome||user.email);
+    initSettings(user, dados);
     carregarVouchers(user.uid);
   }else{
     document.getElementById('authBox').classList.remove('hidden');

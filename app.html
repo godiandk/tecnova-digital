@@ -16,6 +16,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="profile.js"></script>
 <style>
 :root{
   --ink:#16100b;--ink-2:#211812;--ink-3:#2b2016;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
@@ -131,6 +132,23 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .badge.usado{background:rgba(217,178,110,.12);color:var(--cream-dim)}
 .empty{color:var(--cream-dim);font-size:.86rem;text-align:center;padding:18px 0}
 .logout{display:block;text-align:center;margin-top:18px;color:var(--cream-dim);font-size:.82rem;cursor:pointer;text-decoration:underline}
+
+/* Configurações */
+.settings-card{margin-top:22px;border-top:1px solid rgba(217,178,110,.14);padding-top:18px}
+.set-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;background:none;border:none;color:var(--gold-soft);font-family:inherit;font-weight:700;font-size:.95rem;cursor:pointer;padding:6px 0}
+.set-body{display:none;margin-top:14px}
+.set-body.open{display:block}
+.avatar-edit{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+.avatar-edit .big{width:76px;height:76px;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,var(--gold-soft),var(--gold));color:var(--ink);display:grid;place-items:center;font-family:'Playfair Display',serif;font-weight:800;font-size:1.7rem;flex:none}
+.avatar-edit .big img{width:100%;height:100%;object-fit:cover}
+.avatar-actions{display:flex;flex-wrap:wrap;gap:8px}
+.mini-btn{background:rgba(217,178,110,.1);border:1px solid rgba(217,178,110,.3);color:var(--gold-soft);border-radius:999px;padding:9px 15px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:inherit;display:inline-block}
+.mini-btn:hover{background:rgba(217,178,110,.18)}
+.mini-btn.danger{border-color:rgba(224,113,92,.4);color:#f0a292}
+.char-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:14px 0}
+.char-grid button{aspect-ratio:1;border-radius:50%;border:1px solid rgba(217,178,110,.25);background:var(--ink);font-size:1.4rem;cursor:pointer;display:grid;place-items:center;padding:0}
+.char-grid button:hover,.char-grid button.sel{border-color:var(--gold);background:rgba(217,178,110,.14)}
+@media(max-width:520px){.char-grid{grid-template-columns:repeat(4,1fr)}}
 
 /* Barra inferior de abas */
 .tabbar{
@@ -263,6 +281,33 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
     </div>
     <h3 style="font-size:1.05rem;margin-bottom:6px">Os meus cupões</h3>
     <div id="vouchersList"><p class="empty">A carregar…</p></div>
+
+    <div class="settings-card">
+      <button type="button" class="set-toggle" id="setToggle">⚙️ Configurações da conta <span id="setChevron">▾</span></button>
+      <div class="set-body" id="setBody">
+        <label>Foto / avatar</label>
+        <div class="avatar-edit">
+          <div class="big" id="setAvatar">?</div>
+          <div class="avatar-actions">
+            <label class="mini-btn" for="setFoto">📷 Enviar foto</label>
+            <input type="file" id="setFoto" accept="image/*" class="hidden">
+            <button type="button" class="mini-btn" id="setCharsBtn">🙂 Personagens</button>
+            <button type="button" class="mini-btn danger" id="setRemove">Remover</button>
+          </div>
+        </div>
+        <div class="char-grid hidden" id="charGrid"></div>
+        <label>Nome</label><input type="text" id="setNome" placeholder="O seu nome">
+        <label>Telemóvel</label><input type="tel" id="setTel" placeholder="+351 9xx xxx xxx">
+        <label>Sexo</label>
+        <select id="setSexo"><option value="">Prefiro não dizer</option><option value="masculino">Masculino</option><option value="feminino">Feminino</option></select>
+        <button type="button" class="btn btn-gold" id="setSave">Guardar alterações</button>
+        <div class="msg" id="setMsg"></div>
+        <label style="margin-top:18px">Segurança</label>
+        <button type="button" class="mini-btn" id="setPass">Alterar palavra-passe (por email)</button>
+        <div class="msg" id="passMsg"></div>
+      </div>
+    </div>
+
     <a class="btn btn-line" href="index.html" style="margin-top:18px">🌐 Voltar ao site</a>
     <span class="logout" id="logoutBtn">Sair da conta</span>
   </div>
@@ -387,12 +432,74 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   });
   document.getElementById("logoutBtn").addEventListener("click", function(){ auth.signOut(); });
 
-  function setAvatar(el, dados, fallback){
-    if(dados && dados.foto){ el.innerHTML='<img src="'+dados.foto+'" alt="">'; }
-    else if(dados && dados.sexo==='feminino'){ el.textContent='👩'; }
-    else if(dados && dados.sexo==='masculino'){ el.textContent='👨'; }
-    else { el.textContent=(fallback||'T').charAt(0).toUpperCase(); }
+  function setAvatar(el, dados, fallback){ window.tecnovaApplyAvatar(el, dados, fallback); }
+
+  /* ---- Configurações da conta ---- */
+  var setUser=null, setData={}, setDirtyAvatar=undefined;
+  function initSettings(user, dados){
+    setUser=user; setData=Object.assign({},dados); setDirtyAvatar=undefined;
+    document.getElementById('setNome').value=dados.nome||'';
+    document.getElementById('setTel').value=dados.telefone||'';
+    document.getElementById('setSexo').value=dados.sexo||'';
+    window.tecnovaApplyAvatar(document.getElementById('setAvatar'),dados,dados.nome||user.email);
+    buildCharGrid();
   }
+  function previewData(){var d=Object.assign({},setData);if(setDirtyAvatar!==undefined){d.foto=setDirtyAvatar.foto;d.avatarChar=setDirtyAvatar.avatarChar;}return d;}
+  function refreshPreview(){window.tecnovaApplyAvatar(document.getElementById('setAvatar'),previewData(),(setData.nome||(setUser&&setUser.email)||'T'));}
+  function buildCharGrid(){
+    var grid=document.getElementById('charGrid'); if(grid.childElementCount) return;
+    (window.TECNOVA_CHARS||[]).forEach(function(ch){
+      var b=document.createElement('button');b.type='button';b.textContent=ch;
+      b.addEventListener('click',function(){
+        setDirtyAvatar={foto:null,avatarChar:ch};
+        grid.querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});
+        b.classList.add('sel'); refreshPreview();
+      });
+      grid.appendChild(b);
+    });
+  }
+  document.getElementById('setToggle').addEventListener('click',function(){
+    var open=document.getElementById('setBody').classList.toggle('open');
+    document.getElementById('setChevron').textContent=open?'▴':'▾';
+  });
+  document.getElementById('setCharsBtn').addEventListener('click',function(){document.getElementById('charGrid').classList.toggle('hidden');});
+  document.getElementById('setFoto').addEventListener('change',async function(e){
+    var file=e.target.files[0]; if(!file) return; var m=document.getElementById('setMsg');
+    try{ var data=await window.tecnovaCompress(file); setDirtyAvatar={foto:data,avatarChar:null};
+      document.getElementById('charGrid').querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});
+      refreshPreview(); m.className='msg ok'; m.textContent='Foto pronta — clique em "Guardar alterações".';
+    }catch(err){ m.className='msg err'; m.textContent=err.message; e.target.value=''; }
+  });
+  document.getElementById('setRemove').addEventListener('click',function(){
+    setDirtyAvatar={foto:null,avatarChar:null};
+    document.getElementById('charGrid').querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});
+    refreshPreview();
+  });
+  document.getElementById('setSave').addEventListener('click',async function(){
+    if(!setUser) return; var m=document.getElementById('setMsg');
+    var upd={nome:document.getElementById('setNome').value.trim(),telefone:document.getElementById('setTel').value.trim(),sexo:document.getElementById('setSexo').value};
+    if(setDirtyAvatar!==undefined){
+      upd.foto=setDirtyAvatar.foto||firebase.firestore.FieldValue.delete();
+      upd.avatarChar=setDirtyAvatar.avatarChar||firebase.firestore.FieldValue.delete();
+    }
+    m.className='msg'; m.textContent='';
+    try{
+      await db.collection('clientes').doc(setUser.uid).set(upd,{merge:true});
+      if(upd.nome) await setUser.updateProfile({displayName:upd.nome});
+      setData.nome=upd.nome; setData.telefone=upd.telefone; setData.sexo=upd.sexo;
+      if(setDirtyAvatar!==undefined){setData.foto=setDirtyAvatar.foto||null;setData.avatarChar=setDirtyAvatar.avatarChar||null;setDirtyAvatar=undefined;}
+      document.getElementById('pfNome').textContent=setData.nome||setUser.email;
+      window.tecnovaApplyAvatar(document.getElementById('pfAvatar'),setData,setData.nome||setUser.email);
+      window.tecnovaApplyAvatar(document.getElementById('abAvatar'),setData,setData.nome||setUser.email);
+      refreshPreview();
+      m.className='msg ok'; m.textContent='✅ Alterações guardadas!';
+    }catch(err){ m.className='msg err'; m.textContent='Não foi possível guardar. Tente novamente.'; }
+  });
+  document.getElementById('setPass').addEventListener('click',async function(){
+    var pm=document.getElementById('passMsg'); if(!setUser||!setUser.email) return;
+    try{ await auth.sendPasswordResetEmail(setUser.email); pm.className='msg ok'; pm.textContent='📧 Enviámos um link para '+setUser.email+'.'; }
+    catch(err){ pm.className='msg err'; pm.textContent='Não foi possível enviar o email agora.'; }
+  });
 
   auth.onAuthStateChanged(async function(user){
     var abAv=document.getElementById("abAvatar");
@@ -408,6 +515,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
       document.getElementById("pfEmail").textContent=dados.email||user.email;
       setAvatar(document.getElementById("pfAvatar"),dados,dados.nome||user.email);
       setAvatar(abAv,dados,dados.nome||user.email);
+      initSettings(user,dados);
       carregarVouchers(user.uid);
     }else{
       document.getElementById("authBox").classList.remove("hidden");
