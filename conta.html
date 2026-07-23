@@ -80,7 +80,18 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
       <a href="index.html">Início</a>
       <a href="servicos.html">O que fazemos</a>
       <a href="pacotes.html">Pacotes</a>
-      <a href="modelos.html">Modelos</a>
+      <span class="nav-drop">
+        <a class="nav-drop-toggle" href="modelos.html">Modelos</a>
+        <div class="nav-drop-menu">
+          <a href="modelo-barbearia.html">Barbearia</a>
+          <a href="modelo-estetica.html">Clínica de Estética</a>
+          <a href="modelo-restaurante.html">Restaurante &amp; Café</a>
+          <a href="modelo-ginasio.html">Ginásio &amp; Personal Trainer</a>
+          <a href="modelo-oficina.html">Oficina Automóvel</a>
+          <a href="modelo-salao.html">Salão de Beleza</a>
+          <a class="dd-all" href="modelos.html">Todos os modelos →</a>
+        </div>
+      </span>
       <a href="renovacao.html">Já tem site?</a>
       <a href="sobre.html">Sobre</a>
       <a href="conta.html" id="navAccount" class="on">Entrar / Criar conta</a>
@@ -201,12 +212,6 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
 <script src="firebase-config.js"></script>
 
 <script>
-const burger = document.getElementById('burger');
-const navLinks = document.getElementById('navLinks');
-if(burger){
-  burger.addEventListener('click', ()=> navLinks.classList.toggle('open'));
-  navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLinks.classList.remove('open')));
-}
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
 }
@@ -365,5 +370,6 @@ async function carregarVouchers(uid){
   }
 }
 </script>
+<script src="site.js"></script>
 </body>
 </html>

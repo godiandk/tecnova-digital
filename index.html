@@ -23,6 +23,25 @@
     var(--ink);
 }
 .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:60px;align-items:center}
+/* carrossel do hero */
+.hero-slider{position:relative;overflow:hidden;min-height:100vh;display:flex;
+  background:
+    radial-gradient(900px 500px at 80% -10%,rgba(217,178,110,.12),transparent 60%),
+    radial-gradient(700px 500px at -10% 100%,rgba(217,178,110,.07),transparent 60%),
+    var(--ink);}
+.hs-slide{position:absolute;inset:0;opacity:0;transition:opacity .8s ease;pointer-events:none;display:flex;align-items:center;padding:150px 0 96px}
+.hs-slide.active{position:relative;opacity:1;pointer-events:auto}
+.hs-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:60px;align-items:center;width:100%}
+.hs-grid.solo{grid-template-columns:1fr;max-width:820px}
+.hs-slide h1,.hs-slide h2{font-size:clamp(2.6rem,6vw,4.4rem);line-height:1.06;font-weight:800;margin:22px 0 26px;max-width:15em}
+.hs-slide h1 em,.hs-slide h2 em{font-style:italic;color:var(--gold);white-space:nowrap}
+.hs-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:46px;height:46px;border-radius:50%;border:1px solid rgba(217,178,110,.5);background:rgba(22,16,11,.5);color:var(--gold-soft);font-size:1.5rem;cursor:pointer;display:grid;place-items:center;transition:all .2s;line-height:1}
+.hs-arrow:hover{background:var(--gold);color:var(--ink)}
+.hs-arrow.prev{left:20px}.hs-arrow.next{right:20px}
+.hs-dots{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:10}
+.hs-dots button{width:10px;height:10px;border-radius:50%;border:1px solid var(--gold-soft);background:transparent;cursor:pointer;padding:0;transition:all .25s}
+.hs-dots button.active{background:var(--gold-soft);transform:scale(1.25)}
+@media(max-width:900px){.hs-grid{grid-template-columns:1fr}.phone{display:none}.hs-arrow{display:none}.hs-slide{padding:120px 0 80px}}
 .hero h1{font-size:clamp(2.6rem,6vw,4.4rem);line-height:1.06;font-weight:800;margin:22px 0 26px}
 .hero h1 em{font-style:italic;color:var(--gold);position:relative;white-space:nowrap}
 .hero h1 em::after{content:"";position:absolute;left:0;right:0;bottom:-10px;height:3px;background:linear-gradient(90deg,var(--gold),transparent)}
@@ -98,7 +117,18 @@
       <a class="on" href="index.html">Início</a>
       <a class="" href="servicos.html">O que fazemos</a>
       <a class="" href="pacotes.html">Pacotes</a>
-      <a class="" href="modelos.html">Modelos</a>
+      <span class="nav-drop">
+        <a class="nav-drop-toggle" href="modelos.html">Modelos</a>
+        <div class="nav-drop-menu">
+          <a href="modelo-barbearia.html">Barbearia</a>
+          <a href="modelo-estetica.html">Clínica de Estética</a>
+          <a href="modelo-restaurante.html">Restaurante &amp; Café</a>
+          <a href="modelo-ginasio.html">Ginásio &amp; Personal Trainer</a>
+          <a href="modelo-oficina.html">Oficina Automóvel</a>
+          <a href="modelo-salao.html">Salão de Beleza</a>
+          <a class="dd-all" href="modelos.html">Todos os modelos →</a>
+        </div>
+      </span>
       <a class="" href="renovacao.html">Já tem site?</a>
       <a class="" href="sobre.html">Sobre</a>
       <a href="conta.html" id="navAccount">Entrar / Criar conta</a>
@@ -111,42 +141,95 @@
 </header>
 <main>
 
-<section class="hero">
-  <div class="wrap hero-grid">
-    <div>
-      <p class="eyebrow">Sites &amp; Apps que trabalham por si</p>
-      <h1>O seu negócio merece um site <em>à altura.</em></h1>
-      <p class="lead">Site profissional + aplicação própria + marcações pelo WhatsApp + cartão de fidelidade digital que faz os seus clientes voltarem.</p>
-      <p class="hero-price">Tudo pronto, no ar e a trabalhar por si — a partir de 350€.</p>
-      <div class="hero-cta">
-        <a class="btn btn-wa" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Quero%20a%20simula%C3%A7%C3%A3o%20gratuita%20do%20meu%20site." target="_blank" rel="noopener">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.14-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.5 0 1.47 1.07 2.9 1.22 3.1.15.2 2.1 3.2 5.1 4.49.71.3 1.27.49 1.7.63.72.23 1.37.2 1.88.12.58-.09 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35zM12 2a10 10 0 0 0-8.66 15L2 22l5.15-1.35A10 10 0 1 0 12 2z"/></svg>
-          Falar no WhatsApp
-        </a>
-        <a class="btn btn-line" href="pacotes.html">Ver pacotes e preços</a>
-      </div>
-      <div class="hero-proof">
-        <div class="proof"><b>5 dias</b><span>entrega mais rápida</span></div>
-        <div class="proof"><b>50/50</b><span>só paga o resto com o site no ar</span></div>
-        <div class="proof"><b>24h</b><span>o seu site nunca fecha</span></div>
-      </div>
-    </div>
-    <div class="phone reveal">
-      <div class="phone-screen">
-        <div class="ps-hero">
-          <div class="hexline"><span class="hex"></span><span>O SEU NEGÓCIO</span></div>
-          <h4>Marcações online, <i>sem complicações.</i></h4>
-          <span class="ps-btn">✆ Marcar pelo WhatsApp</span>
+<section class="hero-slider" aria-label="Destaques TECNOVA Digital">
+
+  <!-- Slide 1 -->
+  <div class="hs-slide active">
+    <div class="wrap hs-grid">
+      <div>
+        <p class="eyebrow">Sites &amp; Apps que trabalham por si</p>
+        <h1>O seu negócio merece um site <em>à altura.</em></h1>
+        <p class="lead">Site profissional + aplicação própria + marcações pelo WhatsApp + cartão de fidelidade digital que faz os seus clientes voltarem.</p>
+        <p class="hero-price">Tudo pronto, no ar e a trabalhar por si — a partir de 350€.</p>
+        <div class="hero-cta">
+          <a class="btn btn-wa" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Quero%20a%20simula%C3%A7%C3%A3o%20gratuita%20do%20meu%20site." target="_blank" rel="noopener">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.14-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.5 0 1.47 1.07 2.9 1.22 3.1.15.2 2.1 3.2 5.1 4.49.71.3 1.27.49 1.7.63.72.23 1.37.2 1.88.12.58-.09 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35zM12 2a10 10 0 0 0-8.66 15L2 22l5.15-1.35A10 10 0 1 0 12 2z"/></svg>
+            Falar no WhatsApp
+          </a>
+          <a class="btn btn-line" href="pacotes.html">Ver pacotes e preços</a>
         </div>
-        <div class="ps-row"><span class="ps-ic">📅</span><div><b>Marcar em 1 minuto</b><span>o pedido cai direto no seu WhatsApp</span></div></div>
-        <div class="ps-row"><span class="ps-ic">💶</span><div><b>Preçário sempre atualizado</b><span>menos chamadas a perguntar «quanto custa?»</span></div></div>
-        <div class="ps-stamps">
-          <span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span>
-          <span class="stamp">5</span><span class="stamp">6</span><span class="stamp">7</span><span class="stamp">🎁</span>
+        <div class="hero-proof">
+          <div class="proof"><b>5 dias</b><span>entrega mais rápida</span></div>
+          <div class="proof"><b>50/50</b><span>só paga o resto com o site no ar</span></div>
+          <div class="proof"><b>24h</b><span>o seu site nunca fecha</span></div>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="ps-hero">
+            <div class="hexline"><span class="hex"></span><span>O SEU NEGÓCIO</span></div>
+            <h4>Marcações online, <i>sem complicações.</i></h4>
+            <span class="ps-btn">✆ Marcar pelo WhatsApp</span>
+          </div>
+          <div class="ps-row"><span class="ps-ic">📅</span><div><b>Marcar em 1 minuto</b><span>o pedido cai direto no seu WhatsApp</span></div></div>
+          <div class="ps-row"><span class="ps-ic">💶</span><div><b>Preçário sempre atualizado</b><span>menos chamadas a perguntar «quanto custa?»</span></div></div>
+          <div class="ps-stamps">
+            <span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span>
+            <span class="stamp">5</span><span class="stamp">6</span><span class="stamp">7</span><span class="stamp">🎁</span>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Slide 2 -->
+  <div class="hs-slide">
+    <div class="wrap hs-grid solo">
+      <div>
+        <p class="eyebrow">Pacotes e preços</p>
+        <h2>Um site profissional a partir de <em>350€.</em></h2>
+        <p class="lead">Três pacotes claros — Essencial, Profissional e Premium — sem surpresas. Só paga a segunda metade quando o site estiver no ar e aprovado por si.</p>
+        <div class="hero-cta">
+          <a class="btn btn-gold" href="pacotes.html">Ver pacotes e preços</a>
+          <a class="btn btn-line" href="renovacao.html">Já tem site? Renove</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 3 -->
+  <div class="hs-slide">
+    <div class="wrap hs-grid solo">
+      <div>
+        <p class="eyebrow">Prova visual</p>
+        <h2>Veja um modelo pronto para o <em>seu tipo de negócio.</em></h2>
+        <p class="lead">Barbearias, clínicas de estética, restaurantes, ginásios, oficinas e salões — modelos reais que pode explorar antes de decidir.</p>
+        <div class="hero-cta">
+          <a class="btn btn-gold" href="modelos.html">Ver os modelos</a>
+          <a class="btn btn-line" href="servicos.html">O que fazemos</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 4 -->
+  <div class="hs-slide">
+    <div class="wrap hs-grid solo">
+      <div>
+        <p class="eyebrow">Aplicação própria</p>
+        <h2>Um site que abre como <em>aplicação</em>, sem loja nenhuma.</h2>
+        <p class="lead">Conta de cliente, cartão de fidelidade digital e instalação direta no telemóvel — sem App Store, sem Play Store, sem fricção.</p>
+        <div class="hero-cta">
+          <a class="btn btn-gold" href="conta.html">Criar a minha conta</a>
+          <a class="btn btn-line" href="servicos.html">Ver funcionalidades</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="hs-arrow prev" aria-label="Destaque anterior">‹</button>
+  <button type="button" class="hs-arrow next" aria-label="Destaque seguinte">›</button>
+  <div class="hs-dots" aria-label="Navegação dos destaques"></div>
 </section>
 
 <section class="why">
@@ -267,12 +350,6 @@
 <script src="auth-nav.js"></script>
 
 <script>
-const burger = document.getElementById('burger');
-const navLinks = document.getElementById('navLinks');
-if(burger){
-  burger.addEventListener('click', ()=> navLinks.classList.toggle('open'));
-  navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLinks.classList.remove('open')));
-}
 const io=new IntersectionObserver(es=>{
   es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})
 },{threshold:.12});
@@ -281,5 +358,6 @@ if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
 }
 </script>
+<script src="site.js"></script>
 </body>
 </html>
