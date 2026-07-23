@@ -213,3 +213,12 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
 .char-grid button img{width:100%;height:100%;object-fit:cover}
 .char-grid button:hover,.char-grid button.sel{border-color:var(--gold);background:rgba(217,178,110,.14)}
 @media(max-width:520px){.char-grid{grid-template-columns:repeat(4,1fr)}}
+
+/* Configurações em destaque + barra de aplicar cupão */
+.settings-card.prominent{margin-top:20px;border:1px solid rgba(217,178,110,.3);background:rgba(217,178,110,.05);border-radius:16px;padding:8px 16px}
+.settings-card.prominent .set-toggle{font-size:1rem}
+.coupon-apply{display:flex;gap:10px;margin:6px 0 4px}
+.coupon-apply input{flex:1;padding:12px 14px;border-radius:10px;border:1px solid rgba(217,178,110,.25);background:#0f0b07;color:var(--cream);font-family:inherit;font-size:.92rem}
+.coupon-apply input:focus{outline:none;border-color:var(--gold)}
+.coupon-apply .btn{margin-top:0;padding:12px 22px;white-space:nowrap}
+@media(max-width:520px){.coupon-apply{flex-direction:column}.coupon-apply .btn{width:100%;justify-content:center}}

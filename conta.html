@@ -165,11 +165,10 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
         <div class="avatar" id="avatarLetter">?</div>
         <div><b id="dashNome">—</b><span id="dashEmail">—</span></div>
       </div>
-      <h2 class="dash-title">Os meus cupões</h2>
-      <div id="vouchersList"><p class="empty">A carregar…</p></div>
+      <a id="adminLink" class="btn btn-gold hidden" href="admin.html" style="width:100%;justify-content:center;margin-bottom:16px">🛠️ Painel de administração — gerar cupões</a>
 
-      <div class="settings-card">
-        <button type="button" class="set-toggle" id="setToggle">⚙️ Configurações da conta <span id="setChevron">▾</span></button>
+      <div class="settings-card prominent">
+        <button type="button" class="set-toggle" id="setToggle"><span>⚙️ Configurações da conta</span> <span id="setChevron">▾</span></button>
         <div class="set-body" id="setBody">
           <label>Foto / avatar</label>
           <div class="avatar-edit">
@@ -197,6 +196,14 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
           <div class="msg" id="passMsg"></div>
         </div>
       </div>
+
+      <h2 class="dash-title" style="margin-top:26px">Os meus cupões</h2>
+      <div class="coupon-apply">
+        <input type="text" id="couponInput" placeholder="Tenho um código (ex: TEC-XXXXXX)" style="text-transform:uppercase">
+        <button type="button" class="btn btn-gold" id="couponApply">Aplicar</button>
+      </div>
+      <div class="msg" id="couponMsg"></div>
+      <div id="vouchersList"><p class="empty">A carregar…</p></div>
 
       <span class="logout" onclick="logout()">Sair da conta</span>
     </div>
@@ -473,6 +480,29 @@ document.getElementById('setPass').addEventListener('click', async function(){
   }catch(err){ pm.className='msg err'; pm.textContent='Não foi possível enviar o email agora.'; }
 });
 
+// ---------- Aplicar / verificar um cupão ----------
+document.getElementById('couponApply').addEventListener('click', async function(){
+  var m = document.getElementById('couponMsg');
+  var code = (document.getElementById('couponInput').value||'').trim().toUpperCase();
+  if(!code){ m.className='msg err'; m.textContent='Escreva um código.'; return; }
+  if(!setUser){ return; }
+  try{
+    var doc = await db.collection('vouchers').doc(code).get();
+    if(!doc.exists){ m.className='msg err'; m.textContent='Código não encontrado ou não pertence à sua conta.'; return; }
+    var v = doc.data();
+    if(v.clienteUid && v.clienteUid !== setUser.uid){ m.className='msg err'; m.textContent='Este cupão não pertence à sua conta.'; return; }
+    if(v.usado){ m.className='msg err'; m.textContent='Este cupão já foi usado.'; return; }
+    var desc = v.tipo==='percentagem' ? (v.valor+'% de desconto') : (v.valor+'€ de desconto');
+    var wa = 'https://wa.me/351933113525?text=' + encodeURIComponent('Olá Wesley! Quero usar o meu cupão '+code+' ('+desc+') no meu pedido.');
+    m.className='msg ok';
+    m.innerHTML = '✅ Cupão válido: <b>'+desc+'</b>. Já está na sua conta. <a href="'+wa+'" target="_blank" rel="noopener" style="color:var(--gold);font-weight:700">Usar no meu pedido →</a>';
+    document.getElementById('couponInput').value='';
+    carregarVouchers(setUser.uid);
+  }catch(err){
+    m.className='msg err'; m.textContent='Código não encontrado ou não pertence à sua conta.';
+  }
+});
+
 // ---------- Estado da sessão ----------
 auth.onAuthStateChanged(async (user)=>{
   if(user){
@@ -485,6 +515,14 @@ auth.onAuthStateChanged(async (user)=>{
     var primeiro = (dados.nome || user.email || '').split(' ')[0];
     document.getElementById('authHeroTitle').textContent = 'Olá, ' + primeiro + ' 👋';
     document.getElementById('authHeroSub').textContent = 'Bem-vindo de volta à sua conta TECNOVA Digital.';
+    // mostra o painel de administração apenas ao admin
+    try{
+      if(typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.indexOf(user.email) >= 0){
+        document.getElementById('adminLink').classList.remove('hidden');
+      }else{
+        document.getElementById('adminLink').classList.add('hidden');
+      }
+    }catch(e){}
     window.tecnovaApplyAvatar(document.getElementById('avatarLetter'), dados, dados.nome||user.email);
     initSettings(user, dados);
     carregarVouchers(user.uid);
