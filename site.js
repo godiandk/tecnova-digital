@@ -109,8 +109,10 @@
     '<div class="app-modal-box">' +
       '<button class="app-modal-close" aria-label="Fechar">×</button>' +
       '<div class="app-modal-logo">T</div>' +
-      '<h3>Instalar a app TECNOVA</h3>' +
-      '<p>Adicione o nosso site ao seu ecrã como uma aplicação — sem loja, sem download.</p>' +
+      '<h3>App TECNOVA</h3>' +
+      '<p>Aceda à app agora mesmo — sem instalar nada — ou coloque o ícone no seu ecrã.</p>' +
+      '<a class="app-open-btn" href="app.html">▶ Abrir app agora</a>' +
+      '<div class="app-or"><span>ou instalar no ecrã</span></div>' +
       '<div class="app-choice">' +
         '<button data-os="android"><span class="os-ic">🤖</span>Android / PC</button>' +
         '<button data-os="ios"><span class="os-ic"></span>iPhone / iPad</button>' +

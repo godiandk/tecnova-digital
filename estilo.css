@@ -189,3 +189,9 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
 .app-steps .app-ok{background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.35);color:#8fe3ac;padding:12px 14px;border-radius:10px;font-size:.88rem}
 .app-steps .app-warn{background:rgba(217,178,110,.08);border:1px solid rgba(217,178,110,.3);color:var(--gold-soft);padding:12px 14px;border-radius:10px;font-size:.86rem}
 .app-back{margin-top:16px;background:none;border:none;color:var(--cream-dim);font-size:.82rem;cursor:pointer;text-decoration:underline;font-family:inherit}
+
+/* Botão "Abrir app" e separador no modal */
+.app-open-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border-radius:999px;background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--ink);font-weight:800;font-size:.95rem;text-decoration:none;box-shadow:0 10px 26px rgba(217,178,110,.3)}
+.app-open-btn:hover{transform:translateY(-2px)}
+.app-or{display:flex;align-items:center;gap:12px;margin:18px 0 4px;color:var(--cream-dim);font-size:.74rem}
+.app-or::before,.app-or::after{content:"";flex:1;height:1px;background:rgba(217,178,110,.2)}

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>App TECNOVA Digital</title>
+<meta name="description" content="A aplicação TECNOVA Digital: peça o seu site, veja modelos, aceda à sua conta e cupões — tudo num só lugar.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16100b">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+:root{
+  --ink:#16100b;--ink-2:#211812;--ink-3:#2b2016;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
+  --cream:#f6efe2;--cream-dim:#c9bda6;--wa:#25d366;--bad:#e0715c;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--ink);color:var(--cream);font-family:'Manrope',sans-serif;
+  min-height:100vh;padding-bottom:78px;overflow-x:hidden;
+}
+h1,h2,h3,.serif{font-family:'Playfair Display',serif}
+a{color:var(--gold);text-decoration:none}
+img{max-width:100%;display:block}
+
+/* ---- App bar (topo) ---- */
+.app-bar{
+  position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 18px;background:rgba(22,16,11,.96);border-bottom:1px solid rgba(217,178,110,.16);
+  backdrop-filter:blur(8px);
+}
+.app-bar .ab-brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.22em;font-size:.82rem;color:var(--gold-soft)}
+.app-bar .ab-brand small{display:block;letter-spacing:.42em;font-size:.5rem;color:var(--cream-dim)}
+.logo-mark{width:34px;height:38px;display:grid;place-items:center;background:linear-gradient(160deg,var(--gold-soft),var(--gold));clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);color:var(--ink);font-family:'Playfair Display',serif;font-weight:800;font-size:1.05rem}
+.ab-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(217,178,110,.1);border:1px solid rgba(217,178,110,.3);color:var(--gold-soft);border-radius:999px;padding:8px 14px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit}
+.ab-btn:hover{background:rgba(217,178,110,.18)}
+.ab-avatar{width:34px;height:34px;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,var(--gold-soft),var(--gold));color:var(--ink);display:grid;place-items:center;font-weight:800;font-family:'Playfair Display',serif;flex:none}
+.ab-avatar img{width:100%;height:100%;object-fit:cover}
+
+/* ---- Ecrãs ---- */
+.app-screen{display:none;padding:20px 18px 30px;max-width:640px;margin:0 auto;animation:scr .35s ease}
+.app-screen.active{display:block}
+@keyframes scr{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.app-screen h1{font-size:1.6rem;margin-bottom:4px}
+.as-sub{color:var(--cream-dim);font-size:.9rem;margin-bottom:20px}
+.eyebrow{font-size:.68rem;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);font-weight:800;margin-bottom:10px}
+
+/* Hero de boas-vindas */
+.app-hero{
+  border-radius:22px;padding:26px 22px;margin-bottom:20px;position:relative;overflow:hidden;
+  background:
+    radial-gradient(600px 300px at 90% -20%,rgba(217,178,110,.22),transparent 60%),
+    linear-gradient(160deg,var(--ink-3),var(--ink-2));
+  border:1px solid rgba(217,178,110,.2);
+}
+.app-hero .eyebrow{margin-bottom:8px}
+.app-hero h2{font-size:1.5rem;line-height:1.15;margin-bottom:8px}
+.app-hero h2 em{font-style:italic;color:var(--gold)}
+.app-hero p{color:var(--cream-dim);font-size:.9rem;max-width:36ch}
+
+/* Grelha de ações rápidas */
+.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+.qa-card{
+  background:var(--ink-2);border:1px solid rgba(217,178,110,.16);border-radius:16px;
+  padding:18px 14px;text-align:left;cursor:pointer;color:var(--cream);font-family:inherit;
+  display:flex;flex-direction:column;gap:8px;transition:border-color .2s,transform .2s;font-size:.9rem;font-weight:700;
+}
+.qa-card:hover{border-color:var(--gold);transform:translateY(-3px)}
+.qa-card .qa-ic{font-size:1.5rem}
+.qa-card small{display:block;color:var(--cream-dim);font-weight:500;font-size:.75rem}
+
+/* faixa de stats */
+.stat-row{display:flex;gap:10px;margin:18px 0 4px}
+.stat-row div{flex:1;background:var(--ink-2);border:1px solid rgba(217,178,110,.14);border-radius:14px;padding:14px 10px;text-align:center}
+.stat-row b{display:block;font-family:'Playfair Display',serif;color:var(--gold);font-size:1.4rem}
+.stat-row span{font-size:.66rem;color:var(--cream-dim)}
+
+/* Modelos */
+.mdl-list{display:grid;gap:16px}
+.mdl-card{border-radius:18px;overflow:hidden;border:1px solid rgba(217,178,110,.18);background:var(--ink-2);text-decoration:none;color:inherit;display:block;transition:transform .2s,border-color .2s}
+.mdl-card:hover{transform:translateY(-3px);border-color:var(--gold)}
+.mdl-shot{aspect-ratio:16/9;background-size:cover;background-position:center}
+.mdl-info{padding:14px 16px}
+.mdl-info .k{font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:800}
+.mdl-info h3{font-size:1.05rem;margin:3px 0 0}
+.mdl-info .go{color:var(--gold);font-size:.8rem;font-weight:700;margin-top:6px;display:inline-block}
+
+/* Cartões / formulários */
+.card{background:var(--ink-2);border:1px solid rgba(217,178,110,.18);border-radius:18px;padding:22px}
+label{display:block;font-size:.76rem;color:var(--gold-soft);margin:12px 0 6px;font-weight:700}
+input,select,textarea{
+  width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(217,178,110,.25);
+  background:#0f0b07;color:var(--cream);font-size:.92rem;font-family:inherit;
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 22px;border-radius:999px;font-weight:800;font-size:.9rem;cursor:pointer;border:none;font-family:inherit;width:100%;margin-top:16px;text-decoration:none}
+.btn-gold{background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--ink)}
+.btn-wa{background:var(--wa);color:#062b14}
+.btn-line{background:transparent;border:1px solid var(--gold-dim);color:var(--gold-soft)}
+.tabs{display:flex;gap:8px;margin-bottom:18px}
+.tab{flex:1;text-align:center;padding:11px;border-radius:10px;font-weight:700;font-size:.85rem;cursor:pointer;color:var(--cream-dim);border:1px solid rgba(217,178,110,.16)}
+.tab.active{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.msg{margin-top:14px;font-size:.85rem;padding:10px 14px;border-radius:10px;display:none}
+.msg.err{display:block;background:rgba(224,113,92,.12);color:#f0a292;border:1px solid rgba(224,113,92,.35)}
+.msg.ok{display:block;background:rgba(37,211,102,.1);color:#8fe3ac;border:1px solid rgba(37,211,102,.35)}
+.hidden{display:none!important}
+.photo-picker{display:flex;align-items:center;gap:14px;margin-top:12px}
+.photo-preview{width:60px;height:60px;border-radius:50%;flex:none;cursor:pointer;background:#0f0b07;border:1px dashed var(--gold-dim);display:grid;place-items:center;font-size:1.5rem;overflow:hidden;color:var(--gold-soft)}
+.photo-preview img{width:100%;height:100%;object-fit:cover}
+.photo-hint{font-size:.76rem;color:var(--cream-dim)}
+
+/* Perfil / cupões */
+.profile{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.profile .pf-av{width:58px;height:58px;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,var(--gold-soft),var(--gold));color:var(--ink);display:grid;place-items:center;font-weight:800;font-family:'Playfair Display',serif;font-size:1.4rem;flex:none}
+.profile .pf-av img{width:100%;height:100%;object-fit:cover}
+.profile b{display:block;font-size:1.1rem;font-family:'Playfair Display',serif}
+.profile span{font-size:.8rem;color:var(--cream-dim)}
+.voucher{border:1px dashed var(--gold-dim);border-radius:14px;padding:15px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.voucher .code{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold);letter-spacing:.05em}
+.voucher .desc{font-size:.76rem;color:var(--cream-dim)}
+.badge{font-size:.66rem;font-weight:800;padding:5px 11px;border-radius:999px;white-space:nowrap}
+.badge.ativo{background:rgba(37,211,102,.15);color:#8fe3ac}
+.badge.usado{background:rgba(217,178,110,.12);color:var(--cream-dim)}
+.empty{color:var(--cream-dim);font-size:.86rem;text-align:center;padding:18px 0}
+.logout{display:block;text-align:center;margin-top:18px;color:var(--cream-dim);font-size:.82rem;cursor:pointer;text-decoration:underline}
+
+/* Barra inferior de abas */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;display:grid;grid-template-columns:repeat(4,1fr);
+  background:rgba(18,13,8,.98);border-top:1px solid rgba(217,178,110,.18);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.tabbar button{
+  background:none;border:none;color:var(--cream-dim);font-family:inherit;font-size:.64rem;font-weight:700;
+  padding:9px 4px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .2s;
+}
+.tabbar button .tb-ic{font-size:1.25rem;line-height:1}
+.tabbar button.active{color:var(--gold)}
+</style>
+</head>
+<body>
+
+<header class="app-bar">
+  <a class="ab-btn" href="index.html">🌐 Site</a>
+  <div class="ab-brand"><span class="logo-mark">T</span><span>TECNOVA<small>DIGITAL</small></span></div>
+  <div class="ab-avatar" id="abAvatar">T</div>
+</header>
+
+<!-- ===== INÍCIO ===== -->
+<section class="app-screen active" id="scr-inicio">
+  <div class="app-hero">
+    <p class="eyebrow">Aplicação oficial</p>
+    <h2 id="homeGreet">O seu negócio, <em>a um toque.</em></h2>
+    <p id="homeSub">Peça o seu site, explore modelos e acompanhe os seus cupões — tudo aqui dentro.</p>
+  </div>
+
+  <div class="stat-row">
+    <div><b>350€</b><span>a partir de</span></div>
+    <div><b>5 dias</b><span>entrega rápida</span></div>
+    <div><b>50/50</b><span>pagamento seguro</span></div>
+  </div>
+
+  <p class="eyebrow" style="margin-top:22px">O que quer fazer?</p>
+  <div class="qa-grid">
+    <button class="qa-card" data-goto="pedir"><span class="qa-ic">🚀</span>Pedir o meu site<small>orçamento em minutos</small></button>
+    <button class="qa-card" data-goto="modelos"><span class="qa-ic">🖼️</span>Ver modelos<small>por tipo de negócio</small></button>
+    <a class="qa-card" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Vim%20da%20app%20da%20TECNOVA." target="_blank" rel="noopener"><span class="qa-ic">💬</span>WhatsApp<small>fale connosco já</small></a>
+    <a class="qa-card" href="pacotes.html"><span class="qa-ic">💶</span>Pacotes<small>preços claros</small></a>
+    <button class="qa-card" data-goto="conta"><span class="qa-ic">🎟️</span>Os meus cupões<small>a minha conta</small></button>
+    <a class="qa-card" href="sobre.html"><span class="qa-ic">👤</span>Sobre nós<small>quem somos</small></a>
+  </div>
+</section>
+
+<!-- ===== MODELOS ===== -->
+<section class="app-screen" id="scr-modelos">
+  <h1>Modelos</h1>
+  <p class="as-sub">Exemplos reais por tipo de negócio. Toque para ver o modelo completo.</p>
+  <div class="mdl-list">
+    <a class="mdl-card" href="modelo-barbearia.html"><div class="mdl-shot" style="background-image:url('img/modelos/barbearia/hero.jpg')"></div><div class="mdl-info"><span class="k">Barbearia</span><h3>Barbearia Império</h3><span class="go">Ver modelo →</span></div></a>
+    <a class="mdl-card" href="modelo-estetica.html"><div class="mdl-shot" style="background-image:url('img/modelos/estetica/hero.jpg')"></div><div class="mdl-info"><span class="k">Clínica de Estética</span><h3>Clínica Bella Pele</h3><span class="go">Ver modelo →</span></div></a>
+    <a class="mdl-card" href="modelo-restaurante.html"><div class="mdl-shot" style="background-image:url('img/modelos/restaurante/hero.jpg')"></div><div class="mdl-info"><span class="k">Restaurante &amp; Café</span><h3>Sabor &amp; Tradição</h3><span class="go">Ver modelo →</span></div></a>
+    <a class="mdl-card" href="modelo-ginasio.html"><div class="mdl-shot" style="background-image:url('img/modelos/ginasio/hero.jpg')"></div><div class="mdl-info"><span class="k">Ginásio &amp; Personal Trainer</span><h3>Studio Performance</h3><span class="go">Ver modelo →</span></div></a>
+    <a class="mdl-card" href="modelo-oficina.html"><div class="mdl-shot" style="background-image:url('img/modelos/oficina/hero.jpg')"></div><div class="mdl-info"><span class="k">Oficina Automóvel</span><h3>AutoCentro Norte</h3><span class="go">Ver modelo →</span></div></a>
+    <a class="mdl-card" href="modelo-salao.html"><div class="mdl-shot" style="background-image:url('img/modelos/salao/hero.jpg')"></div><div class="mdl-info"><span class="k">Salão de Beleza</span><h3>Studio Glow</h3><span class="go">Ver modelo →</span></div></a>
+  </div>
+</section>
+
+<!-- ===== PEDIR ===== -->
+<section class="app-screen" id="scr-pedir">
+  <h1>Pedir o meu site</h1>
+  <p class="as-sub">Responda a 4 campos — o pedido segue pronto para o nosso WhatsApp e respondemos em minutos.</p>
+  <div class="card">
+    <form id="leadForm" novalidate>
+      <label>O seu nome*</label>
+      <input type="text" id="ldNome" required placeholder="O seu nome">
+      <label>Tipo de negócio*</label>
+      <select id="ldTipo">
+        <option>Barbearia</option><option>Clínica de Estética</option><option>Restaurante / Café</option>
+        <option>Ginásio / Personal Trainer</option><option>Oficina Automóvel</option><option>Salão de Beleza</option>
+        <option>Outro</option>
+      </select>
+      <label>Pacote de interesse</label>
+      <select id="ldPacote">
+        <option>Ainda não sei — quero orientação</option>
+        <option>Essencial — 350€</option>
+        <option>Profissional — 650€</option>
+        <option>Premium — 990€</option>
+        <option>Renovação de site — 450€</option>
+      </select>
+      <label>Mensagem (opcional)</label>
+      <textarea id="ldMsg" rows="3" placeholder="Conte-nos um pouco sobre o seu negócio"></textarea>
+      <button type="submit" class="btn btn-wa">Enviar pedido pelo WhatsApp</button>
+      <div class="msg" id="leadMsg"></div>
+    </form>
+  </div>
+</section>
+
+<!-- ===== CONTA ===== -->
+<section class="app-screen" id="scr-conta">
+  <h1>A minha conta</h1>
+  <p class="as-sub">Entre para ver e usar os seus cupões de desconto.</p>
+
+  <div id="authBox" class="card">
+    <div class="tabs">
+      <div class="tab active" id="tabLogin">Entrar</div>
+      <div class="tab" id="tabRegister">Criar conta</div>
+    </div>
+    <form id="formLogin">
+      <label>Email</label><input type="email" id="loginEmail" required placeholder="oseuemail@exemplo.com">
+      <label>Palavra-passe</label><input type="password" id="loginPass" required placeholder="••••••••">
+      <button class="btn btn-gold" type="submit">Entrar</button>
+    </form>
+    <form id="formRegister" class="hidden">
+      <label>Foto de perfil (opcional)</label>
+      <div class="photo-picker">
+        <label for="regFoto" class="photo-preview" id="regFotoPreview" style="margin:0">📷</label>
+        <input type="file" id="regFoto" accept="image/*" class="hidden">
+        <span class="photo-hint">Toque para escolher. Se não escolher, usamos um avatar.</span>
+      </div>
+      <label>Nome</label><input type="text" id="regNome" required placeholder="O seu nome">
+      <label>Email</label><input type="email" id="regEmail" required placeholder="oseuemail@exemplo.com">
+      <label>Telemóvel</label><input type="tel" id="regTel" required placeholder="+351 9xx xxx xxx">
+      <label>Sexo</label>
+      <select id="regSexo"><option value="" selected>Prefiro não dizer</option><option value="masculino">Masculino</option><option value="feminino">Feminino</option></select>
+      <label>Palavra-passe</label><input type="password" id="regPass" required placeholder="mínimo 6 caracteres">
+      <button class="btn btn-gold" type="submit">Criar a minha conta</button>
+    </form>
+    <div id="authMsg" class="msg"></div>
+  </div>
+
+  <div id="dashBox" class="card hidden">
+    <div class="profile">
+      <div class="pf-av" id="pfAvatar">?</div>
+      <div><b id="pfNome">—</b><span id="pfEmail">—</span></div>
+    </div>
+    <h3 style="font-size:1.05rem;margin-bottom:6px">Os meus cupões</h3>
+    <div id="vouchersList"><p class="empty">A carregar…</p></div>
+    <a class="btn btn-line" href="index.html" style="margin-top:18px">🌐 Voltar ao site</a>
+    <span class="logout" id="logoutBtn">Sair da conta</span>
+  </div>
+</section>
+
+<!-- ===== BARRA DE ABAS ===== -->
+<nav class="tabbar" aria-label="Navegação da app">
+  <button class="active" data-tab="inicio"><span class="tb-ic">🏠</span>Início</button>
+  <button data-tab="modelos"><span class="tb-ic">🖼️</span>Modelos</button>
+  <button data-tab="pedir"><span class="tb-ic">🚀</span>Pedir</button>
+  <button data-tab="conta"><span class="tb-ic">👤</span>Conta</button>
+</nav>
+
+<script>
+(function(){
+  var WA = "https://wa.me/351933113525?text=";
+
+  /* ---- Navegação por abas ---- */
+  function show(tab){
+    document.querySelectorAll(".app-screen").forEach(function(s){s.classList.remove("active");});
+    document.getElementById("scr-"+tab).classList.add("active");
+    document.querySelectorAll(".tabbar button").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-tab")===tab);
+    });
+    window.scrollTo(0,0);
+  }
+  document.querySelectorAll(".tabbar button").forEach(function(b){
+    b.addEventListener("click", function(){ show(b.getAttribute("data-tab")); });
+  });
+  document.querySelectorAll("[data-goto]").forEach(function(b){
+    b.addEventListener("click", function(){ show(b.getAttribute("data-goto")); });
+  });
+
+  /* ---- Pedir site → WhatsApp ---- */
+  document.getElementById("leadForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var m=document.getElementById("leadMsg");
+    var nome=document.getElementById("ldNome").value.trim();
+    if(!nome){ m.className="msg err"; m.textContent="Diga-nos o seu nome, por favor."; return; }
+    var linhas=[
+      "Olá Wesley! Quero um site para o meu negócio (via APP TECNOVA).","",
+      "• Nome: "+nome,
+      "• Tipo de negócio: "+document.getElementById("ldTipo").value,
+      "• Pacote: "+document.getElementById("ldPacote").value
+    ];
+    var msg=document.getElementById("ldMsg").value.trim();
+    if(msg) linhas.push("• Mensagem: "+msg);
+    m.className="msg ok"; m.textContent="A abrir o WhatsApp…";
+    window.open(WA+encodeURIComponent(linhas.join("\n")), "_blank", "noopener");
+  });
+
+  /* ---- Firebase: conta + cupões ---- */
+  function showTab(t){
+    document.getElementById("tabLogin").classList.toggle("active", t==="login");
+    document.getElementById("tabRegister").classList.toggle("active", t==="register");
+    document.getElementById("formLogin").classList.toggle("hidden", t!=="login");
+    document.getElementById("formRegister").classList.toggle("hidden", t!=="register");
+    document.getElementById("authMsg").className="msg";
+  }
+  document.getElementById("tabLogin").addEventListener("click", function(){ showTab("login"); });
+  document.getElementById("tabRegister").addEventListener("click", function(){ showTab("register"); });
+
+  function authMsg(text,type){ var el=document.getElementById("authMsg"); el.textContent=text; el.className="msg "+type; }
+  function traduzErro(err){
+    var map={
+      'auth/email-already-in-use':'Este email já tem conta. Tente entrar.',
+      'auth/invalid-email':'Email inválido.',
+      'auth/weak-password':'A palavra-passe precisa de pelo menos 6 caracteres.',
+      'auth/user-not-found':'Não encontrámos nenhuma conta com este email.',
+      'auth/wrong-password':'Palavra-passe incorreta.',
+      'auth/invalid-credential':'Email ou palavra-passe incorretos.'
+    };
+    return map[err.code]||'Ocorreu um erro. Tente novamente.';
+  }
+
+  var fotoComprimida=null;
+  function comprimirFoto(file){
+    return new Promise(function(resolve,reject){
+      var reader=new FileReader();
+      reader.onerror=function(){reject(new Error('Não foi possível ler a imagem.'));};
+      reader.onload=function(){
+        var img=new Image();
+        img.onerror=function(){reject(new Error('Ficheiro de imagem inválido.'));};
+        img.onload=function(){
+          var size=200,c=document.createElement('canvas');c.width=size;c.height=size;
+          var ctx=c.getContext('2d'),l=Math.min(img.width,img.height);
+          ctx.drawImage(img,(img.width-l)/2,(img.height-l)/2,l,l,0,0,size,size);
+          resolve(c.toDataURL('image/jpeg',0.72));
+        };
+        img.src=reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  document.getElementById("regFoto").addEventListener("change", async function(e){
+    var file=e.target.files[0]; if(!file) return;
+    try{ fotoComprimida=await comprimirFoto(file);
+      document.getElementById("regFotoPreview").innerHTML='<img src="'+fotoComprimida+'" alt="">';
+    }catch(err){ authMsg(err.message,"err"); e.target.value=""; fotoComprimida=null; }
+  });
+
+  document.getElementById("formRegister").addEventListener("submit", async function(e){
+    e.preventDefault();
+    var nome=document.getElementById("regNome").value.trim();
+    var email=document.getElementById("regEmail").value.trim();
+    var tel=document.getElementById("regTel").value.trim();
+    var sexo=document.getElementById("regSexo").value;
+    var pass=document.getElementById("regPass").value;
+    try{
+      var cred=await auth.createUserWithEmailAndPassword(email,pass);
+      await cred.user.updateProfile({displayName:nome});
+      var dados={nome:nome,email:email,telefone:tel,sexo:sexo,criadoEm:firebase.firestore.FieldValue.serverTimestamp()};
+      if(fotoComprimida) dados.foto=fotoComprimida;
+      await db.collection("clientes").doc(cred.user.uid).set(dados);
+      authMsg("Conta criada com sucesso! A entrar…","ok");
+    }catch(err){ authMsg(traduzErro(err),"err"); }
+  });
+  document.getElementById("formLogin").addEventListener("submit", async function(e){
+    e.preventDefault();
+    try{ await auth.signInWithEmailAndPassword(document.getElementById("loginEmail").value.trim(),document.getElementById("loginPass").value); }
+    catch(err){ authMsg(traduzErro(err),"err"); }
+  });
+  document.getElementById("logoutBtn").addEventListener("click", function(){ auth.signOut(); });
+
+  function setAvatar(el, dados, fallback){
+    if(dados && dados.foto){ el.innerHTML='<img src="'+dados.foto+'" alt="">'; }
+    else if(dados && dados.sexo==='feminino'){ el.textContent='👩'; }
+    else if(dados && dados.sexo==='masculino'){ el.textContent='👨'; }
+    else { el.textContent=(fallback||'T').charAt(0).toUpperCase(); }
+  }
+
+  auth.onAuthStateChanged(async function(user){
+    var abAv=document.getElementById("abAvatar");
+    if(user){
+      document.getElementById("authBox").classList.add("hidden");
+      document.getElementById("dashBox").classList.remove("hidden");
+      var doc=await db.collection("clientes").doc(user.uid).get();
+      var dados=doc.exists?doc.data():{nome:user.email,email:user.email};
+      var primeiro=(dados.nome||user.email||"").split(" ")[0];
+      document.getElementById("homeGreet").innerHTML="Olá, <em>"+primeiro+"</em> 👋";
+      document.getElementById("homeSub").textContent="Que bom ter você de volta. Precisa de algo hoje?";
+      document.getElementById("pfNome").textContent=dados.nome||user.email;
+      document.getElementById("pfEmail").textContent=dados.email||user.email;
+      setAvatar(document.getElementById("pfAvatar"),dados,dados.nome||user.email);
+      setAvatar(abAv,dados,dados.nome||user.email);
+      carregarVouchers(user.uid);
+    }else{
+      document.getElementById("authBox").classList.remove("hidden");
+      document.getElementById("dashBox").classList.add("hidden");
+      document.getElementById("homeGreet").innerHTML="O seu negócio, <em>a um toque.</em>";
+      document.getElementById("homeSub").textContent="Peça o seu site, explore modelos e acompanhe os seus cupões — tudo aqui dentro.";
+      abAv.textContent="T";
+    }
+  });
+
+  async function carregarVouchers(uid){
+    var el=document.getElementById("vouchersList");
+    try{
+      var snap=await db.collection("vouchers").where("clienteUid","==",uid).get();
+      if(snap.empty){ el.innerHTML='<p class="empty">Ainda não tem cupões. Fale connosco no WhatsApp!</p>'; return; }
+      el.innerHTML="";
+      snap.forEach(function(doc){
+        var v=doc.data();
+        var desc=v.tipo==="percentagem"?(v.valor+"% de desconto"):(v.valor+"€ de desconto");
+        el.innerHTML+='<div class="voucher"><div><div class="code">'+v.code+'</div><div class="desc">'+desc+'</div></div>'+
+          '<span class="badge '+(v.usado?"usado":"ativo")+'">'+(v.usado?"Usado":"Ativo")+'</span></div>';
+      });
+    }catch(err){ el.innerHTML='<p class="empty">Não foi possível carregar os cupões agora.</p>'; }
+  }
+
+  /* abrir numa aba específica via #hash (ex: app.html#conta) */
+  var h=(location.hash||"").replace("#","");
+  if(h && document.getElementById("scr-"+h)) show(h);
+
+  if("serviceWorker" in navigator && location.protocol==="https:"){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  }
+})();
+</script>
+</body>
+</html>

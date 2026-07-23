@@ -2,7 +2,7 @@
   "name": "TECNOVA Digital",
   "short_name": "TECNOVA",
   "description": "Sites & Apps que trabalham por si — por Wesley Vianna",
-  "start_url": "./index.html",
+  "start_url": "./app.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
