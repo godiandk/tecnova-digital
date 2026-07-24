@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cardápio — Sabor & Tradição · Modelo TECNOVA Digital</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#241509; --ink-2:#2e1c10; --wood:#3a2414; --rust:#d97b3f; --rust-soft:#e79a63;
+  --green:#5c7a4a; --cream:#f3e6d8; --cream-dim:#c9b9a6;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--cream);font-family:'Manrope',sans-serif;overflow-x:hidden}
+h1,h2,h3,.serif{font-family:'Fraunces',serif}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+section{padding:64px 0}
+@media(max-width:640px){section{padding:44px 0}}
+.demo-bar{position:fixed;top:0;left:0;right:0;z-index:100;background:#170d05;border-bottom:1px solid rgba(217,123,63,.3);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:.78rem}
+.demo-bar span{color:var(--cream-dim)}
+.demo-bar a{color:var(--rust-soft);text-decoration:none;font-weight:700;margin-left:14px}
+header{padding-top:44px}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:22px 0;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+.logo-ic{width:34px;height:34px;border-radius:50%;background:linear-gradient(160deg,var(--rust-soft),var(--rust));display:grid;place-items:center;color:var(--ink);font-weight:700;font-family:'Fraunces',serif}
+.logo b{display:block;font-size:.95rem}
+.logo span{display:block;color:var(--rust-soft);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase}
+.nav-right{display:flex;align-items:center;gap:12px}
+nav.links{display:flex;gap:28px}
+nav.links a{color:var(--cream-dim);text-decoration:none;font-size:.82rem;font-weight:600}
+nav.links a:hover,nav.links a.on{color:var(--rust-soft)}
+.burger{display:none;flex-direction:column;gap:5px;background:none;border:1px solid rgba(217,123,63,.3);border-radius:6px;cursor:pointer;padding:9px 10px}
+.burger span{width:18px;height:2px;background:var(--rust-soft)}
+@media(max-width:760px){
+  nav.links{display:none;flex-direction:column;width:100%;order:3;padding-top:14px;margin-top:14px;border-top:1px solid rgba(217,123,63,.15);gap:2px}
+  nav.links.open{display:flex}
+  nav.links a{padding:12px 0;border-bottom:1px solid rgba(217,123,63,.1)}
+  .burger{display:flex}
+}
+@media(min-width:761px){nav.links{order:2}.nav-right{order:3}}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:999px;font-weight:700;font-size:.86rem;text-decoration:none;transition:transform .2s;border:none;cursor:pointer;font-family:inherit}
+.btn:hover{transform:translateY(-2px)}
+.btn-rust{background:linear-gradient(135deg,var(--rust-soft),var(--rust));color:var(--ink)}
+.btn-line{border:1px solid var(--rust-soft);color:var(--rust-soft)}
+.eyebrow{font-size:.72rem;letter-spacing:.3em;color:var(--rust-soft);font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:12px}
+.eyebrow::before{content:"";width:30px;height:1px;background:var(--rust-soft)}
+
+/* page head */
+.menu-head{padding:38px 0 10px;background:radial-gradient(700px 380px at 80% -10%,rgba(217,123,63,.14),transparent 60%)}
+.menu-head h1{font-size:clamp(2.4rem,6vw,3.6rem);line-height:1.05;margin:16px 0 14px;font-weight:600}
+.menu-head h1 i{color:var(--rust-soft);font-style:italic}
+.menu-head p{color:var(--cream-dim);max-width:560px;font-size:1.02rem}
+
+/* sticky category chips */
+.cat-nav{position:sticky;top:44px;z-index:60;background:rgba(23,13,5,.94);backdrop-filter:blur(6px);border-top:1px solid rgba(217,123,63,.15);border-bottom:1px solid rgba(217,123,63,.15)}
+.cat-nav .wrap{display:flex;gap:8px;overflow-x:auto;padding-top:12px;padding-bottom:12px;scrollbar-width:none}
+.cat-nav .wrap::-webkit-scrollbar{display:none}
+.cat-nav a{white-space:nowrap;padding:8px 16px;border-radius:999px;border:1px solid rgba(217,123,63,.4);color:var(--rust-soft);text-decoration:none;font-size:.8rem;font-weight:700}
+.cat-nav a:hover{background:var(--rust);color:var(--ink)}
+
+.cat{scroll-margin-top:120px}
+.cat-title{display:flex;align-items:baseline;gap:16px;margin-bottom:24px}
+.cat-title h2{font-size:1.9rem}
+.cat-title .ln{flex:1;height:1px;background:rgba(217,123,63,.25)}
+.cat-title .em{font-size:1.6rem}
+.dish-list{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media(max-width:720px){.dish-list{grid-template-columns:1fr}}
+.dish{display:flex;justify-content:space-between;gap:14px;padding:16px 20px;background:var(--ink-2);border:1px solid rgba(217,123,63,.18);border-radius:12px;position:relative}
+.dish.pop{border-color:var(--rust-soft)}
+.dish .tag{position:absolute;top:-10px;left:16px;background:var(--rust);color:var(--ink);font-size:.6rem;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.05em}
+.dish .tag.veg{background:var(--green);color:#fff}
+.dish b{font-size:.98rem;font-family:'Fraunces',serif}
+.dish small{color:var(--cream-dim);font-size:.8rem;display:block;margin-top:4px;font-weight:400}
+.dish .price{color:var(--rust-soft);font-weight:700;white-space:nowrap;font-size:.95rem}
+.dish .price s{color:var(--cream-dim);font-weight:400;font-size:.8rem;margin-right:6px}
+
+.wines{background:var(--ink-2);border-top:1px solid rgba(217,123,63,.15);border-bottom:1px solid rgba(217,123,63,.15)}
+.wine-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:820px){.wine-grid{grid-template-columns:1fr}}
+.wine{padding:16px 18px;background:var(--ink);border:1px solid rgba(217,123,63,.18);border-radius:12px;display:flex;justify-content:space-between;gap:10px}
+.wine b{font-family:'Fraunces',serif;font-size:.9rem}
+.wine small{display:block;color:var(--cream-dim);font-size:.75rem;margin-top:3px}
+.wine .price{color:var(--rust-soft);font-weight:700;white-space:nowrap;font-size:.85rem}
+
+.menu-note{margin-top:18px;font-size:.78rem;color:var(--cream-dim);font-style:italic}
+
+.cta-final{text-align:center;background:radial-gradient(600px 360px at 50% 0,rgba(217,123,63,.14),transparent 65%)}
+.cta-final h2{font-size:2rem}
+.cta-final h2 i{color:var(--rust-soft);font-style:italic}
+footer{border-top:1px solid rgba(217,123,63,.18);padding:36px 0 90px;text-align:center;color:var(--cream-dim);font-size:.82rem}
+.tecnova-credit{margin-top:16px;display:inline-flex;align-items:center;gap:10px;background:rgba(217,123,63,.08);border:1px solid rgba(217,123,63,.3);border-radius:999px;padding:10px 20px;font-size:.8rem}
+.tecnova-credit a{color:var(--rust-soft);text-decoration:none;font-weight:700}
+.sticky-cta{display:none}
+@media(max-width:760px){
+  .sticky-cta{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:80;padding:12px 16px;background:rgba(23,13,5,.96);border-top:1px solid rgba(217,123,63,.3)}
+  .sticky-cta .btn{width:100%;justify-content:center}
+  .cat-nav{top:0}
+}
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease}
+.reveal.in{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<div class="demo-bar">
+  <span>🖼️ Modelo demonstrativo criado pela TECNOVA Digital</span>
+  <div>
+    <a href="modelo-restaurante.html">← Voltar ao restaurante</a>
+    <a href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Gostei%20do%20modelo%20Sabor%20%26%20Tradi%C3%A7%C3%A3o%20e%20quero%20um%20site%20assim." target="_blank" rel="noopener">Quero um site assim →</a>
+  </div>
+</div>
+
+<header class="wrap">
+  <div class="nav">
+    <a class="logo" href="modelo-restaurante.html"><span class="logo-ic">S</span><div><b>Sabor &amp; Tradição</b><span>Restaurante &amp; Café</span></div></a>
+    <div class="nav-right">
+      <a class="btn btn-rust" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20reservar%20mesa%20no%20Sabor%20%26%20Tradi%C3%A7%C3%A3o%20(modelo)." target="_blank" rel="noopener">Reservar mesa</a>
+      <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+    </div>
+    <nav class="links" id="navLinks">
+      <a href="modelo-restaurante.html">Início</a>
+      <a class="on" href="modelo-restaurante-menu.html">Cardápio</a>
+      <a href="modelo-restaurante.html#galeria">Galeria</a>
+      <a href="modelo-restaurante.html#horario">Reservas</a>
+    </nav>
+  </div>
+</header>
+
+<section class="menu-head">
+  <div class="wrap">
+    <p class="eyebrow">Cardápio completo</p>
+    <h1>O nosso <i>cardápio.</i></h1>
+    <p>Cozinha tradicional portuguesa, feita com produtos frescos e de época. Menu sempre atualizado — sem surpresas no preço.</p>
+  </div>
+</section>
+
+<div class="cat-nav">
+  <div class="wrap">
+    <a href="#entradas">Entradas</a>
+    <a href="#sopas">Sopas</a>
+    <a href="#carne">Carnes</a>
+    <a href="#peixe">Peixe &amp; Mar</a>
+    <a href="#veg">Vegetariano</a>
+    <a href="#sobremesas">Sobremesas</a>
+    <a href="#bebidas">Bebidas</a>
+    <a href="#vinhos">Vinhos</a>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+
+    <div class="cat" id="entradas">
+      <div class="cat-title"><span class="em">🥖</span><h2>Entradas &amp; Petiscos</h2><span class="ln"></span></div>
+      <div class="dish-list">
+        <div class="dish pop reveal"><span class="tag">Mais pedido</span><div><b>Pão com Alheira</b><small>alheira de caça artesanal, azeite DOP, broa quente</small></div><span class="price">6,50€</span></div>
+        <div class="dish reveal"><div><b>Queijo da Serra Curado</b><small>DOP, com compota de abóbora da casa</small></div><span class="price">8,00€</span></div>
+        <div class="dish reveal"><div><b>Presunto de Bísaro</b><small>cura de 18 meses, fatiado na hora</small></div><span class="price">9,50€</span></div>
+        <div class="dish reveal"><div><b>Pica-Pau de Vitela</b><small>salteado em vinho branco e pickles</small></div><span class="price">8,90€</span></div>
+        <div class="dish reveal"><div><b>Moelas à Portuguesa</b><small>estufadas lentamente em tomate e louro</small></div><span class="price">6,90€</span></div>
+        <div class="dish reveal"><div><b>Cogumelos Salteados</b><small>alho, coentros e um fio de azeite virgem</small></div><span class="price">6,50€</span></div>
+      </div>
+    </div>
+
+    <div class="cat" id="sopas" style="margin-top:52px">
+      <div class="cat-title"><span class="em">🍲</span><h2>Sopas</h2><span class="ln"></span></div>
+      <div class="dish-list">
+        <div class="dish reveal"><div><b>Caldo Verde</b><small>couve, chouriço de vinho, broa</small></div><span class="price">3,80€</span></div>
+        <div class="dish reveal"><div><b>Sopa da Pedra</b><small>a receita completa, à moda de Almeirim</small></div><span class="price">4,50€</span></div>
+        <div class="dish reveal"><div><b>Creme de Legumes</b><small>legumes da horta, sem glúten</small></div><span class="price">3,50€</span></div>
+        <div class="dish reveal"><div><b>Açorda de Marisco</b><small>pão alentejano, coentros e camarão</small></div><span class="price">7,90€</span></div>
+      </div>
+    </div>
+
+    <div class="cat" id="carne" style="margin-top:52px">
+      <div class="cat-title"><span class="em">🥩</span><h2>Pratos de Carne</h2><span class="ln"></span></div>
+      <div class="dish-list">
+        <div class="dish pop reveal"><span class="tag">Especialidade</span><div><b>Posta Mirandesa</b><small>na brasa, batata a murro e grelos salteados</small></div><span class="price">18,50€</span></div>
+        <div class="dish reveal"><div><b>Francesinha da Casa</b><small>receita original, molho secreto, batata frita caseira</small></div><span class="price">12,90€</span></div>
+        <div class="dish reveal"><div><b>Cabrito Assado no Forno</b><small>arroz de forno e batata corada (para 2)</small></div><span class="price">34,00€</span></div>
+        <div class="dish reveal"><div><b>Bochechas de Porco Preto</b><small>estufadas em vinho tinto, puré trufado</small></div><span class="price">15,50€</span></div>
+        <div class="dish reveal"><div><b>Arroz de Pato à Antiga</b><small>chouriço, laranja e crocante no forno</small></div><span class="price">13,90€</span></div>
+        <div class="dish reveal"><div><b>Bife à Café</b><small>lombo de novilho, molho da casa, ovo a cavalo</small></div><span class="price">14,50€</span></div>
+      </div>
+    </div>
+
+    <div class="cat" id="peixe" style="margin-top:52px">
+      <div class="cat-title"><span class="em">🐟</span><h2>Peixe &amp; Mar</h2><span class="ln"></span></div>
+      <div class="dish-list">
+        <div class="dish pop reveal"><span class="tag">Mais pedido</span><div><b>Bacalhau à Tradição</b><small>lascado no forno, batata a murro, grelos, azeite</small></div><span class="price">16,50€</span></div>
+        <div class="dish reveal"><div><b>Polvo à Lagareiro</b><small>assado, batata a murro e alho dourado</small></div><span class="price">17,90€</span></div>
+        <div class="dish reveal"><div><b>Arroz de Marisco</b><small>caldoso, camarão, amêijoa e sapateira (para 2)</small></div><span class="price">36,00€</span></div>
+        <div class="dish reveal"><div><b>Robalo Grelhado</b><small>legumes salteados e molho de limão</small></div><span class="price">16,90€</span></div>
+        <div class="dish reveal"><div><b>Bacalhau com Broa</b><small>gratinado, cebolada e azeite virgem</small></div><span class="price">15,50€</span></div>
+        <div class="dish reveal"><div><b>Filetes de Peixe com Arroz de Tomate</b><small>panados na hora, malandrinho</small></div><span class="price">11,90€</span></div>
+      </div>
+    </div>
+
+    <div class="cat" id="veg" style="margin-top:52px">
+      <div class="cat-title"><span class="em">🥗</span><h2>Vegetariano</h2><span class="ln"></span></div>
+      <div class="dish-list">
+        <div class="dish reveal"><span class="tag veg">Vegetariano</span><div><b>Migas de Grão &amp; Espinafres</b><small>ovo escalfado e azeite de alho</small></div><span class="price">10,50€</span></div>
+        <div class="dish reveal"><span class="tag veg">Vegan</span><div><b>Caril de Legumes &amp; Grão</b><small>arroz basmati e leite de coco</small></div><span class="price">10,90€</span></div>
+        <div class="dish reveal"><div><b>Risoto de Cogumelos</b><small>funghi, parmesão e trufa</small></div><span class="price">11,50€</span></div>
+        <div class="dish reveal"><div><b>Lasanha de Legumes</b><small>gratinada, béchamel caseiro</small></div><span class="price">10,90€</span></div>
+      </div>
+    </div>
+
+    <div class="cat" id="sobremesas" style="margin-top:52px">
+      <div class="cat-title"><span class="em">🍮</span><h2>Sobremesas</h2><span class="ln"></span></div>
+      <div class="dish-list">
+        <div class="dish pop reveal"><span class="tag">Da casa</span><div><b>Pudim Abade de Priscos</b><small>receita centenária, calda de caramelo</small></div><span class="price">4,50€</span></div>
+        <div class="dish reveal"><div><b>Leite Creme Queimado</b><small>queimado à frente do cliente</small></div><span class="price">3,80€</span></div>
+        <div class="dish reveal"><div><b>Toucinho do Céu</b><small>doçaria conventual, amêndoa</small></div><span class="price">4,20€</span></div>
+        <div class="dish reveal"><div><b>Mousse de Chocolate</b><small>chocolate 70%, flor de sal</small></div><span class="price">3,90€</span></div>
+        <div class="dish reveal"><div><b>Arroz Doce da Avó</b><small>canela e limão</small></div><span class="price">3,50€</span></div>
+        <div class="dish reveal"><div><b>Tábua de Sobremesas</b><small>seleção da casa (para 2)</small></div><span class="price">9,50€</span></div>
+      </div>
+    </div>
+
+    <div class="cat" id="bebidas" style="margin-top:52px">
+      <div class="cat-title"><span class="em">🥤</span><h2>Bebidas &amp; Cafés</h2><span class="ln"></span></div>
+      <div class="dish-list">
+        <div class="dish reveal"><div><b>Água (0,5L / 1,5L)</b><small>com ou sem gás</small></div><span class="price">1,50€ / 2,50€</span></div>
+        <div class="dish reveal"><div><b>Refrigerantes</b><small>lata ou vidro</small></div><span class="price">2,00€</span></div>
+        <div class="dish reveal"><div><b>Sumo Natural</b><small>laranja espremida na hora</small></div><span class="price">3,50€</span></div>
+        <div class="dish reveal"><div><b>Cerveja Imperial / Caneca</b><small>fresca de pressão</small></div><span class="price">1,80€ / 3,20€</span></div>
+        <div class="dish reveal"><div><b>Café / Garoto / Abatanado</b><small>torra artesanal</small></div><span class="price">0,90€</span></div>
+        <div class="dish reveal"><div><b>Chá / Infusões</b><small>seleção de ervas</small></div><span class="price">1,60€</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wines" id="vinhos">
+  <div class="wrap">
+    <div class="cat-title"><span class="em">🍷</span><h2>Carta de Vinhos</h2><span class="ln"></span></div>
+    <div class="wine-grid">
+      <div class="wine reveal"><div><b>Douro Tinto</b><small>Reserva · copo / garrafa</small></div><span class="price">3,80€ / 19€</span></div>
+      <div class="wine reveal"><div><b>Alentejo Tinto</b><small>encorpado · copo / garrafa</small></div><span class="price">3,50€ / 17€</span></div>
+      <div class="wine reveal"><div><b>Vinho Verde Branco</b><small>fresco · copo / garrafa</small></div><span class="price">3,00€ / 14€</span></div>
+      <div class="wine reveal"><div><b>Dão Branco</b><small>aromático · copo / garrafa</small></div><span class="price">3,20€ / 15€</span></div>
+      <div class="wine reveal"><div><b>Espumante Bruto</b><small>método clássico · garrafa</small></div><span class="price">22€</span></div>
+      <div class="wine reveal"><div><b>Vinho do Porto</b><small>Tawny 10 anos · copo</small></div><span class="price">4,50€</span></div>
+    </div>
+    <p class="menu-note">Preços e pratos meramente ilustrativos, para demonstração do modelo. No seu site, atualiza o cardápio quando quiser — sem custos de reimpressão.</p>
+  </div>
+</section>
+
+<section class="cta-final">
+  <div class="wrap">
+    <h2 class="reveal">Um cardápio digital que <i>trabalha por si.</i></h2>
+    <p style="color:var(--cream-dim);max-width:520px;margin:16px auto 30px">Este menu está sempre atualizado, acessível por QR code na mesa e no Google. O seu restaurante pode ter um assim.</p>
+    <a class="btn btn-rust reveal" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Quero%20um%20site%20com%20card%C3%A1pio%20digital%20como%20o%20Sabor%20%26%20Tradi%C3%A7%C3%A3o." target="_blank" rel="noopener">Falar com a TECNOVA Digital</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Sabor &amp; Tradição é um negócio fictício, criado apenas para demonstração.
+    <div class="tecnova-credit">🅣 Modelo criado por <a href="index.html">TECNOVA Digital</a></div>
+  </div>
+</footer>
+
+<div class="sticky-cta">
+  <a class="btn btn-rust" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20reservar%20mesa%20no%20Sabor%20%26%20Tradi%C3%A7%C3%A3o%20(modelo)." target="_blank" rel="noopener">Reservar mesa</a>
+</div>
+
+<script>
+const burger = document.getElementById('burger');
+const navLinks = document.getElementById('navLinks');
+if(burger){
+  burger.addEventListener('click', ()=> navLinks.classList.toggle('open'));
+  navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLinks.classList.remove('open')));
+}
+const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
