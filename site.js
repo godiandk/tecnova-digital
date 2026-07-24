@@ -42,6 +42,8 @@
         d.type = "button";
         d.setAttribute("aria-label", "Ir para o destaque " + (i + 1));
         if (i === 0) d.classList.add("active");
+        // evita que o foco do botão faça a página saltar/rolar
+        d.addEventListener("mousedown", function (e) { e.preventDefault(); });
         d.addEventListener("click", function () { go(i); restart(); });
         dotsWrap.appendChild(d);
       });
@@ -58,8 +60,14 @@
 
     var prev = slider.querySelector(".hs-arrow.prev");
     var nxt = slider.querySelector(".hs-arrow.next");
-    if (prev) prev.addEventListener("click", function () { go(idx - 1); restart(); });
-    if (nxt) nxt.addEventListener("click", function () { go(idx + 1); restart(); });
+    if (prev) {
+      prev.addEventListener("mousedown", function (e) { e.preventDefault(); });
+      prev.addEventListener("click", function () { go(idx - 1); restart(); });
+    }
+    if (nxt) {
+      nxt.addEventListener("mousedown", function (e) { e.preventDefault(); });
+      nxt.addEventListener("click", function () { go(idx + 1); restart(); });
+    }
     slider.addEventListener("mouseenter", function () { clearInterval(timer); });
     slider.addEventListener("mouseleave", restart);
 
