@@ -57,6 +57,7 @@ tr:last-child td{border-bottom:none}
 .badge{font-size:.68rem;font-weight:800;padding:5px 11px;border-radius:999px;white-space:nowrap}
 .badge.ativo{background:rgba(37,211,102,.15);color:#8fe3ac}
 .badge.usado{background:rgba(217,178,110,.12);color:var(--cream-dim)}
+.badge.expirado{background:rgba(224,113,92,.14);color:#f0a292}
 .code-txt{font-family:'Playfair Display',serif;color:var(--gold);letter-spacing:.05em}
 .empty{color:var(--cream-dim);font-size:.85rem;text-align:center;padding:16px 0}
 .hidden{display:none!important}
@@ -118,6 +119,9 @@ tr:last-child td{border-bottom:none}
         <input type="number" id="inpValor" placeholder="Ex: 15" min="1" step="1">
       </div>
     </div>
+    <label>Validade (opcional)</label>
+    <input type="date" id="inpValidade">
+    <p style="font-size:.75rem;color:var(--cream-dim);margin:6px 0 0">Deixe em branco para um cupom sem prazo. Depois desta data, o código deixa de ser aceite.</p>
     <button class="btn" onclick="gerarCupom()">Gerar cupom</button>
     <div id="gerarMsg" class="msg"></div>
   </div>
@@ -149,8 +153,8 @@ tr:last-child td{border-bottom:none}
     <h2 style="font-size:1.1rem;margin-bottom:14px">Cupons emitidos</h2>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Código</th><th>Cliente</th><th>Desconto</th><th>Estado</th><th>Criado em</th></tr></thead>
-        <tbody id="tabelaVouchers"><tr><td colspan="5" class="empty">A carregar…</td></tr></tbody>
+        <thead><tr><th>Código</th><th>Cliente</th><th>Desconto</th><th>Estado</th><th>Validade</th><th>Criado em</th></tr></thead>
+        <tbody id="tabelaVouchers"><tr><td colspan="6" class="empty">A carregar…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -219,19 +223,26 @@ async function carregarVouchers(){
   const snap = await db.collection('vouchers').orderBy('criadoEm','desc').get();
   const tb = document.getElementById('tabelaVouchers');
   let ativos=0, usados=0;
-  if(snap.empty){ tb.innerHTML = '<tr><td colspan="5" class="empty">Ainda não foram gerados cupons.</td></tr>'; }
+  const hoje = new Date().toISOString().slice(0,10);
+  if(snap.empty){ tb.innerHTML = '<tr><td colspan="6" class="empty">Ainda não foram gerados cupons.</td></tr>'; }
   else{
     tb.innerHTML = '';
     snap.forEach(doc=>{
       const v = doc.data();
-      if(v.usado) usados++; else ativos++;
+      const expirado = !v.usado && v.validade && v.validade < hoje;
+      if(v.usado) usados++; else if(!expirado) ativos++;
       const desc = v.tipo==='percentagem' ? `${v.valor}%` : `${v.valor}€`;
       const data = v.criadoEm && v.criadoEm.toDate ? v.criadoEm.toDate().toLocaleDateString('pt-PT') : '—';
+      const validadeTxt = v.validade ? v.validade.split('-').reverse().join('/') : 'Sem prazo';
+      let estado = '<span class="badge ativo">Ativo</span>';
+      if(v.usado) estado = '<span class="badge usado">Usado</span>';
+      else if(expirado) estado = '<span class="badge expirado">Expirado</span>';
       tb.innerHTML += `<tr>
         <td class="code-txt">${v.code}</td>
         <td>${v.clienteNome||v.clienteEmail||'—'}</td>
         <td>${desc}</td>
-        <td><span class="badge ${v.usado?'usado':'ativo'}">${v.usado?'Usado':'Ativo'}</span></td>
+        <td>${estado}</td>
+        <td>${validadeTxt}</td>
         <td>${data}</td>
       </tr>`;
     });
@@ -244,6 +255,7 @@ async function gerarCupom(){
   const uid = document.getElementById('selCliente').value;
   const tipo = document.getElementById('selTipo').value;
   const valor = document.getElementById('inpValor').value;
+  const validade = document.getElementById('inpValidade').value; // 'YYYY-MM-DD' ou ''
   const msg = document.getElementById('gerarMsg');
   if(!uid || !valor){ msg.className='msg err'; msg.textContent='Escolha o cliente e o valor do desconto.'; return; }
   const cliente = clientesCache.find(c=>c.uid===uid);
@@ -251,12 +263,14 @@ async function gerarCupom(){
   try{
     await db.collection('vouchers').doc(code).set({
       code, clienteUid: uid, clienteNome: cliente.nome, clienteEmail: cliente.email,
-      tipo, valor: Number(valor), usado:false,
+      tipo, valor: Number(valor), usado:false, validade: validade || null,
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
     });
     msg.className='msg ok';
-    msg.textContent = `Cupom ${code} criado para ${cliente.nome}.`;
+    const prazo = validade ? ` (válido até ${validade.split('-').reverse().join('/')})` : '';
+    msg.textContent = `Cupom ${code} criado para ${cliente.nome}${prazo}.`;
     document.getElementById('inpValor').value='';
+    document.getElementById('inpValidade').value='';
     carregarVouchers();
   }catch(err){
     msg.className='msg err'; msg.textContent='Não foi possível criar o cupom. Tente novamente.';
@@ -274,6 +288,8 @@ async function validarCupom(){
       if(!doc.exists) throw new Error('nao-encontrado');
       const data = doc.data();
       if(data.usado) throw Object.assign(new Error('ja-usado'), {data});
+      const hoje = new Date().toISOString().slice(0,10);
+      if(data.validade && data.validade < hoje) throw Object.assign(new Error('expirado'), {data});
       tx.update(ref, { usado:true, usadoEm: firebase.firestore.FieldValue.serverTimestamp() });
       return data;
     });
@@ -285,6 +301,7 @@ async function validarCupom(){
   }catch(err){
     if(err.message === 'nao-encontrado'){ msg.className='msg err'; msg.textContent='Código não encontrado.'; }
     else if(err.message === 'ja-usado'){ msg.className='msg err'; msg.textContent = `Este código já foi usado por ${err.data.clienteNome} e não pode ser usado outra vez.`; }
+    else if(err.message === 'expirado'){ msg.className='msg err'; msg.textContent = `Este cupom expirou em ${err.data.validade.split('-').reverse().join('/')} e já não é válido.`; }
     else{ msg.className='msg err'; msg.textContent='Erro ao verificar o código.'; }
   }
 }
