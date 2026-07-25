@@ -74,6 +74,16 @@ nav.links a:hover,nav.links a.on{color:var(--rose)}
 .hs-slide p.lead{max-width:520px;font-size:1.05rem;color:#f3e4d7;margin-bottom:28px}
 .hs-cta{display:flex;gap:14px;flex-wrap:wrap}
 .hs-badge{display:inline-block;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:.78rem;font-weight:700;padding:7px 16px;border-radius:999px;margin-bottom:6px}
+/* slide com a personagem da marca */
+.hs-slide.char{background:linear-gradient(150deg,#5b3b28 0%,#3d2418 55%,#2d190f 100%)}
+.hs-slide.char::before{background:none}
+.hs-slide.char .wrap{display:grid;grid-template-columns:1.08fr .92fr;gap:36px;align-items:center}
+.hs-char{display:flex;justify-content:center;align-items:flex-end}
+.hs-char img{max-height:min(58vh,470px);width:auto;filter:drop-shadow(0 22px 34px rgba(0,0,0,.5))}
+@media(max-width:880px){
+  .hs-slide.char .wrap{grid-template-columns:1fr;gap:18px}
+  .hs-char img{max-height:230px}
+}
 .hs-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(45,25,15,.4);color:#fff;font-size:1.5rem;cursor:pointer;display:none;place-items:center;line-height:1;transition:all .2s}
 .hs-arrow:hover{background:var(--rose);border-color:var(--rose)}
 .hs-arrow.prev{left:24px}.hs-arrow.next{right:24px}
