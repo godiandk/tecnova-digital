@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galeria — Doce Aurora · Modelo TECNOVA Digital</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="modelo-confeitaria.css">
+<style>
+.gal-filter{display:flex;gap:8px;flex-wrap:wrap;margin:26px 0 30px}
+.gal-filter button{padding:9px 18px;border-radius:999px;border:1px solid rgba(196,69,107,.35);background:#fff;color:var(--rose);font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+.gal-filter button.active,.gal-filter button:hover{background:var(--rose);color:#fff;border-color:var(--rose)}
+.gal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:860px){.gal-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.gal-grid{grid-template-columns:1fr}}
+.gitem{position:relative;border-radius:18px;overflow:hidden;box-shadow:0 12px 30px rgba(61,36,24,.08);background:#fff}
+.gitem img{aspect-ratio:1/1;object-fit:cover;width:100%;transition:transform .5s}
+.gitem:hover img{transform:scale(1.05)}
+.gitem .cap{position:absolute;left:0;right:0;bottom:0;padding:16px;background:linear-gradient(180deg,transparent,rgba(61,36,24,.82));color:#fff}
+.gitem .cap b{display:block;font-family:'DM Serif Display',serif;font-size:1.1rem}
+.gitem .cap span{font-size:.78rem;opacity:.9}
+.gitem.hide{display:none}
+</style>
+</head>
+<body>
+
+<div class="demo-bar">
+  <span>🎂 Este é um <b>modelo demonstrativo</b> criado pela TECNOVA Digital</span>
+  <div>
+    <a href="modelos.html">← Voltar aos modelos</a>
+    <a href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Gostei%20do%20modelo%20de%20confeitaria%20e%20quero%20um%20site%20assim." target="_blank" rel="noopener">Quero um site assim →</a>
+  </div>
+</div>
+
+<header class="wrap">
+  <div class="nav">
+    <a class="logo" href="modelo-confeitaria.html">
+      <span class="logo-ic">A</span>
+      <div><b>Doce Aurora</b><span class="tagline">Confeitaria Artesanal</span></div>
+    </a>
+    <div class="nav-right">
+      <a class="btn btn-rose" href="modelo-confeitaria-contactos.html">Encomendar</a>
+      <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+    </div>
+    <nav class="links" id="navLinks">
+      <a href="modelo-confeitaria.html">Início</a>
+      <a href="modelo-confeitaria-catalogo.html">Catálogo &amp; Preços</a>
+      <a class="on" href="modelo-confeitaria-galeria.html">Galeria</a>
+      <a href="modelo-confeitaria-sobre.html">Sobre</a>
+      <a href="modelo-confeitaria-contactos.html">Contactos</a>
+    </nav>
+  </div>
+</header>
+
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">Galeria</p>
+    <h1>Feito à mão, <i>com tempo.</i></h1>
+    <p>Alguns dos bolos e doces que saíram do nosso obrador. O seu pode ser o próximo.</p>
+  </div>
+</section>
+
+<section style="padding-top:20px">
+  <div class="wrap">
+    <div class="gal-filter" id="galFilter">
+      <button class="active" data-f="todos">Todos</button>
+      <button data-f="bolos">Bolos</button>
+      <button data-f="festas">Festas</button>
+      <button data-f="doces">Doces finos</button>
+    </div>
+    <div class="gal-grid" id="galGrid">
+      <div class="gitem reveal" data-c="bolos"><img src="img/modelos/confeitaria/g1.jpg" alt="Bolo de chocolate" loading="lazy"><div class="cap"><b>Chocolate Belga</b><span>Ganache a escorrer</span></div></div>
+      <div class="gitem reveal" data-c="bolos"><img src="img/modelos/confeitaria/g2.jpg" alt="Bolo de frutos vermelhos" loading="lazy"><div class="cap"><b>Frutos Vermelhos</b><span>Chantilly e frutas frescas</span></div></div>
+      <div class="gitem reveal" data-c="festas"><img src="img/modelos/confeitaria/g3.jpg" alt="Bolo de festa infantil" loading="lazy"><div class="cap"><b>Festa infantil</b><span>Arco-íris com confeitos</span></div></div>
+      <div class="gitem reveal" data-c="doces"><img src="img/modelos/confeitaria/g4.jpg" alt="Doces decorados" loading="lazy"><div class="cap"><b>Doces finos</b><span>Para mesa de festa</span></div></div>
+      <div class="gitem reveal" data-c="bolos"><img src="img/modelos/confeitaria/g5.jpg" alt="Torta de chocolate" loading="lazy"><div class="cap"><b>Tortas</b><span>Por travessa</span></div></div>
+      <div class="gitem reveal" data-c="festas"><img src="img/modelos/confeitaria/hero.jpg" alt="Bolo de casamento" loading="lazy"><div class="cap"><b>Casamentos</b><span>Bolo de andares</span></div></div>
+      <div class="gitem reveal" data-c="doces"><img src="img/modelos/confeitaria/p-docinhos.jpg" alt="Macarons" loading="lazy"><div class="cap"><b>Macarons</b><span>Sabores sortidos</span></div></div>
+      <div class="gitem reveal" data-c="doces"><img src="img/modelos/confeitaria/p-pote.jpg" alt="Bolo no pote" loading="lazy"><div class="cap"><b>Bolo no pote</b><span>Pronto a comer</span></div></div>
+      <div class="gitem reveal" data-c="festas"><img src="img/modelos/confeitaria/p-cupcake.jpg" alt="Cupcakes decorados" loading="lazy"><div class="cap"><b>Cupcakes</b><span>Decorados ao tema</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-final">
+  <div class="wrap">
+    <h2 class="reveal">Viu algum que <i>lhe encheu o olho?</i></h2>
+    <p class="reveal">Diga-nos qual e fazemos igual — ou melhor ainda, à sua medida.</p>
+    <a class="btn btn-cream btn-lg reveal" href="modelo-confeitaria-contactos.html">Encomendar agora</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Doce Aurora é um negócio fictício, criado apenas para demonstração.
+    <div class="tecnova-credit">🅣 Modelo criado por <a href="index.html">TECNOVA Digital</a></div>
+  </div>
+</footer>
+
+<div class="sticky-cta">
+  <a class="btn btn-rose" href="modelo-confeitaria-contactos.html">Encomendar</a>
+</div>
+
+<script src="modelo-confeitaria.js"></script>
+<script>
+(function(){
+  var btns=document.querySelectorAll('#galFilter button');
+  var items=document.querySelectorAll('#galGrid .gitem');
+  btns.forEach(function(b){
+    b.addEventListener('click',function(){
+      btns.forEach(function(x){x.classList.remove('active')});
+      b.classList.add('active');
+      var f=b.dataset.f;
+      items.forEach(function(it){
+        it.classList.toggle('hide', f!=='todos' && it.dataset.c!==f);
+      });
+    });
+  });
+})();
+</script>
+<script src="modelo-fix.js"></script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 //    usando o cache apenas como reserva quando não há internet.
 //  - Restantes ficheiros (CSS/JS/imagens): stale-while-revalidate —
 //    abrem rápido a partir do cache e atualizam-se em segundo plano.
-const CACHE_NAME = 'tecnova-v3';
+const CACHE_NAME = 'tecnova-v4';
 const ASSETS = [
   './index.html',
   './servicos.html',
@@ -19,6 +19,14 @@ const ASSETS = [
   './modelo-ginasio.html',
   './modelo-oficina.html',
   './modelo-salao.html',
+  './modelo-confeitaria.html',
+  './modelo-confeitaria-catalogo.html',
+  './modelo-confeitaria-galeria.html',
+  './modelo-confeitaria-sobre.html',
+  './modelo-confeitaria-contactos.html',
+  './modelo-confeitaria.css',
+  './modelo-confeitaria.js',
+  './modelo-fix.js',
   './estilo.css',
   './site.js',
   './profile.js',
