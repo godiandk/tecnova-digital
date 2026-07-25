@@ -34,10 +34,24 @@ nav.links a{color:var(--cocoa-dim);text-decoration:none;font-size:.83rem;font-we
 nav.links a:hover,nav.links a.on{color:var(--rose)}
 .burger{display:none;flex-direction:column;gap:5px;background:none;border:1px solid rgba(196,69,107,.35);border-radius:8px;cursor:pointer;padding:9px 10px}
 .burger span{width:18px;height:2px;background:var(--rose);border-radius:2px}
+/* CTA que só aparece dentro do menu no telemóvel */
+nav.links .menu-cta{display:none}
+
 @media(max-width:880px){
-  nav.links{display:none;flex-direction:column;width:100%;order:3;padding-top:12px;margin-top:12px;border-top:1px solid rgba(196,69,107,.15);gap:0}
+  /* cabeçalho numa só linha: logótipo à esquerda, menu à direita */
+  .nav{flex-wrap:wrap;padding:14px 0}
+  .logo{flex:1 1 auto;min-width:0}
+  .logo b{font-size:1.05rem}
+  .logo .tagline{font-size:.53rem;letter-spacing:.2em}
+  .logo .logo-ic{width:40px;height:40px}
+  .nav-right{flex:0 0 auto}
+  .nav-right > .btn{display:none}      /* o CTA passa para dentro do menu */
+
+  nav.links{display:none;flex-direction:column;width:100%;order:3;padding-top:10px;margin-top:12px;border-top:1px solid rgba(196,69,107,.15);gap:0}
   nav.links.open{display:flex}
-  nav.links a{padding:13px 0;border-bottom:1px solid rgba(196,69,107,.1)}
+  nav.links a{padding:13px 2px;border-bottom:1px solid rgba(196,69,107,.1)}
+  nav.links a:last-child{border-bottom:none}
+  nav.links a.menu-cta{display:flex;justify-content:center;margin-top:14px;padding:14px 22px;color:#fff;border-bottom:none}
   .burger{display:flex}
 }
 @media(min-width:881px){nav.links{order:2}.nav-right{order:3}}

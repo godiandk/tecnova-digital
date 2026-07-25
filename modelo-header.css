@@ -1,0 +1,15 @@
+/* TECNOVA — cabeçalho dos modelos numa só linha no telemóvel.
+   Antes, o botão de ação saltava para uma segunda linha por baixo do
+   logótipo. Agora fica dentro do menu, deixando o topo limpo. */
+nav.links a.menu-cta{display:none}
+
+@media(max-width:760px){
+  .nav{flex-wrap:wrap}
+  .logo{flex:1 1 auto;min-width:0}
+  .nav-right{flex:0 0 auto}
+  .nav-right > .btn{display:none}
+  nav.links a.menu-cta{
+    display:inline-flex;align-items:center;justify-content:center;text-align:center;
+    margin-top:14px;padding:13px 22px;border-bottom:none;
+  }
+}

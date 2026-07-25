@@ -3,42 +3,91 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contactos &amp; Encomendas — Doce Aurora · Modelo TECNOVA Digital</title>
+<title>Encomendar — Doce Aurora · Modelo TECNOVA Digital</title>
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="modelo-confeitaria.css">
 <style>
-.cont-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:start}
-@media(max-width:880px){.cont-grid{grid-template-columns:1fr}}
-.form-card{background:#fff;border:1px solid rgba(196,69,107,.16);border-radius:22px;padding:30px;box-shadow:0 14px 36px rgba(61,36,24,.08)}
-.form-card h2{font-size:1.5rem;margin-bottom:6px}
-.form-card .hint{color:var(--cocoa-dim);font-size:.88rem;margin-bottom:20px}
-label{display:block;font-size:.78rem;font-weight:800;color:var(--cocoa);margin:14px 0 6px;letter-spacing:.02em}
+.order-grid{display:grid;grid-template-columns:1.3fr .7fr;gap:26px;align-items:start}
+@media(max-width:980px){.order-grid{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid rgba(196,69,107,.16);border-radius:22px;padding:26px;box-shadow:0 14px 36px rgba(61,36,24,.07);margin-bottom:20px}
+.card h2{font-size:1.3rem;margin-bottom:4px;display:flex;align-items:center}
+.card .hint{color:var(--cocoa-dim);font-size:.86rem;margin-bottom:16px}
+.stepn{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--rose);color:#fff;font-size:.85rem;font-weight:800;margin-right:9px;font-family:'Manrope',sans-serif;flex:none}
+label{display:block;font-size:.78rem;font-weight:800;color:var(--cocoa);margin:14px 0 6px}
 input,select,textarea{width:100%;padding:13px 15px;border-radius:12px;border:1px solid rgba(196,69,107,.25);background:var(--cream);color:var(--cocoa);font-family:inherit;font-size:16px}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--rose);background:#fff}
-textarea{resize:vertical;min-height:90px}
+textarea{resize:vertical;min-height:80px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:560px){.row2{grid-template-columns:1fr}}
-.form-card .btn{width:100%;margin-top:22px}
-.hours-table{width:100%;margin-top:14px;border-collapse:collapse;font-size:.92rem}
-.hours-table td{padding:11px 0;border-bottom:1px solid rgba(196,69,107,.16);color:var(--cocoa-dim)}
-.hours-table td:last-child{text-align:right;color:var(--cocoa);font-weight:600}
-.map-mock{border-radius:20px;border:1px solid rgba(196,69,107,.2);padding:34px;text-align:center;margin-top:22px;
-  background:repeating-linear-gradient(0deg,rgba(196,69,107,.05) 0 1px,transparent 1px 34px),repeating-linear-gradient(90deg,rgba(196,69,107,.05) 0 1px,transparent 1px 34px),#fff}
-.map-mock .pin{font-size:2.2rem;margin-bottom:8px}
-.map-mock p{color:var(--cocoa-dim);font-size:.92rem;line-height:1.6}
-.contact-ways{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:44px}
+.qty{display:grid;grid-template-columns:1fr 96px;gap:12px;align-items:end}
+.hide{display:none!important}
+.sub-block{background:var(--cream);border:1px dashed rgba(196,69,107,.35);border-radius:16px;padding:16px 18px;margin-top:14px}
+.sub-block .tt{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:var(--rose);margin-bottom:4px}
+.opt{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid rgba(196,69,107,.1)}
+.opt:last-child{border-bottom:none}
+.opt input[type=checkbox]{width:20px;height:20px;flex:none;accent-color:var(--rose)}
+.opt span{font-size:.89rem;color:var(--cocoa-dim)}
+.opt b{margin-left:auto;color:var(--rose);white-space:nowrap;font-size:.88rem}
+
+.summary{position:sticky;top:96px}
+.sum-list{list-style:none;margin:4px 0 0}
+.sum-list li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(196,69,107,.1);font-size:.86rem;color:var(--cocoa-dim)}
+.sum-list li b{color:var(--cocoa);white-space:nowrap}
+.sum-empty{color:var(--cocoa-dim);font-size:.86rem;font-style:italic;padding:10px 0}
+.total-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;padding-top:13px;border-top:2px solid rgba(196,69,107,.2)}
+.total-row span{font-weight:800;font-size:.85rem}
+.total-row b{font-family:'DM Serif Display',serif;font-size:1.85rem;color:var(--cocoa)}
+.deposit{margin-top:15px;background:linear-gradient(150deg,rgba(229,143,168,.2),rgba(196,69,107,.12));border:1.5px solid var(--rose);border-radius:16px;padding:17px}
+.deposit .lbl{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:var(--rose)}
+.deposit .val{font-family:'DM Serif Display',serif;font-size:2.3rem;color:var(--rose);line-height:1.1;margin:3px 0}
+.deposit p{font-size:.78rem;color:var(--cocoa-dim)}
+
+.warn{background:#fff6f8;border:1.5px solid var(--rose);border-radius:16px;padding:17px 19px;margin-bottom:16px}
+.warn b{display:block;color:var(--rose);margin-bottom:5px;font-size:.94rem}
+.warn p{color:var(--cocoa-dim);font-size:.85rem}
+.pay-box{background:var(--cream-2);border-radius:14px;padding:15px 17px;margin:6px 0 16px}
+.pay-box div{display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:.87rem;color:var(--cocoa-dim)}
+.pay-box b{color:var(--cocoa)}
+.drop{border:2px dashed rgba(196,69,107,.45);border-radius:16px;padding:24px 18px;text-align:center;cursor:pointer;transition:all .2s;background:var(--cream)}
+.drop:hover{border-color:var(--rose);background:#fff6f8}
+.drop.filled{border-style:solid;border-color:#2e9e5b;background:#f2fbf5}
+.drop .ic{font-size:1.9rem;margin-bottom:6px}
+.drop b{display:block;font-size:.92rem;margin-bottom:3px}
+.drop small{color:var(--cocoa-dim);font-size:.79rem}
+.drop input[type=file]{display:none}
+.preview{margin-top:13px;display:none;align-items:center;gap:12px;background:#fff;border:1px solid rgba(46,158,91,.4);border-radius:12px;padding:10px 14px}
+.preview.show{display:flex}
+.preview img{width:50px;height:50px;object-fit:cover;border-radius:8px;flex:none}
+.preview .nm{font-size:.84rem;font-weight:700;word-break:break-all}
+.preview .rm{margin-left:auto;background:none;border:none;color:var(--rose);font-weight:800;cursor:pointer;font-family:inherit;font-size:.79rem}
+.err{display:none;color:#a5281b;background:#fdecea;border:1px solid #f5b7b1;border-radius:12px;padding:12px 15px;font-size:.85rem;margin-top:14px}
+.err.show{display:block}
+
+.done{display:none;text-align:center}
+.done.show{display:block}
+.done .big{font-size:2.9rem;margin-bottom:6px}
+.done h2{font-size:1.65rem;margin-bottom:8px;justify-content:center}
+.done p{color:var(--cocoa-dim);font-size:.93rem;margin-bottom:12px}
+.done .box{background:var(--cream-2);border-radius:16px;padding:18px;text-align:left;margin:16px 0}
+.done .box div{display:flex;gap:11px;padding:8px 0;font-size:.89rem;color:var(--cocoa-dim)}
+.done .box .n{color:var(--rose);font-weight:800;flex:none}
+
+.contact-ways{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
 @media(max-width:720px){.contact-ways{grid-template-columns:1fr}}
-.way{background:#fff;border:1px solid rgba(196,69,107,.14);border-radius:18px;padding:24px;text-align:center;box-shadow:0 10px 26px rgba(61,36,24,.05)}
-.way .ic{font-size:1.9rem;margin-bottom:8px}
+.way{background:#fff;border:1px solid rgba(196,69,107,.14);border-radius:18px;padding:22px;text-align:center;box-shadow:0 10px 26px rgba(61,36,24,.05)}
+.way .ic{font-size:1.8rem;margin-bottom:8px}
 .way b{display:block;margin-bottom:4px}
-.way a{color:var(--rose);text-decoration:none;font-weight:700;font-size:.9rem}
+.way a{color:var(--rose);text-decoration:none;font-weight:700;font-size:.89rem}
+.hours-table{width:100%;margin-top:12px;border-collapse:collapse;font-size:.9rem}
+.hours-table td{padding:10px 0;border-bottom:1px solid rgba(196,69,107,.16);color:var(--cocoa-dim)}
+.hours-table td:last-child{text-align:right;color:var(--cocoa);font-weight:600}
 .faq details{background:#fff;border:1px solid rgba(196,69,107,.14);border-radius:14px;margin-bottom:10px;overflow:hidden}
-.faq summary{cursor:pointer;padding:16px 20px;font-weight:700;font-size:.92rem;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq summary{cursor:pointer;padding:15px 19px;font-weight:700;font-size:.9rem;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
 .faq summary::-webkit-details-marker{display:none}
 .faq summary::after{content:"+";color:var(--rose);font-size:1.3rem}
 .faq details[open] summary::after{content:"−"}
-.faq p{padding:0 20px 18px;color:var(--cocoa-dim);font-size:.88rem}
+.faq p{padding:0 19px 17px;color:var(--cocoa-dim);font-size:.87rem}
 </style>
 </head>
 <body>
@@ -67,104 +116,253 @@ textarea{resize:vertical;min-height:90px}
       <a href="modelo-confeitaria-galeria.html">Galeria</a>
       <a href="modelo-confeitaria-sobre.html">Sobre</a>
       <a class="on" href="modelo-confeitaria-contactos.html">Contactos</a>
+      <a class="btn btn-rose menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20encomendar%20na%20Doce%20Aurora%20(modelo)." target="_blank" rel="noopener">Encomendar</a>
     </nav>
   </div>
 </header>
 
 <section class="page-head">
   <div class="wrap">
-    <p class="eyebrow">Contactos &amp; encomendas</p>
-    <h1>Vamos falar do <i>seu bolo.</i></h1>
-    <p>Preencha o pedido abaixo e ele chega-nos já organizado pelo WhatsApp — ou fale connosco diretamente.</p>
+    <p class="eyebrow">Encomendar</p>
+    <h1>Monte a sua encomenda <i>e veja já o total.</i></h1>
+    <p>Escolha o bolo, o sabor do recheio e o que quiser juntar. O site calcula tudo e mostra os 50% do sinal.</p>
   </div>
 </section>
 
-<section style="padding-top:20px">
-  <div class="wrap cont-grid">
-
-    <div class="form-card reveal">
-      <h2>Pedido de encomenda</h2>
-      <p class="hint">Leva menos de um minuto. Respondemos no mesmo dia.</p>
-      <form id="encForm">
-        <div class="row2">
-          <div><label for="fNome">O seu nome</label><input id="fNome" type="text" placeholder="Nome e apelido" required></div>
-          <div><label for="fTel">Telemóvel</label><input id="fTel" type="tel" placeholder="+351 9xx xxx xxx" required></div>
-        </div>
-        <div class="row2">
-          <div>
-            <label for="fProduto">O que quer encomendar</label>
-            <select id="fProduto">
-              <option>Bolo de festa</option><option>Doces finos (cento)</option>
-              <option>Bolo no pote</option><option>Salgados (cento)</option>
-              <option>Kit de festa</option><option>Outro / não sei ainda</option>
-            </select>
-          </div>
-          <div>
-            <label for="fTamanho">Tamanho / quantidade</label>
-            <select id="fTamanho">
-              <option>P — 10 a 15 fatias</option><option>M — 20 a 25 fatias</option>
-              <option>G — 30 a 40 fatias</option><option>GG — 50 a 60 fatias</option>
-              <option>Ainda não sei</option>
-            </select>
-          </div>
-        </div>
-        <div class="row2">
-          <div><label for="fData">Data da festa</label><input id="fData" type="date"></div>
-          <div><label for="fSabor">Sabor preferido</label><input id="fSabor" type="text" placeholder="Ex: brigadeiro, ninho com Nutella"></div>
-        </div>
-        <label for="fObs">Observações</label>
-        <textarea id="fObs" placeholder="Tema da festa, alergias, decoração especial…"></textarea>
-        <button type="submit" class="btn btn-rose btn-lg">Enviar pedido pelo WhatsApp</button>
-        <p class="hint" style="margin:14px 0 0;text-align:center">Não paga nada agora. Confirmamos o preço antes de avançar.</p>
-      </form>
-    </div>
-
-    <div>
-      <div class="info-card reveal">
-        <h3>Horário</h3>
-        <table class="hours-table">
-          <tr><td>Terça – Sexta</td><td>10:00 – 19:00</td></tr>
-          <tr><td>Sábado</td><td>10:00 – 17:00</td></tr>
-          <tr><td>Domingo e Segunda</td><td>Encomendas online</td></tr>
-        </table>
-      </div>
-      <div class="info-card reveal" style="margin-top:20px">
-        <h3>Encomendas &amp; entregas</h3>
-        <ul>
-          <li>Encomenda mínima com <b>48h</b> de antecedência</li>
-          <li>Bolos decorados: <b>5 dias</b> de antecedência</li>
-          <li>Sinal de <b>50%</b> para reservar a data</li>
-          <li>Levantamento na loja <b>grátis</b></li>
-          <li>Entrega a partir de <b>5€</b> conforme a zona</li>
-          <li>MB Way, Multibanco, transferência ou numerário</li>
-        </ul>
-      </div>
-      <div class="map-mock reveal">
-        <div class="pin">📍</div>
-        <p><b>Rua Exemplo, 120</b><br>1000-000 Lisboa<br>Junto ao mercado municipal</p>
-      </div>
-    </div>
-  </div>
-
+<section style="padding-top:18px">
   <div class="wrap">
-    <div class="contact-ways">
-      <div class="way reveal"><div class="ic">💬</div><b>WhatsApp</b><a href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20encomendar%20na%20Doce%20Aurora%20(modelo)." target="_blank" rel="noopener">+351 933 113 525</a></div>
-      <div class="way reveal"><div class="ic">✉️</div><b>Email</b><a href="mailto:ola@doceaurora.pt">ola@doceaurora.pt</a></div>
-      <div class="way reveal"><div class="ic">📷</div><b>Instagram</b><a href="#" onclick="return false">@doceaurora</a></div>
-    </div>
+    <form id="orderForm" class="order-grid">
+
+      <div>
+        <!-- 1. BOLO -->
+        <div class="card">
+          <h2><span class="stepn">1</span>Escolha o seu bolo</h2>
+          <p class="hint">Primeiro o bolo e o tamanho. A seguir escolhe o sabor do recheio.</p>
+
+          <label for="fBolo">Bolo</label>
+          <select id="fBolo">
+            <option value="">— Não quero bolo —</option>
+            <option value="chocolate">Chocolate Belga</option>
+            <option value="brigadeiro">Brigadeiro Gourmet</option>
+            <option value="redvelvet">Red Velvet</option>
+            <option value="baunilha">Baunilha</option>
+            <option value="cenoura">Cenoura com Chocolate</option>
+            <option value="arcoiris">Arco-Íris (infantil)</option>
+          </select>
+
+          <div id="boloOpts" class="hide">
+            <label for="fTamanho">Tamanho</label>
+            <select id="fTamanho">
+              <option value="p">P — 10 a 15 fatias</option>
+              <option value="m">M — 20 a 25 fatias</option>
+              <option value="g">G — 30 a 40 fatias</option>
+              <option value="gg">GG — 50 a 60 fatias</option>
+            </select>
+
+            <!-- SABOR DO RECHEIO -->
+            <div class="sub-block">
+              <div class="tt">Passo seguinte · sabor do recheio</div>
+              <p style="font-size:.85rem;color:var(--cocoa-dim);margin-bottom:2px">O recheio já vem incluído no preço do bolo. Alguns sabores especiais têm um pequeno acréscimo.</p>
+              <label for="fRecheio">Sabor do recheio</label>
+              <select id="fRecheio">
+                <option value="chocolate">Chocolate — incluído</option>
+                <option value="brigadeiro">Brigadeiro — incluído</option>
+                <option value="doceleite">Doce de leite — incluído</option>
+                <option value="maracuja">Maracujá — +2€</option>
+                <option value="morango">Morango — +3€</option>
+                <option value="ninho">Ninho — +3€</option>
+                <option value="ninhonutella">Ninho com Nutella — +4€</option>
+                <option value="prestigio">Prestígio (coco) — +2€</option>
+              </select>
+            </div>
+
+            <!-- EXTRAS DO BOLO -->
+            <div class="sub-block" style="margin-top:12px">
+              <div class="tt">Quer enfeitar mais?</div>
+              <p style="font-size:.85rem;color:var(--cocoa-dim)">Opcional — junte o que quiser ao seu bolo.</p>
+              <div class="opt"><input type="checkbox" id="xDeco"><span>Decoração personalizada (tema da festa)</span><b>+10€</b></div>
+              <div class="opt"><input type="checkbox" id="xTopo"><span>Topo de bolo com nome</span><b>+6€</b></div>
+              <div class="opt"><input type="checkbox" id="xFrutas"><span>Cobertura de frutas frescas</span><b>+8€</b></div>
+              <div class="opt"><input type="checkbox" id="xFerrero"><span>Ferrero / bombons à volta</span><b>+7€</b></div>
+              <div class="opt"><input type="checkbox" id="xFlores"><span>Flores naturais comestíveis</span><b>+9€</b></div>
+              <div class="opt"><input type="checkbox" id="xAndar"><span>Andar extra (bolo de 2 andares)</span><b>+25€</b></div>
+              <div class="opt"><input type="checkbox" id="xGluten"><span>Massa sem glúten</span><b>+3€</b></div>
+              <div class="opt"><input type="checkbox" id="xLactose"><span>Recheio sem lactose</span><b>+3€</b></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. JUNTAR MAIS -->
+        <div class="card">
+          <h2><span class="stepn">2</span>Quer juntar mais alguma coisa?</h2>
+          <p class="hint">Opcional — doces, salgados ou um kit completo.</p>
+          <div class="row2">
+            <div class="qty">
+              <div><label for="fDoce">Doces finos</label>
+                <select id="fDoce">
+                  <option value="0">— Nenhum —</option>
+                  <option value="0.55">Brigadeiro / Beijinho — 0,55€</option>
+                  <option value="0.75">Gourmet (pistache, ninho) — 0,75€</option>
+                  <option value="1.20">Bem-casado — 1,20€</option>
+                  <option value="1.50">Macaron — 1,50€</option>
+                </select></div>
+              <div><label for="fDoceQt">Unid.</label><input type="number" id="fDoceQt" min="0" step="25" value="0"></div>
+            </div>
+            <div class="qty">
+              <div><label for="fSalg">Salgados</label>
+                <select id="fSalg">
+                  <option value="0">— Nenhum —</option>
+                  <option value="0.45">Sortido de fritos — 0,45€</option>
+                  <option value="0.55">Sortido de assados — 0,55€</option>
+                </select></div>
+              <div><label for="fSalgQt">Unid.</label><input type="number" id="fSalgQt" min="0" step="25" value="0"></div>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="qty">
+              <div><label for="fPoteQt">Bolo no pote — 4,50€</label></div>
+              <div><label for="fPoteQt2">Unid.</label><input type="number" id="fPoteQt" min="0" step="1" value="0"></div>
+            </div>
+            <div>
+              <label for="fKit">Kit de festa</label>
+              <select id="fKit">
+                <option value="0">— Nenhum —</option>
+                <option value="120">Festa Simples — 120€</option>
+                <option value="210">Festa Completa — 210€</option>
+                <option value="320">Casamento / Batizado — 320€</option>
+              </select>
+            </div>
+          </div>
+          <div class="opt" style="margin-top:14px"><input type="checkbox" id="xEntrega"><span>Entrega ao domicílio (em vez de levantar na loja)</span><b>+5€</b></div>
+        </div>
+
+        <!-- 3. DADOS -->
+        <div class="card">
+          <h2><span class="stepn">3</span>Os seus dados</h2>
+          <p class="hint">Para confirmarmos a encomenda e a entrega.</p>
+          <div class="row2">
+            <div><label for="fNome">Nome e apelido</label><input id="fNome" type="text" placeholder="O seu nome"></div>
+            <div><label for="fTel">Telemóvel</label><input id="fTel" type="tel" placeholder="+351 9xx xxx xxx"></div>
+          </div>
+          <div class="row2">
+            <div><label for="fData">Data da festa</label><input id="fData" type="date"></div>
+            <div><label for="fHora">Hora de entrega / levantamento</label><input id="fHora" type="time"></div>
+          </div>
+          <label for="fObs">Observações</label>
+          <textarea id="fObs" placeholder="Tema da festa, alergias, mensagem no bolo…"></textarea>
+        </div>
+
+        <!-- 4. PAGAMENTO -->
+        <div class="card">
+          <h2><span class="stepn">4</span>Sinal de 50% e comprovativo</h2>
+          <p class="hint">É este passo que reserva a sua data na agenda.</p>
+
+          <div class="warn">
+            <b>⚠️ Sem comprovativo a encomenda não é feita</b>
+            <p>Para reservarmos a data é necessário o pagamento de <b>50% do valor total</b>. Anexe aqui a fotografia ou o PDF do comprovativo — <b>sem esse anexo o pedido não é aceite nem entra em produção</b>.</p>
+          </div>
+
+          <div class="pay-box">
+            <div><span>Valor a pagar agora (50%)</span><b id="payNow">0,00€</b></div>
+            <div><span>MB Way</span><b>933 113 525</b></div>
+            <div><span>IBAN</span><b>PT50 0000 0000 0000 0000 0000 0</b></div>
+            <div><span>Titular</span><b>Doce Aurora, Lda.</b></div>
+          </div>
+
+          <label>Comprovativo de pagamento <span style="color:var(--rose)">* obrigatório</span></label>
+          <div class="drop" id="drop">
+            <input type="file" id="fFile" accept="image/*,application/pdf">
+            <div class="ic">📎</div>
+            <b>Toque para anexar o comprovativo</b>
+            <small>Fotografia ou PDF · até 10 MB</small>
+          </div>
+          <div class="preview" id="preview">
+            <img id="pvImg" alt="" hidden>
+            <span id="pvIc" style="font-size:1.9rem" hidden>📄</span>
+            <div><div class="nm" id="pvName"></div><small style="color:#2e9e5b;font-weight:700">✓ Comprovativo anexado</small></div>
+            <button type="button" class="rm" id="pvRm">remover</button>
+          </div>
+
+          <div class="err" id="formErr"></div>
+          <button type="submit" class="btn btn-rose btn-lg" style="width:100%;margin-top:18px">Confirmar encomenda</button>
+        </div>
+
+        <!-- CONFIRMAÇÃO -->
+        <div class="card done" id="done">
+          <div class="big">🎉</div>
+          <h2>Obrigada pela sua encomenda!</h2>
+          <p id="doneMsg"></p>
+          <div class="box">
+            <div><span class="n">1.</span><span>Vamos <b>analisar o comprovativo</b> e confirmar a entrada dos 50%.</span></div>
+            <div><span class="n">2.</span><span>Assim que estiver confirmado, <b>começamos já a preparar a sua encomenda</b>.</span></div>
+            <div><span class="n">3.</span><span>Recebe uma <b>notificação no WhatsApp</b> a dizer que o pedido está em preparação, com o <b>prazo e a data de entrega</b> certinhos.</span></div>
+            <div><span class="n">4.</span><span>Os restantes <b>50%</b> são pagos na entrega ou no levantamento.</span></div>
+          </div>
+          <p style="font-style:italic;color:var(--rose)">Obrigada por confiar na Doce Aurora — o seu bolo vai ser feito com todo o carinho. 💗</p>
+          <a class="btn btn-rose btn-lg" id="waBtn" href="#" target="_blank" rel="noopener" style="width:100%">Enviar também pelo WhatsApp</a>
+          <button type="button" class="btn btn-line" id="newOrder" style="width:100%;margin-top:10px">Fazer outra encomenda</button>
+        </div>
+      </div>
+
+      <!-- RESUMO -->
+      <div>
+        <div class="card summary">
+          <h2>Resumo do pedido</h2>
+          <p class="hint">Atualiza sozinho à medida que escolhe.</p>
+          <ul class="sum-list" id="sumList"></ul>
+          <p class="sum-empty" id="sumEmpty">Ainda não escolheu nada.</p>
+          <div class="total-row"><span>TOTAL</span><b id="total">0,00€</b></div>
+          <div class="deposit">
+            <div class="lbl">Sinal a pagar agora (50%)</div>
+            <div class="val" id="deposit">0,00€</div>
+            <p>Os restantes 50% ficam para a entrega ou levantamento.</p>
+          </div>
+        </div>
+      </div>
+    </form>
   </div>
 </section>
 
 <section style="background:var(--cream-2)">
   <div class="wrap">
-    <p class="eyebrow reveal">Dúvidas</p>
-    <h2 class="sec-title reveal">Perguntas frequentes</h2>
-    <div class="faq" style="margin-top:26px;max-width:760px">
-      <details><summary>Com quanto tempo devo encomendar?</summary><p>Bolos simples com 48 horas. Bolos decorados, kits de festa e encomendas grandes, com 5 dias. Em época de festas, quanto antes melhor.</p></details>
-      <details><summary>Fazem sem glúten ou sem lactose?</summary><p>Sim. Temos massas sem glúten e recheios sem lactose, com um acréscimo de 3€. Avise-nos de alergias no momento da encomenda.</p></details>
-      <details><summary>Entregam ao domicílio?</summary><p>Sim, na zona e arredores, a partir de 5€ conforme a distância. O levantamento na loja é sempre grátis.</p></details>
-      <details><summary>Posso personalizar o bolo com um tema?</summary><p>Claro. Envie-nos a foto de inspiração pelo WhatsApp e fazemos um orçamento da decoração personalizada.</p></details>
-      <details><summary>Como funciona o pagamento?</summary><p>50% de sinal para reservar a data e os restantes 50% no levantamento ou na entrega. Aceitamos MB Way, Multibanco, transferência e numerário.</p></details>
+    <div class="order-grid">
+      <div>
+        <p class="eyebrow">Dúvidas</p>
+        <h2 class="sec-title">Perguntas frequentes</h2>
+        <div class="faq" style="margin-top:22px">
+          <details><summary>Porque é preciso pagar 50% antes?</summary><p>Cada bolo é feito de raiz só para si, com ingredientes comprados de propósito. O sinal reserva a sua data na nossa agenda e garante que compramos tudo a tempo.</p></details>
+          <details><summary>E se eu não anexar o comprovativo?</summary><p>A encomenda fica pendente e <b>não entra em produção</b>. Só começamos a preparar depois de confirmarmos a entrada do sinal de 50%.</p></details>
+          <details><summary>Quando recebo a confirmação?</summary><p>No mesmo dia útil. Assim que verificarmos o pagamento, recebe uma mensagem no WhatsApp a dizer que o pedido está em preparação, com o prazo e a data de entrega.</p></details>
+          <details><summary>O recheio está incluído no preço?</summary><p>Sim. Chocolate, brigadeiro e doce de leite estão incluídos. Sabores especiais como maracujá, morango ou ninho com Nutella têm um pequeno acréscimo, que aparece logo no total.</p></details>
+          <details><summary>Posso cancelar?</summary><p>Até 5 dias antes da data devolvemos o sinal na totalidade. Depois disso os ingredientes já foram comprados e o valor não é devolvido.</p></details>
+        </div>
+      </div>
+      <div>
+        <div class="info-card">
+          <h3>Horário</h3>
+          <table class="hours-table">
+            <tr><td>Terça – Sexta</td><td>10:00 – 19:00</td></tr>
+            <tr><td>Sábado</td><td>10:00 – 17:00</td></tr>
+            <tr><td>Domingo e Segunda</td><td>Encomendas online</td></tr>
+          </table>
+        </div>
+        <div class="info-card" style="margin-top:18px">
+          <h3>Prazos</h3>
+          <ul>
+            <li>Bolos simples: <b>48h</b> de antecedência</li>
+            <li>Bolos decorados: <b>5 dias</b></li>
+            <li>Kits de festa: <b>5 dias</b></li>
+            <li>Levantamento na loja <b>grátis</b></li>
+            <li>Entrega na zona <b>+5€</b></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="contact-ways">
+      <div class="way"><div class="ic">💬</div><b>WhatsApp</b><a href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20encomendar%20na%20Doce%20Aurora%20(modelo)." target="_blank" rel="noopener">+351 933 113 525</a></div>
+      <div class="way"><div class="ic">✉️</div><b>Email</b><a href="mailto:ola@doceaurora.pt">ola@doceaurora.pt</a></div>
+      <div class="way"><div class="ic">📍</div><b>Loja</b><a href="#" onclick="return false">Rua Exemplo, 120 · Lisboa</a></div>
     </div>
   </div>
 </section>
@@ -176,25 +374,130 @@ textarea{resize:vertical;min-height:90px}
   </div>
 </footer>
 
-<div class="sticky-cta">
-  <a class="btn btn-rose" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20encomendar%20na%20Doce%20Aurora%20(modelo)." target="_blank" rel="noopener">Falar no WhatsApp</a>
-</div>
-
 <script src="modelo-confeitaria.js"></script>
 <script>
-document.getElementById('encForm').addEventListener('submit',function(e){
-  e.preventDefault();
-  var v=function(id){return (document.getElementById(id).value||'').trim();};
-  var msg='Olá! Quero fazer uma encomenda na Doce Aurora (modelo).\n\n'+
-    '• Nome: '+v('fNome')+'\n'+
-    '• Telemóvel: '+v('fTel')+'\n'+
-    '• Produto: '+v('fProduto')+'\n'+
-    '• Tamanho: '+v('fTamanho')+'\n'+
-    (v('fData')?'• Data da festa: '+v('fData').split('-').reverse().join('/')+'\n':'')+
-    (v('fSabor')?'• Sabor: '+v('fSabor')+'\n':'')+
-    (v('fObs')?'• Observações: '+v('fObs')+'\n':'');
-  window.open('https://wa.me/351933113525?text='+encodeURIComponent(msg),'_blank');
-});
+(function(){
+  var BOLOS={
+    chocolate:{n:'Chocolate Belga',p:28,m:42,g:58,gg:78},
+    brigadeiro:{n:'Brigadeiro Gourmet',p:30,m:44,g:60,gg:80},
+    redvelvet:{n:'Red Velvet',p:32,m:46,g:64,gg:85},
+    baunilha:{n:'Baunilha',p:27,m:40,g:56,gg:76},
+    cenoura:{n:'Cenoura com Chocolate',p:26,m:39,g:54,gg:74},
+    arcoiris:{n:'Arco-Íris (infantil)',p:30,m:44,g:60,gg:82}
+  };
+  var RECHEIOS={
+    chocolate:['Chocolate',0], brigadeiro:['Brigadeiro',0], doceleite:['Doce de leite',0],
+    maracuja:['Maracujá',2], morango:['Morango',3], ninho:['Ninho',3],
+    ninhonutella:['Ninho com Nutella',4], prestigio:['Prestígio (coco)',2]
+  };
+  var TAM={p:'P (10-15 fatias)',m:'M (20-25 fatias)',g:'G (30-40 fatias)',gg:'GG (50-60 fatias)'};
+  var EXTRAS=[
+    ['xDeco','Decoração personalizada',10],['xTopo','Topo de bolo com nome',6],
+    ['xFrutas','Cobertura de frutas frescas',8],['xFerrero','Ferrero / bombons',7],
+    ['xFlores','Flores comestíveis',9],['xAndar','Andar extra (2 andares)',25],
+    ['xGluten','Massa sem glúten',3],['xLactose','Recheio sem lactose',3]
+  ];
+
+  var $=function(i){return document.getElementById(i);};
+  var eur=function(v){return v.toFixed(2).replace('.',',')+'€';};
+  var itens=[], total=0;
+
+  function calc(){
+    itens=[]; total=0;
+    var bolo=$('fBolo').value;
+    $('boloOpts').classList.toggle('hide', !bolo);
+
+    if(bolo){
+      var tam=$('fTamanho').value;
+      var base=BOLOS[bolo][tam];
+      itens.push({t:BOLOS[bolo].n+' — '+TAM[tam], v:base}); total+=base;
+      var rc=RECHEIOS[$('fRecheio').value];
+      itens.push({t:'Recheio: '+rc[0]+(rc[1]?'':' (incluído)'), v:rc[1]}); total+=rc[1];
+      EXTRAS.forEach(function(x){
+        if($(x[0]).checked){ itens.push({t:x[1], v:x[2]}); total+=x[2]; }
+      });
+    }
+    var dp=parseFloat($('fDoce').value)||0, dq=parseInt($('fDoceQt').value)||0;
+    if(dp>0&&dq>0){ var dv=dp*dq; itens.push({t:'Doces finos × '+dq+' un.',v:dv}); total+=dv; }
+    var sp=parseFloat($('fSalg').value)||0, sq=parseInt($('fSalgQt').value)||0;
+    if(sp>0&&sq>0){ var sv=sp*sq; itens.push({t:'Salgados × '+sq+' un.',v:sv}); total+=sv; }
+    var pq=parseInt($('fPoteQt').value)||0;
+    if(pq>0){ var pv=4.5*pq; itens.push({t:'Bolo no pote × '+pq,v:pv}); total+=pv; }
+    var kit=parseFloat($('fKit').value)||0;
+    if(kit>0){ itens.push({t:'Kit '+$('fKit').options[$('fKit').selectedIndex].text.split(' — ')[0],v:kit}); total+=kit; }
+    if($('xEntrega').checked){ itens.push({t:'Entrega ao domicílio',v:5}); total+=5; }
+
+    var ul=$('sumList'); ul.innerHTML='';
+    itens.forEach(function(i){
+      var li=document.createElement('li');
+      li.innerHTML='<span></span><b></b>';
+      li.children[0].textContent=i.t;
+      li.children[1].textContent=i.v?eur(i.v):'incluído';
+      ul.appendChild(li);
+    });
+    $('sumEmpty').style.display=itens.length?'none':'block';
+    $('total').textContent=eur(total);
+    $('deposit').textContent=eur(total/2);
+    $('payNow').textContent=eur(total/2);
+  }
+
+  var ids=['fBolo','fTamanho','fRecheio','fDoce','fDoceQt','fSalg','fSalgQt','fPoteQt','fKit','xEntrega'];
+  EXTRAS.forEach(function(x){ ids.push(x[0]); });
+  ids.forEach(function(i){ var e=$(i); if(e){ e.addEventListener('change',calc); e.addEventListener('input',calc); } });
+  calc();
+
+  var ficheiro=null;
+  $('drop').addEventListener('click',function(){ $('fFile').click(); });
+  $('fFile').addEventListener('change',function(e){
+    var f=e.target.files[0]; if(!f) return;
+    if(f.size>10*1024*1024){ erro('O ficheiro é demasiado grande (máximo 10 MB).'); $('fFile').value=''; return; }
+    ficheiro=f; $('pvName').textContent=f.name;
+    if(f.type.indexOf('image')===0){
+      var r=new FileReader();
+      r.onload=function(ev){ $('pvImg').src=ev.target.result; $('pvImg').hidden=false; $('pvIc').hidden=true; };
+      r.readAsDataURL(f);
+    } else { $('pvImg').hidden=true; $('pvIc').hidden=false; }
+    $('preview').classList.add('show'); $('drop').classList.add('filled');
+    $('formErr').classList.remove('show');
+  });
+  $('pvRm').addEventListener('click',function(){
+    ficheiro=null; $('fFile').value='';
+    $('preview').classList.remove('show'); $('drop').classList.remove('filled');
+  });
+
+  function erro(m){ var e=$('formErr'); e.textContent='⚠️ '+m; e.classList.add('show'); e.scrollIntoView({behavior:'smooth',block:'center'}); }
+
+  $('orderForm').addEventListener('submit',function(ev){
+    ev.preventDefault();
+    if(!itens.length) return erro('Escolha pelo menos um produto para encomendar.');
+    if(!$('fNome').value.trim()) return erro('Indique o seu nome.');
+    if(!$('fTel').value.trim()) return erro('Indique o seu telemóvel.');
+    if(!$('fData').value) return erro('Indique a data da festa.');
+    if(!ficheiro) return erro('É obrigatório anexar o comprovativo do pagamento de 50%. Sem ele a encomenda não é feita.');
+
+    var dep=total/2;
+    var linhas=itens.map(function(i){return '• '+i.t+(i.v?' — '+eur(i.v):'');}).join('\n');
+    var msg='Olá! Nova encomenda na Doce Aurora (modelo).\n\n'+linhas+
+      '\n\nTOTAL: '+eur(total)+'\nSINAL PAGO (50%): '+eur(dep)+
+      '\n\n• Nome: '+$('fNome').value.trim()+
+      '\n• Telemóvel: '+$('fTel').value.trim()+
+      '\n• Data da festa: '+$('fData').value.split('-').reverse().join('/')+
+      ($('fHora').value?'\n• Hora: '+$('fHora').value:'')+
+      ($('fObs').value.trim()?'\n• Observações: '+$('fObs').value.trim():'')+
+      '\n\nComprovativo: '+ficheiro.name+' (vou anexar a seguir)';
+
+    $('waBtn').href='https://wa.me/351933113525?text='+encodeURIComponent(msg);
+    $('doneMsg').innerHTML='Recebemos o seu pedido de <b>'+eur(total)+'</b> e o comprovativo do sinal de <b>'+eur(dep)+'</b>.';
+    var cards=document.querySelectorAll('#orderForm .card');
+    for(var i=0;i<cards.length;i++){
+      if(cards[i].id!=='done' && cards[i].className.indexOf('summary')<0) cards[i].style.display='none';
+    }
+    $('done').classList.add('show');
+    $('done').scrollIntoView({behavior:'smooth',block:'start'});
+  });
+
+  $('newOrder').addEventListener('click',function(){ location.reload(); });
+})();
 </script>
 <script src="modelo-fix.js"></script>
 </body>
