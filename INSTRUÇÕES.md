@@ -165,6 +165,18 @@ convertidos na hora. Para acrescentar um país, copia um bloco em `MOEDAS`.
 Podes enviar um link já com o país escolhido: `orcamento.html?moeda=br`.
 Serve, por exemplo, para quem divulga no Brasil.
 
+## Assistente do site
+
+O botão dourado no canto inferior direito de todas as páginas é o assistente.
+Responde sozinho sobre preços, prazos, pagamentos, remodelação, vendas,
+marketing, domínios e manutenção — e quando não sabe, encaminha para o teu
+WhatsApp em vez de inventar.
+
+As respostas estão todas em `assistente.js`, na lista `RESPOSTAS`. Para
+acrescentar uma pergunta nova, copia um bloco e muda as `chaves` (as palavras
+que o visitante pode escrever) e a `resposta`. Não precisa de servidor nem de
+subscrição nenhuma.
+
 ## Conversa com os clientes
 
 Quem tem conta passa a ter, dentro de `conta.html`, uma conversa direta contigo.
