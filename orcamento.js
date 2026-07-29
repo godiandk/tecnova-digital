@@ -43,7 +43,8 @@ const MOEDAS = {
       titulo: 'Dados para o sinal',
       linhas: [
         ['MB WAY', '+351 933 113 525'],
-        ['Transferência (IBAN)', ''],          // ← preenche o teu IBAN
+        ['Transferência (IBAN)', 'PT50 0007 0000 0074 9704 5622 3'],
+        ['Banco', 'Novo Banco'],
         ['Titular', 'Wesley Vianna']
       ],
       nota: 'Também pode pagar com cartão, Apple Pay ou Google Pay — peça-nos o link de pagamento.'
@@ -51,13 +52,13 @@ const MOEDAS = {
   },
   br: {
     pais: 'Brasil', bandeira: '🇧🇷', codigo: 'BRL', simbolo: 'R$', curto: 'BRL',
-    sufixo: false, taxa: 6.30, ajuste: 1, casas: 0,
+    sufixo: false, taxa: 6.30, ajuste: 0.70, casas: 0,   // 0.70 = 30% abaixo da conversão direta
     pagamento: {
       titulo: 'Dados para o sinal (Pix)',
       linhas: [
-        ['Chave Pix', ''],                     // ← preenche a tua chave Pix
+        ['Chave Pix (email)', 'viannakoa3@gmail.com'],
         ['Nome do titular', 'Wesley Vianna'],
-        ['Banco', '']
+        ['Banco', 'Bradesco']
       ],
       nota: 'O pagamento é por Pix. Depois de pagar, envie o comprovativo pelo WhatsApp com a referência do orçamento.'
     }
@@ -109,6 +110,32 @@ const PAGAMENTO = {
   mbway: '+351 933 113 525',
   titular: 'Wesley Vianna',
   iban: ''                  // ex.: 'PT50 0000 0000 0000 0000 0000 0'
+};
+
+/* --- Detetar o país de quem entra --------------------------------
+   Serve só para pré-escolher a bandeira certa: quem entra do Brasil vê
+   logo os valores em reais, quem entra de Portugal vê em euros.
+
+   O visitante pode sempre trocar de bandeira à mão — e isso é normal:
+   num site nada do que o browser calcula pode ficar escondido de quem
+   o está a ver. O que isto resolve é a comodidade, não o sigilo.
+
+   Se falhar (sem rede, serviço em baixo, bloqueador de anúncios), fica
+   simplesmente Portugal. Nunca trava o carregamento da página.          */
+const GEO = {
+  ativo: true,
+  servicos: [
+    'https://get.geojs.io/v1/ip/country.json',   // devolve {"country":"BR"}
+    'https://ipwho.is/'                          // reserva
+  ],
+  // código do país (ISO) → chave em MOEDAS
+  mapa: {
+    PT: 'pt', BR: 'br', US: 'us', GB: 'uk', CH: 'ch', CA: 'ca',
+    // países do euro caem em Portugal, que também é euro
+    ES: 'pt', FR: 'pt', DE: 'pt', IT: 'pt', LU: 'pt', BE: 'pt',
+    NL: 'pt', IE: 'pt', AT: 'pt'
+  },
+  timeout: 2500
 };
 
 const WHATSAPP = '351933113525';
@@ -886,17 +913,52 @@ const PRESETS = {
     } catch (e) { return Promise.resolve(false); }
   }
 
+  /* ---------- descobrir o país de quem entra ---------- */
+  function detetarPais() {
+    if (!GEO.ativo || !window.fetch) return Promise.resolve(null);
+
+    function tentar(url) {
+      var ctrl = window.AbortController ? new AbortController() : null;
+      var t = setTimeout(function () { if (ctrl) ctrl.abort(); }, GEO.timeout);
+      return fetch(url, ctrl ? { signal: ctrl.signal } : undefined)
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          clearTimeout(t);
+          if (!j) return null;
+          // get.geojs.io devolve "country"; ipwho.is devolve "country_code"
+          var cod = (j.country_code || j.country || '').toString().toUpperCase();
+          return GEO.mapa[cod] || null;
+        })
+        .catch(function () { clearTimeout(t); return null; });
+    }
+
+    return tentar(GEO.servicos[0]).then(function (r) {
+      return r || (GEO.servicos[1] ? tentar(GEO.servicos[1]) : null);
+    });
+  }
+
   /* ---------- arranque ---------- */
   function iniciar() {
     // permite chegar já em modo remodelação: orcamento.html?projeto=remod
     if (new URLSearchParams(location.search).get('projeto') === 'remod') projeto = 'remod';
+    var escolheuAntes = false;
     try {
       var mUrl = new URLSearchParams(location.search).get('moeda');
       var mGuardada = localStorage.getItem('tecnova-moeda');
-      if (mUrl && MOEDAS[mUrl]) moeda = mUrl;
-      else if (mGuardada && MOEDAS[mGuardada]) moeda = mGuardada;
+      if (mUrl && MOEDAS[mUrl]) { moeda = mUrl; escolheuAntes = true; }
+      else if (mGuardada && MOEDAS[mGuardada]) { moeda = mGuardada; escolheuAntes = true; }
     } catch (e) {}
     montarMoeda(); notaCambio();
+
+    // Sem escolha anterior, tentamos adivinhar pelo país. A página já está
+    // desenhada em euros; se vier resposta, troca sozinha em silêncio.
+    if (!escolheuAntes) {
+      detetarPais().then(function (pais) {
+        if (!pais || pais === moeda || !MOEDAS[pais]) return;
+        moeda = pais;
+        montarMoeda(); notaCambio(); recontar(); calcular();
+      });
+    }
     montarProjeto();
     montarNegocios();
     montarGrupos();
