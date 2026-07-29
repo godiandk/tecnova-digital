@@ -7,10 +7,12 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="chat.css?v=1">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="chat.js"></script>
 <style>
 :root{
   --ink:#16100b;--ink-2:#211812;--ink-3:#2b2016;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
@@ -143,6 +145,7 @@ tr:last-child td{border-bottom:none}
 
   <div class="tabs">
     <button class="tab on" data-pane="paneOrc">Orçamentos <span class="n" id="tabNovos">0</span></button>
+    <button class="tab" data-pane="paneMsg">Mensagens <span class="n" id="tabMsgs">0</span></button>
     <button class="tab" data-pane="paneCli">Clientes &amp; Cupões</button>
   </div>
 
@@ -172,6 +175,17 @@ tr:last-child td{border-bottom:none}
       <input class="search" id="buscaOrc" placeholder="Pesquisar por nome, negócio, telefone ou referência…" oninput="renderOrcamentos()">
 
       <div id="listaOrc"><p class="empty">A carregar…</p></div>
+    </div>
+  </div>
+
+  <!-- =============== MENSAGENS =============== -->
+  <div class="pane" id="paneMsg">
+    <div class="card">
+      <h2 style="font-size:1.1rem;margin:0 0 4px">Conversas com clientes</h2>
+      <p style="font-size:.82rem;color:var(--cream-dim);margin:0 0 18px">
+        Cada cliente com conta tem aqui uma conversa direta consigo. As mensagens chegam em tempo real
+        e ficam guardadas — nada se perde entre WhatsApp, email e chamadas.</p>
+      <div id="chatAdmin"></div>
     </div>
   </div>
 
@@ -266,6 +280,11 @@ auth.onAuthStateChanged(async (user)=>{
   carregarClientes();
   carregarVouchers();
   carregarOrcamentos();
+  try{
+    TecnovaChat.admin('#chatAdmin', function(porResponder){
+      document.getElementById('tabMsgs').textContent = porResponder;
+    });
+  }catch(e){}
 });
 
 /* ============ separadores ============ */
@@ -382,6 +401,10 @@ function renderOrcamentos(){
               <li><span>Total</span><b>${eur(o.total)}</b></li>
               <li><span>Sinal de 50%</span><b>${eur(o.sinal)}</b></li>
               <li><span>Manutenção</span><b>${esc(o.manutencaoNome||'—')}${o.manutencaoPreco?' · '+eur(o.manutencaoPreco)+'/mês':''}</b></li>
+              ${o.moeda&&o.moeda!=='EUR'?`<li class="g">Moeda</li>
+              <li><span>País</span><b>${esc(o.pais||'—')}</b></li>
+              <li><span>Valor mostrado em</span><b>${esc(o.moeda)} (1€ = ${esc(o.taxaCambio)})</b></li>
+              <li><span>Total em euros</span><b>${eur(o.totalEur)}</b></li>`:''}
               <li class="g">Origem</li>
               <li><span>Veio de</span><b>${esc(o.origem||'direto')}</b></li>
               ${o.campanha?`<li><span>Campanha</span><b>${esc(o.campanha)}</b></li>`:''}
@@ -439,6 +462,7 @@ function briefingTexto(o){
   t += 'Sinal de 50%: ' + (o.sinal||0) + '€\n';
   t += 'Manutenção: ' + (o.manutencaoNome||'—') + (o.manutencaoPreco?' ('+o.manutencaoPreco+'€/mês)':'') + '\n';
   if(o.notas) t += '\n--- OBSERVAÇÕES DO CLIENTE ---\n' + o.notas + '\n';
+  if(o.moeda && o.moeda!=='EUR') t += '\nPais/moeda: ' + (o.pais||'—') + ' · ' + o.moeda + ' (1€ = ' + o.taxaCambio + ')';
   t += '\nOrigem: ' + (o.origem||'direto') + (o.campanha?' · campanha '+o.campanha:'') + '\n';
   t += 'Estado: ' + (ESTADOS[o.estado||'novo']) + '\n';
   return t;

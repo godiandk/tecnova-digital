@@ -22,6 +22,15 @@
 .orc-hero .lead{margin:0 auto}
 .orc-hero .eyebrow{justify-content:center}
 
+.moedas{display:inline-flex;gap:8px;margin-top:24px;background:var(--ink-2);border:1px solid rgba(217,178,110,.22);border-radius:999px;padding:5px}
+.mo{background:none;border:none;border-radius:999px;padding:8px 14px;font:inherit;font-size:.78rem;color:var(--cream-dim);cursor:pointer;display:flex;align-items:center;gap:6px;transition:.18s;white-space:nowrap}
+.mo i{font-style:normal;font-size:1.05rem;line-height:1}
+.mo b{font-weight:800;letter-spacing:.04em}
+.mo:hover{color:var(--cream)}
+.mo.on{background:var(--gold);color:var(--ink)}
+@media(max-width:700px){.moedas{flex-wrap:wrap;justify-content:center;border-radius:18px}.mo{padding:7px 11px;font-size:.72rem}}
+.cambio{max-width:640px;margin:12px auto 0;color:var(--cream-dim);font-size:.8rem;line-height:1.55}
+.cambio b{color:var(--gold-soft)}
 .promo-bar{margin:26px auto 0;max-width:820px;background:linear-gradient(135deg,rgba(217,178,110,.16),rgba(217,178,110,.06));border:1px solid rgba(217,178,110,.4);border-radius:16px;padding:14px 20px;font-size:.92rem;color:var(--cream)}
 .promo-bar .cod{display:inline-block;background:var(--gold);color:var(--ink);font-weight:800;letter-spacing:.12em;padding:2px 10px;border-radius:6px;font-size:.82rem}
 .promo-bar i{color:var(--gold-soft);font-style:normal;font-weight:700}
@@ -218,6 +227,9 @@
     <h1>Monte o site do seu negócio<br>e veja o preço na hora.</h1>
     <p class="lead">Sem telefonemas, sem esperar dias por uma resposta. Escolha o que faz sentido para si —
       o valor aparece ao lado, atualizado a cada clique. No fim, leva o orçamento consigo.</p>
+    <p style="font-size:.74rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cream-dim);font-weight:700;margin-top:26px">Em que país está?</p>
+    <div class="moedas" id="moedas"></div>
+    <p class="cambio" id="cambio" style="display:none"></p>
     <div class="promo-bar" id="promoBar"></div>
   </div>
 </section>
@@ -335,8 +347,9 @@
       <li>Vê o site pronto no ar. Só depois de aprovar tudo é que paga o restante.</li>
     </ol>
 
-    <h3 style="font-size:1.15rem">Dados para o sinal</h3>
+    <h3 style="font-size:1.15rem" id="okPagTitulo">Dados para o sinal</h3>
     <ul class="ok-pag" id="okDadosPag"></ul>
+    <p style="color:var(--cream-dim);font-size:.84rem;margin:-10px 0 22px" id="okPagNota"></p>
 
     <div class="ok-btns">
       <a class="btn btn-wa" id="okWa" href="#" target="_blank" rel="noopener">Enviar orçamento pelo WhatsApp</a>

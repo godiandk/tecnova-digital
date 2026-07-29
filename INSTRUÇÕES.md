@@ -97,6 +97,17 @@ service cloud.firestore {
          request.auth.token.email in ['wly.vianna@gmail.com']);
       allow write: if request.auth != null && request.auth.token.email in ['wly.vianna@gmail.com'];
     }
+    match /conversas/{uid} {
+      // cada cliente vê e escreve só na sua conversa; tu vês todas
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if request.auth != null &&
+        request.auth.token.email in ['wly.vianna@gmail.com'];
+      match /mensagens/{msg} {
+        allow read, create: if request.auth != null && request.auth.uid == uid;
+        allow read, create: if request.auth != null &&
+          request.auth.token.email in ['wly.vianna@gmail.com'];
+      }
+    }
     match /orcamentos/{ref} {
       // qualquer visitante pode criar o seu orçamento no simulador,
       // mas só tu é que os podes ler e alterar
@@ -133,9 +144,32 @@ mudar em tempo real. No fim deixa o contacto e recebe uma referência
 | Os preços da manutenção mensal | `MANUTENCAO` |
 | Preços e textos de cada funcionalidade | `GRUPOS` |
 | O que vem pré-marcado por tipo de negócio | `PRESETS` |
+| Países, moedas e taxas de câmbio | `MOEDAS` e `CAMBIO_DATA` |
+| Descontos e tarefas de remodelação | `REMODELACAO` |
 
-**Antes de divulgar:** preenche o `iban` em `PAGAMENTO` (está vazio) — senão o
-cliente só vê a opção MB WAY.
+**Antes de divulgar, preenche em `MOEDAS`:**
+
+- `pt` → o teu **IBAN** (está vazio)
+- `br` → a tua **chave Pix** e o banco (estão vazios)
+
+**Países e moedas.** O simulador mostra bandeiras de Portugal, Brasil, EUA,
+Reino Unido, Suíça e Canadá. Os preços do catálogo estão sempre em euros e são
+convertidos na hora. Para acrescentar um país, copia um bloco em `MOEDAS`.
+
+> ⚠️ **As taxas de câmbio não se atualizam sozinhas.** Estão em `MOEDAS[...].taxa`
+> e foram verificadas na data que está em `CAMBIO_DATA`. Confirma-as antes de
+> divulgar e revê de mês a mês, senão os orçamentos noutras moedas saem errados.
+> O `ajuste` serve para praticar um preço diferente num país sem mexer no
+> catálogo (1 = conversão direta, 0.8 = 20% abaixo).
+
+Podes enviar um link já com o país escolhido: `orcamento.html?moeda=br`.
+Serve, por exemplo, para quem divulga no Brasil.
+
+## Conversa com os clientes
+
+Quem tem conta passa a ter, dentro de `conta.html`, uma conversa direta contigo.
+Tu respondes no separador **Mensagens** do `admin.html`. As mensagens são em
+tempo real e ficam guardadas — precisa das regras de `conversas` publicadas.
 
 Os pedidos aparecem no separador **Orçamentos** do `admin.html`, com tudo o que
 o cliente escolheu. O botão **Copiar briefing** copia o pedido inteiro em texto,

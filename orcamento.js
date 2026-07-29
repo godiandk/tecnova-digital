@@ -21,7 +21,90 @@ const PROMO = {
    botão passa a levar o cliente direto para o pagamento.               */
 const LINK_PAGAMENTO = "";
 
-/* --- Dados de pagamento (preenche antes de divulgar) ---------------- */
+/* --- Moedas ---------------------------------------------------------
+   Todos os preços do catálogo estão em EUROS. O real é convertido só na
+   hora de mostrar, pela taxa aqui em baixo.
+
+   >>> ATUALIZA A TAXA DE CÂMBIO DE VEZ EM QUANDO <<<
+   Se ficar desatualizada, os orçamentos em reais saem errados. Muda o
+   número em `taxa` e a data em `taxaData`.
+
+   O `ajuste` serve para praticar um preço diferente no Brasil sem mexer
+   no catálogo: 1 = conversão direta, 0.8 = 20% abaixo da conversão.     */
+const CAMBIO_DATA = '29/07/2026';   // dia em que as taxas abaixo foram verificadas
+
+// Para acrescentar um país: copia um bloco, muda a bandeira, o código, o
+// símbolo e a taxa. Aparece logo no seletor, sem mexer em mais nada.
+const MOEDAS = {
+  pt: {
+    pais: 'Portugal', bandeira: '🇵🇹', codigo: 'EUR', simbolo: '€', curto: 'EUR',
+    sufixo: true, taxa: 1, ajuste: 1, casas: 2,
+    pagamento: {
+      titulo: 'Dados para o sinal',
+      linhas: [
+        ['MB WAY', '+351 933 113 525'],
+        ['Transferência (IBAN)', ''],          // ← preenche o teu IBAN
+        ['Titular', 'Wesley Vianna']
+      ],
+      nota: 'Também pode pagar com cartão, Apple Pay ou Google Pay — peça-nos o link de pagamento.'
+    }
+  },
+  br: {
+    pais: 'Brasil', bandeira: '🇧🇷', codigo: 'BRL', simbolo: 'R$', curto: 'BRL',
+    sufixo: false, taxa: 6.30, ajuste: 1, casas: 0,
+    pagamento: {
+      titulo: 'Dados para o sinal (Pix)',
+      linhas: [
+        ['Chave Pix', ''],                     // ← preenche a tua chave Pix
+        ['Nome do titular', 'Wesley Vianna'],
+        ['Banco', '']
+      ],
+      nota: 'O pagamento é por Pix. Depois de pagar, envie o comprovativo pelo WhatsApp com a referência do orçamento.'
+    }
+  },
+  us: {
+    pais: 'Estados Unidos', bandeira: '🇺🇸', codigo: 'USD', simbolo: '$', curto: 'USD',
+    sufixo: false, taxa: 1.08, ajuste: 1, casas: 0,
+    pagamento: {
+      titulo: 'Payment details / Dados para o sinal',
+      linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por WhatsApp'],
+               ['Transferência internacional', ''], ['Titular', 'Wesley Vianna']],
+      nota: 'Paga com cartão, Apple Pay ou Google Pay pelo link que lhe enviamos. Sem taxas escondidas.'
+    }
+  },
+  uk: {
+    pais: 'Reino Unido', bandeira: '🇬🇧', codigo: 'GBP', simbolo: '£', curto: 'GBP',
+    sufixo: false, taxa: 0.84, ajuste: 1, casas: 0,
+    pagamento: {
+      titulo: 'Dados para o sinal',
+      linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por WhatsApp'],
+               ['Transferência internacional', ''], ['Titular', 'Wesley Vianna']],
+      nota: 'Paga com cartão, Apple Pay ou Google Pay pelo link que lhe enviamos.'
+    }
+  },
+  ch: {
+    pais: 'Suíça', bandeira: '🇨🇭', codigo: 'CHF', simbolo: 'CHF', curto: 'CHF',
+    sufixo: false, taxa: 0.94, ajuste: 1, casas: 0,
+    pagamento: {
+      titulo: 'Dados para o sinal',
+      linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por WhatsApp'],
+               ['Transferência (IBAN)', ''], ['Titular', 'Wesley Vianna']],
+      nota: 'Paga com cartão, Apple Pay, Google Pay ou transferência SEPA.'
+    }
+  },
+  ca: {
+    pais: 'Canadá', bandeira: '🇨🇦', codigo: 'CAD', simbolo: 'C$', curto: 'CAD',
+    sufixo: false, taxa: 1.47, ajuste: 1, casas: 0,
+    pagamento: {
+      titulo: 'Dados para o sinal',
+      linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por WhatsApp'],
+               ['Transferência internacional', ''], ['Titular', 'Wesley Vianna']],
+      nota: 'Paga com cartão, Apple Pay ou Google Pay pelo link que lhe enviamos.'
+    }
+  }
+};
+
+/* --- Dados de pagamento (usado se a moeda não tiver os seus) --------- */
 const PAGAMENTO = {
   mbway: '+351 933 113 525',
   titular: 'Wesley Vianna',
@@ -310,10 +393,19 @@ const PRESETS = {
   });
 
   var $ = function (s, r) { return (r || document).querySelector(s); };
-  var eur = function (n) {
-    return (Number.isInteger(n) ? n.toLocaleString('pt-PT')
-      : n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) + '€';
-  };
+  var moeda = 'pt';    // chave de MOEDAS: pt, br, us, uk, ch, ca…
+  function M() { return MOEDAS[moeda]; }
+
+  // Converte de euros para a moeda escolhida e formata.
+  function preco(n) {
+    var m = M();
+    var v = n * m.taxa * m.ajuste;
+    var casas = (m.casas === 0 || Number.isInteger(v)) ? 0 : m.casas;
+    if (m.casas === 0) v = Math.round(v);
+    var txt = v.toLocaleString('pt-PT', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+    return m.sufixo ? txt + m.simbolo : m.simbolo + ' ' + txt;
+  }
+  var eur = preco;   // nome antigo, mantido para não partir nada
 
   // Preço do item. Os que dependem da quantidade de produtos (tratamento de
   // fotos, importação, fichas técnicas) mudam conforme o escalão escolhido.
@@ -337,6 +429,46 @@ const PRESETS = {
   }
 
   /* ---------- construir o ecrã ---------- */
+  function montarMoeda() {
+    var box = $('#moedas'); if (!box) return;
+    box.innerHTML = Object.keys(MOEDAS).map(function (k) {
+      var m = MOEDAS[k];
+      return '<button type="button" class="mo' + (k === moeda ? ' on' : '') + '" data-m="' + k +
+        '" title="' + m.pais + '"><i>' + m.bandeira + '</i><b>' + m.curto + '</b></button>';
+    }).join('');
+    box.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    box.addEventListener('click', function (e) {
+      var b = e.target.closest('.mo'); if (!b) return;
+      moeda = b.dataset.m;
+      try { localStorage.setItem('tecnova-moeda', moeda); } catch (err) {}
+      montarMoeda(); notaCambio(); recontar(); calcular();
+    });
+  }
+
+  // Os preços de cada opção também têm de mudar de moeda.
+  function recontar() {
+    document.querySelectorAll('#grupos .opt').forEach(function (l) {
+      var it = TODOS[l.dataset.id]; if (!it) return;
+      var pr = l.querySelector('.pr'); if (!pr) return;
+      if (it.precoVol && indisponivel(it)) { pr.textContent = 'escolha primeiro os produtos'; return; }
+      pr.textContent = precoDe(it) ? '+' + preco(precoDe(it)) : 'sem custo';
+    });
+    MANUTENCAO.forEach(function (m) {
+      var l = document.querySelector('#grp-manut .opt[data-id="' + m.id + '"] .pr');
+      if (l) l.textContent = m.preco ? preco(m.preco) + '/mês' : 'grátis';
+    });
+  }
+
+  function notaCambio() {
+    var el = $('#cambio'); if (!el) return;
+    var m = M();
+    if (m.taxa === 1) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.innerHTML = m.bandeira + ' Valores em <b>' + m.codigo + '</b>, convertidos a <b>1€ = ' +
+      (m.taxa * m.ajuste).toLocaleString('pt-PT') + ' ' + m.codigo + '</b> (câmbio de ' + CAMBIO_DATA + ').' +
+      ' O contrato é feito em euros, por isso o valor na sua moeda pode variar um pouco no dia do pagamento.';
+  }
+
   function montarProjeto() {
     var box = $('#projeto');
     if (!box) return;
@@ -638,7 +770,7 @@ const PRESETS = {
       if (l.grupo !== g) { g = l.grupo; t += '\n' + g.toUpperCase() + '\n'; }
       t += '• ' + l.nome + ' — ' + eur(l.preco) + '\n';
     });
-    t += '\n— VALORES —\n';
+    t += '\n— VALORES (' + M().codigo + ') —\n';
     t += 'Tipo de projeto: ' + (o.projeto === 'remod' ? 'Remodelação de site existente' : 'Site novo') + '\n';
     if (o.pack) t += 'Pacote ' + o.pack.p.nome + ' aplicado (poupança de ' + eur(o.pack.poupa) + ')\n';
     t += 'Valor do site: ' + eur(o.baseFinal) + '\n';
@@ -660,6 +792,8 @@ const PRESETS = {
       return db.collection('orcamentos').doc(ref).set({
         ref: ref, criado: new Date().toISOString(), estado: 'novo',
         nome: dados.nome, negocio: dados.negocio, tel: dados.tel, email: dados.email, notas: dados.notas,
+        pais: M().pais, moeda: M().codigo, taxaCambio: M().taxa * M().ajuste,
+        totalEur: o.total, sinalEur: o.sinal,
         projeto: projeto, projetoNome: (projeto === 'remod' ? 'Remodelação de site existente' : 'Site novo'),
         descontoRemodelacao: o.descRemod,
         tipo: negocio, tipoNome: (PRESETS[negocio] || {}).nome || '',
@@ -681,6 +815,13 @@ const PRESETS = {
   function iniciar() {
     // permite chegar já em modo remodelação: orcamento.html?projeto=remod
     if (new URLSearchParams(location.search).get('projeto') === 'remod') projeto = 'remod';
+    try {
+      var mUrl = new URLSearchParams(location.search).get('moeda');
+      var mGuardada = localStorage.getItem('tecnova-moeda');
+      if (mUrl && MOEDAS[mUrl]) moeda = mUrl;
+      else if (mGuardada && MOEDAS[mGuardada]) moeda = mGuardada;
+    } catch (e) {}
+    montarMoeda(); notaCambio();
     montarProjeto();
     montarNegocios();
     montarGrupos();
@@ -740,12 +881,29 @@ const PRESETS = {
       var pay = $('#okPagar');
       if (LINK_PAGAMENTO) { pay.href = LINK_PAGAMENTO; pay.style.display = 'inline-flex'; }
       else { pay.style.display = 'none'; }
+      var pag = M().pagamento;
+      var tit = $('#okPagTitulo'); if (tit) tit.textContent = pag.titulo;
       var dadosPag = $('#okDadosPag');
       dadosPag.innerHTML =
-        '<li><span>MB WAY</span><b>' + PAGAMENTO.mbway + '</b></li>' +
-        (PAGAMENTO.iban ? '<li><span>Transferência (IBAN)</span><b>' + PAGAMENTO.iban + '</b></li>' : '') +
-        '<li><span>Titular</span><b>' + PAGAMENTO.titular + '</b></li>' +
+        pag.linhas.filter(function (l) { return l[1]; })
+          .map(function (l) { return '<li><span>' + l[0] + '</span><b>' + l[1] + '</b></li>'; }).join('') +
         '<li><span>Referência a indicar</span><b>' + ref + '</b></li>';
+      var nota = $('#okPagNota'); if (nota) nota.textContent = pag.nota || '';
+
+      // se o cliente estiver com sessão iniciada, o orçamento fica logo na
+      // conversa da conta dele — passa a poder falar connosco por lá
+      try {
+        if (typeof auth !== 'undefined' && auth.currentUser && window.TecnovaChat) {
+          var u = auth.currentUser;
+          TecnovaChat.garantir(u.uid, { nome: dados.nome, email: dados.email || u.email, telefone: dados.tel })
+            .then(function () {
+              return TecnovaChat.enviar(u.uid, 'admin',
+                'Recebemos o seu orçamento ' + ref + ' — total de ' + preco(window.__ORC.total) +
+                ', com sinal de ' + preco(window.__ORC.sinal) + '. Assim que confirmarmos o pagamento, ' +
+                'começo o seu site e digo-lhe aqui a data de entrega. Qualquer dúvida, escreva por aqui.');
+            }).catch(function () {});
+        }
+      } catch (e) {}
 
       $('#final').style.display = 'none';
       $('#sucesso').style.display = 'block';
