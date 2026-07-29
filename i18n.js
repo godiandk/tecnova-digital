@@ -186,7 +186,14 @@ window.TecnovaI18N = (function () {
             '<i>' + IDIOMAS[k].bandeira + '</i><span>' + IDIOMAS[k].nome + '</span></button>';
         }).join('') +
       '</div>';
-    document.body.appendChild(w);
+
+    // Fica dentro do cabeçalho, ao lado do botão — é onde as pessoas o
+    // procuram, e assim nunca choca com os botões flutuantes.
+    var casa = document.querySelector('header .nav-right') ||
+               document.querySelector('.nav .nav-right') ||
+               document.querySelector('.nav-right');
+    if (casa) { w.classList.add('no-header'); casa.insertBefore(w, casa.firstChild); }
+    else { document.body.appendChild(w); }
 
     var atual = w.querySelector('#langAtual');
     atual.addEventListener('click', function (e) {

@@ -3,6 +3,8 @@
    Canto superior direito, discreto, com bandeira.
    =========================================================== */
 .lang{position:fixed;top:12px;right:14px;z-index:120;font-family:'Manrope',sans-serif}
+/* dentro do cabeçalho (o caso normal): acompanha o menu em vez de flutuar */
+.lang.no-header{position:relative;top:auto;right:auto;bottom:auto;left:auto;z-index:60;flex:none}
 .lang-atual{
   display:flex;align-items:center;gap:6px;
   background:rgba(22,16,11,.86);border:1px solid rgba(217,178,110,.4);
@@ -29,17 +31,15 @@
 .lang-btn.on{background:rgba(217,178,110,.18);color:#e8cf9e;font-weight:800}
 
 /* nas páginas dos modelos há a barra de demonstração no topo */
-.demo-bar ~ .lang,
-body:has(.demo-bar) .lang{top:auto;bottom:14px;right:14px}
-body:has(.demo-bar) .lang-menu{top:auto;bottom:calc(100% + 7px);transform:translateY(6px)}
-body:has(.demo-bar) .lang.aberto .lang-menu{transform:none}
+body:has(.demo-bar) .lang:not(.no-header){top:auto;bottom:14px;right:14px}
+body:has(.demo-bar) .lang:not(.no-header) .lang-menu{top:auto;bottom:calc(100% + 7px);transform:translateY(6px)}
+body:has(.demo-bar) .lang:not(.no-header).aberto .lang-menu{transform:none}
 
 @media(max-width:640px){
-  .lang{top:auto;bottom:14px;left:14px;right:auto}
-  .lang-menu{top:auto;bottom:calc(100% + 7px);left:0;right:auto;transform:translateY(6px)}
-  .lang.aberto .lang-menu{transform:none}
-  .lang-atual{padding:8px 13px;font-size:.72rem}
-  /* no telemóvel o botão da app fica ao lado, não por cima */
-  body:has(.lang) .app-float{left:auto;right:14px}
+  .lang:not(.no-header){top:auto;bottom:14px;left:14px;right:auto}
+  .lang:not(.no-header) .lang-menu{top:auto;bottom:calc(100% + 7px);left:0;right:auto;transform:translateY(6px)}
+  .lang:not(.no-header).aberto .lang-menu{transform:none}
+  .lang-atual{padding:7px 11px;font-size:.7rem}
+  .lang.no-header .lang-menu{right:-8px}
 }
 @media print{.lang{display:none!important}}

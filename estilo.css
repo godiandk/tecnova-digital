@@ -56,7 +56,7 @@ header{
   background:rgba(22,16,11,.97);
   border-bottom:1px solid rgba(217,178,110,.14);
 }
-.nav{display:flex;align-items:center;justify-content:space-between;height:74px;gap:20px}
+.nav{display:flex;align-items:center;justify-content:space-between;height:74px;gap:18px}
 .logo{display:flex;align-items:center;gap:12px;text-decoration:none;flex:none}
 .logo-mark{
   width:40px;height:44px;display:grid;place-items:center;
@@ -66,8 +66,10 @@ header{
 }
 .logo-name{letter-spacing:.32em;font-weight:800;color:var(--gold-soft);font-size:.95rem}
 .logo-name small{display:block;letter-spacing:.5em;font-size:.55rem;color:var(--cream-dim);font-weight:600}
-nav.links{display:flex;gap:26px;flex-wrap:wrap}
-nav.links a{color:var(--cream-dim);text-decoration:none;font-size:.86rem;font-weight:600;transition:color .2s;white-space:nowrap;position:relative;padding:6px 0}
+/* O menu tem 8 entradas: com 26px de intervalo não cabia na linha e o
+   "Entrar / Criar conta" caía sozinho para baixo. */
+nav.links{display:flex;gap:18px;flex-wrap:nowrap;align-items:center}
+nav.links a{color:var(--cream-dim);text-decoration:none;font-size:.84rem;font-weight:600;transition:color .2s;white-space:nowrap;position:relative;padding:6px 0}
 nav.links a:hover{color:var(--gold)}
 nav.links a.on{color:var(--gold-soft)}
 nav.links a.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--gold)}
@@ -84,7 +86,7 @@ nav.links a.nav-account{display:flex;align-items:center;gap:9px;color:var(--gold
 .nav-avatar img{width:100%;height:100%;object-fit:cover;display:block}
 .burger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:6px}
 .burger span{width:22px;height:2px;background:var(--gold-soft)}
-@media(max-width:980px){
+@media(max-width:1120px){
   nav.links{
     position:fixed;inset:74px 0 0 0;background:var(--ink);flex-direction:column;flex-wrap:nowrap;
     padding:30px 24px 60px;gap:4px;transform:translateX(100%);transition:transform .3s ease;overflow-y:auto;
@@ -152,7 +154,7 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
 .nav-drop-menu a{display:block;padding:11px 22px;font-size:.85rem;color:var(--cream-dim);white-space:nowrap;border:none}
 .nav-drop-menu a:hover{background:rgba(217,178,110,.08);color:var(--gold);padding-left:26px}
 .nav-drop-menu a.dd-all{color:var(--gold);font-weight:700;margin-top:4px;border-top:1px solid rgba(217,178,110,.12)}
-@media(max-width:980px){
+@media(max-width:1120px){
   .nav-drop{flex-direction:column;align-items:stretch;width:100%}
   .nav-drop-menu{
     position:static;transform:none;opacity:1;visibility:hidden;display:none;
