@@ -169,7 +169,7 @@ window.TecnovaI18N = (function () {
       b.classList.toggle('on', b.dataset.lang === idioma);
     });
     var atual = document.getElementById('langAtual');
-    if (atual) atual.textContent = IDIOMAS[idioma].bandeira + ' ' + IDIOMAS[idioma].curto;
+    if (atual) atual.textContent = IDIOMAS[idioma].bandeira + ' ' + IDIOMAS[idioma].nome;
   }
 
   function montarSeletor() {

@@ -786,7 +786,9 @@ const PRESETS = {
       html += '<li><span>' + l.nome + '</span><b>' + eur(l.preco) + '</b></li>';
     });
     $('#resLista').innerHTML = html;
-    $('#resCount').textContent = L.length + (L.length === 1 ? ' item' : ' itens');
+    var ling = (window.TecnovaI18N && TecnovaI18N.atual()) || 'pt';
+    var palavraItem = { pt: [' item', ' itens'], en: [' item', ' items'], es: [' artículo', ' artículos'] }[ling] || [' item', ' itens'];
+    $('#resCount').textContent = L.length + (L.length === 1 ? palavraItem[0] : palavraItem[1]);
 
     var packBox = $('#resPacote');
     if (pack) {
@@ -835,7 +837,8 @@ const PRESETS = {
         '<div class="merc-l"><span>Com um freelancer</span><b>' + preco(perfil.freelancer[0]) + ' – ' + preco(perfil.freelancer[1]) + '</b></div>' +
         '<div class="merc-l aqui"><span>Aqui, com tudo o que escolheu</span><b>' + preco(total) + '</b></div>' +
         (poupaMin > 0 ? '<div class="merc-poupa">Poupa entre <b>' + preco(poupaMin) + '</b> e <b>' + preco(poupaMax) + '</b></div>' : '') +
-        '<p class="merc-nota">São <b>' + String(horas).replace('.', ',') + ' horas</b> de trabalho. ' +
+        '<p class="merc-nota">São <b>' + String(horas).replace('.', ',') + ' ' +
+        ({ pt: 'horas', en: 'hours', es: 'horas' }[ling] || 'horas') + '</b> de trabalho. ' +
         'Um freelancer em Portugal cobra <b>' + preco(MERCADO.taxaFreelancer[0]) + ' a ' + preco(MERCADO.taxaFreelancer[1]) +
         ' por hora</b>; a nossa taxa efetiva ronda os <b>' + preco(TAXA_HORA) + '/hora</b>. ' +
         'Não há extras a meio: o que está aqui é o que paga.</p>' +
