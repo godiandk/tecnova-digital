@@ -184,3 +184,23 @@
   .res-total b{color:#111}
   .orc-cols{display:block}
 }
+
+/* ===========================================================
+   Fundo do ecrã no telemóvel
+   -----------------------------------------------------------
+   Na página do simulador a barra do total é o elemento mais
+   importante — não pode ser tapada por nada. Por isso, aqui,
+   escondemos os botões flutuantes que não fazem falta e
+   levantamos o assistente para cima da barra.
+   =========================================================== */
+@media(max-width:860px){
+  .pagina-orcamento .bar-fixa{z-index:95}
+  /* o botão da app e o do WhatsApp tapavam o total e o "Ver resumo";
+     nesta página são dispensáveis — o assistente já leva ao WhatsApp */
+  .pagina-orcamento .app-float,
+  .pagina-orcamento .wa-float{display:none!important}
+  .pagina-orcamento .as-botao{bottom:calc(80px + env(safe-area-inset-bottom))}
+  .pagina-orcamento .as-caixa{bottom:calc(146px + env(safe-area-inset-bottom))}
+  /* espaço à direita para o "Ver resumo" nunca ficar debaixo do assistente */
+  .pagina-orcamento .bar-fixa{padding-right:18px}
+}
