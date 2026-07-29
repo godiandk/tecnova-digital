@@ -6,8 +6,11 @@
 <title>Studio Performance — Modelo TECNOVA Digital</title>
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="modelo-carrossel.css?v=1">
 <style>
-:root{ --ink:#0a0a0a; --ink-2:#161616; --lime:#c8ff3d; --lime-dim:#8fb52c; --grey:#c9c9c9; --grey-dim:#8a8a8a; }
+:root{
+  --mc-acc:#c8ff3d; --mc-acc-soft:#c8ff3d; --mc-txt:#f2f2f2; --mc-txt-dim:#c2c2c2;
+  --mc-veil:rgba(10,10,10,.9); --mc-on-acc:#0a0a0a; --mc-line:rgba(200,255,61,.35); --ink:#0a0a0a; --ink-2:#161616; --lime:#c8ff3d; --lime-dim:#8fb52c; --grey:#c9c9c9; --grey-dim:#8a8a8a; }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{background:var(--ink);color:#f2f2f2;font-family:'Manrope',sans-serif;overflow-x:hidden}
@@ -166,27 +169,69 @@ footer{border-top:1px solid rgba(200,255,61,.15);padding:36px 0 90px;text-align:
       <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
     <nav class="links" id="navLinks">
-      <a href="modelo-ginasio-planos.html">Planos &amp; Aulas</a>
-      <a href="#galeria">Espaço</a>
-      <a href="#equipa">Treinadores</a>
-      <a href="#horario">Horário</a>
-      <a class="btn btn-lime menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20marcar%20uma%20aula%20experimental%20no%20Studio%20Performance%20(modelo)." target="_blank" rel="noopener">Aula grátis</a>
+      <a class="on" href="modelo-ginasio.html">Início</a>
+      <a class="" href="modelo-ginasio-planos.html">Planos & Aulas</a>
+      <a class="" href="modelo-ginasio-galeria.html">Galeria</a>
+      <a class="" href="modelo-ginasio-sobre.html">Sobre</a>
+      <a class="" href="modelo-ginasio-contactos.html">Contactos</a>
+      <a class="btn btn-lime menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20a%20aula%20gr%C3%A1tis%20no%20Studio%20Performance%20%28modelo%29." target="_blank" rel="noopener">Aula grátis</a>
     </nav>
   </div>
 </header>
 
-<section class="hero">
-  <div class="wrap">
-    <p class="eyebrow">Ginásio &amp; Personal Trainer</p>
-    <h1>Treine <i>sem limites.</i></h1>
-    <p>Planos claros, aulas com inscrição direta e acompanhamento real do seu progresso. Marque a sua aula experimental agora.</p>
-    <a class="btn btn-lime" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20marcar%20uma%20aula%20experimental%20no%20Studio%20Performance%20(modelo)." target="_blank" rel="noopener">Marcar aula grátis</a>
-    <div class="trust-row reveal">
-      <span class="stars">★★★★★</span> <b>4.9</b> <span>(96 avaliações no Google)</span>
-      <span class="sep">·</span>
-      <span><b>+400</b> alunos ativos</span>
+<section class="mc" aria-label="Destaques">
+
+  <div class="mc-slide active">
+    <div class="mc-bg" style="background-image:url('img/modelos/ginasio/hero.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Ginásio &amp; Treino Pessoal</p>
+        <h1>Treine<br><i>sem limites.</i></h1>
+        <p>Avaliação física e plano escrito antes de tocar numa máquina. Mensalidade sem fidelização, aula experimental gratuita.</p>
+        <div class="mc-cta">
+          <a class="btn btn-lime" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20a%20aula%20gr%C3%A1tis%20no%20Studio%20Performance%20%28modelo%29." target="_blank" rel="noopener">Aula grátis</a>
+          <a class="btn btn-line" href="modelo-ginasio-planos.html">Ver planos e aulas</a>
+        </div>
+        <div class="mc-badges"><span>★ 4.9 no Google</span><span>340 sócios</span><span>0 meses de fidelização</span></div>
+      </div>
     </div>
   </div>
+
+  <div class="mc-slide">
+    <div class="mc-bg" style="background-image:url('img/modelos/ginasio/g9.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Planos &amp; Aulas</p>
+        <h2>Turmas de doze.<br><i>Nunca mais.</i></h2>
+        <p>Se o treinador não consegue corrigir a postura de toda a gente, a aula não serve para nada. Por isso limitamos as turmas.</p>
+        <div class="mc-cta">
+          <a class="btn btn-lime" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20a%20aula%20gr%C3%A1tis%20no%20Studio%20Performance%20%28modelo%29." target="_blank" rel="noopener">Aula grátis</a>
+          <a class="btn btn-line" href="modelo-ginasio-planos.html">Ver planos</a>
+        </div>
+        <div class="mc-badges"><span>Livre 29€/mês</span><span>Total 39€/mês</span><span>PT 25€/sessão</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mc-slide">
+    <div class="mc-bg" style="background-image:url('img/modelos/ginasio/g6.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">O espaço</p>
+        <h2>400 m² de<br><i>equipamento a sério.</i></h2>
+        <p>Zona de pesos livres própria, plataforma de levantamento e sala de máquinas profissional. Aberto desde as 6h30.</p>
+        <div class="mc-cta">
+          <a class="btn btn-lime" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20a%20aula%20gr%C3%A1tis%20no%20Studio%20Performance%20%28modelo%29." target="_blank" rel="noopener">Aula grátis</a>
+          <a class="btn btn-line" href="modelo-ginasio-galeria.html">Ver o ginásio</a>
+        </div>
+        <div class="mc-badges"><span>Pesos livres</span><span>Aulas de grupo</span><span>Cardio</span></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="mc-arrow prev" aria-label="Anterior">‹</button>
+  <button class="mc-arrow next" aria-label="Seguinte">›</button>
+  <div class="mc-dots"></div>
 </section>
 
 <section class="plans" id="planos">
@@ -304,5 +349,32 @@ const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.tar
 document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 </script>
 <script src="modelo-fix.js"></script>
+
+<script>
+(function(){
+  var s=document.querySelector('.mc'); if(!s) return;
+  var sl=s.querySelectorAll('.mc-slide'), dw=s.querySelector('.mc-dots'), i=0, t;
+  sl.forEach(function(_,n){
+    var d=document.createElement('button');
+    d.setAttribute('aria-label','Destaque '+(n+1));
+    if(n===0) d.className='active';
+    d.addEventListener('mousedown',function(e){e.preventDefault();});
+    d.addEventListener('click',function(){ir(n);arranca();});
+    dw.appendChild(d);
+  });
+  function ir(n){
+    i=(n+sl.length)%sl.length;
+    sl.forEach(function(x,k){x.classList.toggle('active',k===i);});
+    dw.querySelectorAll('button').forEach(function(x,k){x.classList.toggle('active',k===i);});
+  }
+  function arranca(){clearInterval(t);t=setInterval(function(){ir(i+1);},7000);}
+  ['prev','next'].forEach(function(c,k){
+    var b=s.querySelector('.mc-arrow.'+c); if(!b) return;
+    b.addEventListener('mousedown',function(e){e.preventDefault();});
+    b.addEventListener('click',function(){ir(i+(k?1:-1));arranca();});
+  });
+  arranca();
+})();
+</script>
 </body>
 </html>

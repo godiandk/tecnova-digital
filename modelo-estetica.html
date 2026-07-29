@@ -6,8 +6,11 @@
 <title>Clínica Bella Pele — Modelo TECNOVA Digital</title>
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="modelo-carrossel.css?v=1">
 <style>
 :root{
+  --mc-acc:#b5748c; --mc-acc-soft:#a85b78; --mc-txt:#3a2530; --mc-txt-dim:#6b5460;
+  --mc-veil:rgba(251,243,239,.93); --mc-on-acc:#ffffff; --mc-line:rgba(181,116,140,.35);
   --bg:#fbf3ef; --bg-2:#f3e3dc; --ink:#3a2530; --ink-dim:#7a6169;
   --rose:#b5748c; --rose-soft:#d1a3b5; --gold:#cbb08a;
 }
@@ -183,28 +186,69 @@ footer{border-top:1px solid rgba(181,116,140,.25);padding:36px 0 90px;text-align
       <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
     <nav class="links" id="navLinks">
-      <a href="modelo-estetica-tratamentos.html">Tratamentos &amp; Preçário</a>
-      <a href="#galeria">Galeria</a>
-      <a href="#equipa">Equipa</a>
-      <a href="#fidelidade">Fidelidade</a>
-      <a href="#horario">Horário</a>
-      <a class="btn btn-rose menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20agendar%20um%20tratamento%20na%20Cl%C3%ADnica%20Bella%20Pele%20(modelo)." target="_blank" rel="noopener">Agendar</a>
+      <a class="on" href="modelo-estetica.html">Início</a>
+      <a class="" href="modelo-estetica-tratamentos.html">Tratamentos & Preçário</a>
+      <a class="" href="modelo-estetica-galeria.html">Galeria</a>
+      <a class="" href="modelo-estetica-sobre.html">Sobre</a>
+      <a class="" href="modelo-estetica-contactos.html">Contactos</a>
+      <a class="btn btn-rose menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20uma%20avalia%C3%A7%C3%A3o%20na%20Bella%20Pele%20%28modelo%29." target="_blank" rel="noopener">Marcar avaliação</a>
     </nav>
   </div>
 </header>
 
-<section class="hero">
-  <div class="wrap">
-    <p class="eyebrow">Clínica de estética</p>
-    <h1>Cuide da sua pele<br>como ela <b>merece.</b></h1>
-    <p>Tratamentos faciais e corporais num espaço pensado para o seu bem-estar. Agende em segundos, sem sair do WhatsApp.</p>
-    <a class="btn btn-rose" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20agendar%20um%20tratamento%20na%20Cl%C3%ADnica%20Bella%20Pele%20(modelo)." target="_blank" rel="noopener">Agendar tratamento</a>
-    <div class="trust-row reveal">
-      <span class="stars">★★★★★</span> <b>4.8</b> <span>(164 avaliações no Google)</span>
-      <span class="sep">·</span>
-      <span><b>+1200</b> tratamentos realizados</span>
+<section class="mc" aria-label="Destaques">
+
+  <div class="mc-slide active">
+    <div class="mc-bg" style="background-image:url('img/modelos/estetica/hero.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Clínica de estética</p>
+        <h1>Cuide da sua pele<br><i>como ela merece.</i></h1>
+        <p>Tratamentos faciais e corporais num espaço pensado para o seu bem-estar. A avaliação inicial é gratuita e demora quarenta minutos.</p>
+        <div class="mc-cta">
+          <a class="btn btn-rose" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20uma%20avalia%C3%A7%C3%A3o%20na%20Bella%20Pele%20%28modelo%29." target="_blank" rel="noopener">Marcar avaliação</a>
+          <a class="btn btn-line" href="modelo-estetica-tratamentos.html">Ver tratamentos</a>
+        </div>
+        <div class="mc-badges"><span>★ 4.9 no Google</span><span>+1.400 tratamentos</span><span>Avaliação grátis</span></div>
+      </div>
     </div>
   </div>
+
+  <div class="mc-slide">
+    <div class="mc-bg" style="background-image:url('img/modelos/estetica/g8.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Tratamentos &amp; Preçário</p>
+        <h2>Plano escrito,<br><i>preço fechado.</i></h2>
+        <p>Sai da avaliação com o número de sessões, o intervalo entre elas e o valor total. Nunca vai ouvir «vamos ver mais umas».</p>
+        <div class="mc-cta">
+          <a class="btn btn-rose" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20uma%20avalia%C3%A7%C3%A3o%20na%20Bella%20Pele%20%28modelo%29." target="_blank" rel="noopener">Marcar avaliação</a>
+          <a class="btn btn-line" href="modelo-estetica-tratamentos.html">Ver preçário</a>
+        </div>
+        <div class="mc-badges"><span>Limpeza de pele 45€</span><span>Peeling 60€</span><span>Radiofrequência 70€</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mc-slide">
+    <div class="mc-bg" style="background-image:url('img/modelos/estetica/g6.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Resultados</p>
+        <h2>Resultados reais,<br><i>sem filtros.</i></h2>
+        <p>Tratamentos feitos nesta clínica, em pessoas reais. Sem promessas que não conseguimos cumprir.</p>
+        <div class="mc-cta">
+          <a class="btn btn-rose" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20uma%20avalia%C3%A7%C3%A3o%20na%20Bella%20Pele%20%28modelo%29." target="_blank" rel="noopener">Marcar avaliação</a>
+          <a class="btn btn-line" href="modelo-estetica-galeria.html">Ver galeria</a>
+        </div>
+        <div class="mc-badges"><span>Facial</span><span>Corpo</span><span>A clínica</span></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="mc-arrow prev" aria-label="Anterior">‹</button>
+  <button class="mc-arrow next" aria-label="Seguinte">›</button>
+  <div class="mc-dots"></div>
 </section>
 
 <section class="treats" id="tratamentos">
@@ -345,5 +389,32 @@ const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.tar
 document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 </script>
 <script src="modelo-fix.js"></script>
+
+<script>
+(function(){
+  var s=document.querySelector('.mc'); if(!s) return;
+  var sl=s.querySelectorAll('.mc-slide'), dw=s.querySelector('.mc-dots'), i=0, t;
+  sl.forEach(function(_,n){
+    var d=document.createElement('button');
+    d.setAttribute('aria-label','Destaque '+(n+1));
+    if(n===0) d.className='active';
+    d.addEventListener('mousedown',function(e){e.preventDefault();});
+    d.addEventListener('click',function(){ir(n);arranca();});
+    dw.appendChild(d);
+  });
+  function ir(n){
+    i=(n+sl.length)%sl.length;
+    sl.forEach(function(x,k){x.classList.toggle('active',k===i);});
+    dw.querySelectorAll('button').forEach(function(x,k){x.classList.toggle('active',k===i);});
+  }
+  function arranca(){clearInterval(t);t=setInterval(function(){ir(i+1);},7000);}
+  ['prev','next'].forEach(function(c,k){
+    var b=s.querySelector('.mc-arrow.'+c); if(!b) return;
+    b.addEventListener('mousedown',function(e){e.preventDefault();});
+    b.addEventListener('click',function(){ir(i+(k?1:-1));arranca();});
+  });
+  arranca();
+})();
+</script>
 </body>
 </html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contactos — Studio Glow · Modelo TECNOVA Digital</title>
+<meta name="description" content="Contactos, horários e marcação na Studio Glow.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="modelo-paginas.css?v=1">
+<style>
+:root{
+  --bg:#150e17; --bg2:#201621; --card:#201621;
+  --txt:#f1e6f0; --txt-dim:#b8a6b5;
+  --acc:#c987b9; --acc-soft:#e9b8dd; --on-acc:#150e17;
+  --acc-line:rgba(201,135,185,.2); --bar:#0c070d; --field:#191019; --grid:rgba(201,135,185,.1);
+  --font-head:'Playfair Display',serif; --logo-r:50%;
+}
+</style>
+</head>
+<body>
+
+<div class="demo-bar">
+  <span>🖼️ Este é um <b>modelo demonstrativo</b> criado pela TECNOVA Digital</span>
+  <div>
+    <a href="modelos.html">← Voltar aos modelos</a>
+    <a href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley%21%20Gostei%20do%20modelo%20Studio%20Glow%20e%20quero%20um%20site%20assim." target="_blank" rel="noopener">Quero um site assim →</a>
+  </div>
+</div>
+
+<header class="wrap">
+  <div class="nav">
+    <a class="logo" href="modelo-salao.html">
+      <span class="logo-ic">G</span>
+      <span><b>Studio Glow</b><span class="tagline">Salão de Beleza</span></span>
+    </a>
+    <div class="nav-right">
+      <a class="btn btn-acc" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20hor%C3%A1rio%20no%20Studio%20Glow%20%28modelo%29." target="_blank" rel="noopener">Marcar horário</a>
+      <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+    </div>
+    <nav class="links" id="navLinks">
+      <a class="" href="modelo-salao.html">Início</a>
+      <a class="" href="modelo-salao-servicos.html">Serviços & Preçário</a>
+      <a class="" href="modelo-salao-galeria.html">Galeria</a>
+      <a class="" href="modelo-salao-sobre.html">Sobre</a>
+      <a class="on" href="modelo-salao-contactos.html">Contactos</a>
+      <a class="btn btn-acc menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20hor%C3%A1rio%20no%20Studio%20Glow%20%28modelo%29." target="_blank" rel="noopener">Marcar horário</a>
+    </nav>
+  </div>
+</header>
+
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">Contactos</p>
+    <h1>Falar connosco é <i>simples.</i></h1>
+    <p>Preencha o pedido e a mensagem abre já escrita no WhatsApp. Respondemos no mesmo dia útil.</p>
+  </div>
+</section>
+
+<section style="padding-top:20px">
+  <div class="wrap cont-grid">
+
+    <div>
+      <div class="card reveal">
+        <h2>Pedido de marcação</h2>
+        <p class="hint">Nada é enviado sem si — no fim confere a mensagem antes de a mandar.</p>
+        <form id="fMarc" novalidate>
+          <label for="cNome">O seu nome *</label>
+          <input id="cNome" type="text" autocomplete="name" required>
+
+          <div class="row2">
+            <div>
+              <label for="cTel">Telemóvel *</label>
+              <input id="cTel" type="tel" autocomplete="tel" required>
+            </div>
+            <div>
+              <label for="cServico">O que pretende</label>
+              <select id="cServico">
+          <option>Corte e brushing (28€)</option>
+          <option>Coloração completa (65€)</option>
+          <option>Madeixas / balayage (95€)</option>
+          <option>Alisamento (110€)</option>
+          <option>Penteado de festa (45€)</option>
+          <option>Tratamento capilar (35€)</option>
+          <option>Quero aconselhamento</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row2">
+            <div>
+              <label for="cData">Dia preferido</label>
+              <input id="cData" type="date">
+            </div>
+            <div>
+              <label for="cHora">Hora preferida</label>
+              <select id="cHora">
+                <option>Manhã</option>
+                <option>Início da tarde</option>
+                <option>Fim da tarde</option>
+                <option>Indiferente</option>
+              </select>
+            </div>
+          </div>
+
+          <label for="cNotas">Quer dizer mais alguma coisa?</label>
+          <textarea id="cNotas" placeholder="Escreva à vontade — quanto mais souber, melhor preparamos."></textarea>
+
+          <div class="err" id="cErro"></div>
+          <button class="btn btn-acc" type="submit">Enviar pedido pelo WhatsApp</button>
+        </form>
+      </div>
+
+      <div class="card reveal">
+        <h3>Perguntas frequentes</h3>
+        <div class="faq" style="margin-top:14px">
+      <details class="reveal"><summary>A consulta de cor é gratuita?</summary><p>É, e faz-se antes de marcar o serviço. Inclui análise do cabelo, teste de mecha se for necessário e o preço total fechado.</p></details>
+      <details class="reveal"><summary>Posso levar uma foto do que quero?</summary><p>Traga, é sempre o melhor ponto de partida. Dizemos-lhe com honestidade se resulta na sua base ou quantas sessões vai levar até lá chegar.</p></details>
+      <details class="reveal"><summary>Quanto tempo demora uma coloração?</summary><p>Uma cor completa demora cerca de duas horas. Madeixas ou balayage podem chegar às quatro — avisamos na marcação para se organizar.</p></details>
+      <details class="reveal"><summary>Vou sempre ser atendida pela mesma pessoa?</summary><p>Sim, se quiser. Marca com o nome da profissional e é essa que a atende sempre.</p></details>
+        </div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="card reveal">
+        <h3>Onde estamos</h3>
+        <ul class="info-list" style="margin-top:12px">
+          <li>Rua de Cedofeita, 233 — Porto</li>
+          <li>+351 933 113 525</li>
+          <li>geral@studioglow.pt</li>
+        </ul>
+      </div>
+
+      <div class="card reveal">
+        <h3>Horário</h3>
+        <table class="hours-table">
+        <tr><td>Segunda</td><td>Encerrado</td></tr>
+        <tr><td>Terça a Sexta</td><td>09:30 – 19:30</td></tr>
+        <tr><td>Sábado</td><td>09:00 – 18:00</td></tr>
+        <tr><td>Domingo</td><td>Encerrado</td></tr>
+        </table>
+      </div>
+
+      <div class="map-mock reveal">
+        <div class="pin">📍</div>
+        <p><b>Rua de Cedofeita, 233 — Porto</b><br>Num site a sério, aqui fica o mapa do Google com a rota a um toque.</p>
+      </div>
+    </aside>
+
+  </div>
+
+  <div class="wrap">
+    <div class="ways">
+      <div class="way reveal"><div class="ic">💬</div><b>WhatsApp</b>
+        <a href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20hor%C3%A1rio%20no%20Studio%20Glow%20%28modelo%29." target="_blank" rel="noopener">+351 933 113 525</a></div>
+      <div class="way reveal"><div class="ic">📞</div><b>Telefone</b>
+        <a href="tel:+351933113525">Ligar agora</a></div>
+      <div class="way reveal"><div class="ic">✉️</div><b>Email</b>
+        <a href="mailto:geral@studioglow.pt">geral@studioglow.pt</a></div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-final">
+  <div class="wrap">
+    <h2 class="reveal">Ainda com dúvidas?</h2>
+    <p class="reveal">Mande uma mensagem. Preferimos responder a uma pergunta a mais do que deixá-lo na dúvida.</p>
+    <a class="btn btn-acc btn-lg reveal" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20hor%C3%A1rio%20no%20Studio%20Glow%20%28modelo%29." target="_blank" rel="noopener">Marcar horário</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Studio Glow · Rua de Cedofeita, 233 — Porto · +351 933 113 525</p>
+    <div class="tecnova-credit">
+      <span>Site criado pela</span>
+      <a href="index.html">TECNOVA Digital →</a>
+    </div>
+  </div>
+</footer>
+
+<div class="sticky-cta">
+  <a class="btn btn-acc" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20hor%C3%A1rio%20no%20Studio%20Glow%20%28modelo%29." target="_blank" rel="noopener">Marcar horário</a>
+</div>
+
+<script src="modelo-fix.js"></script>
+<script>
+(function(){
+  var b=document.getElementById('burger'), n=document.getElementById('navLinks');
+  if(b&&n) b.addEventListener('click',function(){n.classList.toggle('open');});
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
+})();
+</script>
+
+<script>
+(function(){
+  var f=document.getElementById('fMarc'); if(!f) return;
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var nome=document.getElementById('cNome').value.trim();
+    var tel=document.getElementById('cTel').value.trim();
+    var erro=document.getElementById('cErro');
+    if(!nome||!tel){
+      erro.textContent='Precisamos do seu nome e de um contacto para lhe responder.';
+      erro.classList.add('show'); return;
+    }
+    erro.classList.remove('show');
+    var t='Olá Studio Glow! Queria marcar.\n\n';
+    t+='Nome: '+nome+'\n';
+    t+='Telemóvel: '+tel+'\n';
+    t+='Pretendo: '+document.getElementById('cServico').value+'\n';
+    var d=document.getElementById('cData').value;
+    if(d){ var p=d.split('-'); t+='Dia preferido: '+p[2]+'/'+p[1]+'/'+p[0]+'\n'; }
+    t+='Hora preferida: '+document.getElementById('cHora').value+'\n';
+    var n=document.getElementById('cNotas').value.trim();
+    if(n) t+='\nObservações: '+n+'\n';
+    window.open('https://wa.me/351933113525?text='+encodeURIComponent(t),'_blank');
+  });
+})();
+</script>
+</body>
+</html>

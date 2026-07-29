@@ -6,8 +6,11 @@
 <title>Studio Glow — Modelo TECNOVA Digital</title>
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="modelo-carrossel.css?v=1">
 <style>
-:root{ --ink:#150e17; --ink-2:#201621; --mauve:#c987b9; --mauve-soft:#e9b8dd; --cream:#f1e6f0; --cream-dim:#b8a6b5; }
+:root{
+  --mc-acc:#c987b9; --mc-acc-soft:#e9b8dd; --mc-txt:#f1e6f0; --mc-txt-dim:#cfbdcd;
+  --mc-veil:rgba(21,14,23,.9); --mc-on-acc:#150e17; --mc-line:rgba(201,135,185,.35); --ink:#150e17; --ink-2:#201621; --mauve:#c987b9; --mauve-soft:#e9b8dd; --cream:#f1e6f0; --cream-dim:#b8a6b5; }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{background:var(--ink);color:var(--cream);font-family:'Manrope',sans-serif;overflow-x:hidden}
@@ -170,28 +173,69 @@ footer{border-top:1px solid rgba(201,135,185,.18);padding:36px 0 90px;text-align
       <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
     <nav class="links" id="navLinks">
-      <a href="modelo-salao-servicos.html">Serviços &amp; Preçário</a>
-      <a href="#galeria">Galeria</a>
-      <a href="#equipa">Equipa</a>
-      <a href="#fidelidade">Fidelidade</a>
-      <a href="#horario">Horário</a>
-      <a class="btn btn-mauve menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20marcar%20hor%C3%A1rio%20no%20Studio%20Glow%20(modelo)." target="_blank" rel="noopener">Marcar horário</a>
+      <a class="on" href="modelo-salao.html">Início</a>
+      <a class="" href="modelo-salao-servicos.html">Serviços & Preçário</a>
+      <a class="" href="modelo-salao-galeria.html">Galeria</a>
+      <a class="" href="modelo-salao-sobre.html">Sobre</a>
+      <a class="" href="modelo-salao-contactos.html">Contactos</a>
+      <a class="btn btn-mauve menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20hor%C3%A1rio%20no%20Studio%20Glow%20%28modelo%29." target="_blank" rel="noopener">Marcar horário</a>
     </nav>
   </div>
 </header>
 
-<section class="hero">
-  <div class="wrap">
-    <p class="eyebrow">Salão de beleza</p>
-    <h1>Beleza que <b>se sente.</b></h1>
-    <p>Cabelo, unhas e sobrancelhas num só espaço. Marque o seu horário em segundos e acompanhe os seus selos de fidelidade sempre que quiser.</p>
-    <a class="btn btn-mauve" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20marcar%20hor%C3%A1rio%20no%20Studio%20Glow%20(modelo)." target="_blank" rel="noopener">Marcar horário</a>
-    <div class="trust-row reveal">
-      <span class="stars">★★★★★</span> <b>4.9</b> <span>(188 avaliações no Google)</span>
-      <span class="sep">·</span>
-      <span><b>10 anos</b> de salão</span>
+<section class="mc" aria-label="Destaques">
+
+  <div class="mc-slide active">
+    <div class="mc-bg" style="background-image:url('img/modelos/salao/hero.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Salão de beleza</p>
+        <h1>Beleza que<br><i>se sente.</i></h1>
+        <p>Cabelo, cor e penteado num só espaço. A consulta de cor é gratuita e faz-se antes de marcar o serviço.</p>
+        <div class="mc-cta">
+          <a class="btn btn-mauve" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20hor%C3%A1rio%20no%20Studio%20Glow%20%28modelo%29." target="_blank" rel="noopener">Marcar horário</a>
+          <a class="btn btn-line" href="modelo-salao-servicos.html">Ver serviços</a>
+        </div>
+        <div class="mc-badges"><span>★ 4.9 no Google</span><span>18 anos de profissão</span><span>Consulta de cor grátis</span></div>
+      </div>
     </div>
   </div>
+
+  <div class="mc-slide">
+    <div class="mc-bg" style="background-image:url('img/modelos/salao/g8.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Serviços &amp; Preçário</p>
+        <h2>Dizemos-lhe<br><i>a verdade.</i></h2>
+        <p>Se a sua base não aguenta a cor que quer, dizemos. Preferimos perder o serviço a queimar-lhe o cabelo.</p>
+        <div class="mc-cta">
+          <a class="btn btn-mauve" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20hor%C3%A1rio%20no%20Studio%20Glow%20%28modelo%29." target="_blank" rel="noopener">Marcar horário</a>
+          <a class="btn btn-line" href="modelo-salao-servicos.html">Ver preçário</a>
+        </div>
+        <div class="mc-badges"><span>Corte 28€</span><span>Coloração 65€</span><span>Balayage 95€</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mc-slide">
+    <div class="mc-bg" style="background-image:url('img/modelos/salao/g11.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Trabalhos</p>
+        <h2>Cabelo que<br><i>lhe fica bem a si.</i></h2>
+        <p>Doze trabalhos feitos neste salão. Traga uma foto — dizemos-lhe com honestidade se resulta na sua base.</p>
+        <div class="mc-cta">
+          <a class="btn btn-mauve" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20hor%C3%A1rio%20no%20Studio%20Glow%20%28modelo%29." target="_blank" rel="noopener">Marcar horário</a>
+          <a class="btn btn-line" href="modelo-salao-galeria.html">Ver galeria</a>
+        </div>
+        <div class="mc-badges"><span>Cor</span><span>Corte</span><span>O salão</span></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="mc-arrow prev" aria-label="Anterior">‹</button>
+  <button class="mc-arrow next" aria-label="Seguinte">›</button>
+  <div class="mc-dots"></div>
 </section>
 
 <section class="svc" id="servicos">
@@ -332,5 +376,32 @@ const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.tar
 document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 </script>
 <script src="modelo-fix.js"></script>
+
+<script>
+(function(){
+  var s=document.querySelector('.mc'); if(!s) return;
+  var sl=s.querySelectorAll('.mc-slide'), dw=s.querySelector('.mc-dots'), i=0, t;
+  sl.forEach(function(_,n){
+    var d=document.createElement('button');
+    d.setAttribute('aria-label','Destaque '+(n+1));
+    if(n===0) d.className='active';
+    d.addEventListener('mousedown',function(e){e.preventDefault();});
+    d.addEventListener('click',function(){ir(n);arranca();});
+    dw.appendChild(d);
+  });
+  function ir(n){
+    i=(n+sl.length)%sl.length;
+    sl.forEach(function(x,k){x.classList.toggle('active',k===i);});
+    dw.querySelectorAll('button').forEach(function(x,k){x.classList.toggle('active',k===i);});
+  }
+  function arranca(){clearInterval(t);t=setInterval(function(){ir(i+1);},7000);}
+  ['prev','next'].forEach(function(c,k){
+    var b=s.querySelector('.mc-arrow.'+c); if(!b) return;
+    b.addEventListener('mousedown',function(e){e.preventDefault();});
+    b.addEventListener('click',function(){ir(i+(k?1:-1));arranca();});
+  });
+  arranca();
+})();
+</script>
 </body>
 </html>

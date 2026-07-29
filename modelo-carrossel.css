@@ -1,0 +1,61 @@
+/* ===========================================================
+   TECNOVA — carrossel de entrada dos modelos
+   Cada modelo define as suas variáveis:
+   --mc-acc --mc-acc-soft --mc-txt --mc-txt-dim --mc-veil --mc-on-acc
+   =========================================================== */
+.mc{position:relative;overflow:hidden;padding:0}
+.mc-slide{
+  position:absolute;inset:0;opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .8s ease;display:flex;align-items:center;
+  min-height:min(76vh,600px);padding:64px 0;
+}
+.mc-slide.active{position:relative;opacity:1;visibility:visible;pointer-events:auto}
+.mc-bg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center}
+.mc-bg::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(100deg,var(--mc-veil) 0%,var(--mc-veil) 58%,transparent 112%);
+}
+.mc-in{position:relative;z-index:2;max-width:600px}
+.mc-eyebrow{
+  display:inline-flex;align-items:center;gap:10px;font-size:.68rem;letter-spacing:.26em;
+  text-transform:uppercase;color:var(--mc-acc-soft);font-weight:800;
+}
+.mc-eyebrow::before{content:"";width:26px;height:1.5px;background:var(--mc-acc-soft)}
+.mc-slide h1,.mc-slide h2{
+  font-size:clamp(2.1rem,5vw,3.4rem);line-height:1.06;margin:16px 0 14px;color:var(--mc-txt);
+}
+.mc-slide h1 i,.mc-slide h2 i{color:var(--mc-acc-soft);font-style:italic}
+.mc-slide p{color:var(--mc-txt-dim);font-size:1rem;max-width:34em;margin-bottom:24px}
+.mc-cta{display:flex;gap:12px;flex-wrap:wrap}
+.mc-badges{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+.mc-badges span{
+  background:rgba(127,127,127,.14);border:1px solid var(--mc-line,rgba(127,127,127,.3));
+  border-radius:999px;padding:7px 15px;font-size:.77rem;color:var(--mc-txt-dim);font-weight:600;
+}
+
+.mc-arrow{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:44px;height:44px;
+  border-radius:50%;border:1px solid var(--mc-line,rgba(127,127,127,.4));
+  background:rgba(0,0,0,.32);color:var(--mc-acc-soft);font-size:1.4rem;cursor:pointer;
+  display:none;place-items:center;line-height:1;transition:all .2s;
+}
+.mc-arrow:hover{background:var(--mc-acc);color:var(--mc-on-acc)}
+.mc-arrow.prev{left:20px}.mc-arrow.next{right:20px}
+@media(min-width:1180px){.mc-arrow{display:grid}}
+
+.mc-dots{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:9px;z-index:10}
+.mc-dots button{
+  width:10px;height:10px;border-radius:50%;padding:0;cursor:pointer;
+  border:1px solid var(--mc-acc-soft);background:transparent;transition:all .25s;
+}
+.mc-dots button.active{background:var(--mc-acc-soft);transform:scale(1.25)}
+
+@media(max-width:860px){
+  .mc-slide{min-height:auto;padding:52px 0 62px;align-items:flex-start}
+  .mc-bg::after{background:linear-gradient(180deg,var(--mc-veil) 0%,var(--mc-veil) 62%,transparent 120%),
+                           linear-gradient(100deg,var(--mc-veil) 0%,var(--mc-veil) 70%,transparent 110%)}
+  .mc-slide p{font-size:.93rem;margin-bottom:20px}
+  .mc-cta .btn{width:100%;justify-content:center}
+  .mc-badges{gap:7px;margin-top:18px}
+  .mc-badges span{font-size:.72rem;padding:6px 12px}
+}

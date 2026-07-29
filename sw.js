@@ -4,7 +4,7 @@
 //    usando o cache apenas como reserva quando não há internet.
 //  - Restantes ficheiros (CSS/JS/imagens): stale-while-revalidate —
 //    abrem rápido a partir do cache e atualizam-se em segundo plano.
-const CACHE_NAME = 'tecnova-v5';
+const CACHE_NAME = 'tecnova-v6';
 const ASSETS = [
   './index.html',
   './servicos.html',
@@ -28,6 +28,26 @@ const ASSETS = [
   './modelo-confeitaria-contactos.html',
   './modelo-confeitaria.css',
   './modelo-confeitaria.js',
+  './modelo-barbearia-galeria.html',
+  './modelo-barbearia-sobre.html',
+  './modelo-barbearia-contactos.html',
+  './modelo-estetica-galeria.html',
+  './modelo-estetica-sobre.html',
+  './modelo-estetica-contactos.html',
+  './modelo-restaurante-galeria.html',
+  './modelo-restaurante-sobre.html',
+  './modelo-restaurante-contactos.html',
+  './modelo-ginasio-galeria.html',
+  './modelo-ginasio-sobre.html',
+  './modelo-ginasio-contactos.html',
+  './modelo-oficina-galeria.html',
+  './modelo-oficina-sobre.html',
+  './modelo-oficina-contactos.html',
+  './modelo-salao-galeria.html',
+  './modelo-salao-sobre.html',
+  './modelo-salao-contactos.html',
+  './modelo-paginas.css',
+  './modelo-carrossel.css',
   './modelo-fix.js',
   './estilo.css',
   './site.js',

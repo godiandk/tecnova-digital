@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galeria — AutoCentro Norte · Modelo TECNOVA Digital</title>
+<meta name="description" content="Fotografamos o que encontramos antes de mexer. Se não conseguirmos explicar-lhe porquê, não fazemos.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="modelo-paginas.css?v=1">
+<style>
+:root{
+  --bg:#0d1113; --bg2:#171d20; --card:#171d20;
+  --txt:#e7edf0; --txt-dim:#93a3aa;
+  --acc:#4fa3d1; --acc-soft:#7cc0e6; --on-acc:#0d1113;
+  --acc-line:rgba(79,163,209,.2); --bar:#070a0b; --field:#101619; --grid:rgba(79,163,209,.09);
+  --font-head:'Manrope',sans-serif; --logo-r:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="demo-bar">
+  <span>🖼️ Este é um <b>modelo demonstrativo</b> criado pela TECNOVA Digital</span>
+  <div>
+    <a href="modelos.html">← Voltar aos modelos</a>
+    <a href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley%21%20Gostei%20do%20modelo%20AutoCentro%20Norte%20e%20quero%20um%20site%20assim." target="_blank" rel="noopener">Quero um site assim →</a>
+  </div>
+</div>
+
+<header class="wrap">
+  <div class="nav">
+    <a class="logo" href="modelo-oficina.html">
+      <span class="logo-ic">A</span>
+      <span><b>AutoCentro Norte</b><span class="tagline">Oficina Automóvel</span></span>
+    </a>
+    <div class="nav-right">
+      <a class="btn btn-acc" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20uma%20revis%C3%A3o%20no%20AutoCentro%20Norte%20%28modelo%29." target="_blank" rel="noopener">Marcar revisão</a>
+      <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+    </div>
+    <nav class="links" id="navLinks">
+      <a class="" href="modelo-oficina.html">Início</a>
+      <a class="" href="modelo-oficina-servicos.html">Serviços & Preçário</a>
+      <a class="on" href="modelo-oficina-galeria.html">Galeria</a>
+      <a class="" href="modelo-oficina-sobre.html">Sobre</a>
+      <a class="" href="modelo-oficina-contactos.html">Contactos</a>
+      <a class="btn btn-acc menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20uma%20revis%C3%A3o%20no%20AutoCentro%20Norte%20%28modelo%29." target="_blank" rel="noopener">Marcar revisão</a>
+    </nav>
+  </div>
+</header>
+
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">A oficina</p>
+    <h1>Trabalho que se <i>vê por dentro.</i></h1>
+    <p>Fotografamos o que encontramos antes de mexer. Se não conseguirmos explicar-lhe porquê, não fazemos.</p>
+  </div>
+</section>
+
+<section style="padding-top:20px">
+  <div class="wrap">
+    <div class="gal-filter" id="galFilter">
+      <button class="active" data-f="todos">Todos</button>
+      <button class="" data-f="mecanica">Mecânica</button>
+      <button class="" data-f="oficina">A oficina</button>
+      <button class="" data-f="viaturas">Viaturas</button>
+    </div>
+    <div class="gal-grid" id="galGrid">
+      <div class="gitem reveal" data-c="mecanica"><img src="img/modelos/oficina/g6.jpg" alt="Distribuição" loading="lazy" width="1000" height="1000"><div class="cap"><b>Distribuição</b><span>Correia e tensores</span></div></div>
+      <div class="gitem reveal" data-c="mecanica"><img src="img/modelos/oficina/g7.jpg" alt="Mudança de óleo" loading="lazy" width="1000" height="1000"><div class="cap"><b>Mudança de óleo</b><span>Filtros incluídos</span></div></div>
+      <div class="gitem reveal" data-c="oficina"><img src="img/modelos/oficina/hero.jpg" alt="Rampa de trabalho" loading="lazy" width="1000" height="1000"><div class="cap"><b>Rampa de trabalho</b><span>Elevador de 4 colunas</span></div></div>
+      <div class="gitem reveal" data-c="oficina"><img src="img/modelos/oficina/g8.jpg" alt="Bancada de ferramenta" loading="lazy" width="1000" height="1000"><div class="cap"><b>Bancada de ferramenta</b><span>Tudo à mão</span></div></div>
+      <div class="gitem reveal" data-c="mecanica"><img src="img/modelos/oficina/g1.jpg" alt="Motor aberto" loading="lazy" width="1000" height="1000"><div class="cap"><b>Motor aberto</b><span>Diagnóstico ao pormenor</span></div></div>
+      <div class="gitem reveal" data-c="viaturas"><img src="img/modelos/oficina/g9.jpg" alt="Em revisão" loading="lazy" width="1000" height="1000"><div class="cap"><b>Em revisão</b><span>Capot aberto, tudo verificado</span></div></div>
+      <div class="gitem reveal" data-c="mecanica"><img src="img/modelos/oficina/g10.jpg" alt="Trabalho fino" loading="lazy" width="1000" height="1000"><div class="cap"><b>Trabalho fino</b><span>Aperto ao binário certo</span></div></div>
+      <div class="gitem reveal" data-c="viaturas"><img src="img/modelos/oficina/g2.jpg" alt="Entrega ao cliente" loading="lazy" width="1000" height="1000"><div class="cap"><b>Entrega ao cliente</b><span>Lavada por fora</span></div></div>
+      <div class="gitem reveal" data-c="viaturas"><img src="img/modelos/oficina/g11.jpg" alt="Pronta a sair" loading="lazy" width="1000" height="1000"><div class="cap"><b>Pronta a sair</b><span>Revisão concluída</span></div></div>
+      <div class="gitem reveal" data-c="oficina"><img src="img/modelos/oficina/g3.jpg" alt="Zona de diagnóstico" loading="lazy" width="1000" height="1000"><div class="cap"><b>Zona de diagnóstico</b><span>Equipamento de marca</span></div></div>
+      <div class="gitem reveal" data-c="viaturas"><img src="img/modelos/oficina/g12.jpg" alt="Box coberta" loading="lazy" width="1000" height="1000"><div class="cap"><b>Box coberta</b><span>Fica ao abrigo</span></div></div>
+      <div class="gitem reveal" data-c="oficina"><img src="img/modelos/oficina/g4.jpg" alt="Peças originais" loading="lazy" width="1000" height="1000"><div class="cap"><b>Peças originais</b><span>Fornecedores certificados</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-final">
+  <div class="wrap">
+    <h2 class="reveal">Viu alguma coisa que <i>quer para si?</i></h2>
+    <p class="reveal">Diga-nos qual e tratamos do resto. Basta uma mensagem.</p>
+    <a class="btn btn-acc btn-lg reveal" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20uma%20revis%C3%A3o%20no%20AutoCentro%20Norte%20%28modelo%29." target="_blank" rel="noopener">Marcar revisão</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>AutoCentro Norte · Zona Industrial da Maia, Lote 14 · +351 933 113 525</p>
+    <div class="tecnova-credit">
+      <span>Site criado pela</span>
+      <a href="index.html">TECNOVA Digital →</a>
+    </div>
+  </div>
+</footer>
+
+<div class="sticky-cta">
+  <a class="btn btn-acc" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20uma%20revis%C3%A3o%20no%20AutoCentro%20Norte%20%28modelo%29." target="_blank" rel="noopener">Marcar revisão</a>
+</div>
+
+<script src="modelo-fix.js"></script>
+<script>
+(function(){
+  var b=document.getElementById('burger'), n=document.getElementById('navLinks');
+  if(b&&n) b.addEventListener('click',function(){n.classList.toggle('open');});
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
+})();
+</script>
+
+<script>
+(function(){
+  var f=document.getElementById('galFilter'), g=document.getElementById('galGrid');
+  if(!f||!g) return;
+  f.addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    f.querySelectorAll('button').forEach(function(x){x.classList.toggle('active',x===b);});
+    var c=b.dataset.f;
+    g.querySelectorAll('.gitem').forEach(function(it){
+      it.classList.toggle('hide', c!=='todos' && it.dataset.c!==c);
+    });
+  });
+})();
+</script>
+</body>
+</html>

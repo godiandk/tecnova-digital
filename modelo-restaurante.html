@@ -6,8 +6,11 @@
 <title>Sabor & Tradição — Modelo TECNOVA Digital</title>
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="modelo-carrossel.css?v=1">
 <style>
 :root{
+  --mc-acc:#d97b3f; --mc-acc-soft:#e79a63; --mc-txt:#f3e6d8; --mc-txt-dim:#dbccb9;
+  --mc-veil:rgba(36,21,9,.9); --mc-on-acc:#241509; --mc-line:rgba(217,123,63,.35);
   --ink:#241509; --ink-2:#2e1c10; --wood:#3a2414; --rust:#d97b3f; --rust-soft:#e79a63;
   --green:#5c7a4a; --cream:#f3e6d8; --cream-dim:#c9b9a6;
 }
@@ -170,27 +173,69 @@ footer{border-top:1px solid rgba(217,123,63,.18);padding:36px 0 90px;text-align:
       <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
     <nav class="links" id="navLinks">
-      <a href="modelo-restaurante-menu.html">Cardápio</a>
-      <a href="#galeria">Galeria</a>
-      <a href="#equipa">Equipa</a>
-      <a href="#horario">Reservas</a>
-      <a class="btn btn-rust menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20reservar%20mesa%20no%20Sabor%20%26%20Tradi%C3%A7%C3%A3o%20(modelo)." target="_blank" rel="noopener">Reservar mesa</a>
+      <a class="on" href="modelo-restaurante.html">Início</a>
+      <a class="" href="modelo-restaurante-menu.html">Cardápio</a>
+      <a class="" href="modelo-restaurante-galeria.html">Galeria</a>
+      <a class="" href="modelo-restaurante-sobre.html">Sobre</a>
+      <a class="" href="modelo-restaurante-contactos.html">Contactos</a>
+      <a class="btn btn-rust menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20reservar%20mesa%20no%20Sabor%20%26%20Tradi%C3%A7%C3%A3o%20%28modelo%29." target="_blank" rel="noopener">Reservar mesa</a>
     </nav>
   </div>
 </header>
 
-<section class="hero">
-  <div class="wrap">
-    <p class="eyebrow">Restaurante &amp; Café</p>
-    <h1>Sabores que <i>contam histórias.</i></h1>
-    <p>Cozinha tradicional feita com calma, num espaço acolhedor. Reserve a sua mesa em segundos, direto pelo WhatsApp.</p>
-    <a class="btn btn-rust" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20reservar%20mesa%20no%20Sabor%20%26%20Tradi%C3%A7%C3%A3o%20(modelo)." target="_blank" rel="noopener">Reservar mesa</a>
-    <div class="trust-row reveal">
-      <span class="stars">★★★★★</span> <b>4.7</b> <span>(340 avaliações no Google)</span>
-      <span class="sep">·</span>
-      <span><b>15 anos</b> de casa</span>
+<section class="mc" aria-label="Destaques">
+
+  <div class="mc-slide active">
+    <div class="mc-bg" style="background-image:url('img/modelos/restaurante/hero.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Restaurante &amp; Café</p>
+        <h1>Sabores que<br><i>contam histórias.</i></h1>
+        <p>Cozinha tradicional feita com calma, com receitas escritas à mão pela avó em 1978. Reserve a sua mesa em segundos.</p>
+        <div class="mc-cta">
+          <a class="btn btn-rust" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20reservar%20mesa%20no%20Sabor%20%26%20Tradi%C3%A7%C3%A3o%20%28modelo%29." target="_blank" rel="noopener">Reservar mesa</a>
+          <a class="btn btn-line" href="modelo-restaurante-menu.html">Ver cardápio</a>
+        </div>
+        <div class="mc-badges"><span>★ 4.8 no Google</span><span>47 anos de casa</span><span>3 gerações</span></div>
+      </div>
     </div>
   </div>
+
+  <div class="mc-slide">
+    <div class="mc-bg" style="background-image:url('img/modelos/restaurante/g7.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Cardápio</p>
+        <h2>Do mercado,<br><i>nesse mesmo dia.</i></h2>
+        <p>Compramos de manhã no mercado ao lado. Se o peixe não estiver bom, não há peixe — e dizemos-lhe porquê.</p>
+        <div class="mc-cta">
+          <a class="btn btn-rust" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20reservar%20mesa%20no%20Sabor%20%26%20Tradi%C3%A7%C3%A3o%20%28modelo%29." target="_blank" rel="noopener">Reservar mesa</a>
+          <a class="btn btn-line" href="modelo-restaurante-menu.html">Ver cardápio completo</a>
+        </div>
+        <div class="mc-badges"><span>Prato do dia</span><span>Vinhos da região</span><span>Menu de criança</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mc-slide">
+    <div class="mc-bg" style="background-image:url('img/modelos/restaurante/g13.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Reservas</p>
+        <h2>Uma mesa<br><i>à sua espera.</i></h2>
+        <p>Ao jantar e aos fins de semana enchemos quase sempre. Reserve pelo WhatsApp e fica tratado em segundos.</p>
+        <div class="mc-cta">
+          <a class="btn btn-rust" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20reservar%20mesa%20no%20Sabor%20%26%20Tradi%C3%A7%C3%A3o%20%28modelo%29." target="_blank" rel="noopener">Reservar mesa</a>
+          <a class="btn btn-line" href="modelo-restaurante-contactos.html">Reservar agora</a>
+        </div>
+        <div class="mc-badges"><span>Até 30 pessoas</span><span>Esplanada</span><span>Take-away</span></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="mc-arrow prev" aria-label="Anterior">‹</button>
+  <button class="mc-arrow next" aria-label="Seguinte">›</button>
+  <div class="mc-dots"></div>
 </section>
 
 <section class="menu-sec" id="menu">
@@ -320,5 +365,32 @@ const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.tar
 document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 </script>
 <script src="modelo-fix.js"></script>
+
+<script>
+(function(){
+  var s=document.querySelector('.mc'); if(!s) return;
+  var sl=s.querySelectorAll('.mc-slide'), dw=s.querySelector('.mc-dots'), i=0, t;
+  sl.forEach(function(_,n){
+    var d=document.createElement('button');
+    d.setAttribute('aria-label','Destaque '+(n+1));
+    if(n===0) d.className='active';
+    d.addEventListener('mousedown',function(e){e.preventDefault();});
+    d.addEventListener('click',function(){ir(n);arranca();});
+    dw.appendChild(d);
+  });
+  function ir(n){
+    i=(n+sl.length)%sl.length;
+    sl.forEach(function(x,k){x.classList.toggle('active',k===i);});
+    dw.querySelectorAll('button').forEach(function(x,k){x.classList.toggle('active',k===i);});
+  }
+  function arranca(){clearInterval(t);t=setInterval(function(){ir(i+1);},7000);}
+  ['prev','next'].forEach(function(c,k){
+    var b=s.querySelector('.mc-arrow.'+c); if(!b) return;
+    b.addEventListener('mousedown',function(e){e.preventDefault();});
+    b.addEventListener('click',function(){ir(i+(k?1:-1));arranca();});
+  });
+  arranca();
+})();
+</script>
 </body>
 </html>

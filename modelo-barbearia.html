@@ -6,8 +6,11 @@
 <title>Barbearia Império — Modelo TECNOVA Digital</title>
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Playfair+Display:ital,wght@0,700;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="modelo-carrossel.css?v=1">
 <style>
 :root{
+  --mc-acc:#8c2f2f; --mc-acc-soft:#c9a227; --mc-txt:#ece3d3; --mc-txt-dim:#d6cab6;
+  --mc-veil:rgba(26,18,16,.9); --mc-on-acc:#ece3d3; --mc-line:rgba(201,162,39,.35);
   --ink:#1a1210; --ink-2:#241715; --red:#8c2f2f; --red-soft:#a83b3b;
   --gold:#c9a227; --gold-soft:#ddc064; --cream:#ece3d3; --cream-dim:#b9ac97;
 }
@@ -191,28 +194,69 @@ footer{border-top:1px solid rgba(201,162,39,.18);padding:36px 0 90px;text-align:
       <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
     <nav class="links" id="navLinks">
-      <a href="modelo-barbearia-servicos.html">Serviços &amp; Loja</a>
-      <a href="#galeria">Galeria</a>
-      <a href="#equipa">Equipa</a>
-      <a href="#fidelidade">Fidelidade</a>
-      <a href="#horario">Horário</a>
-      <a class="btn btn-red menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20marcar%20um%20corte%20na%20Barbearia%20Imp%C3%A9rio%20(modelo)." target="_blank" rel="noopener">Marcar corte</a>
+      <a class="on" href="modelo-barbearia.html">Início</a>
+      <a class="" href="modelo-barbearia-servicos.html">Serviços & Loja</a>
+      <a class="" href="modelo-barbearia-galeria.html">Galeria</a>
+      <a class="" href="modelo-barbearia-sobre.html">Sobre</a>
+      <a class="" href="modelo-barbearia-contactos.html">Contactos</a>
+      <a class="btn btn-red menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20um%20corte%20na%20Barbearia%20Imp%C3%A9rio%20%28modelo%29." target="_blank" rel="noopener">Marcar corte</a>
     </nav>
   </div>
 </header>
 
-<section class="hero">
-  <div class="wrap">
-    <p class="eyebrow">Barbearia tradicional</p>
-    <h1>Estilo clássico,<br><i>atitude moderna.</i></h1>
-    <p>Cortes de precisão, barba bem feita e um atendimento que respeita o seu tempo. Marque em menos de um minuto, sem sair da conversa do WhatsApp.</p>
-    <a class="btn btn-red" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20marcar%20um%20corte%20na%20Barbearia%20Imp%C3%A9rio%20(modelo)." target="_blank" rel="noopener">Marcar agora</a>
-    <div class="trust-row reveal">
-      <span class="stars">★★★★★</span> <b>4.9</b> <span>(212 avaliações no Google)</span>
-      <span class="sep">·</span>
-      <span><b>8 anos</b> de experiência</span>
+<section class="mc" aria-label="Destaques">
+
+  <div class="mc-slide active">
+    <div class="mc-bg" style="background-image:url('img/modelos/barbearia/hero.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Barbearia tradicional</p>
+        <h1>Estilo clássico,<br><i>atitude moderna.</i></h1>
+        <p>Cortes de precisão, barba bem feita e um atendimento que respeita o seu tempo. Marque em menos de um minuto, sem sair da conversa do WhatsApp.</p>
+        <div class="mc-cta">
+          <a class="btn btn-red" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20um%20corte%20na%20Barbearia%20Imp%C3%A9rio%20%28modelo%29." target="_blank" rel="noopener">Marcar corte</a>
+          <a class="btn btn-line" href="modelo-barbearia-servicos.html">Ver serviços e preços</a>
+        </div>
+        <div class="mc-badges"><span>★ 4.9 no Google</span><span>8 anos de casa</span><span>212 avaliações</span></div>
+      </div>
     </div>
   </div>
+
+  <div class="mc-slide">
+    <div class="mc-bg" style="background-image:url('img/modelos/barbearia/g4.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Serviços &amp; Loja</p>
+        <h2>Preço à vista,<br><i>sem surpresas.</i></h2>
+        <p>Corte, barba, packs e os produtos que usamos na cadeira. Tudo com preço e duração à frente — chega a saber quanto custa e quanto demora.</p>
+        <div class="mc-cta">
+          <a class="btn btn-red" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20um%20corte%20na%20Barbearia%20Imp%C3%A9rio%20%28modelo%29." target="_blank" rel="noopener">Marcar corte</a>
+          <a class="btn btn-line" href="modelo-barbearia-servicos.html">Ver preçário completo</a>
+        </div>
+        <div class="mc-badges"><span>Corte 12€</span><span>Pack completo 20€</span><span>Loja própria</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mc-slide">
+    <div class="mc-bg" style="background-image:url('img/modelos/barbearia/g7.jpg')"></div>
+    <div class="wrap">
+      <div class="mc-in">
+        <p class="mc-eyebrow">Galeria</p>
+        <h2>Veja o trabalho<br><i>antes de marcar.</i></h2>
+        <p>Doze trabalhos reais feitos nesta cadeira. Traga uma foto do que quer — copiamos ao milímetro.</p>
+        <div class="mc-cta">
+          <a class="btn btn-red" href="https://wa.me/351933113525?text=Ol%C3%A1%21%20Quero%20marcar%20um%20corte%20na%20Barbearia%20Imp%C3%A9rio%20%28modelo%29." target="_blank" rel="noopener">Marcar corte</a>
+          <a class="btn btn-line" href="modelo-barbearia-galeria.html">Ver galeria</a>
+        </div>
+        <div class="mc-badges"><span>Cortes</span><span>Barba</span><span>O espaço</span></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="mc-arrow prev" aria-label="Anterior">‹</button>
+  <button class="mc-arrow next" aria-label="Seguinte">›</button>
+  <div class="mc-dots"></div>
 </section>
 
 <section class="services" id="servicos">
@@ -333,5 +377,32 @@ const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.tar
 document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 </script>
 <script src="modelo-fix.js"></script>
+
+<script>
+(function(){
+  var s=document.querySelector('.mc'); if(!s) return;
+  var sl=s.querySelectorAll('.mc-slide'), dw=s.querySelector('.mc-dots'), i=0, t;
+  sl.forEach(function(_,n){
+    var d=document.createElement('button');
+    d.setAttribute('aria-label','Destaque '+(n+1));
+    if(n===0) d.className='active';
+    d.addEventListener('mousedown',function(e){e.preventDefault();});
+    d.addEventListener('click',function(){ir(n);arranca();});
+    dw.appendChild(d);
+  });
+  function ir(n){
+    i=(n+sl.length)%sl.length;
+    sl.forEach(function(x,k){x.classList.toggle('active',k===i);});
+    dw.querySelectorAll('button').forEach(function(x,k){x.classList.toggle('active',k===i);});
+  }
+  function arranca(){clearInterval(t);t=setInterval(function(){ir(i+1);},7000);}
+  ['prev','next'].forEach(function(c,k){
+    var b=s.querySelector('.mc-arrow.'+c); if(!b) return;
+    b.addEventListener('mousedown',function(e){e.preventDefault();});
+    b.addEventListener('click',function(){ir(i+(k?1:-1));arranca();});
+  });
+  arranca();
+})();
+</script>
 </body>
 </html>
