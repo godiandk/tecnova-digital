@@ -184,6 +184,31 @@ orçamentos de concorrentes**, e é isso que está a dizer ao cliente.
 Se mudares os preços do catálogo, revê o `TAXA_HORA` (a nossa taxa efetiva),
 senão as horas mostradas deixam de bater certo.
 
+## Idiomas do site
+
+O botão com a bandeira (canto superior direito no computador, canto inferior
+esquerdo no telemóvel) troca o idioma sem recarregar a página. O português é a
+língua original; **o que não estiver traduzido fica em português** — o site
+nunca inventa traduções nem mostra texto partido.
+
+Os dicionários estão em `idiomas/`. Cada entrada é simples:
+
+```js
+"Frase exatamente como está no site": "Sentence in English",
+```
+
+**Como descobrir o que falta traduzir:** abre a página com `?lang=en` e vê o
+que continua em português. Copia a frase tal como aparece no HTML e acrescenta
+ao dicionário. Se a frase tiver negrito ou itálico no meio, a chave tem de
+incluir esse HTML — por exemplo:
+
+```js
+"Monte o seu site e veja o preço <em>na hora.</em>": "Build your website and see the price <em>right now.</em>",
+```
+
+Também podes enviar um link já num idioma: `index.html?lang=en`. E quem entra
+com o telemóvel em inglês vê o site em inglês logo à primeira.
+
 ## Assistente do site
 
 O botão dourado no canto inferior direito de todas as páginas é o assistente.
