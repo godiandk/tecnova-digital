@@ -63,6 +63,53 @@ tr:last-child td{border-bottom:none}
 .hidden{display:none!important}
 .search{max-width:320px;margin-bottom:14px}
 
+/* separadores */
+.tabs{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap}
+.tab{background:var(--ink-2);border:1px solid rgba(217,178,110,.2);color:var(--cream-dim);border-radius:999px;padding:10px 20px;font:inherit;font-size:.85rem;font-weight:700;cursor:pointer}
+.tab.on{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+.tab .n{background:rgba(0,0,0,.18);border-radius:999px;padding:1px 8px;margin-left:7px;font-size:.75rem}
+.tab.on .n{background:rgba(0,0,0,.16)}
+.pane{display:none}
+.pane.on{display:block}
+
+/* orçamentos */
+.filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.filtro{background:transparent;border:1px solid rgba(217,178,110,.22);color:var(--cream-dim);border-radius:999px;padding:7px 15px;font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
+.filtro.on{background:rgba(217,178,110,.16);border-color:var(--gold);color:var(--gold-soft)}
+.orc{background:var(--ink-2);border:1px solid rgba(217,178,110,.16);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.orc-top{display:flex;align-items:center;gap:14px;padding:16px 20px;cursor:pointer;flex-wrap:wrap}
+.orc-top:hover{background:rgba(217,178,110,.04)}
+.orc-ref{font-family:'Playfair Display',serif;color:var(--gold);letter-spacing:.04em;font-size:.9rem;flex:none}
+.orc-quem{flex:1;min-width:150px}
+.orc-quem b{display:block;font-size:.95rem;color:var(--cream)}
+.orc-quem span{font-size:.76rem;color:var(--cream-dim)}
+.orc-val{font-family:'Playfair Display',serif;font-size:1.35rem;color:var(--gold);flex:none}
+.orc-data{font-size:.74rem;color:var(--cream-dim);flex:none}
+.badge.novo{background:rgba(217,178,110,.18);color:var(--gold-soft)}
+.badge.sinal{background:rgba(37,211,102,.15);color:#8fe3ac}
+.badge.producao{background:rgba(90,160,220,.16);color:#9ccdf0}
+.badge.entregue{background:rgba(255,255,255,.08);color:var(--cream-dim)}
+.badge.perdido{background:rgba(224,113,92,.14);color:#f0a292}
+.orc-det{display:none;padding:0 20px 20px;border-top:1px solid rgba(217,178,110,.12)}
+.orc.aberto .orc-det{display:block}
+.det-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:18px}
+.det-bloco h4{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:0 0 10px;font-weight:800}
+.det-bloco ul{list-style:none;margin:0;padding:0}
+.det-bloco li{display:flex;justify-content:space-between;gap:12px;font-size:.83rem;color:var(--cream-dim);padding:5px 0;border-bottom:1px dashed rgba(217,178,110,.1)}
+.det-bloco li b{color:var(--cream);font-weight:600;white-space:nowrap}
+.det-bloco li.g{display:block;color:var(--gold-soft);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin-top:12px;border:none;padding-bottom:0}
+.det-bloco li.g:first-child{margin-top:0}
+.det-notas{background:rgba(0,0,0,.24);border-radius:12px;padding:14px 16px;font-size:.85rem;color:var(--cream-dim);margin-top:14px;line-height:1.6}
+.det-acoes{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center}
+.det-acoes .btn{margin-top:0;padding:10px 18px;font-size:.82rem}
+.det-acoes select{width:auto;min-width:170px;padding:9px 12px;font-size:.82rem}
+.copiado{color:#8fe3ac;font-size:.8rem;font-weight:700}
+@media(max-width:720px){
+  .det-grid{grid-template-columns:1fr;gap:18px}
+  .orc-val{font-size:1.15rem}
+  .grid-stats{grid-template-columns:1fr 1fr}
+}
+
 /* gate */
 #gate{max-width:420px;margin:80px auto 0;text-align:center}
 #gate p{color:var(--cream-dim);font-size:.9rem;margin-top:10px}
@@ -93,6 +140,43 @@ tr:last-child td{border-bottom:none}
     </div>
     <button class="logout" onclick="auth.signOut()">Sair</button>
   </header>
+
+  <div class="tabs">
+    <button class="tab on" data-pane="paneOrc">Orçamentos <span class="n" id="tabNovos">0</span></button>
+    <button class="tab" data-pane="paneCli">Clientes &amp; Cupões</button>
+  </div>
+
+  <!-- =============== ORÇAMENTOS =============== -->
+  <div class="pane on" id="paneOrc">
+
+    <div class="grid-stats">
+      <div class="stat"><b id="statOrcNovos">–</b><span>Por responder</span></div>
+      <div class="stat"><b id="statOrcAndamento">–</b><span>Em curso</span></div>
+      <div class="stat"><b id="statOrcValor">–</b><span>Valor em carteira</span></div>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:1.1rem;margin:0 0 4px">Pedidos de orçamento do simulador</h2>
+      <p style="font-size:.82rem;color:var(--cream-dim);margin:0 0 16px">
+        Cada linha é um cliente que montou o site dele no simulador. Abra para ver tudo o que ele escolheu —
+        e use <b>Copiar briefing</b> para levar o pedido completo para onde precisar.</p>
+
+      <div class="filtros" id="filtrosOrc">
+        <button class="filtro on" data-f="todos">Todos</button>
+        <button class="filtro" data-f="novo">Por responder</button>
+        <button class="filtro" data-f="sinal">Sinal pago</button>
+        <button class="filtro" data-f="producao">Em produção</button>
+        <button class="filtro" data-f="entregue">Entregue</button>
+        <button class="filtro" data-f="perdido">Perdido</button>
+      </div>
+      <input class="search" id="buscaOrc" placeholder="Pesquisar por nome, negócio, telefone ou referência…" oninput="renderOrcamentos()">
+
+      <div id="listaOrc"><p class="empty">A carregar…</p></div>
+    </div>
+  </div>
+
+  <!-- =============== CLIENTES E CUPÕES =============== -->
+  <div class="pane" id="paneCli">
 
   <div class="grid-stats">
     <div class="stat"><b id="statClientes">–</b><span>Clientes registados</span></div>
@@ -158,6 +242,7 @@ tr:last-child td{border-bottom:none}
       </table>
     </div>
   </div>
+  </div><!-- /paneCli -->
 </div>
 
 <script>
@@ -180,7 +265,201 @@ auth.onAuthStateChanged(async (user)=>{
   document.getElementById('painel').classList.remove('hidden');
   carregarClientes();
   carregarVouchers();
+  carregarOrcamentos();
 });
+
+/* ============ separadores ============ */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x===t));
+    document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on', p.id===t.dataset.pane));
+  });
+});
+
+/* ============ ORÇAMENTOS ============ */
+let orcCache = [];
+let filtroOrc = 'todos';
+
+const ESTADOS = {
+  novo:      'Por responder',
+  sinal:     'Sinal pago',
+  producao:  'Em produção',
+  entregue:  'Entregue',
+  perdido:   'Perdido'
+};
+
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const eur = n => (Number(n)||0).toLocaleString('pt-PT') + '€';
+
+// número pronto para o wa.me: só dígitos e, se vier sem indicativo, assume Portugal
+function waNum(tel){
+  let n = String(tel||'').replace(/\D/g,'');
+  if(n.length === 9) n = '351' + n;
+  return n;
+}
+
+document.querySelectorAll('#filtrosOrc .filtro').forEach(b=>{
+  b.addEventListener('click',()=>{
+    filtroOrc = b.dataset.f;
+    document.querySelectorAll('#filtrosOrc .filtro').forEach(x=>x.classList.toggle('on', x===b));
+    renderOrcamentos();
+  });
+});
+
+async function carregarOrcamentos(){
+  try{
+    const snap = await db.collection('orcamentos').orderBy('criado','desc').get();
+    orcCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
+  }catch(e){
+    document.getElementById('listaOrc').innerHTML =
+      '<p class="empty">Não foi possível carregar os orçamentos. Confirme as regras do Firestore.</p>';
+    return;
+  }
+  const novos = orcCache.filter(o=>(o.estado||'novo')==='novo').length;
+  const curso = orcCache.filter(o=>['sinal','producao'].includes(o.estado)).length;
+  const carteira = orcCache.filter(o=>['novo','sinal','producao'].includes(o.estado||'novo'))
+                           .reduce((a,o)=>a+(Number(o.total)||0),0);
+  document.getElementById('statOrcNovos').textContent = novos;
+  document.getElementById('statOrcAndamento').textContent = curso;
+  document.getElementById('statOrcValor').textContent = eur(carteira);
+  document.getElementById('tabNovos').textContent = novos;
+  renderOrcamentos();
+}
+
+function renderOrcamentos(){
+  const q = (document.getElementById('buscaOrc').value||'').toLowerCase();
+  const lista = orcCache.filter(o=>{
+    const est = o.estado||'novo';
+    if(filtroOrc!=='todos' && est!==filtroOrc) return false;
+    if(!q) return true;
+    return [o.ref,o.nome,o.negocio,o.tel,o.email].join(' ').toLowerCase().includes(q);
+  });
+  const box = document.getElementById('listaOrc');
+  if(!lista.length){ box.innerHTML = '<p class="empty">Nenhum orçamento aqui por agora.</p>'; return; }
+
+  box.innerHTML = lista.map(o=>{
+    const est = o.estado||'novo';
+    const data = o.criado ? new Date(o.criado).toLocaleDateString('pt-PT',{day:'2-digit',month:'short'}) : '—';
+
+    let itens='', grupo='';
+    (o.linhas||[]).forEach(l=>{
+      if(l.grupo!==grupo){ grupo=l.grupo; itens += `<li class="g">${esc(grupo)}</li>`; }
+      itens += `<li><span>${esc(l.nome)}</span><b>${eur(l.preco)}</b></li>`;
+    });
+    if(!itens) itens = '<li><span>Sem detalhe guardado</span></li>';
+
+    return `
+    <div class="orc" id="orc-${esc(o.id)}">
+      <div class="orc-top" onclick="document.getElementById('orc-${esc(o.id)}').classList.toggle('aberto')">
+        <span class="orc-ref">${esc(o.ref||o.id)}</span>
+        <span class="orc-quem"><b>${esc(o.nome||'—')}</b>
+          <span>${esc(o.negocio||o.tipoNome||'—')} · ${esc(o.tel||'')}</span></span>
+        <span class="badge ${est}">${esc(ESTADOS[est]||est)}</span>
+        <span class="orc-val">${eur(o.total)}</span>
+        <span class="orc-data">${esc(data)}</span>
+      </div>
+      <div class="orc-det">
+        <div class="det-grid">
+          <div class="det-bloco">
+            <h4>O que o cliente quer no site</h4>
+            <ul>${itens}</ul>
+          </div>
+          <div class="det-bloco">
+            <h4>Contacto e valores</h4>
+            <ul>
+              <li><span>Nome</span><b>${esc(o.nome||'—')}</b></li>
+              <li><span>Negócio</span><b>${esc(o.negocio||'—')}</b></li>
+              <li><span>Tipo</span><b>${esc(o.tipoNome||'—')}</b></li>
+              <li><span>Telemóvel</span><b>${esc(o.tel||'—')}</b></li>
+              <li><span>Email</span><b>${esc(o.email||'—')}</b></li>
+              <li class="g">Valores</li>
+              <li><span>Soma dos itens</span><b>${eur(o.subtotal)}</b></li>
+              ${o.pacote?`<li><span>Pacote aplicado</span><b>${esc(o.pacote)}</b></li>`:''}
+              <li><span>Valor do site</span><b>${eur(o.valorSite)}</b></li>
+              ${o.desconto?`<li><span>Desconto ${esc(o.codigoPromo||'')}</span><b>− ${eur(o.desconto)}</b></li>`:''}
+              <li><span>Total</span><b>${eur(o.total)}</b></li>
+              <li><span>Sinal de 50%</span><b>${eur(o.sinal)}</b></li>
+              <li><span>Manutenção</span><b>${esc(o.manutencaoNome||'—')}${o.manutencaoPreco?' · '+eur(o.manutencaoPreco)+'/mês':''}</b></li>
+              <li class="g">Origem</li>
+              <li><span>Veio de</span><b>${esc(o.origem||'direto')}</b></li>
+              ${o.campanha?`<li><span>Campanha</span><b>${esc(o.campanha)}</b></li>`:''}
+            </ul>
+          </div>
+        </div>
+        ${o.notas?`<div class="det-notas"><b style="color:var(--gold-soft)">Observações do cliente:</b><br>${esc(o.notas)}</div>`:''}
+        <div class="det-acoes">
+          <select onchange="mudarEstado('${esc(o.id)}', this.value)">
+            ${Object.keys(ESTADOS).map(k=>`<option value="${k}"${k===est?' selected':''}>${ESTADOS[k]}</option>`).join('')}
+          </select>
+          <button class="btn line" onclick="copiarBriefing('${esc(o.id)}', this)">Copiar briefing</button>
+          <a class="btn line" style="text-decoration:none;display:inline-block"
+             href="https://wa.me/${esc(waNum(o.tel))}?text=${encodeURIComponent('Olá '+(o.nome||'')+'! Aqui é o Wesley da TECNOVA Digital. Recebi o seu orçamento '+(o.ref||'')+'. Podemos falar?')}"
+             target="_blank" rel="noopener">Falar no WhatsApp</a>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function mudarEstado(id, estado){
+  try{
+    await db.collection('orcamentos').doc(id).update({estado:estado});
+    const o = orcCache.find(x=>x.id===id); if(o) o.estado = estado;
+    carregarOrcamentos();
+  }catch(e){ alert('Não foi possível guardar o estado.'); }
+}
+
+function briefingTexto(o){
+  let t = '=== BRIEFING DE SITE — TECNOVA DIGITAL ===\n';
+  t += 'Referência: ' + (o.ref||o.id) + '\n';
+  t += 'Data do pedido: ' + (o.criado ? new Date(o.criado).toLocaleString('pt-PT') : '—') + '\n\n';
+  t += '--- CLIENTE ---\n';
+  t += 'Nome: ' + (o.nome||'—') + '\n';
+  t += 'Negócio: ' + (o.negocio||'—') + '\n';
+  t += 'Tipo de negócio: ' + (o.tipoNome||'—') + '\n';
+  t += 'Telemóvel: ' + (o.tel||'—') + '\n';
+  t += 'Email: ' + (o.email||'—') + '\n\n';
+  t += '--- O QUE O SITE TEM DE TER ---\n';
+  t += 'Tamanho: ' + (o.baseNome||'—') + '\n';
+  let g='';
+  (o.linhas||[]).forEach(l=>{
+    if(l.grupo!==g){ g=l.grupo; t += '\n[' + g.toUpperCase() + ']\n'; }
+    t += '  - ' + l.nome + ' (' + l.preco + '€)\n';
+  });
+  t += '\n--- VALORES ---\n';
+  t += 'Soma dos itens: ' + (o.subtotal||0) + '€\n';
+  if(o.pacote) t += 'Pacote aplicado: ' + o.pacote + '\n';
+  t += 'Valor do site: ' + (o.valorSite||0) + '€\n';
+  if(o.desconto) t += 'Desconto ' + (o.codigoPromo||'') + ': -' + o.desconto + '€\n';
+  t += 'TOTAL: ' + (o.total||0) + '€\n';
+  t += 'Sinal de 50%: ' + (o.sinal||0) + '€\n';
+  t += 'Manutenção: ' + (o.manutencaoNome||'—') + (o.manutencaoPreco?' ('+o.manutencaoPreco+'€/mês)':'') + '\n';
+  if(o.notas) t += '\n--- OBSERVAÇÕES DO CLIENTE ---\n' + o.notas + '\n';
+  t += '\nOrigem: ' + (o.origem||'direto') + (o.campanha?' · campanha '+o.campanha:'') + '\n';
+  t += 'Estado: ' + (ESTADOS[o.estado||'novo']) + '\n';
+  return t;
+}
+
+function copiarBriefing(id, btn){
+  const o = orcCache.find(x=>x.id===id); if(!o) return;
+  const txt = briefingTexto(o);
+  const fim = ()=>{
+    const antes = btn.textContent;
+    btn.textContent = 'Copiado ✓';
+    setTimeout(()=>{ btn.textContent = antes; }, 2000);
+  };
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(txt).then(fim).catch(()=>fallback(txt,fim));
+  } else fallback(txt, fim);
+}
+
+function fallback(txt, fim){
+  const ta = document.createElement('textarea');
+  ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); fim(); }catch(e){ prompt('Copie o briefing:', txt); }
+  document.body.removeChild(ta);
+}
 
 function gerarCodigo(){
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

@@ -97,12 +97,53 @@ service cloud.firestore {
          request.auth.token.email in ['wly.vianna@gmail.com']);
       allow write: if request.auth != null && request.auth.token.email in ['wly.vianna@gmail.com'];
     }
+    match /orcamentos/{ref} {
+      // qualquer visitante pode criar o seu orçamento no simulador,
+      // mas só tu é que os podes ler e alterar
+      allow create: if true;
+      allow read, update, delete: if request.auth != null &&
+        request.auth.token.email in ['wly.vianna@gmail.com'];
+    }
   }
 }
 ```
 
 Troca `wly.vianna@gmail.com` pelo teu email (o mesmo do `ADMIN_EMAILS`) e clica
 **Publicar**.
+
+> **Importante:** sem a regra de `orcamentos`, o simulador continua a funcionar
+> e o cliente continua a conseguir enviar-te tudo pelo WhatsApp — mas o pedido
+> **não aparece no painel**. Publica as regras antes de começares a divulgar.
+
+---
+
+## O simulador de orçamento (`orcamento.html`)
+
+O cliente escolhe o tipo de negócio, marca o que quer no site e vê o preço a
+mudar em tempo real. No fim deixa o contacto e recebe uma referência
+(`ORC-260729-AB12`).
+
+**Onde mudar as coisas:** está tudo no topo do ficheiro `orcamento.js`.
+
+| Quero mudar… | Onde |
+|---|---|
+| A campanha (desconto, data de fim, código) | `PROMO` |
+| O link de pagamento (Stripe, MB WAY, SumUp) | `LINK_PAGAMENTO` |
+| O MB WAY / IBAN que aparece ao cliente | `PAGAMENTO` |
+| Os preços da manutenção mensal | `MANUTENCAO` |
+| Preços e textos de cada funcionalidade | `GRUPOS` |
+| O que vem pré-marcado por tipo de negócio | `PRESETS` |
+
+**Antes de divulgar:** preenche o `iban` em `PAGAMENTO` (está vazio) — senão o
+cliente só vê a opção MB WAY.
+
+Os pedidos aparecem no separador **Orçamentos** do `admin.html`, com tudo o que
+o cliente escolheu. O botão **Copiar briefing** copia o pedido inteiro em texto,
+pronto a colar onde precisares para o site ser construído.
+
+Para saberes o que veio do Instagram, divulga o link assim:
+`orcamento.html?utm_source=instagram&utm_campaign=agosto` — a origem fica
+guardada em cada orçamento.
 
 ---
 

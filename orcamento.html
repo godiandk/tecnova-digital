@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Orçamento — TECNOVA Digital</title>
+<meta name="description" content="Monte o site do seu negócio e veja o preço na hora. 20% de desconto até 31 de agosto e 1.ª mensalidade de manutenção grátis.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16100b">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta property="og:title" content="Monte o seu site e veja o preço na hora — TECNOVA Digital">
+<meta property="og:description" content="Escolha o que quer no site do seu negócio e o preço aparece ao lado. 20% de desconto até 31 de agosto.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=2">
+<style>
+.orc-hero{padding:130px 0 40px;text-align:center}
+.orc-hero h1{font-size:clamp(2rem,5vw,3.3rem);line-height:1.1;margin:16px 0 14px}
+.orc-hero .lead{margin:0 auto}
+.orc-hero .eyebrow{justify-content:center}
+
+.promo-bar{margin:26px auto 0;max-width:820px;background:linear-gradient(135deg,rgba(217,178,110,.16),rgba(217,178,110,.06));border:1px solid rgba(217,178,110,.4);border-radius:16px;padding:14px 20px;font-size:.92rem;color:var(--cream)}
+.promo-bar .cod{display:inline-block;background:var(--gold);color:var(--ink);font-weight:800;letter-spacing:.12em;padding:2px 10px;border-radius:6px;font-size:.82rem}
+.promo-bar i{color:var(--gold-soft);font-style:normal;font-weight:700}
+
+.orc-cols{display:grid;grid-template-columns:1fr 372px;gap:36px;align-items:start;padding-bottom:40px}
+
+/* ---- passo 1: tipo de negócio ---- */
+.step0{background:var(--ink-2);border:1px solid rgba(217,178,110,.16);border-radius:var(--radius);padding:26px;margin-bottom:26px}
+.step0 h3{font-size:1.25rem;margin-bottom:6px}
+.step0 p{color:var(--cream-dim);font-size:.9rem;margin-bottom:16px}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{background:var(--ink-3);border:1px solid rgba(217,178,110,.22);color:var(--cream-dim);border-radius:999px;padding:10px 18px;font:inherit;font-size:.86rem;font-weight:600;cursor:pointer;transition:.18s}
+.chip:hover{border-color:var(--gold);color:var(--cream)}
+.chip.on{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:800}
+.preset-aviso{display:none;margin-top:16px;background:rgba(217,178,110,.08);border-left:3px solid var(--gold);padding:12px 16px;border-radius:0 10px 10px 0;font-size:.88rem;color:var(--cream-dim)}
+.preset-aviso b{color:var(--gold-soft)}
+.preset-aviso a{color:var(--gold);font-weight:700}
+
+/* ---- grupos de opções ---- */
+.grp{background:var(--ink-2);border:1px solid rgba(217,178,110,.14);border-radius:var(--radius);padding:26px;margin-bottom:20px}
+.grp-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid rgba(217,178,110,.14)}
+.grp-n{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(217,178,110,.14);border:1px solid rgba(217,178,110,.35);color:var(--gold);font-weight:800;font-size:.9rem}
+.grp-head h3{font-size:1.22rem;line-height:1.3}
+.grp-head p{color:var(--cream-dim);font-size:.88rem;margin-top:4px}
+.grp-head p b{color:var(--gold-soft)}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border:1px solid rgba(217,178,110,.14);border-radius:14px;cursor:pointer;transition:.18s;background:rgba(0,0,0,.14)}
+.opt:hover{border-color:rgba(217,178,110,.45)}
+.opt.on{border-color:var(--gold);background:rgba(217,178,110,.08)}
+.opt input{position:absolute;opacity:0;width:0;height:0}
+.mark{flex:none;width:21px;height:21px;margin-top:2px;border:1.5px solid rgba(217,178,110,.5);border-radius:6px;display:grid;place-items:center;transition:.18s}
+.opt input[type=radio]+.mark{border-radius:50%}
+.opt.on .mark{background:var(--gold);border-color:var(--gold)}
+.opt.on .mark::after{content:"";width:9px;height:5px;border-left:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(-45deg) translate(1px,-1px)}
+.opt-body{flex:1;min-width:0}
+.opt-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+.opt-top b{font-size:.95rem;font-weight:700}
+.opt-top .pr{margin-left:auto;color:var(--gold);font-style:normal;font-weight:800;font-size:.92rem;white-space:nowrap}
+.tag{font-style:normal;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;background:var(--gold);color:var(--ink);font-weight:800;padding:2px 8px;border-radius:999px}
+.opt-desc{display:block;color:var(--cream-dim);font-size:.84rem;line-height:1.55;margin-top:4px}
+.opt-simples{display:block;margin-top:8px;padding:9px 12px;background:rgba(217,178,110,.07);border-left:2px solid rgba(217,178,110,.45);border-radius:0 8px 8px 0;color:var(--cream-dim);font-size:.79rem;line-height:1.55}
+.opt-simples b{color:var(--gold-soft);font-weight:700}
+.opt.bloq{opacity:.42;cursor:not-allowed}
+.opt.bloq .pr{color:var(--cream-dim);font-size:.74rem;font-weight:600}
+.ex{color:var(--gold);font-weight:700;white-space:nowrap}
+
+/* ---- resumo ---- */
+.resumo{position:sticky;top:92px;max-height:calc(100vh - 108px);overflow-y:auto;background:var(--ink-2);border:1px solid rgba(217,178,110,.3);border-radius:var(--radius);padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.resumo h3{font-size:1.2rem}
+.res-count{color:var(--cream-dim);font-size:.78rem;margin-bottom:14px}
+.res-lista{list-style:none;max-height:270px;overflow-y:auto;margin:0 -6px 14px;padding:0 6px}
+.res-lista li{display:flex;justify-content:space-between;gap:12px;font-size:.82rem;padding:5px 0;color:var(--cream-dim)}
+.res-lista li b{color:var(--cream);font-weight:600;white-space:nowrap}
+.res-lista li.res-g{display:block;color:var(--gold);font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;font-weight:800;margin-top:12px;padding-bottom:2px}
+.res-lista li.res-g:first-child{margin-top:0}
+.res-pack{display:none;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.35);border-radius:12px;padding:12px 14px;font-size:.82rem;color:var(--cream-dim);line-height:1.55;margin-bottom:14px}
+.res-pack b{color:#7ff0a8}
+.res-linhas{border-top:1px solid rgba(217,178,110,.18);padding-top:14px}
+.res-l{display:flex;justify-content:space-between;align-items:baseline;font-size:.88rem;color:var(--cream-dim);padding:4px 0}
+.res-l s{color:var(--cream-dim);opacity:.55;font-size:.8rem;margin-right:8px}
+.res-l.desc{color:#7ff0a8}
+.res-total{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;padding-top:14px;border-top:1px solid rgba(217,178,110,.25)}
+.res-total span{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--cream-dim);font-weight:700}
+.res-total b{font-family:'Playfair Display',serif;font-size:2.4rem;color:var(--gold);line-height:1}
+.res-nota{color:var(--cream-dim);font-size:.76rem;margin-top:4px;text-align:right}
+.res-pag{margin-top:16px;background:rgba(0,0,0,.24);border-radius:12px;padding:14px 16px}
+.res-pag div{display:flex;justify-content:space-between;font-size:.82rem;color:var(--cream-dim);padding:3px 0}
+.res-pag div b{color:var(--cream)}
+.res-pag div b s{opacity:.5}
+.resumo .btn{width:100%;justify-content:center;margin-top:16px}
+.res-acoes{display:flex;gap:10px;margin-top:10px}
+.res-acoes button{flex:1;background:none;border:1px solid rgba(217,178,110,.28);color:var(--cream-dim);border-radius:999px;padding:9px;font:inherit;font-size:.78rem;font-weight:600;cursor:pointer}
+.res-acoes button:hover{color:var(--gold);border-color:var(--gold)}
+
+/* ---- finalizar ---- */
+.final{background:var(--ink-2);border:1px solid rgba(217,178,110,.2);border-radius:var(--radius);padding:32px;margin-top:10px}
+.final h2{margin-top:0}
+.campos{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+.campo{display:flex;flex-direction:column;gap:6px}
+.campo.full{grid-column:1/-1}
+.campo label{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-soft);font-weight:700}
+.campo input,.campo textarea{background:var(--ink);border:1px solid rgba(217,178,110,.24);border-radius:12px;padding:13px 15px;color:var(--cream);font:inherit;font-size:16px}
+.campo input:focus,.campo textarea:focus{outline:none;border-color:var(--gold)}
+.campo textarea{resize:vertical;min-height:88px}
+.form-erro{display:none;background:rgba(255,90,90,.12);border:1px solid rgba(255,90,90,.4);color:#ffb3b3;border-radius:10px;padding:11px 14px;font-size:.86rem;margin-top:14px}
+.final-nota{color:var(--cream-dim);font-size:.8rem;margin-top:14px}
+
+.sucesso{display:none;background:linear-gradient(150deg,rgba(37,211,102,.1),var(--ink-2));border:1px solid rgba(37,211,102,.35);border-radius:var(--radius);padding:34px;margin-top:10px}
+.sucesso h2{margin-top:8px}
+.ok-ref{display:inline-block;background:rgba(0,0,0,.3);border:1px dashed rgba(217,178,110,.5);border-radius:10px;padding:8px 16px;font-weight:800;letter-spacing:.1em;color:var(--gold)}
+.ok-nums{display:flex;flex-wrap:wrap;gap:26px;margin:22px 0;padding:18px 0;border-top:1px solid rgba(217,178,110,.16);border-bottom:1px solid rgba(217,178,110,.16)}
+.ok-nums div span{display:block;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--cream-dim);font-weight:700}
+.ok-nums div b{font-family:'Playfair Display',serif;font-size:1.9rem;color:var(--gold)}
+.ok-pag{list-style:none;background:rgba(0,0,0,.24);border-radius:12px;padding:14px 18px;margin:14px 0 22px}
+.ok-pag li{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:.88rem;color:var(--cream-dim);padding:6px 0;border-bottom:1px dashed rgba(217,178,110,.12)}
+.ok-pag li:last-child{border:none}
+.ok-pag li b{color:var(--gold-soft)}
+.passos{list-style:none;counter-reset:p;margin:18px 0 24px}
+.passos li{counter-increment:p;position:relative;padding:8px 0 8px 42px;color:var(--cream-dim);font-size:.9rem}
+.passos li::before{content:counter(p);position:absolute;left:0;top:6px;width:26px;height:26px;border-radius:50%;background:var(--gold);color:var(--ink);display:grid;place-items:center;font-weight:800;font-size:.78rem}
+.ok-btns{display:flex;flex-wrap:wrap;gap:12px}
+
+/* ---- garantias ---- */
+.garantias{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:40px}
+.gar{background:var(--ink-2);border:1px solid rgba(217,178,110,.14);border-radius:14px;padding:20px}
+.gar b{display:block;color:var(--gold-soft);font-size:.94rem;margin-bottom:5px}
+.gar p{color:var(--cream-dim);font-size:.83rem;line-height:1.55}
+
+/* ---- barra fixa telemóvel ---- */
+.bar-fixa{display:none;position:fixed;left:0;right:0;bottom:0;z-index:60;background:rgba(22,16,11,.97);border-top:1px solid rgba(217,178,110,.3);padding:11px 18px calc(11px + env(safe-area-inset-bottom));align-items:center;justify-content:space-between;gap:14px;backdrop-filter:blur(8px)}
+.bar-fixa span{font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--cream-dim);font-weight:700;display:block}
+.bar-fixa b{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--gold);line-height:1}
+.bar-fixa button{background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--ink);border:none;border-radius:999px;padding:13px 24px;font:inherit;font-weight:800;cursor:pointer}
+
+@media(max-width:1080px){
+  .orc-cols{grid-template-columns:1fr;gap:24px}
+  .resumo{position:static}
+  .garantias{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:760px){
+  .orc-hero{padding:110px 0 30px}
+  .grp,.step0,.final,.sucesso{padding:20px 18px}
+  .campos{grid-template-columns:1fr}
+  .opt-top .pr{margin-left:0}
+  .res-lista{max-height:none}
+  .bar-fixa{display:flex}
+  body{padding-bottom:82px}
+  .wa-float{bottom:88px}
+  .garantias{grid-template-columns:1fr}
+  .ok-nums{gap:18px}
+}
+
+/* ---- impressão ---- */
+@media print{
+  header,footer,.wa-float,.bar-fixa,.step0,#grupos,.promo-bar,.res-acoes,.resumo .btn,.final,.garantias,.orc-hero .lead,.orc-hero .eyebrow{display:none!important}
+  body{background:#fff;color:#111}
+  .resumo{position:static;border:1px solid #999;box-shadow:none;background:#fff}
+  .res-lista{max-height:none;overflow:visible}
+  .res-lista li,.res-l,.res-pag div{color:#333}
+  .res-lista li b,.res-total b,.res-pag div b{color:#111}
+  .res-total b{color:#111}
+  .orc-cols{display:block}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="index.html">
+      <span class="logo-mark">T</span>
+      <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
+    </a>
+    <nav class="links" id="navLinks">
+      <a href="index.html">Início</a>
+      <a href="servicos.html">O que fazemos</a>
+      <a href="pacotes.html">Pacotes</a>
+      <span class="nav-drop">
+        <a class="nav-drop-toggle" href="modelos.html">Modelos</a>
+        <div class="nav-drop-menu">
+          <a href="modelo-barbearia.html">Barbearia</a>
+          <a href="modelo-estetica.html">Clínica de Estética</a>
+          <a href="modelo-restaurante.html">Restaurante &amp; Café</a>
+          <a href="modelo-ginasio.html">Ginásio &amp; Personal Trainer</a>
+          <a href="modelo-oficina.html">Oficina Automóvel</a>
+          <a href="modelo-salao.html">Salão de Beleza</a>
+          <a href="modelo-confeitaria.html">Confeitaria &amp; Bolos</a>
+          <a class="dd-all" href="modelos.html">Todos os modelos →</a>
+        </div>
+      </span>
+      <a class="on" href="orcamento.html">Simulador</a>
+      <a href="renovacao.html">Já tem site?</a>
+      <a href="sobre.html">Sobre</a>
+      <a href="conta.html" id="navAccount">Entrar / Criar conta</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn btn-gold" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Quero%20um%20site%20para%20o%20meu%20neg%C3%B3cio." target="_blank" rel="noopener">Falar consigo</a>
+      <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<section class="orc-hero">
+  <div class="wrap">
+    <div class="eyebrow">Simulador de orçamento</div>
+    <h1>Monte o site do seu negócio<br>e veja o preço na hora.</h1>
+    <p class="lead">Sem telefonemas, sem esperar dias por uma resposta. Escolha o que faz sentido para si —
+      o valor aparece ao lado, atualizado a cada clique. No fim, leva o orçamento consigo.</p>
+    <div class="promo-bar" id="promoBar"></div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="orc-cols">
+
+    <div>
+      <div class="step0">
+        <h3>Que tipo de negócio tem?</h3>
+        <p>Escolha e nós marcamos logo o que costuma fazer falta a um negócio como o seu. Depois é só afinar.</p>
+        <div class="chips" id="negocios"></div>
+        <div class="preset-aviso" id="presetAviso"></div>
+      </div>
+
+      <div id="grupos"></div>
+    </div>
+
+    <aside>
+      <div class="resumo" id="resumo">
+        <h3>O seu orçamento</h3>
+        <div class="res-count" id="resCount"></div>
+        <ul class="res-lista" id="resLista"></ul>
+        <div class="res-pack" id="resPacote"></div>
+
+        <div class="res-linhas">
+          <div class="res-l"><span>Valor do site</span>
+            <span><s id="resSubtotalRiscado"></s><b id="resSubtotal"></b></span></div>
+          <div class="res-l desc" id="linhaDesconto"><span>Desconto de campanha</span><b id="resDesconto"></b></div>
+        </div>
+
+        <div class="res-total"><span>Total</span><b id="resTotal"></b></div>
+        <div class="res-nota">ou cerca de <b id="resPrestacao"></b>/mês em 12 vezes</div>
+
+        <div class="res-pag">
+          <div><span>Sinal para começar (50%)</span><b id="resSinal"></b></div>
+          <div><span>Na entrega, após aprovar</span><b id="resResto"></b></div>
+          <div><span>Manutenção mensal</span><b id="resManut"></b></div>
+        </div>
+
+        <a class="btn btn-gold" href="#final">Quero avançar com este orçamento</a>
+        <div class="res-acoes">
+          <button type="button" id="btnImprimir">Guardar em PDF</button>
+          <button type="button" id="btnLimpar">Recomeçar</button>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <div class="final" id="final">
+    <div class="eyebrow">Último passo</div>
+    <h2>Reserve o seu preço e a sua vaga</h2>
+    <p class="lead">Deixe o contacto e recebe o orçamento com uma referência própria.
+      O preço que vê fica garantido durante 15 dias, mesmo que a campanha termine.</p>
+
+    <form id="formFinal" novalidate>
+      <div class="campos">
+        <div class="campo"><label for="fNome">O seu nome *</label><input id="fNome" type="text" autocomplete="name" required></div>
+        <div class="campo"><label for="fNegocio">Nome do negócio</label><input id="fNegocio" type="text" autocomplete="organization"></div>
+        <div class="campo"><label for="fTel">Telemóvel / WhatsApp *</label><input id="fTel" type="tel" autocomplete="tel" required></div>
+        <div class="campo"><label for="fEmail">Email</label><input id="fEmail" type="email" autocomplete="email"></div>
+        <div class="campo full">
+          <label for="fNotas">O que mais quer no site que não viu aqui?</label>
+          <textarea id="fNotas" placeholder="Escreva à vontade, mesmo que não saiba o nome técnico. Por exemplo: «queria que os clientes pudessem ver a encomenda a ser preparada», «tenho 800 produtos numa folha de Excel», «queria ligar isto ao meu programa de faturação», «já tenho logótipo e fotos», «preciso disto pronto até ao fim do mês»."></textarea>
+          <p style="color:var(--cream-dim);font-size:.8rem;margin-top:2px">Se for possível fazer, digo-lhe já o preço. Se não for, explico porquê e proponho a alternativa mais próxima — sem rodeios.</p>
+        </div>
+      </div>
+      <div class="form-erro" id="formErro"></div>
+      <button class="btn btn-gold" type="submit" style="margin-top:20px">Confirmar orçamento →</button>
+      <p class="final-nota">Não há qualquer compromisso ao enviar. Só começamos quando você disser que sim.</p>
+    </form>
+  </div>
+
+  <div class="sucesso" id="sucesso">
+    <div class="eyebrow">Orçamento criado</div>
+    <h2>Obrigado! Está tudo do nosso lado.</h2>
+    <p class="lead">Guarde esta referência — é por ela que o seu projeto passa a ser identificado.</p>
+    <div class="ok-ref" id="okRef"></div>
+
+    <div class="ok-nums">
+      <div><span>Total do site</span><b id="okTotal"></b></div>
+      <div><span>Sinal para arrancar</span><b id="okSinal"></b></div>
+      <div><span>Prazo</span><b>5 a 15 dias</b></div>
+    </div>
+
+    <h3 style="font-size:1.15rem">Como avançamos a partir daqui</h3>
+    <ol class="passos">
+      <li>Envie-me o orçamento pelo WhatsApp (botão em baixo). Confirmo tudo consigo em poucas horas.</li>
+      <li>Paga o sinal de 50% por MB WAY ou transferência, indicando a referência acima.</li>
+      <li>Assim que confirmo o pagamento, começo o site e digo-lhe a data exata de entrega.</li>
+      <li>Vê o site pronto no ar. Só depois de aprovar tudo é que paga o restante.</li>
+    </ol>
+
+    <h3 style="font-size:1.15rem">Dados para o sinal</h3>
+    <ul class="ok-pag" id="okDadosPag"></ul>
+
+    <div class="ok-btns">
+      <a class="btn btn-wa" id="okWa" href="#" target="_blank" rel="noopener">Enviar orçamento pelo WhatsApp</a>
+      <a class="btn btn-gold" id="okPagar" href="#" style="display:none" target="_blank" rel="noopener">Pagar o sinal agora</a>
+      <button class="btn btn-line" type="button" onclick="window.print()">Guardar em PDF</button>
+    </div>
+  </div>
+
+  <div class="garantias">
+    <div class="gar"><b>Paga metade no início</b><p>50% para arrancar e 50% só na entrega, depois de ver o site no ar e aprovar tudo.</p></div>
+    <div class="gar"><b>Preço fechado</b><p>O que está no orçamento é o que paga. Nada aparece a meio a dizer «afinal isto é extra».</p></div>
+    <div class="gar"><b>O site é seu</b><p>Fica com tudo: domínio, conteúdos e ficheiros. Não fica preso a ninguém.</p></div>
+    <div class="gar"><b>Fala sempre comigo</b><p>Sem call centers nem tickets. Trata diretamente com quem faz o seu site.</p></div>
+  </div>
+</div>
+
+<div class="bar-fixa" id="barFixa">
+  <div><span>Total estimado</span><b id="barTotal">—</b></div>
+  <button type="button" id="barVer">Ver resumo</button>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="logo" href="index.html">
+          <span class="logo-mark">T</span>
+          <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
+        </a>
+        <p>Sites &amp; Apps que trabalham por si. Sites profissionais, marcações pelo WhatsApp e cartões de fidelidade digital para negócios locais.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navegação</h4>
+        <a href="servicos.html">O que fazemos</a>
+        <a href="pacotes.html">Pacotes</a>
+        <a href="orcamento.html">Simulador de orçamento</a>
+        <a href="modelos.html">Modelos</a>
+        <a href="renovacao.html">Já tem site?</a>
+        <a href="sobre.html">Sobre</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contacto</h4>
+        <a href="https://wa.me/351933113525" target="_blank" rel="noopener">WhatsApp +351 933 113 525</a>
+        <a href="conta.html">Entrar / Criar conta</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      TECNOVA Digital · Wesley Vianna · <a href="https://wa.me/351933113525" target="_blank" rel="noopener">WhatsApp +351 933 113 525</a>
+    </div>
+  </div>
+</footer>
+
+<a class="wa-float" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Tenho%20uma%20d%C3%BAvida%20sobre%20o%20or%C3%A7amento." target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#062b14"><path d="M17.5 14.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.14-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.5 0 1.47 1.07 2.9 1.22 3.1.15.2 2.1 3.2 5.1 4.49.71.3 1.27.49 1.7.63.72.23 1.37.2 1.88.12.58-.09 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35zM12 2a10 10 0 0 0-8.66 15L2 22l5.15-1.35A10 10 0 1 0 12 2z"/></svg>
+</a>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="auth-nav.js"></script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+</script>
+<script src="site.js"></script>
+<script src="orcamento.js"></script>
+</body>
+</html>
