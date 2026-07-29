@@ -36,6 +36,15 @@
 .chip{background:var(--ink-3);border:1px solid rgba(217,178,110,.22);color:var(--cream-dim);border-radius:999px;padding:10px 18px;font:inherit;font-size:.86rem;font-weight:600;cursor:pointer;transition:.18s}
 .chip:hover{border-color:var(--gold);color:var(--cream)}
 .chip.on{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:800}
+.projeto{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pj{position:relative;text-align:left;background:var(--ink-3);border:1.5px solid rgba(217,178,110,.22);border-radius:16px;padding:18px 20px;font:inherit;color:var(--cream-dim);cursor:pointer;transition:.18s}
+.pj:hover{border-color:var(--gold)}
+.pj.on{border-color:var(--gold);background:rgba(217,178,110,.1)}
+.pj b{display:block;color:var(--cream);font-size:1rem;margin-bottom:5px}
+.pj span{display:block;font-size:.83rem;line-height:1.5}
+.pj-off{position:absolute;top:-10px;right:14px;font-style:normal;background:var(--gold);color:var(--ink);font-size:.66rem;font-weight:800;letter-spacing:.06em;padding:3px 10px;border-radius:999px}
+@media(max-width:620px){.projeto{grid-template-columns:1fr}}
+
 .preset-aviso{display:none;margin-top:16px;background:rgba(217,178,110,.08);border-left:3px solid var(--gold);padding:12px 16px;border-radius:0 10px 10px 0;font-size:.88rem;color:var(--cream-dim)}
 .preset-aviso b{color:var(--gold-soft)}
 .preset-aviso a{color:var(--gold);font-weight:700}
@@ -218,6 +227,28 @@
 
     <div>
       <div class="step0">
+        <h3>Já tem site ou vamos criar de raiz?</h3>
+        <p>Quem já tem site não parte do zero — e isso desconta no preço.</p>
+        <div class="projeto" id="projeto">
+          <button type="button" class="pj on" data-p="novo">
+            <b>✨ Site novo</b>
+            <span>Ainda não tenho site nenhum, ou o que tenho é só uma página de redes sociais.</span>
+          </button>
+          <button type="button" class="pj" data-p="remod">
+            <b>♻️ Remodelação</b>
+            <span>Já tenho site, mas está antigo, lento ou não traz clientes. Quero refazê-lo.</span>
+            <i class="pj-off">−30% na base</i>
+          </button>
+        </div>
+        <div class="preset-aviso" id="remodAviso" style="display:none">
+          Como o site já existe, a estrutura sai <b>30% mais barata</b> e o trabalho de marca e conteúdo
+          <b>20% mais barato</b> — os textos e as fotos já estão feitos, é só aproveitar o que presta.
+          Em troca, aparece um passo novo lá abaixo com as tarefas próprias de quem muda de site.
+          <a href="renovacao.html">Ver o Pacote Renovação (450€) →</a>
+        </div>
+      </div>
+
+      <div class="step0">
         <h3>Que tipo de negócio tem?</h3>
         <p>Escolha e nós marcamos logo o que costuma fazer falta a um negócio como o seu. Depois é só afinar.</p>
         <div class="chips" id="negocios"></div>
@@ -237,6 +268,7 @@
         <div class="res-linhas">
           <div class="res-l"><span>Valor do site</span>
             <span><s id="resSubtotalRiscado"></s><b id="resSubtotal"></b></span></div>
+          <div class="res-l desc" id="linhaRemod"><span>Desconto de remodelação</span><b id="resRemod"></b></div>
           <div class="res-l desc" id="linhaDesconto"><span>Desconto de campanha</span><b id="resDesconto"></b></div>
         </div>
 

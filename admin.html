@@ -370,12 +370,14 @@ function renderOrcamentos(){
               <li><span>Nome</span><b>${esc(o.nome||'—')}</b></li>
               <li><span>Negócio</span><b>${esc(o.negocio||'—')}</b></li>
               <li><span>Tipo</span><b>${esc(o.tipoNome||'—')}</b></li>
+              <li><span>Projeto</span><b>${esc(o.projetoNome||'Site novo')}</b></li>
               <li><span>Telemóvel</span><b>${esc(o.tel||'—')}</b></li>
               <li><span>Email</span><b>${esc(o.email||'—')}</b></li>
               <li class="g">Valores</li>
               <li><span>Soma dos itens</span><b>${eur(o.subtotal)}</b></li>
               ${o.pacote?`<li><span>Pacote aplicado</span><b>${esc(o.pacote)}</b></li>`:''}
               <li><span>Valor do site</span><b>${eur(o.valorSite)}</b></li>
+              ${o.descontoRemodelacao?`<li><span>Desconto de remodelação</span><b>− ${eur(o.descontoRemodelacao)}</b></li>`:''}
               ${o.desconto?`<li><span>Desconto ${esc(o.codigoPromo||'')}</span><b>− ${eur(o.desconto)}</b></li>`:''}
               <li><span>Total</span><b>${eur(o.total)}</b></li>
               <li><span>Sinal de 50%</span><b>${eur(o.sinal)}</b></li>
@@ -427,9 +429,11 @@ function briefingTexto(o){
     t += '  - ' + l.nome + ' (' + l.preco + '€)\n';
   });
   t += '\n--- VALORES ---\n';
+  t += 'Tipo de projeto: ' + (o.projetoNome||'Site novo') + '\n';
   t += 'Soma dos itens: ' + (o.subtotal||0) + '€\n';
   if(o.pacote) t += 'Pacote aplicado: ' + o.pacote + '\n';
   t += 'Valor do site: ' + (o.valorSite||0) + '€\n';
+  if(o.descontoRemodelacao) t += 'Desconto de remodelação: -' + o.descontoRemodelacao + '€\n';
   if(o.desconto) t += 'Desconto ' + (o.codigoPromo||'') + ': -' + o.desconto + '€\n';
   t += 'TOTAL: ' + (o.total||0) + '€\n';
   t += 'Sinal de 50%: ' + (o.sinal||0) + '€\n';

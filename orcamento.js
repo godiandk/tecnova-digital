@@ -30,14 +30,37 @@ const PAGAMENTO = {
 
 const WHATSAPP = '351933113525';
 
+/* --- Remodelação de um site que já existe --------------------------
+   Quem já tem site não parte do zero: a estrutura está pensada, os textos
+   e as fotos existem. Por isso a base e o trabalho de marca ficam mais
+   baratos — e há tarefas próprias que um site novo não tem.            */
+const REMODELACAO = {
+  descBase: 0.30,     // 30% menos no tamanho do site
+  descMarca: 0.20,    // 20% menos no grupo "Marca e conteúdo"
+  itens: [
+    { id: 'rMigrar',   nome: 'Migração dos textos e fotos do site atual', preco: 90,
+      desc: 'Passamos o conteúdo que vale a pena do site antigo para o novo, revisto e organizado.' },
+    { id: 'rRedirect', nome: 'Redirecionamentos para não perder o Google', preco: 70,
+      desc: 'As moradas antigas passam a levar às novas páginas.',
+      simples: 'Sem isto, quem tinha o seu site guardado nos favoritos ou o encontrava no Google passa a bater numa página de erro. É o erro mais caro de quem muda de site.' },
+    { id: 'rDominio',  nome: 'Manter o domínio e os emails que já tem',  preco: 40,
+      desc: 'Fica com o mesmo endereço e os mesmos emails. Ninguém do lado do cliente dá por nada.' },
+    { id: 'rBackup',   nome: 'Cópia de segurança do site antigo',        preco: 30,
+      desc: 'Guardamos uma cópia completa do que existe antes de mexer, por precaução.' },
+    { id: 'rAudit',    nome: 'Análise do site atual por escrito',        preco: 80,
+      desc: 'O que está a funcionar, o que está a afastar clientes e o que vale a pena aproveitar.',
+      simples: 'Recebe um documento com o diagnóstico. Se depois não avançar connosco, o documento é seu na mesma.' }
+  ]
+};
+
 /* --- Manutenção mensal --------------------------------------------- */
 const MANUTENCAO = [
   { id: 'm0', nome: 'Sem manutenção', preco: 0,
     desc: 'O site fica seu. Se precisar de alterações, pede quando quiser.' },
-  { id: 'm1', nome: 'Manutenção Essencial', preco: 19, destaque: true,
-    desc: 'Alojamento, cópias de segurança, atualizações de segurança e pequenas alterações de texto ou preço.' },
-  { id: 'm2', nome: 'Manutenção Plus', preco: 39,
-    desc: 'Tudo do Essencial + alterações ilimitadas, publicação de novidades e relatório mensal de visitas.' }
+  { id: 'm1', nome: 'Manutenção Essencial', preco: 19.90, destaque: true,
+    desc: 'Alterações de preços e serviços, banners de promoções e suporte prioritário por WhatsApp.' },
+  { id: 'm2', nome: 'Manutenção Completa', preco: 39.90,
+    desc: 'Tudo do Essencial + pequenas alterações ilimitadas e campanhas de cupões e fidelidade feitas por nós.' }
 ];
 
 /* --- Catálogo de funcionalidades -----------------------------------
@@ -233,6 +256,12 @@ const GRUPOS = [
       { id: 'personagem', nome: 'Personagem 3D da marca',      preco: 130, desc: 'Uma mascote ou o seu retrato em 3D, para se destacar nas redes.', exemplo: 'modelo-confeitaria-sobre.html' },
       { id: 'cartao',   nome: 'Cartão de visita digital com QR', preco: 45, desc: 'O cliente aponta e fica com os seus contactos guardados.' }
     ]
+  },
+  {
+    id: 'remod', tipo: 'multi', icone: '♻️', so_remod: true,
+    nome: 'Passar do site antigo para o novo',
+    sub: 'Trocar de site tem tarefas próprias. É aqui que a maior parte das pessoas se queima — e não custa quase nada evitar.',
+    itens: REMODELACAO.itens
   }
 ];
 
@@ -270,6 +299,7 @@ const PRESETS = {
   var sel = {};                 // id -> true
   var base = 'b3a5';
   var vol = 'vol0';             // escalão de quantidade de produtos
+  var projeto = 'novo';         // 'novo' ou 'remod' (remodelação de site existente)
   var manut = 'm1';
   var negocio = '';
   var TODOS = {};               // id -> item
@@ -280,7 +310,10 @@ const PRESETS = {
   });
 
   var $ = function (s, r) { return (r || document).querySelector(s); };
-  var eur = function (n) { return n.toLocaleString('pt-PT') + '€'; };
+  var eur = function (n) {
+    return (Number.isInteger(n) ? n.toLocaleString('pt-PT')
+      : n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) + '€';
+  };
 
   // Preço do item. Os que dependem da quantidade de produtos (tratamento de
   // fotos, importação, fichas técnicas) mudam conforme o escalão escolhido.
@@ -304,6 +337,22 @@ const PRESETS = {
   }
 
   /* ---------- construir o ecrã ---------- */
+  function montarProjeto() {
+    var box = $('#projeto');
+    if (!box) return;
+    box.addEventListener('click', function (e) {
+      var b = e.target.closest('.pj'); if (!b) return;
+      projeto = b.dataset.p;
+      if (projeto !== 'remod') {
+        Object.keys(sel).forEach(function (k) {
+          if (GRUPO_DE[k] && GRUPO_DE[k].so_remod) delete sel[k];
+        });
+      }
+      pintar(); calcular();
+    });
+    box.addEventListener('mousedown', function (e) { e.preventDefault(); });
+  }
+
   function montarNegocios() {
     var box = $('#negocios');
     Object.keys(PRESETS).forEach(function (k) {
@@ -321,6 +370,7 @@ const PRESETS = {
     GRUPOS.forEach(function (g, gi) {
       var s = document.createElement('section');
       s.className = 'grp'; s.id = 'grp-' + g.id;
+      if (g.so_remod) s.classList.add('so-remod');
       var itens = g.itens.map(function (it) {
         // num grupo de escolha única, o rádio; nos outros, caixa de seleção.
         // No grupo dos produtos, o escalão é rádio e os extras são caixas.
@@ -422,6 +472,14 @@ const PRESETS = {
     document.querySelectorAll('#negocios .chip').forEach(function (c) {
       c.classList.toggle('on', c.dataset.k === negocio);
     });
+    document.querySelectorAll('#projeto .pj').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.p === projeto);
+    });
+    document.querySelectorAll('#grupos .so-remod').forEach(function (g) {
+      g.style.display = (projeto === 'remod') ? '' : 'none';
+    });
+    var av = $('#remodAviso');
+    if (av) av.style.display = (projeto === 'remod') ? 'block' : 'none';
   }
 
   function aplicarPreset(k) {
@@ -450,6 +508,7 @@ const PRESETS = {
     var L = [{ nome: TODOS[base].nome, preco: TODOS[base].preco, grupo: 'Tamanho do site' }];
     GRUPOS.forEach(function (g) {
       if (g.tipo === 'base') return;
+      if (g.so_remod && projeto !== 'remod') return;
       if (g.tipo === 'vol' && vol !== 'vol0') {
         L.push({ nome: TODOS[vol].nome, preco: TODOS[vol].preco, grupo: g.nome });
       }
@@ -463,6 +522,7 @@ const PRESETS = {
 
   function melhorPacote(subtotal) {
     var escolhidos = [base].concat(Object.keys(sel).filter(function (id) {
+      if (GRUPO_DE[id] && GRUPO_DE[id].so_remod && projeto !== 'remod') return false;
       return !indisponivel(TODOS[id]);
     }));
     if (vol !== 'vol0') escolhidos.push(vol);
@@ -493,9 +553,22 @@ const PRESETS = {
     var pack = melhorPacote(subtotal);
     var baseFinal = pack ? pack.total : subtotal;
 
+    // Remodelação: o site já existe, por isso a estrutura e o trabalho de
+    // marca não se pagam por inteiro. Mostramos como desconto próprio para
+    // o cliente ver de onde vem o abatimento.
+    var descRemod = 0;
+    if (projeto === 'remod') {
+      descRemod = Math.round(TODOS[base].preco * REMODELACAO.descBase);
+      L.forEach(function (l) {
+        if (l.grupo === 'Marca e conteúdo') descRemod += Math.round(l.preco * REMODELACAO.descMarca);
+      });
+      if (descRemod > baseFinal) descRemod = baseFinal;
+    }
+    var aposRemod = baseFinal - descRemod;
+
     var promo = promoAtiva();
-    var desconto = promo ? Math.round(baseFinal * PROMO.desconto) : 0;
-    var total = baseFinal - desconto;
+    var desconto = promo ? Math.round(aposRemod * PROMO.desconto) : 0;
+    var total = aposRemod - desconto;
     var sinal = Math.round(total / 2);
     var mens = MANUTENCAO.filter(function (m) { return m.id === manut; })[0];
 
@@ -519,6 +592,11 @@ const PRESETS = {
 
     $('#resSubtotal').textContent = eur(baseFinal);
     $('#resSubtotalRiscado').textContent = pack ? eur(subtotal) : '';
+    var lRemod = $('#linhaRemod');
+    if (descRemod) {
+      lRemod.style.display = 'flex';
+      $('#resRemod').textContent = '− ' + eur(descRemod);
+    } else { lRemod.style.display = 'none'; }
     var lDesc = $('#linhaDesconto');
     if (desconto) {
       lDesc.style.display = 'flex';
@@ -535,6 +613,7 @@ const PRESETS = {
     $('#barTotal').textContent = eur(total);
 
     window.__ORC = { linhas: L, subtotal: subtotal, pack: pack, baseFinal: baseFinal,
+                     projeto: projeto, descRemod: descRemod, aposRemod: aposRemod,
                      desconto: desconto, total: total, sinal: sinal, manut: mens };
   }
 
@@ -560,8 +639,10 @@ const PRESETS = {
       t += '• ' + l.nome + ' — ' + eur(l.preco) + '\n';
     });
     t += '\n— VALORES —\n';
+    t += 'Tipo de projeto: ' + (o.projeto === 'remod' ? 'Remodelação de site existente' : 'Site novo') + '\n';
     if (o.pack) t += 'Pacote ' + o.pack.p.nome + ' aplicado (poupança de ' + eur(o.pack.poupa) + ')\n';
     t += 'Valor do site: ' + eur(o.baseFinal) + '\n';
+    if (o.descRemod) t += 'Desconto de remodelação: −' + eur(o.descRemod) + '\n';
     if (o.desconto) t += 'Desconto ' + (PROMO.desconto * 100) + '% (' + PROMO.codigo + '): −' + eur(o.desconto) + '\n';
     t += 'TOTAL: ' + eur(o.total) + '\n';
     t += 'Sinal de 50% para começar: ' + eur(o.sinal) + '\n';
@@ -579,6 +660,8 @@ const PRESETS = {
       return db.collection('orcamentos').doc(ref).set({
         ref: ref, criado: new Date().toISOString(), estado: 'novo',
         nome: dados.nome, negocio: dados.negocio, tel: dados.tel, email: dados.email, notas: dados.notas,
+        projeto: projeto, projetoNome: (projeto === 'remod' ? 'Remodelação de site existente' : 'Site novo'),
+        descontoRemodelacao: o.descRemod,
         tipo: negocio, tipoNome: (PRESETS[negocio] || {}).nome || '',
         base: base, baseNome: TODOS[base].nome,
         volume: vol, volumeNome: TODOS[vol].nome,
@@ -596,6 +679,9 @@ const PRESETS = {
 
   /* ---------- arranque ---------- */
   function iniciar() {
+    // permite chegar já em modo remodelação: orcamento.html?projeto=remod
+    if (new URLSearchParams(location.search).get('projeto') === 'remod') projeto = 'remod';
+    montarProjeto();
     montarNegocios();
     montarGrupos();
     PRESETS.outro.itens.forEach(function (id) {
@@ -620,7 +706,7 @@ const PRESETS = {
     });
 
     $('#btnLimpar').addEventListener('click', function () {
-      sel = {}; base = 'b3a5'; manut = 'm1'; negocio = '';
+      sel = {}; base = 'b3a5'; vol = 'vol0'; manut = 'm1'; negocio = ''; projeto = 'novo';
       $('#presetAviso').style.display = 'none';
       pintar(); calcular();
     });
