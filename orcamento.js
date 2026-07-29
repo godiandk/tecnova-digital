@@ -136,6 +136,39 @@ const REMODELACAO = {
   ]
 };
 
+/* --- Comparação com o mercado ---------------------------------------
+   Isto é o que faz o cliente perceber que não está a ser enganado: mostramos
+   as horas de trabalho de cada coisa e quanto o mesmo projeto custa noutro
+   lado, com a fonte à vista.
+
+   Os intervalos abaixo são de estudos de preços publicados sobre o mercado
+   português em 2026 (ver `fontes`). NÃO são orçamentos de concorrentes —
+   e está escrito no ecrã que são valores de referência.
+
+   `TAXA_HORA` é a nossa taxa efetiva: é com ela que convertemos o preço de
+   cada item em horas de trabalho. Se mudares os preços, muda também isto.   */
+const TAXA_HORA = 30;
+
+const MERCADO = {
+  ativo: true,
+  taxaFreelancer: [30, 80],     // €/hora praticados por freelancers em Portugal
+  perfis: [
+    { id: 'landing', nome: 'Página única / landing page',
+      quando: function (base) { return base === 'b1'; },
+      agencia: [500, 2000], freelancer: [500, 1500] },
+    { id: 'loja', nome: 'Loja online',
+      quando: function (base, sel) { return !!sel.loja; },
+      agencia: [3000, 15000], freelancer: [1890, 8000] },
+    { id: 'site', nome: 'Site institucional completo',
+      quando: function () { return true; },      // caso geral
+      agencia: [2000, 10000], freelancer: [1000, 5000] }
+  ],
+  manutencao: [49, 149],        // €/mês de manutenção praticados no mercado
+  fontes: 'Valores de referência para o mercado português em 2026, publicados por ' +
+          'agências e plataformas do setor (Modular Digital, Webarty, 3hash, Savoris, Shopify). ' +
+          'São intervalos típicos, não propostas de concorrentes.'
+};
+
 /* --- Manutenção mensal --------------------------------------------- */
 const MANUTENCAO = [
   { id: 'm0', nome: 'Sem manutenção', preco: 0,
@@ -416,6 +449,17 @@ const PRESETS = {
   // Um item cujo preço depende do volume não faz sentido sem produtos.
   function indisponivel(it) { return !!it.precoVol && vol === 'vol0'; }
 
+  // Horas de trabalho por trás de um preço, à nossa taxa efetiva.
+  function horasDe(eurAmount) {
+    var h = eurAmount / TAXA_HORA;
+    return h < 1 ? Math.round(h * 10) / 10 : Math.round(h * 2) / 2;
+  }
+  function horasTxt(eurAmount) {
+    var h = horasDe(eurAmount);
+    if (!h) return '';
+    return '≈ ' + String(h).replace('.', ',') + (h === 1 ? ' hora' : ' horas') + ' de trabalho';
+  }
+
   /* ---------- campanha ---------- */
   function promoAtiva() {
     if (!PROMO.ativo) return false;
@@ -452,6 +496,8 @@ const PRESETS = {
       var pr = l.querySelector('.pr'); if (!pr) return;
       if (it.precoVol && indisponivel(it)) { pr.textContent = 'escolha primeiro os produtos'; return; }
       pr.textContent = precoDe(it) ? '+' + preco(precoDe(it)) : 'sem custo';
+      var hh = l.querySelector('.opt-horas');
+      if (hh) hh.textContent = horasTxt(precoDe(it));
     });
     MANUTENCAO.forEach(function (m) {
       var l = document.querySelector('#grp-manut .opt[data-id="' + m.id + '"] .pr');
@@ -519,6 +565,7 @@ const PRESETS = {
               (it.destaque ? '<i class="tag">mais escolhido</i>' : '') +
               '<em class="pr">' + (precoDe(it) ? '+' + eur(precoDe(it)) : 'sem custo') + '</em></span>' +
             '<span class="opt-desc">' + it.desc + ' ' + ex + '</span>' +
+            (MERCADO.ativo && precoDe(it) ? '<span class="opt-horas">' + horasTxt(precoDe(it)) + '</span>' : '') +
             (it.simples ? '<span class="opt-simples"><b>Em palavras simples:</b> ' + it.simples + '</span>' : '') +
           '</span></label>';
       }).join('');
@@ -742,7 +789,35 @@ const PRESETS = {
     $('#resManut').innerHTML = mens.preco
       ? eur(mens.preco) + '/mês' + (PROMO.mesGratis && promoAtiva() ? ' <s>1.º mês</s> <b>grátis</b>' : '')
       : '—';
-    $('#barTotal').textContent = eur(total);
+    $('#barTotal').textContent = preco(total);
+
+    // ---- comparação com o mercado ----
+    var cmp = $('#resMercado');
+    if (cmp && MERCADO.ativo && total > 0) {
+      var perfil = null;
+      for (var i = 0; i < MERCADO.perfis.length; i++) {
+        if (MERCADO.perfis[i].quando(base, sel)) { perfil = MERCADO.perfis[i]; break; }
+      }
+      var horas = horasDe(baseFinal);
+      var poupaMin = Math.max(0, perfil.freelancer[0] - total);
+      var poupaMax = Math.max(0, perfil.agencia[1] - total);
+      cmp.style.display = 'block';
+      cmp.innerHTML =
+        '<b class="merc-t">O mesmo projeto, no mercado português</b>' +
+        '<div class="merc-l"><span>Numa agência</span><b>' + preco(perfil.agencia[0]) + ' – ' + preco(perfil.agencia[1]) + '</b></div>' +
+        '<div class="merc-l"><span>Com um freelancer</span><b>' + preco(perfil.freelancer[0]) + ' – ' + preco(perfil.freelancer[1]) + '</b></div>' +
+        '<div class="merc-l aqui"><span>Aqui, com tudo o que escolheu</span><b>' + preco(total) + '</b></div>' +
+        (poupaMin > 0 ? '<div class="merc-poupa">Poupa entre <b>' + preco(poupaMin) + '</b> e <b>' + preco(poupaMax) + '</b></div>' : '') +
+        '<p class="merc-nota">São <b>' + String(horas).replace('.', ',') + ' horas</b> de trabalho. ' +
+        'Um freelancer em Portugal cobra <b>' + preco(MERCADO.taxaFreelancer[0]) + ' a ' + preco(MERCADO.taxaFreelancer[1]) +
+        ' por hora</b>; a nossa taxa efetiva ronda os <b>' + preco(TAXA_HORA) + '/hora</b>. ' +
+        'Não há extras a meio: o que está aqui é o que paga.</p>' +
+        (mens.preco ? '<p class="merc-nota">Manutenção no mercado: <b>' + preco(MERCADO.manutencao[0]) + ' a ' +
+          preco(MERCADO.manutencao[1]) + '/mês</b> · aqui <b>' + preco(mens.preco) + '/mês</b>.</p>' : '') +
+        (moeda !== 'pt' ? '<p class="merc-nota">Estes valores de referência são do <b>mercado português</b>, ' +
+          'convertidos para ' + M().codigo + ' só para comparar. No seu país os preços locais podem ser outros.</p>' : '') +
+        '<p class="merc-fonte">' + MERCADO.fontes + '</p>';
+    } else if (cmp) { cmp.style.display = 'none'; }
 
     window.__ORC = { linhas: L, subtotal: subtotal, pack: pack, baseFinal: baseFinal,
                      projeto: projeto, descRemod: descRemod, aposRemod: aposRemod,

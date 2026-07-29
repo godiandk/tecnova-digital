@@ -146,6 +146,7 @@ mudar em tempo real. No fim deixa o contacto e recebe uma referência
 | O que vem pré-marcado por tipo de negócio | `PRESETS` |
 | Países, moedas e taxas de câmbio | `MOEDAS` e `CAMBIO_DATA` |
 | Descontos e tarefas de remodelação | `REMODELACAO` |
+| Comparação com o mercado e taxa/hora | `MERCADO` e `TAXA_HORA` |
 
 **Antes de divulgar, preenche em `MOEDAS`:**
 
@@ -164,6 +165,24 @@ convertidos na hora. Para acrescentar um país, copia um bloco em `MOEDAS`.
 
 Podes enviar um link já com o país escolhido: `orcamento.html?moeda=br`.
 Serve, por exemplo, para quem divulga no Brasil.
+
+### O simulador no app
+
+O ecrã **Orçamento** do `app.html` é o mesmo simulador da página, a correr com
+o mesmo `orcamento.js` e a mesma `orcamento.css`. Não há uma segunda cópia de
+preços: mudas num sítio e muda nos dois. O `app-orcamento.css` só ajusta o
+formato para uma coluna.
+
+### Comparação com o mercado
+
+Cada opção mostra as horas de trabalho por trás do preço, e o resumo mostra
+quanto o mesmo projeto custa numa agência ou com um freelancer em Portugal.
+Os intervalos estão em `MERCADO`, com a fonte escrita no próprio ecrã — são
+valores de referência publicados sobre o mercado português em 2026, **não são
+orçamentos de concorrentes**, e é isso que está a dizer ao cliente.
+
+Se mudares os preços do catálogo, revê o `TAXA_HORA` (a nossa taxa efetiva),
+senão as horas mostradas deixam de bater certo.
 
 ## Assistente do site
 

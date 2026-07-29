@@ -165,9 +165,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .tabbar button .tb-ic{font-size:1.25rem;line-height:1}
 .tabbar button.active{color:var(--gold)}
 </style>
+<link rel="stylesheet" href="orcamento.css?v=1">
+<link rel="stylesheet" href="app-orcamento.css?v=1">
 <link rel="stylesheet" href="assistente.css?v=1">
 </head>
-<body>
+<body class="tecnova-app">
 
 <header class="app-bar">
   <a class="ab-btn" href="index.html">🌐 Site</a>
@@ -216,32 +218,151 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 
 <!-- ===== PEDIR ===== -->
 <section class="app-screen" id="scr-pedir">
-  <h1>Pedir o meu site</h1>
-  <p class="as-sub">Responda a 4 campos — o pedido segue pronto para o nosso WhatsApp e respondemos em minutos.</p>
-  <div class="card">
-    <form id="leadForm" novalidate>
-      <label>O seu nome*</label>
-      <input type="text" id="ldNome" required placeholder="O seu nome">
-      <label>Tipo de negócio*</label>
-      <select id="ldTipo">
-        <option>Barbearia</option><option>Clínica de Estética</option><option>Restaurante / Café</option>
-        <option>Ginásio / Personal Trainer</option><option>Oficina Automóvel</option><option>Salão de Beleza</option>
-        <option>Outro</option>
-      </select>
-      <label>Pacote de interesse</label>
-      <select id="ldPacote">
-        <option>Ainda não sei — quero orientação</option>
-        <option>Essencial — 350€</option>
-        <option>Profissional — 650€</option>
-        <option>Premium — 990€</option>
-        <option>Renovação de site — 450€</option>
-      </select>
-      <label>Mensagem (opcional)</label>
-      <textarea id="ldMsg" rows="3" placeholder="Conte-nos um pouco sobre o seu negócio"></textarea>
-      <button type="submit" class="btn btn-wa">Enviar pedido pelo WhatsApp</button>
-      <div class="msg" id="leadMsg"></div>
+  <h1>Monte o seu site</h1>
+  <p class="as-sub">Escolha o que quer e o preço aparece na hora — exatamente os mesmos valores e descontos do site.</p>
+
+  <p style="font-size:.74rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cream-dim);font-weight:700;margin-top:26px">Em que país está?</p>
+  <div class="moedas" id="moedas"></div>
+  <p class="cambio" id="cambio" style="display:none"></p>
+    <div class="promo-bar" id="promoBar"></div>
+
+  <div class="orc-cols">
+
+    <div>
+      <div class="step0">
+        <h3>Já tem site ou vamos criar de raiz?</h3>
+        <p>Quem já tem site não parte do zero — e isso desconta no preço.</p>
+        <div class="projeto" id="projeto">
+          <button type="button" class="pj on" data-p="novo">
+            <b>✨ Site novo</b>
+            <span>Ainda não tenho site nenhum, ou o que tenho é só uma página de redes sociais.</span>
+          </button>
+          <button type="button" class="pj" data-p="remod">
+            <b>♻️ Remodelação</b>
+            <span>Já tenho site, mas está antigo, lento ou não traz clientes. Quero refazê-lo.</span>
+            <i class="pj-off">−30% na base</i>
+          </button>
+        </div>
+        <div class="preset-aviso" id="remodAviso" style="display:none">
+          Como o site já existe, a estrutura sai <b>30% mais barata</b> e o trabalho de marca e conteúdo
+          <b>20% mais barato</b> — os textos e as fotos já estão feitos, é só aproveitar o que presta.
+          Em troca, aparece um passo novo lá abaixo com as tarefas próprias de quem muda de site.
+          <a href="renovacao.html">Ver o Pacote Renovação (450€) →</a>
+        </div>
+      </div>
+
+      <div class="step0">
+        <h3>Que tipo de negócio tem?</h3>
+        <p>Escolha e nós marcamos logo o que costuma fazer falta a um negócio como o seu. Depois é só afinar.</p>
+        <div class="chips" id="negocios"></div>
+        <div class="preset-aviso" id="presetAviso"></div>
+      </div>
+
+      <div id="grupos"></div>
+    </div>
+
+    <aside>
+      <div class="resumo" id="resumo">
+        <h3>O seu orçamento</h3>
+        <div class="res-count" id="resCount"></div>
+        <ul class="res-lista" id="resLista"></ul>
+        <div class="res-pack" id="resPacote"></div>
+
+        <div class="res-linhas">
+          <div class="res-l"><span>Valor do site</span>
+            <span><s id="resSubtotalRiscado"></s><b id="resSubtotal"></b></span></div>
+          <div class="res-l desc" id="linhaRemod"><span>Desconto de remodelação</span><b id="resRemod"></b></div>
+          <div class="res-l desc" id="linhaDesconto"><span>Desconto de campanha</span><b id="resDesconto"></b></div>
+        </div>
+
+        <div class="res-total"><span>Total</span><b id="resTotal"></b></div>
+        <div class="res-nota">ou cerca de <b id="resPrestacao"></b>/mês em 12 vezes</div>
+
+        <div class="res-pag">
+          <div><span>Sinal para começar (50%)</span><b id="resSinal"></b></div>
+          <div><span>Na entrega, após aprovar</span><b id="resResto"></b></div>
+          <div><span>Manutenção mensal</span><b id="resManut"></b></div>
+        </div>
+
+        <div class="res-mercado" id="resMercado"></div>
+
+        <a class="btn btn-gold" href="#final">Quero avançar com este orçamento</a>
+        <div class="res-acoes">
+          <button type="button" id="btnImprimir">Guardar em PDF</button>
+          <button type="button" id="btnLimpar">Recomeçar</button>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <div class="final" id="final">
+    <div class="eyebrow">Último passo</div>
+    <h2>Reserve o seu preço e a sua vaga</h2>
+    <p class="lead">Deixe o contacto e recebe o orçamento com uma referência própria.
+      O preço que vê fica garantido durante 15 dias, mesmo que a campanha termine.</p>
+
+    <form id="formFinal" novalidate>
+      <div class="campos">
+        <div class="campo"><label for="fNome">O seu nome *</label><input id="fNome" type="text" autocomplete="name" required></div>
+        <div class="campo"><label for="fNegocio">Nome do negócio</label><input id="fNegocio" type="text" autocomplete="organization"></div>
+        <div class="campo"><label for="fTel">Telemóvel / WhatsApp *</label><input id="fTel" type="tel" autocomplete="tel" required></div>
+        <div class="campo"><label for="fEmail">Email</label><input id="fEmail" type="email" autocomplete="email"></div>
+        <div class="campo full">
+          <label for="fNotas">O que mais quer no site que não viu aqui?</label>
+          <textarea id="fNotas" placeholder="Escreva à vontade, mesmo que não saiba o nome técnico. Por exemplo: «queria que os clientes pudessem ver a encomenda a ser preparada», «tenho 800 produtos numa folha de Excel», «queria ligar isto ao meu programa de faturação», «já tenho logótipo e fotos», «preciso disto pronto até ao fim do mês»."></textarea>
+          <p style="color:var(--cream-dim);font-size:.8rem;margin-top:2px">Se for possível fazer, digo-lhe já o preço. Se não for, explico porquê e proponho a alternativa mais próxima — sem rodeios.</p>
+        </div>
+      </div>
+      <div class="form-erro" id="formErro"></div>
+      <button class="btn btn-gold" type="submit" style="margin-top:20px">Confirmar orçamento →</button>
+      <p class="final-nota">Não há qualquer compromisso ao enviar. Só começamos quando você disser que sim.</p>
     </form>
   </div>
+
+  <div class="sucesso" id="sucesso">
+    <div class="eyebrow">Orçamento criado</div>
+    <h2>Obrigado! Está tudo do nosso lado.</h2>
+    <p class="lead">Guarde esta referência — é por ela que o seu projeto passa a ser identificado.</p>
+    <div class="ok-ref" id="okRef"></div>
+
+    <div class="ok-nums">
+      <div><span>Total do site</span><b id="okTotal"></b></div>
+      <div><span>Sinal para arrancar</span><b id="okSinal"></b></div>
+      <div><span>Prazo</span><b>5 a 15 dias</b></div>
+    </div>
+
+    <h3 style="font-size:1.15rem">Como avançamos a partir daqui</h3>
+    <ol class="passos">
+      <li>Envie-me o orçamento pelo WhatsApp (botão em baixo). Confirmo tudo consigo em poucas horas.</li>
+      <li>Paga o sinal de 50% por MB WAY ou transferência, indicando a referência acima.</li>
+      <li>Assim que confirmo o pagamento, começo o site e digo-lhe a data exata de entrega.</li>
+      <li>Vê o site pronto no ar. Só depois de aprovar tudo é que paga o restante.</li>
+    </ol>
+
+    <h3 style="font-size:1.15rem" id="okPagTitulo">Dados para o sinal</h3>
+    <ul class="ok-pag" id="okDadosPag"></ul>
+    <p style="color:var(--cream-dim);font-size:.84rem;margin:-10px 0 22px" id="okPagNota"></p>
+
+    <div class="ok-btns">
+      <a class="btn btn-wa" id="okWa" href="#" target="_blank" rel="noopener">Enviar orçamento pelo WhatsApp</a>
+      <a class="btn btn-gold" id="okPagar" href="#" style="display:none" target="_blank" rel="noopener">Pagar o sinal agora</a>
+      <button class="btn btn-line" type="button" onclick="window.print()">Guardar em PDF</button>
+    </div>
+  </div>
+
+  <div class="garantias">
+    <div class="gar"><b>Paga metade no início</b><p>50% para arrancar e 50% só na entrega, depois de ver o site no ar e aprovar tudo.</p></div>
+    <div class="gar"><b>Preço fechado</b><p>O que está no orçamento é o que paga. Nada aparece a meio a dizer «afinal isto é extra».</p></div>
+    <div class="gar"><b>O site é seu</b><p>Fica com tudo: domínio, conteúdos e ficheiros. Não fica preso a ninguém.</p></div>
+    <div class="gar"><b>Fala sempre comigo</b><p>Sem call centers nem tickets. Trata diretamente com quem faz o seu site.</p></div>
+  </div>
+</div>
+
+<div class="bar-fixa" id="barFixa">
+  <div><span>Total estimado</span><b id="barTotal">—</b></div>
+  <button type="button" id="barVer">Ver resumo</button>
+</div>
 </section>
 
 <!-- ===== CONTA ===== -->
@@ -322,7 +443,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 <nav class="tabbar" aria-label="Navegação da app">
   <button class="active" data-tab="inicio"><span class="tb-ic">🏠</span>Início</button>
   <button data-tab="modelos"><span class="tb-ic">🖼️</span>Modelos</button>
-  <button data-tab="pedir"><span class="tb-ic">🚀</span>Pedir</button>
+  <button data-tab="pedir"><span class="tb-ic">🧮</span>Orçamento</button>
   <button data-tab="conta"><span class="tb-ic">👤</span>Conta</button>
 </nav>
 
@@ -360,24 +481,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
         body.scrollIntoView({behavior:"smooth",block:"center"});
       }
     }, 60);
-  });
-
-  /* ---- Pedir site → WhatsApp ---- */
-  document.getElementById("leadForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    var m=document.getElementById("leadMsg");
-    var nome=document.getElementById("ldNome").value.trim();
-    if(!nome){ m.className="msg err"; m.textContent="Diga-nos o seu nome, por favor."; return; }
-    var linhas=[
-      "Olá Wesley! Quero um site para o meu negócio (via APP TECNOVA).","",
-      "• Nome: "+nome,
-      "• Tipo de negócio: "+document.getElementById("ldTipo").value,
-      "• Pacote: "+document.getElementById("ldPacote").value
-    ];
-    var msg=document.getElementById("ldMsg").value.trim();
-    if(msg) linhas.push("• Mensagem: "+msg);
-    m.className="msg ok"; m.textContent="A abrir o WhatsApp…";
-    window.open(WA+encodeURIComponent(linhas.join("\n")), "_blank", "noopener");
   });
 
   /* ---- Firebase: conta + cupões ---- */
@@ -590,6 +693,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   }
 })();
 </script>
+<script src="orcamento.js"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

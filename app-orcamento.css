@@ -1,0 +1,37 @@
+/* ===========================================================
+   TECNOVA Digital — o simulador dentro do app
+   Só ajusta o formato: uma coluna, largura de telemóvel.
+   Preços, descontos e textos vêm todos de orcamento.js —
+   o app e o site nunca podem ficar diferentes.
+   =========================================================== */
+#scr-pedir .orc-cols{grid-template-columns:1fr;gap:20px;padding-bottom:0}
+#scr-pedir .resumo{position:sticky;top:8px;max-height:none;overflow:visible;padding:20px}
+#scr-pedir .res-lista{max-height:220px}
+#scr-pedir .grp,
+#scr-pedir .step0,
+#scr-pedir .final,
+#scr-pedir .sucesso{padding:20px 18px;border-radius:18px}
+#scr-pedir .campos{grid-template-columns:1fr}
+#scr-pedir .garantias{grid-template-columns:1fr 1fr;gap:12px;margin-top:26px}
+#scr-pedir .gar{padding:16px}
+#scr-pedir .gar b{font-size:.88rem}
+#scr-pedir .gar p{font-size:.78rem}
+#scr-pedir .moedas{display:flex;flex-wrap:wrap;justify-content:center;border-radius:16px;margin:14px auto 0}
+#scr-pedir .mo{padding:7px 11px;font-size:.72rem}
+#scr-pedir .cambio,
+#scr-pedir .promo-bar{text-align:center}
+#scr-pedir .promo-bar{margin-top:14px;font-size:.84rem;padding:12px 16px}
+#scr-pedir .opt-top .pr{margin-left:0}
+#scr-pedir .projeto{grid-template-columns:1fr}
+#scr-pedir .ok-btns .btn{width:100%;justify-content:center}
+/* a barra fixa do simulador daria conflito com a barra de navegação do app */
+#scr-pedir .bar-fixa{display:none!important}
+#scr-pedir .res-mercado{margin-top:14px}
+@media(min-width:760px){
+  #scr-pedir .garantias{grid-template-columns:repeat(4,1fr)}
+}
+
+/* o assistente não pode tapar a barra de navegação do app */
+body.tecnova-app .as-botao{bottom:86px}
+body.tecnova-app .as-caixa{bottom:152px}
+body.tecnova-app .wa-float{bottom:154px}
