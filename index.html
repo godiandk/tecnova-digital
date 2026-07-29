@@ -47,6 +47,76 @@
 .hero h1{font-size:clamp(2.6rem,6vw,4.4rem);line-height:1.06;font-weight:800;margin:22px 0 26px}
 .hero h1 em{font-style:italic;color:var(--gold);position:relative;white-space:nowrap}
 .hero h1 em::after{content:"";position:absolute;left:0;right:0;bottom:-10px;height:3px;background:linear-gradient(90deg,var(--gold),transparent)}
+/* ---------- slide de entrada: simulador ---------- */
+.hs-slide.oferta{background:radial-gradient(1100px 700px at 78% 40%,rgba(217,178,110,.16),transparent 70%)}
+.of-grid{grid-template-columns:1.12fr .88fr;gap:40px}
+.of-flag{display:inline-flex;align-items:center;gap:10px;background:rgba(217,178,110,.14);border:1px solid rgba(217,178,110,.45);color:var(--gold-soft);border-radius:999px;padding:7px 18px 7px 14px;font-size:.74rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.of-pulse{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:ofp 1.6s infinite}
+@keyframes ofp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+.of-txt h1{margin:20px 0 18px;font-size:clamp(2.4rem,5.4vw,4rem)}
+.of-txt .lead{font-size:1.02rem;max-width:34em}
+.of-chips{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 24px}
+.of-chips span{background:rgba(255,255,255,.045);border:1px solid rgba(217,178,110,.22);border-radius:999px;padding:7px 14px;font-size:.79rem;color:var(--cream-dim);font-weight:600;white-space:nowrap}
+.of-oferta{display:flex;align-items:center;gap:18px;background:linear-gradient(120deg,rgba(217,178,110,.18),rgba(217,178,110,.04));border:1px solid rgba(217,178,110,.45);border-radius:16px;padding:16px 20px;margin-bottom:26px;flex-wrap:wrap}
+.of-off{flex:none;text-align:center;padding-right:18px;border-right:1px solid rgba(217,178,110,.3)}
+.of-off b{display:block;font-family:'Playfair Display',serif;font-size:2.3rem;color:var(--gold);line-height:1}
+.of-off span{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--cream-dim);font-weight:700}
+.of-oferta>div:last-child b{display:block;color:var(--cream);font-size:.98rem}
+.of-oferta>div:last-child span{font-size:.8rem;color:var(--cream-dim)}
+.of-oferta i{font-style:normal;background:var(--gold);color:var(--ink);font-weight:800;letter-spacing:.1em;padding:1px 8px;border-radius:5px}
+.btn-big{padding:17px 34px;font-size:1rem}
+/* ecrãs largos mas baixos (iPad deitado, portáteis pequenos): comprimir para
+   o botão não cair abaixo da dobra */
+@media(min-width:901px) and (max-height:820px){
+  .hs-slide.oferta{padding:88px 0 56px}
+  .of-txt h1{margin:14px 0 12px;font-size:clamp(2.1rem,3.6vw,3rem)}
+  .of-chips{margin:16px 0 16px}
+  .of-oferta{margin-bottom:18px;padding:13px 18px}
+  .of-off b{font-size:2rem}
+}
+.of-nota{margin-top:18px;font-size:.82rem;color:var(--cream-dim)}
+.of-foto{position:relative;justify-self:center;max-width:390px}
+.of-foto img{width:100%;height:auto;border-radius:22px;border:1px solid rgba(217,178,110,.32);box-shadow:0 30px 70px rgba(0,0,0,.55)}
+.of-foto::after{content:"";position:absolute;inset:auto 0 0 0;height:32%;border-radius:0 0 22px 22px;background:linear-gradient(to top,var(--ink) 4%,transparent 100%);pointer-events:none}
+.of-selo{position:absolute;left:-16px;bottom:12%;z-index:2;display:grid;place-items:center;width:98px;height:98px;border-radius:50%;background:linear-gradient(140deg,var(--gold-soft),var(--gold));color:var(--ink);box-shadow:0 14px 34px rgba(217,178,110,.35);transform:rotate(-11deg)}
+.of-selo b{font-family:'Playfair Display',serif;font-size:1.65rem;line-height:1}
+.of-selo i{font-style:normal;font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+@media(max-width:900px){
+  .hs-slide.oferta{padding-top:78px;padding-bottom:56px;min-height:0}
+  .of-grid{grid-template-columns:1fr;gap:14px}
+  /* no telemóvel a fotografia passa a faixa larga, com o rosto à vista */
+  .of-foto{order:-1;max-width:none;width:100%}
+  .of-foto img{height:150px;object-fit:cover;object-position:52% 18%;border-radius:16px}
+  .of-foto::after{height:52%;border-radius:0 0 16px 16px}
+  .of-flag{font-size:.64rem;letter-spacing:.1em;padding:6px 13px 6px 10px;align-self:flex-start}
+  /* no telemóvel a oferta e o botão sobem, para ficarem à vista sem rolar */
+  .of-txt{display:flex;flex-direction:column}
+  .of-flag{order:1} .of-txt h1{order:2} .of-txt .lead{order:3}
+  .of-oferta{order:4} .of-txt .hero-cta{order:5} .of-nota{order:6} .of-chips{order:7}
+  .of-txt h1{margin:12px 0 9px;font-size:2rem}
+  /* resumo curto no telemóvel — o essencial já está no título e nas etiquetas */
+  .hs-slide.oferta .lead{font-size:.88rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  @media(max-width:400px){.hs-slide.oferta .lead{-webkit-line-clamp:2}}
+  .of-oferta{margin:14px 0 16px;padding:11px 14px;gap:12px;flex-wrap:nowrap}
+  .of-off{padding-right:12px}
+  .of-off b{font-size:1.6rem}
+  .of-off span{font-size:.58rem;letter-spacing:.06em}
+  .of-oferta>div:last-child b{font-size:.88rem}
+  .of-oferta>div:last-child span{font-size:.74rem}
+  .of-chips{margin:20px 0 0}
+  .of-nota{margin-top:12px;font-size:.78rem}
+  .of-txt .hero-cta{gap:10px}
+  .of-txt .hero-cta .btn{width:100%;justify-content:center}
+  .of-selo{width:66px;height:66px;left:auto;right:12px;bottom:auto;top:-14px}
+  .of-selo b{font-size:1.1rem}
+  .of-selo i{font-size:.52rem}
+  .of-chips{gap:6px;margin:16px 0 18px}
+  .of-chips span{font-size:.72rem;padding:6px 11px}
+  .of-off b{font-size:1.9rem}
+  .btn-big{padding:15px 26px;font-size:.92rem}
+  .hs-slide.oferta .lead{font-size:.95rem}
+}
+
 .hero-price{font-weight:800;color:var(--gold-soft);margin:6px 0 34px;font-size:1.05rem}
 .hero-cta{display:flex;gap:16px;flex-wrap:wrap}
 .hero-proof{display:flex;gap:34px;margin-top:52px;flex-wrap:wrap}
@@ -161,8 +231,43 @@
 
 <section class="hero-slider" aria-label="Destaques TECNOVA Digital">
 
+  <!-- Slide de entrada: simulador de orçamento -->
+  <div class="hs-slide oferta active">
+    <div class="wrap hs-grid of-grid">
+      <div class="of-txt">
+        <p class="of-flag"><span class="of-pulse"></span>Campanha de agosto · termina a 31</p>
+        <h1>Monte o seu site e veja o preço <em>na hora.</em></h1>
+        <p class="lead">Site profissional, aplicação no telemóvel, carrossel de destaques, marcações, preçário, loja online — escolha o que quer e o valor aparece à frente dos olhos. Sem telefonemas, sem esperar dias, sem «depois digo-lhe alguma coisa».</p>
+        <div class="of-chips">
+          <span>🖥️ Site profissional</span>
+          <span>📱 Aplicação própria</span>
+          <span>🎞️ Carrossel de destaques</span>
+          <span>📅 Marcações</span>
+          <span>💶 Preçário</span>
+          <span>🏅 Cartão de fidelidade</span>
+        </div>
+        <div class="of-oferta">
+          <div class="of-off"><b>−20%</b><span>em todo o site</span></div>
+          <div>
+            <b>+ 1.ª mensalidade de manutenção grátis</b>
+            <span>Código <i>AGOSTO20</i> · válido até 31 de agosto</span>
+          </div>
+        </div>
+        <div class="hero-cta">
+          <a class="btn btn-gold btn-big" href="orcamento.html">Fazer o meu orçamento agora →</a>
+          <a class="btn btn-line" href="modelos.html">Ver modelos reais</a>
+        </div>
+        <p class="of-nota">Leva 2 minutos · não precisa de deixar contacto para ver o preço</p>
+      </div>
+      <div class="of-foto">
+        <img src="img/wesley-vianna.jpg" width="720" height="1080" alt="Wesley Vianna, fundador da TECNOVA Digital" fetchpriority="high">
+        <span class="of-selo"><b>−20%</b><i>até 31 ago</i></span>
+      </div>
+    </div>
+  </div>
+
   <!-- Slide 1 -->
-  <div class="hs-slide active">
+  <div class="hs-slide">
     <div class="wrap hs-grid">
       <div>
         <p class="eyebrow">Sites &amp; Apps que trabalham por si</p>
