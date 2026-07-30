@@ -765,8 +765,8 @@ window.TECNOVA_DIC.en = {
 /* ---------- padrões: frases que o JavaScript monta com números ---------- */
 /* Cada entrada é [expressão regular sobre o português, molde em inglês]. */
 "__padroes": [
-  ["^≈ ([\\d,.]+) horas? de trabalho$",        "≈ $1 hours of work"],
   ["^≈ 1 hora de trabalho$",                   "≈ 1 hour of work"],
+  ["^≈ ([\\d,.]+) horas de trabalho$",         "≈ $1 hours of work"],
   ["^([\\d.]+) iten?s$",                       "$1 items"],
   ["^1 item$",                                 "1 item"],
   ["^faltam (\\d+) dias$",                     "$1 days left"],

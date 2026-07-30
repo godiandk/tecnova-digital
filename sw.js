@@ -53,6 +53,7 @@ const ASSETS = [
   './i18n.js',
   './i18n.css',
   './idiomas/en.js',
+  './idiomas/es.js',
   './assistente.js',
   './assistente.css',
   './chat.js',
