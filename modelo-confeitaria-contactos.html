@@ -6,7 +6,7 @@
 <title>Encomendar — Doce Aurora · Modelo TECNOVA Digital</title>
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="modelo-confeitaria.css?v=16">
+<link rel="stylesheet" href="modelo-confeitaria.css?v=17">
 <style>
 .order-grid{display:grid;grid-template-columns:1.3fr .7fr;gap:26px;align-items:start}
 @media(max-width:980px){.order-grid{grid-template-columns:1fr}}
@@ -24,7 +24,8 @@ textarea{resize:vertical;min-height:80px}
 .hide{display:none!important}
 .sub-block{background:var(--cream);border:1px dashed rgba(196,69,107,.35);border-radius:16px;padding:16px 18px;margin-top:14px}
 .sub-block .tt{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:var(--rose);margin-bottom:4px}
-.opt{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid rgba(196,69,107,.1)}
+/* rótulo inteiro clicável: antes só a caixa de 24px é que respondia */
+.opt{display:flex;align-items:center;gap:11px;padding:11px 0;min-height:44px;cursor:pointer;border-bottom:1px solid rgba(196,69,107,.1)}
 .opt:last-child{border-bottom:none}
 .opt input[type=checkbox]{width:24px;height:24px;flex:none;accent-color:var(--rose)}
 .opt span{font-size:.89rem;color:var(--cocoa-dim)}
@@ -88,6 +89,22 @@ textarea{resize:vertical;min-height:80px}
 .faq summary::after{content:"+";color:var(--rose);font-size:1.3rem}
 .faq details[open] summary::after{content:"−"}
 .faq p{padding:0 19px 17px;color:var(--cocoa-dim);font-size:.87rem}
+
+/* --- Auditoria de aparelhos: leitura e toque no telemóvel ---------------
+   Alvos com pelo menos 38-44px e nenhum texto abaixo de 11px. Fica no fim
+   da folha de propósito: são correcções sobre o desenho já existente. */
+.demo-bar{padding:3px 20px}
+.demo-bar a{display:inline-flex;align-items:center;min-height:38px}
+.tecnova-credit{padding:6px 20px}
+.tecnova-credit a{display:inline-flex;align-items:center;min-height:38px}
+footer .wrap > a{display:inline-flex;align-items:center;min-height:38px;padding:0 6px}
+.way a{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 10px}
+.btn{min-height:44px}
+.cat-nav a{min-height:40px;display:inline-flex;align-items:center}
+nav.links a{min-height:38px;display:inline-flex;align-items:center}
+.logo span,.logo .tagline,.logo .logo-ic + div span{font-size:.73rem}
+.tag,.pack-tag,.pack .tag,.combo .tag,.kit .tag,.price-row .tag,
+.plan .tag,.dish .tag,.cake .tag,.prow .tag,.svc-card .tag,.treat-card .tag{font-size:.73rem}
 </style>
 </head>
 <body>
@@ -103,7 +120,7 @@ textarea{resize:vertical;min-height:80px}
 <header class="wrap">
   <div class="nav">
     <a class="logo" href="modelo-confeitaria.html">
-      <span class="logo-ic"><img src="img/modelos/confeitaria/logo.png" alt="Doce Aurora"></span>
+      <span class="logo-ic"><img src="img/modelos/confeitaria/logo.png?v=17" alt="Doce Aurora"></span>
       <div><b>Doce Aurora</b><span class="tagline">Confeitaria Artesanal</span></div>
     </a>
     <div class="nav-right">
@@ -180,14 +197,14 @@ textarea{resize:vertical;min-height:80px}
             <div class="sub-block" style="margin-top:12px">
               <div class="tt">Quer enfeitar mais?</div>
               <p style="font-size:.85rem;color:var(--cocoa-dim)">Opcional — junte o que quiser ao seu bolo.</p>
-              <div class="opt"><input type="checkbox" id="xDeco"><span>Decoração personalizada (tema da festa)</span><b>+10€</b></div>
-              <div class="opt"><input type="checkbox" id="xTopo"><span>Topo de bolo com nome</span><b>+6€</b></div>
-              <div class="opt"><input type="checkbox" id="xFrutas"><span>Cobertura de frutas frescas</span><b>+8€</b></div>
-              <div class="opt"><input type="checkbox" id="xFerrero"><span>Ferrero / bombons à volta</span><b>+7€</b></div>
-              <div class="opt"><input type="checkbox" id="xFlores"><span>Flores naturais comestíveis</span><b>+9€</b></div>
-              <div class="opt"><input type="checkbox" id="xAndar"><span>Andar extra (bolo de 2 andares)</span><b>+25€</b></div>
-              <div class="opt"><input type="checkbox" id="xGluten"><span>Massa sem glúten</span><b>+3€</b></div>
-              <div class="opt"><input type="checkbox" id="xLactose"><span>Recheio sem lactose</span><b>+3€</b></div>
+              <label class="opt"><input type="checkbox" id="xDeco"><span>Decoração personalizada (tema da festa)</span><b>+10€</b></label>
+              <label class="opt"><input type="checkbox" id="xTopo"><span>Topo de bolo com nome</span><b>+6€</b></label>
+              <label class="opt"><input type="checkbox" id="xFrutas"><span>Cobertura de frutas frescas</span><b>+8€</b></label>
+              <label class="opt"><input type="checkbox" id="xFerrero"><span>Ferrero / bombons à volta</span><b>+7€</b></label>
+              <label class="opt"><input type="checkbox" id="xFlores"><span>Flores naturais comestíveis</span><b>+9€</b></label>
+              <label class="opt"><input type="checkbox" id="xAndar"><span>Andar extra (bolo de 2 andares)</span><b>+25€</b></label>
+              <label class="opt"><input type="checkbox" id="xGluten"><span>Massa sem glúten</span><b>+3€</b></label>
+              <label class="opt"><input type="checkbox" id="xLactose"><span>Recheio sem lactose</span><b>+3€</b></label>
             </div>
           </div>
         </div>
@@ -233,7 +250,7 @@ textarea{resize:vertical;min-height:80px}
               </select>
             </div>
           </div>
-          <div class="opt" style="margin-top:14px"><input type="checkbox" id="xEntrega"><span>Entrega ao domicílio (em vez de levantar na loja)</span><b>+5€</b></div>
+          <label class="opt" style="margin-top:14px"><input type="checkbox" id="xEntrega"><span>Entrega ao domicílio (em vez de levantar na loja)</span><b>+5€</b></label>
         </div>
 
         <!-- 3. DADOS -->

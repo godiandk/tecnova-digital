@@ -60,8 +60,8 @@ window.TECNOVA_DIC.en = {
 "📅 Marcações": "📅 Bookings",
 "💶 Preçário": "💶 Price list",
 "🏅 Cartão de fidelidade": "🏅 Loyalty card",
-"em todo o site": "off the whole website",
-"em todo o site até": "off the whole website until",
+"em todo o site": "on the whole website",
+"em todo o site até": "on the whole website until",
 "+ 1.ª mensalidade de manutenção grátis": "+ 1st month of maintenance free",
 "1.ª mensalidade de manutenção grátis": "1st month of maintenance free",
 "Fazer o meu orçamento agora →": "Build my quote now →",
@@ -777,7 +777,11 @@ window.TECNOVA_DIC.en = {
   ["^(.+) por sessão$",                        "$1 per session"],
   ["^(\\d+) dias de antecedência$",            "$1 days' notice"],
   ["^\\/mês$",                                 "/month"],
-  ["^(.+)\\/hora$",                            "$1/hour"]
+  ["^(.+)\\/hora$",                            "$1/hour"],
+  ["^(\\S+) Valores em$",                      "$1 Prices in"],
+  ["^, convertidos a$",                        ", converted at"],
+  ["^\\(câmbio de (.+)\\)\\. O contrato é feito em euros, por isso o valor na sua moeda pode variar um pouco no dia do pagamento\\.$",
+   "(exchange rate of $1). The contract is in euros, so the amount in your currency may vary slightly on the day you pay."]
 ],
 
 /* ---------- aplicação ---------- */

@@ -6,7 +6,7 @@
 <title>Barbearia Império — Modelo TECNOVA Digital</title>
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Playfair+Display:ital,wght@0,700;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="modelo-carrossel.css?v=16">
+<link rel="stylesheet" href="modelo-carrossel.css?v=17">
 <style>
 :root{
   --mc-acc:#8c2f2f; --mc-acc-soft:#c9a227; --mc-txt:#ece3d3; --mc-txt-dim:#d6cab6;
@@ -170,6 +170,25 @@ footer{border-top:1px solid rgba(201,162,39,.18);padding:36px 0 90px;text-align:
 .gal-tile.scene-5{background:url('img/modelos/barbearia/g5.jpg') center/cover}
 
 @media(min-width:761px){nav.links{order:2}.nav-right{order:3}}
+/* Selo desenhado: a moldura sai da frente e a arte ocupa o círculo todo. */
+.logo-ic.selo{background:none!important;border:none!important;box-shadow:none!important;clip-path:none!important;border-radius:50%;overflow:hidden;padding:0}
+.logo-ic.selo img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* --- Auditoria de aparelhos: leitura e toque no telemóvel ---------------
+   Alvos com pelo menos 38-44px e nenhum texto abaixo de 11px. Fica no fim
+   da folha de propósito: são correcções sobre o desenho já existente. */
+.demo-bar{padding:3px 20px}
+.demo-bar a{display:inline-flex;align-items:center;min-height:38px}
+.tecnova-credit{padding:6px 20px}
+.tecnova-credit a{display:inline-flex;align-items:center;min-height:38px}
+footer .wrap > a{display:inline-flex;align-items:center;min-height:38px;padding:0 6px}
+.way a{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 10px}
+.btn{min-height:44px}
+.cat-nav a{min-height:40px;display:inline-flex;align-items:center}
+nav.links a{min-height:38px;display:inline-flex;align-items:center}
+.logo span,.logo .tagline,.logo .logo-ic + div span{font-size:.73rem}
+.tag,.pack-tag,.pack .tag,.combo .tag,.kit .tag,.price-row .tag,
+.plan .tag,.dish .tag,.cake .tag,.prow .tag,.svc-card .tag,.treat-card .tag{font-size:.73rem}
 </style>
 <link rel="stylesheet" href="modelo-header.css">
 </head>
@@ -186,7 +205,7 @@ footer{border-top:1px solid rgba(201,162,39,.18);padding:36px 0 90px;text-align:
 <header class="wrap">
   <div class="nav">
     <div class="logo">
-      <span class="logo-ic">✂</span>
+      <span class="logo-ic selo"><img src="img/modelos/barbearia/logo.png?v=17" alt="Barbearia Império"></span>
       <div><b class="display">Barbearia Império</b><span>DESDE 2016</span></div>
     </div>
     <div class="nav-right">

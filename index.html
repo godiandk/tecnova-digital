@@ -12,9 +12,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=16">
-<link rel="stylesheet" href="assistente.css?v=16">
-<link rel="stylesheet" href="i18n.css?v=16">
+<link rel="stylesheet" href="estilo.css?v=17">
+<link rel="stylesheet" href="assistente.css?v=17">
+<link rel="stylesheet" href="i18n.css?v=17">
 <style>
 .hero{
   min-height:100vh;display:flex;align-items:center;
@@ -64,7 +64,7 @@
 .of-oferta{display:flex;align-items:center;gap:18px;background:linear-gradient(120deg,rgba(217,178,110,.18),rgba(217,178,110,.04));border:1px solid rgba(217,178,110,.45);border-radius:16px;padding:16px 20px;margin-bottom:26px;flex-wrap:wrap}
 .of-off{flex:none;text-align:center;padding-right:18px;border-right:1px solid rgba(217,178,110,.3)}
 .of-off b{display:block;font-family:'Playfair Display',serif;font-size:2.3rem;color:var(--gold);line-height:1}
-.of-off span{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--cream-dim);font-weight:700}
+.of-off span{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--cream-dim);font-weight:700}
 .of-oferta>div:last-child b{display:block;color:var(--cream);font-size:.98rem}
 .of-oferta>div:last-child span{font-size:.8rem;color:var(--cream-dim)}
 .of-oferta i{font-style:normal;background:var(--gold);color:var(--ink);font-weight:800;letter-spacing:.1em;padding:1px 8px;border-radius:5px}
@@ -84,7 +84,7 @@
 .of-foto::after{content:"";position:absolute;inset:auto 0 0 0;height:32%;border-radius:0 0 22px 22px;background:linear-gradient(to top,var(--ink) 4%,transparent 100%);pointer-events:none}
 .of-selo{position:absolute;left:-16px;bottom:12%;z-index:2;display:grid;place-items:center;width:98px;height:98px;border-radius:50%;background:linear-gradient(140deg,var(--gold-soft),var(--gold));color:var(--ink);box-shadow:0 14px 34px rgba(217,178,110,.35);transform:rotate(-11deg)}
 .of-selo b{font-family:'Playfair Display',serif;font-size:1.65rem;line-height:1}
-.of-selo i{font-style:normal;font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.of-selo i{font-style:normal;font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 @media(max-width:900px){
   .hs-slide.oferta{padding-top:78px;padding-bottom:56px;min-height:0}
   .of-grid{grid-template-columns:1fr;gap:14px}
@@ -104,7 +104,7 @@
   .of-oferta{margin:14px 0 16px;padding:11px 14px;gap:12px;flex-wrap:nowrap}
   .of-off{padding-right:12px}
   .of-off b{font-size:1.6rem}
-  .of-off span{font-size:.58rem;letter-spacing:.06em}
+  .of-off span{font-size:.72rem;letter-spacing:.06em}
   .of-oferta>div:last-child b{font-size:.88rem}
   .of-oferta>div:last-child span{font-size:.74rem}
   .of-chips{margin:20px 0 0}
@@ -113,7 +113,7 @@
   .of-txt .hero-cta .btn{width:100%;justify-content:center}
   .of-selo{width:66px;height:66px;left:auto;right:12px;bottom:auto;top:-14px}
   .of-selo b{font-size:1.1rem}
-  .of-selo i{font-size:.52rem}
+  .of-selo i{font-size:.7rem}
   .of-chips{gap:6px;margin:16px 0 18px}
   .of-chips span{font-size:.72rem;padding:6px 11px}
   .of-off b{font-size:1.9rem}
@@ -497,7 +497,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="auth-nav.js?v=16"></script>
+<script src="auth-nav.js?v=17"></script>
 
 <script>
 const io=new IntersectionObserver(es=>{
@@ -509,8 +509,8 @@ if('serviceWorker' in navigator){
 }
 </script>
 <script src="site.js"></script>
-<script src="idiomas/en.js?v=16"></script>
-<script src="i18n.js?v=16"></script>
+<script src="idiomas/en.js?v=17"></script>
+<script src="i18n.js?v=17"></script>
 <script src="assistente.js"></script>
 </body>
 </html>
