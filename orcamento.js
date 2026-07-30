@@ -500,20 +500,48 @@ const PRESETS = {
   }
 
   /* ---------- construir o ecrã ---------- */
-  function montarMoeda() {
+
+  /* ---------- moedas ----------
+     Três funções, cada uma com um trabalho só. Estavam as três dentro de
+     `montarMoeda()`, e como trocar de moeda voltava a chamar essa função, cada
+     clique acrescentava mais um par de ouvintes ao mesmo elemento: 1, 2, 4,
+     8… ao décimo clique o navegador refazia a página 512 vezes seguidas e
+     bloqueava. Separadas, os ouvintes ficam ligados uma única vez. */
+
+  // desenha os botões e liga o clique — corre uma vez
+  function montarMoedas() {
     var box = $('#moedas'); if (!box) return;
     box.innerHTML = Object.keys(MOEDAS).map(function (k) {
       var m = MOEDAS[k];
-      return '<button type="button" class="mo' + (k === moeda ? ' on' : '') + '" data-m="' + k +
-        '" title="' + m.pais + '"><i>' + m.bandeira + '</i><b>' + m.curto + '</b></button>';
+      return '<button type="button" class="mo" data-m="' + k + '" aria-pressed="false"' +
+             ' title="' + m.pais + '"><i>' + m.bandeira + '</i><b>' + m.curto + '</b></button>';
     }).join('');
     box.addEventListener('mousedown', function (e) { e.preventDefault(); });
     box.addEventListener('click', function (e) {
-      var b = e.target.closest('.mo'); if (!b) return;
-      moeda = b.dataset.m;
-      try { localStorage.setItem('tecnova-moeda', moeda); } catch (err) {}
-      montarMoeda(); notaCambio(); recontar(); calcular();
+      var b = e.target.closest('.mo');
+      if (b && box.contains(b)) escolherMoeda(b.dataset.m, true);
     });
+    pintarMoedas();
+  }
+
+  // marca qual está escolhida — corre a cada troca
+  function pintarMoedas() {
+    var bs = document.querySelectorAll('#moedas .mo');
+    Array.prototype.forEach.call(bs, function (b) {
+      var ativo = b.dataset.m === moeda;
+      b.classList.toggle('on', ativo);
+      b.setAttribute('aria-pressed', ativo ? 'true' : 'false');
+    });
+  }
+
+  // troca a moeda e volta a desenhar tudo o que depende dela.
+  // `guardar` só é verdade quando foi a pessoa a escolher: a deteção pelo país
+  // é um palpite e não deve ficar registada como preferência.
+  function escolherMoeda(codigo, guardar) {
+    if (!MOEDAS[codigo] || codigo === moeda) return;
+    moeda = codigo;
+    if (guardar) { try { localStorage.setItem('tecnova-moeda', moeda); } catch (e) {} }
+    pintarMoedas(); notaCambio(); recontar(); calcular();
   }
 
   // Os preços de cada opção também têm de mudar de moeda.
@@ -535,7 +563,7 @@ const PRESETS = {
   function notaCambio() {
     var el = $('#cambio'); if (!el) return;
     var m = M();
-    if (m.taxa === 1) { el.style.display = 'none'; return; }
+    if (m.taxa === 1) { el.style.display = 'none'; el.innerHTML = ''; return; }
     el.style.display = 'block';
     el.innerHTML = m.bandeira + ' Valores em <b>' + m.codigo + '</b>, convertidos a <b>1€ = ' +
       (m.taxa * m.ajuste).toLocaleString('pt-PT') + ' ' + m.codigo + '</b> (câmbio de ' + CAMBIO_DATA + ').' +
@@ -951,15 +979,13 @@ const PRESETS = {
       if (mUrl && MOEDAS[mUrl]) { moeda = mUrl; escolheuAntes = true; }
       else if (mGuardada && MOEDAS[mGuardada]) { moeda = mGuardada; escolheuAntes = true; }
     } catch (e) {}
-    montarMoeda(); notaCambio();
+    montarMoedas(); notaCambio();
 
     // Sem escolha anterior, tentamos adivinhar pelo país. A página já está
     // desenhada em euros; se vier resposta, troca sozinha em silêncio.
     if (!escolheuAntes) {
       detetarPais().then(function (pais) {
-        if (!pais || pais === moeda || !MOEDAS[pais]) return;
-        moeda = pais;
-        montarMoeda(); notaCambio(); recontar(); calcular();
+        escolherMoeda(pais, false);
       });
     }
     montarProjeto();
@@ -981,6 +1007,22 @@ const PRESETS = {
     } else { pb.style.display = 'none'; }
 
     // barra fixa no telemóvel
+    // A altura muda com o idioma e com a largura do ecrã (em telemóveis
+    // estreitos o texto quebra). Medimo-la e guardamo-la em --bar-h, para o
+    // assistente e o chat ficarem sempre por cima e nunca taparem o total.
+    (function medirBarra() {
+      var bar = $('#barFixa');
+      if (!bar) return;
+      function medir() {
+        var h = getComputedStyle(bar).display === 'none' ? 0 : bar.offsetHeight;
+        document.documentElement.style.setProperty('--bar-h', h + 'px');
+      }
+      medir();
+      window.addEventListener('resize', medir);
+      if (window.ResizeObserver) new ResizeObserver(medir).observe(bar);
+      document.addEventListener('tecnova:idioma', function () { setTimeout(medir, 60); });
+    })();
+
     $('#barVer').addEventListener('click', function () {
       var r = $('#resumo');
       window.scrollTo({ top: r.offsetTop - 80, behavior: 'smooth' });

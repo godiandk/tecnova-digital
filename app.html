@@ -16,7 +16,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="profile.js"></script>
+<script src="profile.js?v=16"></script>
 <style>
 :root{
   --ink:#16100b;--ink-2:#211812;--ink-3:#2b2016;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
@@ -40,8 +40,15 @@ img{max-width:100%;display:block}
 }
 .app-bar .ab-brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.22em;font-size:.82rem;color:var(--gold-soft)}
 .app-bar .ab-brand small{display:block;letter-spacing:.42em;font-size:.5rem;color:var(--cream-dim)}
+/* Com o seletor de idioma na barra, em telemóveis estreitos deixamos só o
+   símbolo da marca — o nome por extenso empurrava tudo para fora. */
+@media(max-width:430px){
+  .app-bar{padding:12px;gap:8px}
+  .app-bar .ab-brand > span:last-child{display:none}
+  .ab-btn{padding:8px 11px}
+}
 .logo-mark{width:34px;height:38px;display:grid;place-items:center;background:linear-gradient(160deg,var(--gold-soft),var(--gold));clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);color:var(--ink);font-family:'Playfair Display',serif;font-weight:800;font-size:1.05rem}
-.ab-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(217,178,110,.1);border:1px solid rgba(217,178,110,.3);color:var(--gold-soft);border-radius:999px;padding:8px 14px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit}
+.ab-btn{display:inline-flex;align-items:center;gap:6px;min-height:40px;background:rgba(217,178,110,.1);border:1px solid rgba(217,178,110,.3);color:var(--gold-soft);border-radius:999px;padding:8px 14px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit}
 .ab-btn:hover{background:rgba(217,178,110,.18)}
 .ab-avatar{width:34px;height:34px;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,var(--gold-soft),var(--gold));color:var(--ink);display:grid;place-items:center;font-weight:800;font-family:'Playfair Display',serif;flex:none;cursor:pointer;border:2px solid transparent;transition:border-color .2s}
 .ab-avatar:hover,.ab-avatar:active{border-color:var(--gold-soft)}
@@ -53,7 +60,7 @@ img{max-width:100%;display:block}
 @keyframes scr{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .app-screen h1{font-size:1.6rem;margin-bottom:4px}
 .as-sub{color:var(--cream-dim);font-size:.9rem;margin-bottom:20px}
-.eyebrow{font-size:.68rem;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);font-weight:800;margin-bottom:10px}
+.eyebrow{font-size:.73rem;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);font-weight:800;margin-bottom:10px}
 
 /* Hero de boas-vindas */
 .app-hero{
@@ -100,7 +107,9 @@ img{max-width:100%;display:block}
 label{display:block;font-size:.76rem;color:var(--gold-soft);margin:12px 0 6px;font-weight:700}
 input,select,textarea{
   width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(217,178,110,.25);
-  background:#0f0b07;color:var(--cream);font-size:.92rem;font-family:inherit;
+  background:#0f0b07;color:var(--cream);font-family:inherit;
+  /* 16px é o mínimo: abaixo disso o iPhone dá zoom sozinho ao tocar no campo. */
+  font-size:16px;
 }
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 22px;border-radius:999px;font-weight:800;font-size:.9rem;cursor:pointer;border:none;font-family:inherit;width:100%;margin-top:16px;text-decoration:none}
@@ -165,10 +174,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .tabbar button .tb-ic{font-size:1.25rem;line-height:1}
 .tabbar button.active{color:var(--gold)}
 </style>
-<link rel="stylesheet" href="orcamento.css?v=1">
-<link rel="stylesheet" href="app-orcamento.css?v=1">
-<link rel="stylesheet" href="assistente.css?v=1">
-<link rel="stylesheet" href="i18n.css?v=1">
+<link rel="stylesheet" href="orcamento.css?v=16">
+<link rel="stylesheet" href="app-orcamento.css?v=16">
+<link rel="stylesheet" href="assistente.css?v=16">
+<link rel="stylesheet" href="i18n.css?v=16">
 </head>
 <body class="tecnova-app">
 
@@ -532,14 +541,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
     var file=e.target.files[0]; if(!file) return;
     try{ fotoComprimida=await comprimirFoto(file); regAvatarChar=null;
       document.querySelectorAll('#regCharGrid button').forEach(function(b){b.classList.remove('sel');});
-      document.getElementById("regFotoPreview").innerHTML='<img src="'+fotoComprimida+'" alt="">';
+      document.getElementById("regFotoPreview").innerHTML='<img src="'+fotoComprimida+'" alt="A sua fotografia de perfil">';
     }catch(err){ authMsg(err.message,"err"); e.target.value=""; fotoComprimida=null; }
   });
   (function(){
     var grid=document.getElementById("regCharGrid");
-    (window.TECNOVA_CHARS||[]).forEach(function(ch){
+    (window.TECNOVA_CHARS||[]).forEach(function(ch, i){
       var b=document.createElement('button');b.type='button';
-      if(/^img\//.test(ch)||/^data:/.test(ch)){ b.innerHTML='<img src="'+ch+'" alt="">'; } else { b.textContent=ch; }
+      b.setAttribute('aria-label', 'Personagem ' + (i+1));
+      if(/^img\//.test(ch)||/^data:/.test(ch)){ b.innerHTML='<img src="'+ch+'" alt="Personagem '+(i+1)+'">'; } else { b.textContent=ch; }
       b.addEventListener('click',function(){
         regAvatarChar=ch; fotoComprimida=null; document.getElementById('regFoto').value='';
         grid.querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});
@@ -591,9 +601,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   function refreshPreview(){window.tecnovaApplyAvatar(document.getElementById('setAvatar'),previewData(),(setData.nome||(setUser&&setUser.email)||'T'));}
   function buildCharGrid(){
     var grid=document.getElementById('charGrid'); if(grid.childElementCount) return;
-    (window.TECNOVA_CHARS||[]).forEach(function(ch){
+    (window.TECNOVA_CHARS||[]).forEach(function(ch, i){
       var b=document.createElement('button');b.type='button';
-      if(/^img\//.test(ch)||/^data:/.test(ch)){ b.innerHTML='<img src="'+ch+'" alt="">'; } else { b.textContent=ch; }
+      b.setAttribute('aria-label', 'Personagem ' + (i+1));
+      if(/^img\//.test(ch)||/^data:/.test(ch)){ b.innerHTML='<img src="'+ch+'" alt="Personagem '+(i+1)+'">'; } else { b.textContent=ch; }
       b.addEventListener('click',function(){
         setDirtyAvatar={foto:null,avatarChar:ch};
         grid.querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});
@@ -694,9 +705,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   }
 })();
 </script>
-<script src="orcamento.js"></script>
-<script src="idiomas/en.js"></script>
-<script src="i18n.js"></script>
+<script src="orcamento.js?v=16"></script>
+<script src="idiomas/en.js?v=16"></script>
+<script src="i18n.js?v=16"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

@@ -12,10 +12,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=2">
-<link rel="stylesheet" href="assistente.css?v=1">
-<link rel="stylesheet" href="i18n.css?v=1">
-<link rel="stylesheet" href="chat.css?v=1">
+<link rel="stylesheet" href="estilo.css?v=16">
+<link rel="stylesheet" href="assistente.css?v=16">
+<link rel="stylesheet" href="i18n.css?v=16">
+<link rel="stylesheet" href="chat.css?v=16">
 <style>
 :root{ --bad:#e0715c; }
 
@@ -33,7 +33,9 @@
 label{display:block;font-size:.78rem;color:var(--gold-soft);margin:14px 0 6px;font-weight:700}
 input,select{
   width:100%;padding:13px 14px;border-radius:10px;border:1px solid rgba(217,178,110,.25);
-  background:#0f0b07;color:var(--cream);font-size:.92rem;font-family:inherit;
+  background:#0f0b07;color:var(--cream);font-family:inherit;
+  /* 16px é o mínimo: abaixo disso o iPhone dá zoom sozinho ao tocar no campo. */
+  font-size:16px;
 }
 input:focus,select:focus{outline:none;border-color:var(--gold)}
 
@@ -261,7 +263,7 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="profile.js"></script>
+<script src="profile.js?v=16"></script>
 <script src="chat.js"></script>
 
 <script>
@@ -318,7 +320,7 @@ document.getElementById('regFoto').addEventListener('change', async (e)=>{
     fotoComprimida = await comprimirFoto(file);
     regAvatarChar = null; // foto tem prioridade
     document.querySelectorAll('#regCharGrid button').forEach(b=>b.classList.remove('sel'));
-    document.getElementById('regFotoPreview').innerHTML = `<img src="${fotoComprimida}" alt="">`;
+    document.getElementById('regFotoPreview').innerHTML = `<img src="${fotoComprimida}" alt="A sua fotografia de perfil">`;
   }catch(err){
     showMsg(err.message, 'err');
     e.target.value = '';
@@ -329,9 +331,10 @@ document.getElementById('regFoto').addEventListener('change', async (e)=>{
 // grelha de personagens no registo
 (function(){
   var grid = document.getElementById('regCharGrid');
-  (window.TECNOVA_CHARS||[]).forEach(function(ch){
+  (window.TECNOVA_CHARS||[]).forEach(function(ch, i){
     var b = document.createElement('button'); b.type='button';
-    if(/^img\//.test(ch)||/^data:/.test(ch)){ b.innerHTML='<img src="'+ch+'" alt="">'; } else { b.textContent=ch; }
+    b.setAttribute('aria-label', 'Personagem ' + (i+1));
+    if(/^img\//.test(ch)||/^data:/.test(ch)){ b.innerHTML='<img src="'+ch+'" alt="Personagem '+(i+1)+'">'; } else { b.textContent=ch; }
     b.addEventListener('click', function(){
       regAvatarChar = ch; fotoComprimida = null;
       document.getElementById('regFoto').value = '';
@@ -421,9 +424,10 @@ function refreshAvatarPreview(){
 function buildCharGrid(){
   var grid = document.getElementById('charGrid');
   if(grid.childElementCount) return;
-  (window.TECNOVA_CHARS||[]).forEach(function(ch){
+  (window.TECNOVA_CHARS||[]).forEach(function(ch, i){
     var b = document.createElement('button'); b.type='button';
-    if(/^img\//.test(ch)||/^data:/.test(ch)){ b.innerHTML='<img src="'+ch+'" alt="">'; } else { b.textContent=ch; }
+    b.setAttribute('aria-label', 'Personagem ' + (i+1));
+    if(/^img\//.test(ch)||/^data:/.test(ch)){ b.innerHTML='<img src="'+ch+'" alt="Personagem '+(i+1)+'">'; } else { b.textContent=ch; }
     b.addEventListener('click', function(){
       setDirtyAvatar = { foto:null, avatarChar:ch };
       grid.querySelectorAll('button').forEach(function(x){x.classList.remove('sel');});
@@ -574,8 +578,8 @@ async function carregarVouchers(uid){
 }
 </script>
 <script src="site.js"></script>
-<script src="idiomas/en.js"></script>
-<script src="i18n.js"></script>
+<script src="idiomas/en.js?v=16"></script>
+<script src="i18n.js?v=16"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

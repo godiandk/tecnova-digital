@@ -32,10 +32,10 @@
   // Preenche um elemento avatar (foto > personagem > sexo > inicial)
   window.tecnovaApplyAvatar = function (el, dados, fallback) {
     if (!el) return;
-    if (dados && dados.foto) { el.innerHTML = '<img src="' + dados.foto + '" alt="">'; return; }
+    if (dados && dados.foto) { el.innerHTML = '<img src="' + dados.foto + '" alt="Fotografia de perfil">'; return; }
     if (dados && dados.avatarChar) {
       var v = dados.avatarChar;
-      if (/^img\//.test(v) || /^data:/.test(v)) { el.innerHTML = '<img src="' + v + '" alt="">'; return; }
+      if (/^img\//.test(v) || /^data:/.test(v)) { el.innerHTML = '<img src="' + v + '" alt="Personagem escolhida">'; return; }
       el.innerHTML = ""; el.textContent = v; return; // compatibilidade com emojis antigos
     }
     el.innerHTML = "";

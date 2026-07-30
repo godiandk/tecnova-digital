@@ -51,6 +51,20 @@ window.TecnovaI18N = (function () {
     if (dic[k]) return dic[k];
     var m = k.match(/^(.*?)([.!?:;,…]+)$/);
     if (m && dic[m[1]]) return dic[m[1]] + m[2];
+    return porPadrao(k);
+  }
+
+  /* Frases que o JavaScript monta com números lá dentro ("≈ 2,5 horas de
+     trabalho", "9 itens") nunca podem ser uma chave do dicionário. Cada
+     idioma traz por isso a sua lista de padrões em `__padroes`. */
+  function porPadrao(k) {
+    var ps = dic.__padroes;
+    if (!ps) return null;
+    for (var i = 0; i < ps.length; i++) {
+      var m = k.match(new RegExp(ps[i][0]));
+      if (!m) continue;
+      return ps[i][1].replace(/\$(\d)/g, function (_, n) { return m[+n] || ''; });
+    }
     return null;
   }
 
@@ -58,7 +72,12 @@ window.TecnovaI18N = (function () {
      dentro e nenhum descendente com id (esses são do JavaScript). */
   function elementoInteiro(el) {
     if (!ALVO[el.tagName]) return false;
-    if (el.querySelector('[id]')) return false;
+    // Um elemento com `id` é, quase sempre, um elemento que o JavaScript
+    // reescreve (a nota de câmbio, o total, a barra da campanha). Se
+    // guardássemos aqui o innerHTML, ficava preso no primeiro valor: trocava-se
+    // de moeda e a nota continuava a mostrar a moeda anterior. Nesses casos
+    // traduz-se texto a texto, que acompanha as reescritas.
+    if (el.id || el.querySelector('[id]')) return false;
     // ícones, imagens e campos não se traduzem — e trocar o innerHTML
     // de quem os contém apagava-os
     if (el.querySelector('svg,img,input,select,textarea,canvas')) return false;
@@ -69,14 +88,41 @@ window.TecnovaI18N = (function () {
     return el.children.length > 0;   // sem filhos, o modo texto chega
   }
 
+  /* Traduz o elemento inteiro, mas so quando o dicionario conhece a frase toda.
+     Devolve `true` se ficou tratado aqui; `false` manda o caso para o modo
+     texto, que e o mais seguro porque acompanha as reescritas do JavaScript.
+
+     Regra que nao se quebra: NUNCA reescrevemos o elemento com o original
+     guardado por nossa iniciativa. Se o JavaScript da pagina mudou um preco la
+     dentro, escrever de volta a copia antiga apagava-o - foi o que fazia a nota
+     de cambio ficar presa na primeira moeda escolhida. So desfazemos aquilo que
+     fomos nos a fazer, e isso fica marcado em `__i18n_traduzido`. */
   function traduzirElemento(el) {
     if (el.__i18n_pt === undefined) el.__i18n_pt = el.innerHTML;
     var pt = el.__i18n_pt;
-    if (idioma === 'pt') { if (el.innerHTML !== pt) el.innerHTML = pt; return true; }
+
+    if (idioma === 'pt') {
+      if (!el.__i18n_traduzido) return false;      // nunca lhe tocamos
+      if (el.innerHTML !== pt) el.innerHTML = pt;  // desfazer a nossa traducao
+      el.__i18n_traduzido = false;
+      return true;
+    }
+
     var t = traduz(pt);
-    var novo = t || pt;
-    if (el.innerHTML !== novo) el.innerHTML = novo;
-    return true;
+    if (t) {
+      if (el.innerHTML !== t) el.innerHTML = t;
+      el.__i18n_traduzido = true;
+      return true;
+    }
+
+    // Sem traducao para a frase inteira. Se ja esteve traduzido por nos (por
+    // exemplo, trocou-se de ingles para espanhol), repoe-se o portugues antes
+    // de o entregar ao modo texto.
+    if (el.__i18n_traduzido) {
+      if (el.innerHTML !== pt) el.innerHTML = pt;
+      el.__i18n_traduzido = false;
+    }
+    return false;
   }
 
   function traduzirTexto(no) {
@@ -99,8 +145,9 @@ window.TecnovaI18N = (function () {
     Array.prototype.forEach.call(els, function (el) {
       if (el.closest('script,style,[data-sem-traducao]')) return;
       if (!elementoInteiro(el)) return;
-      traduzirElemento(el);
-      feitos.push(el);
+      // so entra nos "feitos" quem ficou mesmo resolvido aqui; o resto segue
+      // para o modo texto, que traduz pedaco a pedaco e respeita os precos
+      if (traduzirElemento(el)) feitos.push(el);
     });
 
     // 2. o texto que sobrou
@@ -169,7 +216,14 @@ window.TecnovaI18N = (function () {
       b.classList.toggle('on', b.dataset.lang === idioma);
     });
     var atual = document.getElementById('langAtual');
-    if (atual) atual.textContent = IDIOMAS[idioma].bandeira + ' ' + IDIOMAS[idioma].nome;
+    if (atual) {
+      // bandeira e nome em elementos próprios: em ecrãs estreitos o CSS
+      // esconde o nome e fica só a bandeira, sem apertar a barra de topo
+      atual.innerHTML = '<i class="la-bandeira"></i><span class="la-nome"></span>';
+      atual.querySelector('.la-bandeira').textContent = IDIOMAS[idioma].bandeira;
+      atual.querySelector('.la-nome').textContent = IDIOMAS[idioma].nome;
+      atual.setAttribute('aria-label', 'Idioma: ' + IDIOMAS[idioma].nome);
+    }
   }
 
   function montarSeletor() {
@@ -193,7 +247,16 @@ window.TecnovaI18N = (function () {
                document.querySelector('.nav .nav-right') ||
                document.querySelector('.nav-right');
     if (casa) { w.classList.add('no-header'); casa.insertBefore(w, casa.firstChild); }
-    else { document.body.appendChild(w); }
+    else {
+      // Na aplicação não há `.nav-right`; a barra de topo serve na mesma, e
+      // assim não fica em cima da barra de abas lá em baixo.
+      var barra = document.querySelector('header.app-bar');
+      if (barra) {
+        w.classList.add('no-header', 'na-app-bar');
+        var avatar = barra.querySelector('.ab-avatar');
+        if (avatar) barra.insertBefore(w, avatar); else barra.appendChild(w);
+      } else { document.body.appendChild(w); }
+    }
 
     var atual = w.querySelector('#langAtual');
     atual.addEventListener('click', function (e) {

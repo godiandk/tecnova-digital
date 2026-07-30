@@ -6,7 +6,7 @@
 <title>Encomendar — Doce Aurora · Modelo TECNOVA Digital</title>
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="modelo-confeitaria.css">
+<link rel="stylesheet" href="modelo-confeitaria.css?v=16">
 <style>
 .order-grid{display:grid;grid-template-columns:1.3fr .7fr;gap:26px;align-items:start}
 @media(max-width:980px){.order-grid{grid-template-columns:1fr}}
@@ -26,7 +26,7 @@ textarea{resize:vertical;min-height:80px}
 .sub-block .tt{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:var(--rose);margin-bottom:4px}
 .opt{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid rgba(196,69,107,.1)}
 .opt:last-child{border-bottom:none}
-.opt input[type=checkbox]{width:20px;height:20px;flex:none;accent-color:var(--rose)}
+.opt input[type=checkbox]{width:24px;height:24px;flex:none;accent-color:var(--rose)}
 .opt span{font-size:.89rem;color:var(--cocoa-dim)}
 .opt b{margin-left:auto;color:var(--rose);white-space:nowrap;font-size:.88rem}
 
@@ -277,7 +277,7 @@ textarea{resize:vertical;min-height:80px}
             <small>Fotografia ou PDF · até 10 MB</small>
           </div>
           <div class="preview" id="preview">
-            <img id="pvImg" alt="" hidden>
+            <img id="pvImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Pré-visualização do comprovativo" hidden>
             <span id="pvIc" style="font-size:1.9rem" hidden>📄</span>
             <div><div class="nm" id="pvName"></div><small style="color:#2e9e5b;font-weight:700">✓ Comprovativo anexado</small></div>
             <button type="button" class="rm" id="pvRm">remover</button>

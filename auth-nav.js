@@ -7,7 +7,7 @@
 
   function avatarHTML(dados) {
     if (dados && dados.foto) {
-      return '<span class="nav-avatar"><img src="' + dados.foto + '" alt=""></span>';
+      return '<span class="nav-avatar"><img src="' + dados.foto + '" alt="Fotografia de perfil"></span>';
     }
     var icon = dados && dados.sexo === 'feminino' ? '👩' : dados && dados.sexo === 'masculino' ? '👨' : '👤';
     return '<span class="nav-avatar">' + icon + '</span>';

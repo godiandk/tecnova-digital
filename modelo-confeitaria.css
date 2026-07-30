@@ -4,7 +4,9 @@
    =========================================================== */
 :root{
   --cream:#fdf7f0; --cream-2:#f7ebe0; --cocoa:#3d2418; --cocoa-2:#5b3b28;
-  --cocoa-dim:#8a6a55; --rose:#c4456b; --rose-soft:#e58fa8; --gold:#c9954a; --gold-soft:#e0b878;
+  /* dois ajustes mínimos para passar o contraste AA sobre os cremes:
+     o rosa estava em 4,48:1 e o castanho suave em 4,19:1. */
+  --cocoa-dim:#826450; --rose:#c34168; --rose-soft:#e58fa8; --gold:#c9954a; --gold-soft:#e0b878;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}

@@ -9,12 +9,12 @@
 .orc-hero .eyebrow{justify-content:center}
 
 .moedas{display:inline-flex;gap:8px;margin-top:24px;background:var(--ink-2);border:1px solid rgba(217,178,110,.22);border-radius:999px;padding:5px}
-.mo{background:none;border:none;border-radius:999px;padding:8px 14px;font:inherit;font-size:.78rem;color:var(--cream-dim);cursor:pointer;display:flex;align-items:center;gap:6px;transition:.18s;white-space:nowrap}
+.mo{background:none;border:none;border-radius:999px;padding:8px 14px;min-height:40px;font:inherit;font-size:.78rem;color:var(--cream-dim);cursor:pointer;display:flex;align-items:center;gap:6px;transition:.18s;white-space:nowrap}
 .mo i{font-style:normal;font-size:1.05rem;line-height:1}
 .mo b{font-weight:800;letter-spacing:.04em}
 .mo:hover{color:var(--cream)}
 .mo.on{background:var(--gold);color:var(--ink)}
-@media(max-width:700px){.moedas{flex-wrap:wrap;justify-content:center;border-radius:18px}.mo{padding:7px 11px;font-size:.72rem}}
+@media(max-width:700px){.moedas{flex-wrap:wrap;justify-content:center;border-radius:18px}.mo{padding:7px 11px;min-height:42px;font-size:.72rem}}
 .cambio{max-width:640px;margin:12px auto 0;color:var(--cream-dim);font-size:.8rem;line-height:1.55}
 .cambio b{color:var(--gold-soft)}
 .promo-bar{margin:26px auto 0;max-width:820px;background:linear-gradient(135deg,rgba(217,178,110,.16),rgba(217,178,110,.06));border:1px solid rgba(217,178,110,.4);border-radius:16px;padding:14px 20px;font-size:.92rem;color:var(--cream)}
@@ -64,7 +64,7 @@
 .opt-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
 .opt-top b{font-size:.95rem;font-weight:700}
 .opt-top .pr{margin-left:auto;color:var(--gold);font-style:normal;font-weight:800;font-size:.92rem;white-space:nowrap}
-.tag{font-style:normal;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;background:var(--gold);color:var(--ink);font-weight:800;padding:2px 8px;border-radius:999px}
+.tag{font-style:normal;font-size:.69rem;letter-spacing:.14em;text-transform:uppercase;background:var(--gold);color:var(--ink);font-weight:800;padding:2px 8px;border-radius:999px}
 .opt-desc{display:block;color:var(--cream-dim);font-size:.84rem;line-height:1.55;margin-top:4px}
 .opt-simples{display:block;margin-top:8px;padding:9px 12px;background:rgba(217,178,110,.07);border-left:2px solid rgba(217,178,110,.45);border-radius:0 8px 8px 0;color:var(--cream-dim);font-size:.79rem;line-height:1.55}
 .opt-simples b{color:var(--gold-soft);font-weight:700}
@@ -79,7 +79,7 @@
 .res-lista{list-style:none;max-height:270px;overflow-y:auto;margin:0 -6px 14px;padding:0 6px}
 .res-lista li{display:flex;justify-content:space-between;gap:12px;font-size:.82rem;padding:5px 0;color:var(--cream-dim)}
 .res-lista li b{color:var(--cream);font-weight:600;white-space:nowrap}
-.res-lista li.res-g{display:block;color:var(--gold);font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;font-weight:800;margin-top:12px;padding-bottom:2px}
+.res-lista li.res-g{display:block;color:var(--gold);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;font-weight:800;margin-top:12px;padding-bottom:2px}
 .res-lista li.res-g:first-child{margin-top:0}
 .res-pack{display:none;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.35);border-radius:12px;padding:12px 14px;font-size:.82rem;color:var(--cream-dim);line-height:1.55;margin-bottom:14px}
 .res-pack b{color:#7ff0a8}
@@ -107,7 +107,7 @@
 .merc-poupa b{color:#7ff0a8}
 .merc-nota{margin-top:11px;font-size:.76rem;line-height:1.6;color:var(--cream-dim)}
 .merc-nota b{color:var(--gold-soft)}
-.merc-fonte{margin-top:10px;font-size:.68rem;line-height:1.55;color:var(--cream-dim);opacity:.72}
+.merc-fonte{margin-top:10px;font-size:.73rem;line-height:1.55;color:var(--cream-dim);opacity:.72}
 .opt-horas{display:block;margin-top:5px;font-size:.73rem;color:var(--gold-soft);opacity:.8;font-weight:600}
 
 .resumo .btn{width:100%;justify-content:center;margin-top:16px}
@@ -199,8 +199,11 @@
      nesta página são dispensáveis — o assistente já leva ao WhatsApp */
   .pagina-orcamento .app-float,
   .pagina-orcamento .wa-float{display:none!important}
-  .pagina-orcamento .as-botao{bottom:calc(80px + env(safe-area-inset-bottom))}
-  .pagina-orcamento .as-caixa{bottom:calc(146px + env(safe-area-inset-bottom))}
+  /* --bar-h é a altura real da barra do total, medida em orcamento.js.
+     Em ecrãs muito estreitos a barra cresce (o texto quebra), por isso um
+     valor fixo deixava o assistente a tapar o preço. */
+  .pagina-orcamento .as-botao{bottom:calc(var(--bar-h,72px) + 14px)}
+  .pagina-orcamento .as-caixa{bottom:calc(var(--bar-h,72px) + 80px)}
   /* espaço à direita para o "Ver resumo" nunca ficar debaixo do assistente */
   .pagina-orcamento .bar-fixa{padding-right:18px}
 }

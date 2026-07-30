@@ -760,5 +760,183 @@ window.TECNOVA_DIC.en = {
 "Sim": "Yes", "Não": "No",
 "Ver mais": "See more",
 "Site criado pela": "Website built by",
-"Escolher idioma": "Choose language"
+"Escolher idioma": "Choose language",
+
+/* ---------- padrões: frases que o JavaScript monta com números ---------- */
+/* Cada entrada é [expressão regular sobre o português, molde em inglês]. */
+"__padroes": [
+  ["^≈ ([\\d,.]+) horas? de trabalho$",        "≈ $1 hours of work"],
+  ["^≈ 1 hora de trabalho$",                   "≈ 1 hour of work"],
+  ["^([\\d.]+) iten?s$",                       "$1 items"],
+  ["^1 item$",                                 "1 item"],
+  ["^faltam (\\d+) dias$",                     "$1 days left"],
+  ["^último dia$",                             "last day"],
+  ["^([\\d,.]+) horas$",                       "$1 hours"],
+  ["^(.+) por hora$",                          "$1 per hour"],
+  ["^(.+)\\/mês$",                             "$1/month"],
+  ["^(.+) por sessão$",                        "$1 per session"],
+  ["^(\\d+) dias de antecedência$",            "$1 days' notice"],
+  ["^\\/mês$",                                 "/month"],
+  ["^(.+)\\/hora$",                            "$1/hour"]
+],
+
+/* ---------- aplicação ---------- */
+"🌐 Site": "🌐 Website",
+"O seu negócio,": "Your business,",
+"a um toque.": "one tap away.",
+"Peça o seu site, explore modelos e acompanhe os seus cupões — tudo aqui dentro.":
+  "Order your website, browse templates and follow your vouchers — all in one place.",
+"a partir de": "starting at",
+"O que quer fazer?": "What would you like to do?",
+"Pedir o meu site": "Order my website",
+"orçamento em minutos": "a quote in minutes",
+"por tipo de negócio": "by type of business",
+"fale connosco já": "talk to us now",
+"preços claros": "clear pricing",
+"Os meus cupões": "My vouchers",
+"a minha conta": "my account",
+"Sobre nós": "About us",
+"quem somos": "who we are",
+"Conta": "Account",
+"Falar com o assistente": "Talk to the assistant",
+"Instalar a app TECNOVA": "Install the TECNOVA app",
+"iPhone / iPad": "iPhone / iPad",
+
+/* ---------- conta ---------- */
+"A sua conta": "Your account",
+"Entre ou crie a sua conta": "Log in or create your account",
+"Veja os seus cupões de desconto e o histórico com a TECNOVA Digital.":
+  "See your discount vouchers and your history with TECNOVA Digital.",
+"Entrar": "Log in",
+"Criar conta": "Sign up",
+"Entrar na minha conta": "Log in to my account",
+"Palavra-passe": "Password",
+"Nome": "Name",
+"O seu nome": "Your name",
+"Telemóvel": "Mobile",
+"Sexo": "Gender",
+"Masculino": "Male",
+"Feminino": "Female",
+"Prefiro não dizer": "Prefer not to say",
+"Foto de perfil (opcional)": "Profile photo (optional)",
+"🙂 Escolher um personagem": "🙂 Pick a character",
+"🙂 Personagens": "🙂 Characters",
+"📷 Enviar foto": "📷 Upload a photo",
+"Foto / avatar": "Photo / avatar",
+"Remover": "Remove",
+"Guardar alterações": "Save changes",
+"Segurança": "Security",
+"Alterar palavra-passe (por email)": "Change password (by email)",
+"⚙️ Configurações da conta": "⚙️ Account settings",
+"A carregar…": "Loading…",
+
+/* ---------- página inicial e pacotes ---------- */
+"Três pacotes claros, a partir de 350€, sem surpresas. Escolha o que serve o seu negócio.":
+  "Three clear packages from €350, no surprises. Pick the one that fits your business.",
+"Domínio próprio .pt: +30€/ano (opcional) · Manutenção mensal com":
+  "Your own .pt domain: +€30/year (optional) · Monthly maintenance with",
+"Pode usar domínio próprio .pt por +30€/ano (opcional), ou começar sem custo extra com um endereço temporário até decidir.":
+  "You can use your own .pt domain for +€30/year (optional), or start at no extra cost with a temporary address until you decide.",
+
+/* ---------- renovação ---------- */
+"Para quem já tem site": "For those who already have a site",
+"Já tem site... mas ele": "You have a site… but does it",
+"trabalha por si?": "work for you?",
+"Responda com sinceridade: quanto pagou pelo site atual — e quanto ele lhe devolveu?":
+  "Answer honestly: how much did your current site cost — and how much has it given back?",
+"Três perguntas antes de continuar": "Three questions before you carry on",
+"Quanto pagou pelo seu site atual — e quanto ele lhe devolveu?":
+  "How much did your current site cost — and how much has it given back?",
+"Está feliz com o resultado que tem hoje?": "Are you happy with the results you get today?",
+"O que mudaria nele, se pudesse?": "What would you change about it, if you could?",
+"Se hesitou em alguma resposta, esta página é para si.":
+  "If you hesitated on any answer, this page is for you.",
+"Sinais de alerta": "Warning signs",
+"O seu site está a custar-lhe clientes se…": "Your site is costing you customers if…",
+"Não abre bem no telemóvel (onde estão 8 em cada 10 clientes)":
+  "It doesn't open properly on a phone (where 8 out of 10 customers are)",
+"Não recebe marcações — é só um cartão de visita parado":
+  "It takes no bookings — it's just a business card sitting still",
+"Preços e serviços desatualizados há meses": "Prices and services months out of date",
+"Design antigo que já não representa a qualidade do seu trabalho":
+  "An old design that no longer matches the quality of your work",
+"Pagou caro e não tem ninguém que faça alterações quando precisa":
+  "You paid a lot and have nobody to make changes when you need them",
+"Redesenho completo e moderno · mantém o seu domínio e conteúdos · marcações pelo WhatsApp incluídas · migração sem perder nada ·":
+  "A complete, modern redesign · keeps your domain and content · WhatsApp bookings included · migration with nothing lost ·",
+"diagnóstico grátis em 24h": "free assessment within 24h",
+"Pedir diagnóstico grátis": "Request a free assessment",
+"Alterações de preços e serviços · banners de promoções · suporte prioritário por WhatsApp.":
+  "Price and service changes · promotional banners · priority support on WhatsApp.",
+"Tudo do Essencial · pequenas alterações ilimitadas · campanhas de cupões e fidelidade feitas por nós.":
+  "Everything in Essential · unlimited small changes · voucher and loyalty campaigns run by us.",
+"✓ 1.º MÊS GRÁTIS ao fechar qualquer pacote · cancela quando quiser · ★ Cliente fiel: 15% de desconto em tudo o que acrescentar ao site":
+  "✓ 1st MONTH FREE with any package · cancel whenever you like · ★ Loyal customer: 15% off everything you add to the site",
+"Ver todos os pacotes": "See all packages",
+
+/* ---------- serviços ---------- */
+"O que os seus clientes vão poder fazer": "What your customers will be able to do",
+"Mais do que um site.": "More than a website.",
+/* o título inteiro: em pedaços sobrava um "Uma" à solta no meio */
+"Mais do que um site.<br>Uma <i>máquina de trazer clientes.</i>":
+  "More than a website.<br>A <i>machine for bringing in customers.</i>",
+"máquina de trazer clientes.": "a machine for bringing in customers.",
+"Explore cada funcionalidade por categoria — tal como um site profissional é organizado.":
+  "Browse every feature by category — the way a professional site is organised.",
+"Marcações em 1 minuto": "Bookings in 1 minute",
+"O cliente escolhe o serviço, o dia e a hora diretamente no site — o pedido cai organizado no seu WhatsApp, sem chamadas nem confusão de agenda.":
+  "The customer picks the service, day and time right on the site — the request lands neatly in your WhatsApp, with no missed calls and no diary mix-ups.",
+"Calendário com horários realmente disponíveis": "A calendar with genuinely free slots",
+"Confirmação automática para o cliente": "Automatic confirmation for the customer",
+"Lembretes que reduzem faltas": "Reminders that cut no-shows",
+"enviado automaticamente para o seu WhatsApp": "sent automatically to your WhatsApp",
+"2h antes da hora marcada": "2h before the appointment",
+"Resultado para si:": "What you get:",
+"menos tempo ao telefone": "less time on the phone",
+"clientes que voltam": "customers who come back",
+
+/* ---------- sobre ---------- */
+"O rosto por trás do projeto": "The face behind the project",
+"«O seu site não pode ser só bonito — tem de": "«Your site can't just be pretty — it has to",
+"trabalhar por si": "work for you",
+"Falar com o Wesley": "Talk to Wesley",
+"Simples e sem risco": "Simple and risk-free",
+"Do primeiro contacto ao site no ar": "From first contact to a live site",
+"Conversa de 15 minutos": "A 15-minute chat",
+"Conhecemos o seu negócio, serviços e preços. Sem compromisso.":
+  "We get to know your business, services and prices. No commitment.",
+"Proposta e desenho": "Proposal and design",
+"Recebe a simulação do SEU site antes de decidir — vê como fica.":
+  "You get a mock-up of YOUR site before deciding — you see how it looks.",
+"Aprovação e sinal": "Approval and deposit",
+"Gostou? 50% para iniciar e mãos à obra.": "Happy with it? 50% to start and we get to work.",
+"Em 5 a 15 dias úteis (conforme o pacote) o site está pronto.":
+  "In 5 to 15 working days (depending on the package) the site is ready.",
+"Entrega e formação": "Handover and training",
+"Site no ar, ensino-lhe tudo (painel, cupões, selos) e só então paga o restante.":
+  "Site live, I teach you everything (panel, vouchers, stamps) and only then do you pay the rest.",
+"✓ Garantia de satisfação": "✓ Satisfaction guarantee",
+"Só paga a segunda metade quando o site estiver": "You only pay the second half once the site is",
+"NO AR": "LIVE",
+"e aprovado por si.": "and approved by you.",
+"★ Oferta de lançamento — 20% de desconto": "★ Launch offer — 20% off",
+"Para os 3 primeiros negócios da zona, em troca de um depoimento. Vagas limitadas.":
+  "For the first 3 businesses in the area, in exchange for a testimonial. Limited places.",
+
+/* ---------- barra e crédito nas páginas de modelo ---------- */
+"Quero um site assim →": "I want a site like this →",
+"criado pela TECNOVA Digital": "built by TECNOVA Digital",
+"Falar com a TECNOVA Digital": "Talk to TECNOVA Digital",
+"🅣 Modelo criado por": "🅣 Template built by",
+"🖼️ Este é um": "🖼️ This is a",
+"🎂 Este é um": "🎂 This is a",
+"modelo demonstrativo": "demo template",
+"🖼️ Modelo demonstrativo criado pela TECNOVA Digital":
+  "🖼️ Demo template built by TECNOVA Digital",
+"🖼️ Este é um modelo demonstrativo criado pela TECNOVA Digital":
+  "🖼️ This is a demo template built by TECNOVA Digital",
+"Este modelo foi feito pela TECNOVA Digital. O seu pode ficar assim — ou com a sua própria identidade.":
+  "This template was made by TECNOVA Digital. Yours can look like this — or carry your own identity.",
+"Voltar aos modelos": "Back to templates",
+"← Voltar aos modelos": "← Back to templates"
 };

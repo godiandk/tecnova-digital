@@ -6,13 +6,16 @@
 <title>Clínica Bella Pele — Modelo TECNOVA Digital</title>
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="modelo-carrossel.css?v=1">
+<link rel="stylesheet" href="modelo-carrossel.css?v=16">
 <style>
 :root{
   --mc-acc:#b5748c; --mc-acc-soft:#a85b78; --mc-txt:#3a2530; --mc-txt-dim:#6b5460;
   --mc-veil:rgba(251,243,239,.93); --mc-on-acc:#ffffff; --mc-line:rgba(181,116,140,.35);
-  --bg:#fbf3ef; --bg-2:#f3e3dc; --ink:#3a2530; --ink-dim:#7a6169;
+  --bg:#fbf3ef; --bg-2:#f3e3dc; --ink:#3a2530; --ink-dim:#765d65;
   --rose:#b5748c; --rose-soft:#d1a3b5; --gold:#cbb08a;
+  /* rosa mais fundo só para as letras: #b5748c sobre creme dava 2,9:1.
+     Este dá 4,7:1 e mantém-se a mesma família de cor. */
+  --rose-txt:#9b4a68;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -31,13 +34,13 @@ section{padding:96px 0}
 header{padding-top:44px}
 .nav{display:flex;justify-content:space-between;align-items:center;padding:24px 0;flex-wrap:wrap}
 .logo{display:flex;align-items:center;gap:10px}
-.logo-ic{width:36px;height:36px;border:1px solid var(--rose);border-radius:50%;display:grid;place-items:center;color:var(--rose);font-style:italic;font-family:'Cormorant Garamond',serif;font-size:1.2rem}
+.logo-ic{width:36px;height:36px;border:1px solid var(--rose);border-radius:50%;display:grid;place-items:center;color:var(--rose-txt);font-style:italic;font-family:'Cormorant Garamond',serif;font-size:1.2rem}
 .logo b{display:block;font-size:.95rem;letter-spacing:.06em}
-.logo span{display:block;color:var(--rose);font-size:.6rem;letter-spacing:.25em;text-transform:uppercase}
+.logo span{display:block;color:var(--rose-txt);font-size:.6rem;letter-spacing:.25em;text-transform:uppercase}
 .nav-right{display:flex;align-items:center;gap:12px}
 nav.links{display:flex;gap:30px}
 nav.links a{color:var(--ink-dim);text-decoration:none;font-size:.82rem;font-weight:600}
-nav.links a:hover{color:var(--rose)}
+nav.links a:hover{color:var(--rose-txt)}
 .burger{display:none;flex-direction:column;gap:5px;background:none;border:1px solid rgba(181,116,140,.35);border-radius:6px;cursor:pointer;padding:9px 10px}
 .burger span{width:18px;height:2px;background:var(--rose)}
 @media(max-width:760px){
@@ -49,30 +52,30 @@ nav.links a:hover{color:var(--rose)}
 
 .hero{min-height:78vh;display:flex;align-items:center;background:radial-gradient(700px 400px at 85% 10%,rgba(181,116,140,.12),transparent 60%),var(--bg)}
 .hero h1{font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.08;margin:20px 0 26px;font-weight:600;font-style:italic}
-.hero h1 b{font-style:normal;color:var(--rose);font-weight:600}
+.hero h1 b{font-style:normal;color:var(--rose-txt);font-weight:600}
 .hero p{color:var(--ink-dim);max-width:500px;margin-bottom:32px;font-size:1.05rem}
 .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 32px;border-radius:999px;font-weight:700;font-size:.88rem;text-decoration:none;transition:transform .2s}
 .btn:hover{transform:translateY(-2px)}
 .btn-rose{background:linear-gradient(135deg,var(--rose-soft),var(--rose));color:#fff}
-.btn-line{border:1px solid var(--rose);color:var(--rose)}
-.eyebrow{font-size:.72rem;letter-spacing:.32em;color:var(--rose);font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:12px}
+.btn-line{border:1px solid var(--rose);color:var(--rose-txt)}
+.eyebrow{font-size:.72rem;letter-spacing:.32em;color:var(--rose-txt);font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:12px}
 .eyebrow::before{content:"";width:30px;height:1px;background:var(--rose)}
 .trust-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:34px;font-size:.85rem;color:var(--ink-dim)}
-.stars{color:var(--rose);letter-spacing:2px}
+.stars{color:var(--rose-txt);letter-spacing:2px}
 .trust-row b{color:var(--ink)}
 .trust-row .sep{color:rgba(58,37,48,.2)}
 
 .treats{background:var(--bg-2)}
 .tab-bar{display:flex;gap:10px;flex-wrap:wrap;margin:36px 0}
-.tab-btn{padding:11px 20px;border-radius:999px;border:1px solid var(--rose);background:transparent;color:var(--rose);font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit}
+.tab-btn{padding:11px 20px;border-radius:999px;border:1px solid var(--rose);background:transparent;color:var(--rose-txt);font-weight:700;font-size:.82rem;cursor:pointer;font-family:inherit}
 .tab-btn.active{background:var(--rose);color:#fff}
 .tab-panel{display:none}
 .tab-panel.active{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .treat-card{background:var(--bg);border:1px solid rgba(181,116,140,.25);border-radius:14px;padding:24px;position:relative}
-.treat-card.pop{border-color:var(--rose)}
-.treat-card .tag{position:absolute;top:-11px;right:18px;background:var(--rose);color:#fff;font-size:.63rem;font-weight:800;padding:4px 10px;border-radius:999px}
+.treat-card.pop{border-color:var(--rose-txt)}
+.treat-card .tag{position:absolute;top:-11px;right:18px;background:var(--rose-txt);color:#fff;font-size:.69rem;font-weight:800;padding:4px 10px;border-radius:999px}
 .treat-card h3{font-size:1.15rem;margin-bottom:6px;font-style:italic}
-.treat-card .price{color:var(--rose);font-weight:700;font-family:'Manrope',sans-serif}
+.treat-card .price{color:var(--rose-txt);font-weight:700;font-family:'Manrope',sans-serif}
 .treat-card p{color:var(--ink-dim);font-size:.85rem;margin-top:8px}
 @media(max-width:820px){.tab-panel.active{grid-template-columns:1fr}}
 
@@ -113,7 +116,7 @@ nav.links a:hover{color:var(--rose)}
 .testi-card{background:var(--bg-2);border:1px solid rgba(181,116,140,.2);border-radius:14px;padding:26px;text-align:left}
 .testi-card .stars{display:block;margin-bottom:10px;font-size:.85rem}
 .testi-card p{color:var(--ink-dim);font-size:.9rem;margin-bottom:14px;font-style:italic}
-.testi-card b{color:var(--rose);font-size:.85rem}
+.testi-card b{color:var(--rose-txt);font-size:.85rem}
 @media(max-width:820px){.testi-grid{grid-template-columns:1fr}}
 
 .hours-sec{background:var(--bg-2)}
@@ -136,7 +139,7 @@ nav.links a:hover{color:var(--rose)}
 
 footer{border-top:1px solid rgba(181,116,140,.25);padding:36px 0 90px;text-align:center;color:var(--ink-dim);font-size:.82rem}
 .tecnova-credit{margin-top:16px;display:inline-flex;align-items:center;gap:10px;background:rgba(181,116,140,.08);border:1px solid rgba(181,116,140,.3);border-radius:999px;padding:10px 20px;font-size:.8rem}
-.tecnova-credit a{color:var(--rose);text-decoration:none;font-weight:700}
+.tecnova-credit a{color:var(--rose-txt);text-decoration:none;font-weight:700}
 
 .sticky-cta{display:none}
 @media(max-width:760px){
@@ -315,7 +318,7 @@ footer{border-top:1px solid rgba(181,116,140,.25);padding:36px 0 90px;text-align
     <div class="card-mock reveal">
       <p style="font-style:italic;color:var(--ink-dim)">O seu cartão Bella Pele</p>
       <div class="dots"><span></span><span></span><span></span><span></span></div>
-      <p style="margin-top:14px;font-size:.8rem;color:var(--rose);font-weight:700">4 de 6 tratamentos concluídos</p>
+      <p style="margin-top:14px;font-size:.8rem;color:var(--rose-txt);font-weight:700">4 de 6 tratamentos concluídos</p>
     </div>
   </div>
 </section>
@@ -353,7 +356,7 @@ footer{border-top:1px solid rgba(181,116,140,.25);padding:36px 0 90px;text-align
 
 <section class="cta-final">
   <div class="wrap">
-    <h2 class="reveal" style="font-size:2.4rem">O seu espaço merece<br><b style="color:var(--rose);font-style:normal">um site assim.</b></h2>
+    <h2 class="reveal" style="font-size:2.4rem">O seu espaço merece<br><b style="color:var(--rose-txt);font-style:normal">um site assim.</b></h2>
     <p style="color:var(--ink-dim);max-width:480px;margin:16px auto 30px">Este modelo foi feito pela TECNOVA Digital. O seu pode ficar assim — ou com a sua própria identidade.</p>
     <a class="btn btn-rose reveal" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Gostei%20do%20modelo%20Bella%20Pele%20e%20quero%20um%20site%20assim." target="_blank" rel="noopener">Falar com a TECNOVA Digital</a>
   </div>

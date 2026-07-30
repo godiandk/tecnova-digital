@@ -43,12 +43,18 @@
 .mc-arrow.prev{left:20px}.mc-arrow.next{right:20px}
 @media(min-width:1180px){.mc-arrow{display:grid}}
 
-.mc-dots{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:9px;z-index:10}
+.mc-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:0;z-index:10}
+/* A bolinha continua com 10px, mas o botão passa a ter 34x34 para o dedo:
+   o ponto visível é desenhado no ::before. */
 .mc-dots button{
-  width:10px;height:10px;border-radius:50%;padding:0;cursor:pointer;
+  width:34px;height:34px;border:none;background:none;padding:0;cursor:pointer;
+  display:grid;place-items:center;
+}
+.mc-dots button::before{
+  content:"";width:10px;height:10px;border-radius:50%;
   border:1px solid var(--mc-acc-soft);background:transparent;transition:all .25s;
 }
-.mc-dots button.active{background:var(--mc-acc-soft);transform:scale(1.25)}
+.mc-dots button.active::before{background:var(--mc-acc-soft);transform:scale(1.25)}
 
 @media(max-width:860px){
   .mc-slide{min-height:auto;padding:52px 0 62px;align-items:flex-start}
