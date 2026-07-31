@@ -1,0 +1,99 @@
+rules_version = '2';
+
+// ============================================================
+// TECNOVA Digital — regras de segurança do Firestore
+// ------------------------------------------------------------
+// Estas regras são a única coisa que protege a base de dados. O
+// código do site é público: qualquer pessoa o pode ler e chamar o
+// Firebase directamente. Por isso não basta verificar no JavaScript
+// — tem de estar aqui.
+//
+// Princípio: cada pessoa só chega aos seus próprios dados. Só o
+// administrador vê tudo.
+// ============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // O administrador é reconhecido pelo email da conta com que entra.
+    // Tem de ser o mesmo que está em ADMIN_EMAILS no firebase-config.js.
+    function ehAdmin() {
+      return request.auth != null
+          && request.auth.token.email in ['wly.vianna@gmail.com'];
+    }
+
+    function ehDono(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // ----------------------------------------------------------
+    // clientes/{uid} — a ficha de cada cliente
+    // O documento tem o mesmo id que a conta, por isso o dono é
+    // sempre quem lá está.
+    // ----------------------------------------------------------
+    match /clientes/{uid} {
+      allow read, write: if ehDono(uid) || ehAdmin();
+    }
+
+    // ----------------------------------------------------------
+    // orcamentos/{ref} — o que sai do simulador
+    // Qualquer visitante pode pedir um orçamento sem ter conta: é
+    // esse o objectivo da página. Por isso a criação é aberta, mas
+    // NINGUÉM os pode ler, alterar ou apagar sem ser o administrador
+    // — nem sequer quem os criou.
+    // ----------------------------------------------------------
+    match /orcamentos/{ref} {
+      allow create: if request.resource.data.keys().hasAll(['ref', 'nome', 'tel'])
+                    && request.resource.data.nome is string
+                    && request.resource.data.nome.size() > 1
+                    && request.resource.data.nome.size() < 200
+                    && request.resource.data.tel is string
+                    && request.resource.data.tel.size() < 60
+                    && request.resource.data.estado == 'novo';
+      allow read, update, delete: if ehAdmin();
+    }
+
+    // ----------------------------------------------------------
+    // vouchers/{codigo} — cupões de desconto
+    // O cliente precisa de ler o cupão para o validar na sua conta.
+    // Só lê os que são dele, ou os gerais (campanhas sem dono).
+    // Criar e alterar cupões é só do administrador.
+    // ----------------------------------------------------------
+    match /vouchers/{codigo} {
+      allow get: if ehAdmin()
+                 || (request.auth != null
+                     && (!('clienteUid' in resource.data)
+                         || resource.data.clienteUid == null
+                         || resource.data.clienteUid == request.auth.uid));
+      // a lista só devolve os cupões do próprio (a consulta do site
+      // filtra por clienteUid; o Firestore verifica isso aqui)
+      allow list: if ehAdmin()
+                  || (request.auth != null
+                      && resource.data.clienteUid == request.auth.uid);
+      allow create, update, delete: if ehAdmin();
+    }
+
+    // ----------------------------------------------------------
+    // conversas/{uid} — o chat entre o cliente e o Wesley
+    // Uma conversa por cliente, com o id da conta dele.
+    // ----------------------------------------------------------
+    match /conversas/{uid} {
+      allow read, create, update: if ehDono(uid) || ehAdmin();
+      allow delete: if ehAdmin();
+
+      match /mensagens/{msgId} {
+        allow read, create: if ehDono(uid) || ehAdmin();
+        allow update, delete: if ehAdmin();
+      }
+    }
+
+    // ----------------------------------------------------------
+    // Tudo o resto fica fechado. Se um dia acrescentarmos uma
+    // coleção nova, ela não funciona até se escrever a regra —
+    // e isso é de propósito.
+    // ----------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1063,7 +1063,17 @@ const PRESETS = {
       $('#formErro').style.display = 'none';
       var ref = referencia();
       var msg = texto(ref, dados);
-      gravar(ref, dados);
+      gravar(ref, dados).catch(function (e) {
+        // Se o Firestore recusar, o pedido não chega ao painel. O cliente
+        // continua a ter o WhatsApp à frente, mas tem de saber disto.
+        console.error('Orçamento não gravado:', e);
+        var av = $('#okAviso');
+        if (av) {
+          av.textContent = 'Não conseguimos guardar o pedido no nosso sistema. ' +
+            'Envie-o pelo WhatsApp no botão abaixo — a referência ' + ref + ' chega na mensagem.';
+          av.style.display = 'block';
+        }
+      });
 
       $('#okRef').textContent = ref;
       $('#okTotal').textContent = eur(window.__ORC.total);

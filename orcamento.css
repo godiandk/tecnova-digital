@@ -207,3 +207,8 @@
   /* espaço à direita para o "Ver resumo" nunca ficar debaixo do assistente */
   .pagina-orcamento .bar-fixa{padding-right:18px}
 }
+
+/* aviso de que o pedido não chegou ao sistema — raro, mas tem de se ver */
+.ok-aviso{margin:14px auto 0;max-width:540px;padding:13px 17px;border-radius:12px;
+  background:rgba(224,113,92,.12);border:1px solid rgba(224,113,92,.4);
+  color:#f0a292;font-size:.88rem;line-height:1.55}

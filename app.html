@@ -16,7 +16,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="profile.js?v=18"></script>
+<script src="profile.js?v=19"></script>
 <style>
 :root{
   --ink:#16100b;--ink-2:#211812;--ink-3:#2b2016;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
@@ -174,10 +174,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .tabbar button .tb-ic{font-size:1.25rem;line-height:1}
 .tabbar button.active{color:var(--gold)}
 </style>
-<link rel="stylesheet" href="orcamento.css?v=18">
-<link rel="stylesheet" href="app-orcamento.css?v=18">
-<link rel="stylesheet" href="assistente.css?v=18">
-<link rel="stylesheet" href="i18n.css?v=18">
+<link rel="stylesheet" href="orcamento.css?v=19">
+<link rel="stylesheet" href="app-orcamento.css?v=19">
+<link rel="stylesheet" href="assistente.css?v=19">
+<link rel="stylesheet" href="i18n.css?v=19">
 </head>
 <body class="tecnova-app">
 
@@ -335,6 +335,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
     <h2>Obrigado! Está tudo do nosso lado.</h2>
     <p class="lead">Guarde esta referência — é por ela que o seu projeto passa a ser identificado.</p>
     <div class="ok-ref" id="okRef"></div>
+    <!-- só aparece se o pedido não chegar ao sistema -->
+    <p class="ok-aviso" id="okAviso" style="display:none"></p>
 
     <div class="ok-nums">
       <div><span>Total do site</span><b id="okTotal"></b></div>
@@ -705,10 +707,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   }
 })();
 </script>
-<script src="orcamento.js?v=18"></script>
-<script src="idiomas/en.js?v=18"></script>
-<script src="idiomas/es.js?v=18"></script>
-<script src="i18n.js?v=18"></script>
+<script src="orcamento.js?v=19"></script>
+<script src="idiomas/en.js?v=19"></script>
+<script src="idiomas/es.js?v=19"></script>
+<script src="i18n.js?v=19"></script>
 <script src="assistente.js"></script>
 </body>
 </html>
