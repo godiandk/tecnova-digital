@@ -16,7 +16,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="profile.js?v=20"></script>
+<script src="profile.js?v=21"></script>
 <style>
 :root{
   --ink:#16100b;--ink-2:#211812;--ink-3:#2b2016;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
@@ -116,9 +116,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .btn-gold{background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--ink)}
 .btn-wa{background:var(--wa);color:#062b14}
 .btn-line{background:transparent;border:1px solid var(--gold-dim);color:var(--gold-soft)}
-.tabs{display:flex;gap:8px;margin-bottom:18px}
-.tab{flex:1;text-align:center;padding:11px;border-radius:10px;font-weight:700;font-size:.85rem;cursor:pointer;color:var(--cream-dim);border:1px solid rgba(217,178,110,.16)}
-.tab.active{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+/* Entrada em duas alturas: uma acção principal (Entrar) e a secundária
+   (Criar conta) longe dela, por baixo de um separador. */
+.link-btn{display:block;width:100%;margin-top:14px;background:none;border:none;
+  color:var(--gold-soft);font-family:inherit;font-size:.86rem;font-weight:700;
+  cursor:pointer;text-align:center;min-height:40px;padding:0}
+.auth-sep{display:flex;align-items:center;gap:14px;margin:24px 0 4px;
+  color:var(--cream-dim);font-size:.78rem;font-weight:700}
+.auth-sep::before,.auth-sep::after{content:"";flex:1;height:1px;
+  background:rgba(217,178,110,.18)}
 .msg{margin-top:14px;font-size:.85rem;padding:10px 14px;border-radius:10px;display:none}
 .msg.err{display:block;background:rgba(224,113,92,.12);color:#f0a292;border:1px solid rgba(224,113,92,.35)}
 .msg.ok{display:block;background:rgba(37,211,102,.1);color:#8fe3ac;border:1px solid rgba(37,211,102,.35)}
@@ -174,10 +180,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .tabbar button .tb-ic{font-size:1.25rem;line-height:1}
 .tabbar button.active{color:var(--gold)}
 </style>
-<link rel="stylesheet" href="orcamento.css?v=20">
-<link rel="stylesheet" href="app-orcamento.css?v=20">
-<link rel="stylesheet" href="assistente.css?v=20">
-<link rel="stylesheet" href="i18n.css?v=20">
+<link rel="stylesheet" href="orcamento.css?v=21">
+<link rel="stylesheet" href="app-orcamento.css?v=21">
+<link rel="stylesheet" href="assistente.css?v=21">
+<link rel="stylesheet" href="i18n.css?v=21">
 </head>
 <body class="tecnova-app">
 
@@ -383,14 +389,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   <p class="as-sub">Entre para ver e usar os seus cupões de desconto.</p>
 
   <div id="authBox" class="card">
-    <div class="tabs">
-      <div class="tab active" id="tabLogin">Já tenho conta</div>
-      <div class="tab" id="tabRegister">Criar conta</div>
-    </div>
     <form id="formLogin">
       <label>Email</label><input type="email" id="loginEmail" required placeholder="oseuemail@exemplo.com">
       <label>Palavra-passe</label><input type="password" id="loginPass" required placeholder="••••••••">
       <button class="btn btn-gold" type="submit">Entrar</button>
+      <button type="button" class="link-btn" id="btnEsqueci">Esqueceu-se da palavra-passe?</button>
     </form>
     <form id="formRegister" class="hidden">
       <label>Foto de perfil (opcional)</label>
@@ -408,8 +411,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
       <select id="regSexo"><option value="" selected>Prefiro não dizer</option><option value="masculino">Masculino</option><option value="feminino">Feminino</option></select>
       <label>Palavra-passe</label><input type="password" id="regPass" required placeholder="mínimo 6 caracteres">
       <button class="btn btn-gold" type="submit">Criar a minha conta</button>
+      <button type="button" class="link-btn" id="btnVoltarLogin">Já tenho conta — entrar</button>
     </form>
     <div id="authMsg" class="msg"></div>
+
+    <div id="authSep">
+      <div class="auth-sep">ou</div>
+      <button type="button" class="btn btn-line" id="btnIrRegistar">Criar nova conta</button>
+    </div>
   </div>
 
   <div id="dashBox" class="card hidden">
@@ -497,14 +506,28 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 
   /* ---- Firebase: conta + cupões ---- */
   function showTab(t){
-    document.getElementById("tabLogin").classList.toggle("active", t==="login");
-    document.getElementById("tabRegister").classList.toggle("active", t==="register");
     document.getElementById("formLogin").classList.toggle("hidden", t!=="login");
     document.getElementById("formRegister").classList.toggle("hidden", t!=="register");
+    // "Criar nova conta" só faz sentido enquanto se está a entrar
+    document.getElementById("authSep").classList.toggle("hidden", t!=="login");
     document.getElementById("authMsg").className="msg";
   }
-  document.getElementById("tabLogin").addEventListener("click", function(){ showTab("login"); });
-  document.getElementById("tabRegister").addEventListener("click", function(){ showTab("register"); });
+  document.getElementById("btnIrRegistar").addEventListener("click", function(){ showTab("register"); });
+  document.getElementById("btnVoltarLogin").addEventListener("click", function(){ showTab("login"); });
+
+  // Recuperar a palavra-passe. Não existia: quem se esquecesse ficava sem
+  // forma nenhuma de voltar a entrar.
+  document.getElementById("btnEsqueci").addEventListener("click", function(){
+    var email = (document.getElementById("loginEmail").value || "").trim();
+    if(!email){
+      authMsg("Escreva primeiro o seu email aqui em cima e volte a tocar.","err");
+      document.getElementById("loginEmail").focus();
+      return;
+    }
+    auth.sendPasswordResetEmail(email)
+      .then(function(){ authMsg("📧 Enviámos um link para " + email + ". Veja também o spam.","ok"); })
+      .catch(function(err){ authMsg(traduzErro(err),"err"); });
+  });
 
   function authMsg(text,type){ var el=document.getElementById("authMsg"); el.textContent=text; el.className="msg "+type; }
   function traduzErro(err){
@@ -707,10 +730,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   }
 })();
 </script>
-<script src="orcamento.js?v=20"></script>
-<script src="idiomas/en.js?v=20"></script>
-<script src="idiomas/es.js?v=20"></script>
-<script src="i18n.js?v=20"></script>
+<script src="orcamento.js?v=21"></script>
+<script src="idiomas/en.js?v=21"></script>
+<script src="idiomas/es.js?v=21"></script>
+<script src="i18n.js?v=21"></script>
 <script src="assistente.js"></script>
 </body>
 </html>
