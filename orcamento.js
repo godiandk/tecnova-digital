@@ -31,7 +31,9 @@ const LINK_PAGAMENTO = "";
 
    O `ajuste` serve para praticar um preço diferente no Brasil sem mexer
    no catálogo: 1 = conversão direta, 0.8 = 20% abaixo da conversão.     */
-const CAMBIO_DATA = '29/07/2026';   // dia em que as taxas abaixo foram verificadas
+// Câmbio de referência do Banco Central Europeu. Ao actualizar as taxas,
+// actualize também esta data — ela aparece na página.
+const CAMBIO_DATA = '30/07/2026';   // dia em que as taxas abaixo foram verificadas
 
 // Para acrescentar um país: copia um bloco, muda a bandeira, o código, o
 // símbolo e a taxa. Aparece logo no seletor, sem mexer em mais nada.
@@ -52,7 +54,7 @@ const MOEDAS = {
   },
   br: {
     pais: 'Brasil', bandeira: '🇧🇷', codigo: 'BRL', simbolo: 'R$', curto: 'BRL',
-    sufixo: false, taxa: 6.30, ajuste: 0.70, casas: 0,   // 0.70 = 30% abaixo da conversão direta
+    sufixo: false, taxa: 5.85, ajuste: 0.70, casas: 0,   // 0.70 = 30% abaixo da conversão direta
     pagamento: {
       titulo: 'Dados para o sinal (Pix)',
       linhas: [
@@ -65,7 +67,7 @@ const MOEDAS = {
   },
   us: {
     pais: 'Estados Unidos', bandeira: '🇺🇸', codigo: 'USD', simbolo: '$', curto: 'USD',
-    sufixo: false, taxa: 1.08, ajuste: 1, casas: 0,
+    sufixo: false, taxa: 1.15, ajuste: 1, casas: 0,
     pagamento: {
       titulo: 'Payment details / Dados para o sinal',
       linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por WhatsApp'],
@@ -75,7 +77,7 @@ const MOEDAS = {
   },
   uk: {
     pais: 'Reino Unido', bandeira: '🇬🇧', codigo: 'GBP', simbolo: '£', curto: 'GBP',
-    sufixo: false, taxa: 0.84, ajuste: 1, casas: 0,
+    sufixo: false, taxa: 0.86, ajuste: 1, casas: 0,
     pagamento: {
       titulo: 'Dados para o sinal',
       linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por WhatsApp'],
@@ -85,7 +87,7 @@ const MOEDAS = {
   },
   ch: {
     pais: 'Suíça', bandeira: '🇨🇭', codigo: 'CHF', simbolo: 'CHF', curto: 'CHF',
-    sufixo: false, taxa: 0.94, ajuste: 1, casas: 0,
+    sufixo: false, taxa: 0.93, ajuste: 1, casas: 0,
     pagamento: {
       titulo: 'Dados para o sinal',
       linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por WhatsApp'],
@@ -95,7 +97,7 @@ const MOEDAS = {
   },
   ca: {
     pais: 'Canadá', bandeira: '🇨🇦', codigo: 'CAD', simbolo: 'C$', curto: 'CAD',
-    sufixo: false, taxa: 1.47, ajuste: 1, casas: 0,
+    sufixo: false, taxa: 1.61, ajuste: 1, casas: 0,
     pagamento: {
       titulo: 'Dados para o sinal',
       linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por WhatsApp'],
@@ -565,9 +567,16 @@ const PRESETS = {
     var m = M();
     if (m.taxa === 1) { el.style.display = 'none'; el.innerHTML = ''; return; }
     el.style.display = 'block';
-    el.innerHTML = m.bandeira + ' Valores em <b>' + m.codigo + '</b>, convertidos a <b>1€ = ' +
-      (m.taxa * m.ajuste).toLocaleString('pt-PT') + ' ' + m.codigo + '</b> (câmbio de ' + CAMBIO_DATA + ').' +
-      ' O contrato é feito em euros, por isso o valor na sua moeda pode variar um pouco no dia do pagamento.';
+    var cambio = m.taxa.toLocaleString('pt-PT');
+    var txt = m.bandeira + ' Valores em <b>' + m.codigo + '</b>, ao câmbio de <b>1€ = ' +
+      cambio + ' ' + m.codigo + '</b> (' + CAMBIO_DATA + ').';
+    if (m.ajuste < 1) {
+      txt += ' Aplicamos ainda um <b>desconto de ' + Math.round((1 - m.ajuste) * 100) +
+             '%</b> sobre a conversão, para o preço acompanhar o mercado local.';
+    }
+    txt += ' O contrato é feito em euros, por isso o valor na sua moeda pode variar' +
+           ' um pouco no dia do pagamento.';
+    el.innerHTML = txt;
   }
 
   function montarProjeto() {

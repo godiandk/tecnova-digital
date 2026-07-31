@@ -784,9 +784,13 @@ window.TECNOVA_DIC.es = {
   ["^\\/mês$",                                 "/mes"],
   ["^(.+)\\/hora$",                            "$1/hora"],
   ["^(\\S+) Valores em$",                      "$1 Importes en"],
-  ["^, convertidos a$",                        ", convertidos a"],
-  ["^\\(câmbio de (.+)\\)\\. O contrato é feito em euros, por isso o valor na sua moeda pode variar um pouco no dia do pagamento\\.$",
-   "(cambio del $1). El contrato se hace en euros, por lo que el importe en su moneda puede variar un poco el día del pago."]
+  ["^, ao câmbio de$",                          ", al cambio de"],
+  ["^desconto de (\\d+)%$",                     "descuento del $1%"],
+  ["^\\((.+)\\)\\. Aplicamos ainda um$",          "($1). Aplicamos además un"],
+  ["^sobre a conversão, para o preço acompanhar o mercado local\\. O contrato é feito em euros, por isso o valor na sua moeda pode variar um pouco no dia do pagamento\\.$",
+   "sobre la conversión, para que el precio se ajuste al mercado local. El contrato se hace en euros, por lo que el importe en su moneda puede variar un poco el día del pago."],
+  ["^\\((.+)\\)\\. O contrato é feito em euros, por isso o valor na sua moeda pode variar um pouco no dia do pagamento\\.$",
+   "($1). El contrato se hace en euros, por lo que el importe en su moneda puede variar un poco el día del pago."]
 ],
 
 /* ---------- aplicação ---------- */
