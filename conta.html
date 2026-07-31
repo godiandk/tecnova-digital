@@ -12,10 +12,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=19">
-<link rel="stylesheet" href="assistente.css?v=19">
-<link rel="stylesheet" href="i18n.css?v=19">
-<link rel="stylesheet" href="chat.css?v=19">
+<link rel="stylesheet" href="estilo.css?v=20">
+<link rel="stylesheet" href="assistente.css?v=20">
+<link rel="stylesheet" href="i18n.css?v=20">
+<link rel="stylesheet" href="chat.css?v=20">
 <style>
 :root{ --bad:#e0715c; }
 
@@ -125,7 +125,7 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
     <!-- LOGIN / REGISTO -->
     <div id="authBox" class="card auth-card">
       <div class="tabs">
-        <div class="tab active" id="tabLogin" onclick="showTab('login')">Entrar</div>
+        <div class="tab active" id="tabLogin" onclick="showTab('login')">Já tenho conta</div>
         <div class="tab" id="tabRegister" onclick="showTab('register')">Criar conta</div>
       </div>
 
@@ -134,7 +134,7 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
         <input type="email" id="loginEmail" required placeholder="oseuemail@exemplo.com">
         <label>Palavra-passe</label>
         <input type="password" id="loginPass" required placeholder="••••••••">
-        <button class="btn btn-gold" type="submit">Entrar na minha conta</button>
+        <button class="btn btn-gold" type="submit">Entrar</button>
       </form>
 
       <form id="formRegister" class="hidden">
@@ -263,7 +263,7 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="profile.js?v=19"></script>
+<script src="profile.js?v=20"></script>
 <script src="chat.js"></script>
 
 <script>
@@ -578,9 +578,9 @@ async function carregarVouchers(uid){
 }
 </script>
 <script src="site.js"></script>
-<script src="idiomas/en.js?v=19"></script>
-<script src="idiomas/es.js?v=19"></script>
-<script src="i18n.js?v=19"></script>
+<script src="idiomas/en.js?v=20"></script>
+<script src="idiomas/es.js?v=20"></script>
+<script src="i18n.js?v=20"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

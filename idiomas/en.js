@@ -816,6 +816,7 @@ window.TECNOVA_DIC.en = {
 "Veja os seus cupões de desconto e o histórico com a TECNOVA Digital.":
   "See your discount vouchers and your history with TECNOVA Digital.",
 "Entrar": "Log in",
+"Já tenho conta": "I have an account",
 "Criar conta": "Sign up",
 "Entrar na minha conta": "Log in to my account",
 "Palavra-passe": "Password",

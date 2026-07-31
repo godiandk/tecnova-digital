@@ -820,6 +820,7 @@ window.TECNOVA_DIC.es = {
 "Veja os seus cupões de desconto e o histórico com a TECNOVA Digital.":
   "Vea sus cupones de descuento y su historial con TECNOVA Digital.",
 "Entrar": "Entrar",
+"Já tenho conta": "Ya tengo cuenta",
 "Criar conta": "Crear cuenta",
 "Entrar na minha conta": "Entrar en mi cuenta",
 "Palavra-passe": "Contraseña",
