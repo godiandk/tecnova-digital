@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// ============================================================
+// Vida Financeira — regras de segurança do Firestore
+// ------------------------------------------------------------
+// Estas regras são a única coisa que protege a base de dados. O
+// código do site é público: qualquer pessoa o pode ler e chamar o
+// Firebase directamente. Por isso não basta verificar no JavaScript
+// — tem de estar aqui.
+//
+// Princípio: cada pessoa só chega aos seus próprios movimentos.
+// Não há administrador: ninguém vê o dinheiro de outra pessoa.
+// ============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function ehDono(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // ----------------------------------------------------------
+    // utilizadores/{uid} — os movimentos de cada pessoa
+    // O documento tem o mesmo id da conta, por isso o dono é sempre
+    // quem lá está. Sem sessão iniciada não se lê nem se escreve nada.
+    // ----------------------------------------------------------
+    match /utilizadores/{uid} {
+      allow read, write: if ehDono(uid);
+
+      // Espaço para o futuro (metas, contas separadas, etc.): o que
+      // estiver debaixo do documento da pessoa pertence à mesma pessoa.
+      match /{sub=**} {
+        allow read, write: if ehDono(uid);
+      }
+    }
+
+    // ----------------------------------------------------------
+    // Tudo o resto fica fechado. Se um dia acrescentarmos uma
+    // colecção nova, ela não funciona até se escrever a regra —
+    // e isso é de propósito.
+    // ----------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
