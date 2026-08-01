@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vida Financeira — saber para onde vai o seu dinheiro</title>
+<meta name="description" content="Aplicação simples para controlar entradas e saídas, ver o saldo do mês e perceber para onde está a ir o dinheiro. Funciona offline e instala-se como app.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1512">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=1">
+<style>
+.hero{
+  min-height:100vh;display:flex;align-items:center;
+  padding:150px 0 90px;position:relative;
+  background:
+    radial-gradient(900px 500px at 80% -10%,rgba(217,178,110,.13),transparent 60%),
+    radial-gradient(700px 500px at -10% 100%,rgba(62,207,142,.07),transparent 60%),
+    var(--ink);
+}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:56px;align-items:center}
+.hero h1{font-size:clamp(2.4rem,5.6vw,4rem);line-height:1.08;font-weight:800;margin:20px 0 22px}
+.hero h1 em{font-style:italic;color:var(--gold);position:relative;white-space:nowrap}
+.hero h1 em::after{content:"";position:absolute;left:0;right:0;bottom:-9px;height:3px;background:linear-gradient(90deg,var(--gold),transparent)}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+.hero-notas{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.hero-notas span{background:rgba(255,255,255,.045);border:1px solid rgba(217,178,110,.22);border-radius:999px;padding:7px 14px;font-size:.79rem;color:var(--cream-dim);font-weight:600}
+
+/* pré-visualização do painel */
+.preview{
+  background:var(--ink-2);border:1px solid rgba(217,178,110,.25);border-radius:22px;
+  padding:22px;box-shadow:0 30px 70px rgba(0,0,0,.55);
+}
+.pv-mes{text-align:center;font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold-soft);margin-bottom:16px}
+.pv-saldo{background:linear-gradient(140deg,rgba(217,178,110,.14),rgba(217,178,110,.02));border:1px solid rgba(217,178,110,.35);border-radius:14px;padding:16px 18px;margin-bottom:12px}
+.pv-saldo .r{font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--cream-dim);font-weight:700}
+.pv-saldo .v{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;color:var(--gold-soft);line-height:1.2}
+.pv-dois{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.pv-dois div{background:var(--ink);border:1px solid rgba(217,178,110,.16);border-radius:14px;padding:13px 15px}
+.pv-dois .r{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim);font-weight:700}
+.pv-dois .v{font-weight:800;font-size:1.05rem;margin-top:2px}
+.pv-dois .up{color:var(--up)}.pv-dois .down{color:var(--down)}
+.pv-linha{display:flex;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px solid rgba(217,178,110,.1)}
+.pv-linha:last-child{border-bottom:none}
+.pv-ic{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;background:rgba(217,178,110,.1);border:1px solid rgba(217,178,110,.18);font-size:1rem}
+.pv-linha b{flex:1;font-size:.86rem;font-weight:700}
+.pv-linha i{font-style:normal;font-weight:800;font-size:.86rem}
+@media(max-width:900px){
+  .hero{padding:110px 0 70px;min-height:0}
+  .hero-grid{grid-template-columns:1fr;gap:34px}
+  .preview{order:-1}
+}
+
+/* blocos de conteúdo */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:38px}
+.bloco-info{background:var(--ink-2);border:1px solid rgba(217,178,110,.18);border-radius:var(--radius);padding:26px 24px}
+.bloco-info .ic{font-size:1.9rem;line-height:1;margin-bottom:12px}
+.bloco-info h3{font-size:1.15rem;margin-bottom:8px;color:var(--gold-soft)}
+.bloco-info p{color:var(--cream-dim);font-size:.92rem}
+@media(max-width:860px){.grid3{grid-template-columns:1fr}}
+
+.passos{counter-reset:p;margin-top:34px;display:grid;gap:16px;max-width:720px}
+.passos li{list-style:none;display:flex;gap:16px;align-items:flex-start}
+.passos li::before{
+  counter-increment:p;content:counter(p);
+  width:38px;height:38px;flex:none;border-radius:50%;display:grid;place-items:center;
+  background:linear-gradient(140deg,var(--gold-soft),var(--gold));color:var(--ink);
+  font-weight:800;font-family:'Playfair Display',serif;
+}
+.passos b{display:block;margin-bottom:2px}
+.passos span{color:var(--cream-dim);font-size:.92rem}
+
+.faixa-final{background:linear-gradient(140deg,rgba(217,178,110,.12),rgba(217,178,110,.02));border-top:1px solid rgba(217,178,110,.2);border-bottom:1px solid rgba(217,178,110,.2);text-align:center}
+.faixa-final .btn{margin-top:22px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="index.html">
+      <div class="logo-mark">VF</div>
+      <div class="logo-name">VIDA<small>FINANCEIRA</small></div>
+    </a>
+    <nav class="links" id="menu">
+      <a href="index.html" class="on">Início</a>
+      <a href="app.html">O meu mês</a>
+      <a href="sobre.html">Sobre</a>
+      <a href="conta.html" id="nav-conta">Entrar / Criar conta</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn btn-gold" href="app.html">Começar</a>
+      <button class="burger" id="burger" aria-label="Abrir menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">Contas pessoais</div>
+        <h1>Saber para onde vai o <em>seu dinheiro</em>.</h1>
+        <p class="lead">
+          Lance o que entra e o que sai, veja o saldo do mês e perceba, sem
+          contas de cabeça, em que categorias o dinheiro está a desaparecer.
+          Sem folhas de cálculo e sem ligar o banco a lado nenhum.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-gold" href="app.html">Abrir o meu mês</a>
+          <a class="btn btn-line" href="sobre.html">Como funciona</a>
+        </div>
+        <div class="hero-notas">
+          <span>Funciona offline</span>
+          <span>Instala-se como app</span>
+          <span>Sem ligar o banco</span>
+          <span>Exporta para Excel</span>
+        </div>
+      </div>
+
+      <div class="preview reveal">
+        <div class="pv-mes">março 2026</div>
+        <div class="pv-saldo">
+          <div class="r">Saldo do mês</div>
+          <div class="v">418,60 €</div>
+        </div>
+        <div class="pv-dois">
+          <div><div class="r">Entradas</div><div class="v up">1 640,00 €</div></div>
+          <div><div class="r">Saídas</div><div class="v down">1 221,40 €</div></div>
+        </div>
+        <div class="pv-linha"><div class="pv-ic">🛒</div><b>Mercado</b><i style="color:var(--down)">− 312,80 €</i></div>
+        <div class="pv-linha"><div class="pv-ic">🏠</div><b>Renda</b><i style="color:var(--down)">− 550,00 €</i></div>
+        <div class="pv-linha"><div class="pv-ic">💼</div><b>Salário</b><i style="color:var(--up)">+ 1 540,00 €</i></div>
+        <div class="pv-linha"><div class="pv-ic">🚗</div><b>Combustível</b><i style="color:var(--down)">− 78,40 €</i></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="eyebrow">O que faz</div>
+      <h2>O essencial, sem ruído</h2>
+      <p class="lead">
+        Não é um banco nem um investimento. É o caderno onde se aponta o
+        dinheiro — só que faz as contas sozinho.
+      </p>
+
+      <div class="grid3">
+        <div class="bloco-info reveal">
+          <div class="ic">📒</div>
+          <h3>Entradas e saídas</h3>
+          <p>Lança-se em segundos: valor, categoria e data. O saldo do mês actualiza-se logo.</p>
+        </div>
+        <div class="bloco-info reveal">
+          <div class="ic">📊</div>
+          <h3>Para onde foi</h3>
+          <p>Cada mês mostra a repartição das saídas por categoria, em valor e em percentagem.</p>
+        </div>
+        <div class="bloco-info reveal">
+          <div class="ic">📶</div>
+          <h3>Sem internet</h3>
+          <p>Fica tudo no dispositivo. Com conta iniciada, sincroniza para poder ver noutro telemóvel.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="eyebrow">Começar</div>
+      <h2>Três passos</h2>
+      <ol class="passos">
+        <li><div><b>Abrir "O meu mês"</b><span>Não é preciso conta nenhuma para começar a usar.</span></div></li>
+        <li><div><b>Lançar o que entra e o que sai</b><span>Comece pelo mês actual. Cinco minutos chegam para pôr em dia.</span></div></li>
+        <li><div><b>Criar conta (opcional)</b><span>Só se quiser os mesmos movimentos no computador e no telemóvel.</span></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="faixa-final">
+    <div class="wrap">
+      <h2>O primeiro mês é o que custa</h2>
+      <p class="lead" style="margin:0 auto">
+        Depois disso passa a ser um hábito de trinta segundos por dia.
+      </p>
+      <a class="btn btn-gold" href="app.html">Abrir o meu mês</a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="logo" href="index.html">
+          <div class="logo-mark">VF</div>
+          <div class="logo-name">VIDA<small>FINANCEIRA</small></div>
+        </a>
+        <p>Controlo de contas pessoais. Simples, offline e sem ligar o seu banco a lado nenhum.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Aplicação</h4>
+        <a href="app.html">O meu mês</a>
+        <a href="conta.html">Entrar / Criar conta</a>
+      </div>
+      <div class="footer-col">
+        <h4>Informação</h4>
+        <a href="sobre.html">Como funciona</a>
+        <a href="sobre.html#privacidade">Privacidade</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © <span id="ano"></span> Vida Financeira
+    </div>
+  </div>
+</footer>
+
+<button class="app-float" id="app-float" type="button">
+  <span class="af-ic">⬇</span> Instalar app
+</button>
+
+<div class="app-modal" id="app-modal" hidden>
+  <div class="app-modal-box">
+    <button class="app-modal-close" data-fechar aria-label="Fechar">×</button>
+    <div class="app-modal-logo">VF</div>
+    <h3>Instalar no telemóvel</h3>
+    <p>Fica com um ícone no ecrã inicial, como qualquer app. Não passa por nenhuma loja.</p>
+    <div class="app-choice">
+      <button type="button" data-os="android"><span class="os-ic">🤖</span> Android</button>
+      <button type="button" data-os="ios"><span class="os-ic">🍎</span> iPhone</button>
+    </div>
+    <div class="app-steps" id="passos-android">
+      <ol>
+        <li>Abra o menu <b>⋮</b> do Chrome.</li>
+        <li>Toque em <b>Instalar aplicação</b> (ou "Adicionar ao ecrã principal").</li>
+        <li>Confirme. O ícone aparece no ecrã inicial.</li>
+      </ol>
+      <button class="app-back" data-fechar type="button">Fechar</button>
+    </div>
+    <div class="app-steps" id="passos-ios">
+      <ol>
+        <li>No <b>Safari</b>, toque no botão <b>Partilhar</b> (quadrado com seta).</li>
+        <li>Desça e toque em <b>Adicionar ao ecrã principal</b>.</li>
+        <li>Toque em <b>Adicionar</b>.</li>
+      </ol>
+      <button class="app-back" data-fechar type="button">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js?v=1"></script>
+<script src="site.js?v=1"></script>
+</body>
+</html>

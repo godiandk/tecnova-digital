@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Como funciona — Vida Financeira</title>
+<meta name="description" content="Como a Vida Financeira guarda os dados, o que faz e o que não faz.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1512">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=1">
+<style>
+.txt{max-width:720px}
+.txt h2{margin-top:46px}
+.txt h2:first-child{margin-top:0}
+.txt p{color:var(--cream-dim);margin-bottom:14px}
+.txt ul{color:var(--cream-dim);margin:0 0 14px 20px}
+.txt li{margin-bottom:8px}
+.txt b{color:var(--cream)}
+.destaque{background:var(--ink-2);border:1px solid rgba(217,178,110,.2);border-left:3px solid var(--gold);border-radius:12px;padding:18px 22px;margin:22px 0}
+.destaque p:last-child{margin-bottom:0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="index.html">
+      <div class="logo-mark">VF</div>
+      <div class="logo-name">VIDA<small>FINANCEIRA</small></div>
+    </a>
+    <nav class="links" id="menu">
+      <a href="index.html">Início</a>
+      <a href="app.html">O meu mês</a>
+      <a href="sobre.html" class="on">Sobre</a>
+      <a href="conta.html" id="nav-conta">Entrar / Criar conta</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn btn-gold" href="app.html">Começar</a>
+      <button class="burger" id="burger" aria-label="Abrir menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="wrap">
+      <div class="eyebrow">Sobre</div>
+      <h1>Como <i>funciona</i></h1>
+      <p class="lead">Sem letra pequena: o que a aplicação faz, onde ficam os dados e o que ela não é.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap txt">
+
+      <h2>O que faz</h2>
+      <p>
+        A Vida Financeira é um livro de contas pessoal. Lança-se o que entra e
+        o que sai, e ela faz três coisas:
+      </p>
+      <ul>
+        <li>mostra o <b>saldo de cada mês</b> — entradas menos saídas;</li>
+        <li>reparte as <b>saídas por categoria</b>, em valor e percentagem;</li>
+        <li><b>exporta tudo</b> para um ficheiro CSV que abre no Excel.</li>
+      </ul>
+
+      <h2 id="privacidade">Onde ficam os dados</h2>
+      <p>
+        Por omissão, os movimentos ficam guardados <b>apenas no navegador
+        deste dispositivo</b> (no <i>localStorage</i>). Não saem daqui, não
+        passam por nenhum servidor e continuam a funcionar sem internet.
+      </p>
+      <p>
+        Se criar conta e iniciar sessão, os mesmos movimentos passam também a
+        ser gravados no Firebase, na sua área privada, para poder vê-los
+        noutro dispositivo. As regras de segurança (no ficheiro
+        <b>firestore.rules</b>) garantem que só a própria conta lê os seus
+        movimentos — não há administrador que veja o dinheiro de ninguém.
+      </p>
+
+      <div class="destaque">
+        <p>
+          <b>Nunca pedimos dados do banco.</b> Não há ligação a bancos, nem
+          IBAN, nem cartões. Tudo o que a aplicação sabe é o que a pessoa
+          escreve à mão.
+        </p>
+      </div>
+
+      <h2>Se limpar o navegador</h2>
+      <p>
+        Como os dados estão no navegador, limpar os dados do site apaga os
+        movimentos. Por isso existem duas redes de segurança: <b>exportar para
+        CSV</b> de vez em quando, e <b>criar conta</b> para ter uma cópia na
+        nuvem.
+      </p>
+
+      <h2>Instalar como aplicação</h2>
+      <p>
+        O site é uma PWA: instala-se directamente do navegador, com um ícone
+        no ecrã inicial, sem passar pela App Store nem pela Play Store e sem
+        instalar nenhum APK. No Android é o menu <b>⋮ → Instalar aplicação</b>;
+        no iPhone é <b>Partilhar → Adicionar ao ecrã principal</b>, no Safari.
+      </p>
+
+      <h2>O que não é</h2>
+      <ul>
+        <li>Não é um banco nem uma carteira — não move dinheiro nenhum.</li>
+        <li>Não dá conselhos de investimento.</li>
+        <li>Não lê extractos automaticamente: o lançamento é manual, de propósito.</li>
+      </ul>
+
+      <p style="margin-top:34px">
+        <a class="btn btn-gold" href="app.html">Abrir o meu mês</a>
+      </p>
+
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-bottom">
+      © <span id="ano"></span> Vida Financeira · <a href="index.html">Início</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js?v=1"></script>
+<script src="site.js?v=1"></script>
+</body>
+</html>
