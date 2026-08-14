@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pagar o sinal — TECNOVA Digital</title>
+<meta name="description" content="Finalize o seu projeto: pague o sinal de 50% por cartão, MB WAY, Multibanco ou em 3 prestações sem juros.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16100b">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=22">
+<link rel="stylesheet" href="i18n.css?v=22">
+<style>
+.pg-wrap{max-width:640px;margin:0 auto;padding:0 24px 120px}
+.pg-card{background:var(--ink-2);border:1px solid rgba(217,178,110,.2);border-radius:22px;padding:30px;margin-bottom:18px}
+
+/* resumo do que se vai pagar */
+.pg-ref{display:inline-block;background:rgba(0,0,0,.3);border:1px dashed rgba(217,178,110,.5);
+  border-radius:10px;padding:8px 16px;font-weight:800;letter-spacing:.1em;color:var(--gold);font-size:.9rem}
+.pg-linhas{list-style:none;margin:20px 0 0}
+.pg-linhas li{display:flex;justify-content:space-between;gap:14px;align-items:baseline;
+  padding:11px 0;border-bottom:1px dashed rgba(217,178,110,.14);color:var(--cream-dim);font-size:.92rem}
+.pg-linhas li:last-child{border:none}
+.pg-linhas li b{color:var(--cream);white-space:nowrap}
+.pg-agora{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-top:16px;
+  padding-top:16px;border-top:2px solid rgba(217,178,110,.28)}
+.pg-agora span{font-weight:800;font-size:.86rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-soft)}
+.pg-agora b{font-family:'Playfair Display',serif;font-size:2.3rem;color:var(--gold);line-height:1}
+
+/* opções de pagamento */
+.pg-op{display:block;width:100%;text-align:left;background:var(--ink-3);
+  border:1px solid rgba(217,178,110,.22);border-radius:16px;padding:18px 20px;margin-bottom:12px;
+  color:var(--cream);font-family:inherit;cursor:pointer;text-decoration:none;transition:border-color .2s,transform .2s}
+.pg-op:hover{border-color:var(--gold);transform:translateY(-2px)}
+/* o display:block acima vencia o [hidden] do navegador */
+[hidden]{display:none!important}
+.pg-op-topo{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pg-op-ic{font-size:1.4rem;line-height:1;flex:none}
+.pg-op b{font-size:1rem}
+.pg-op .pg-tag{margin-left:auto;background:rgba(217,178,110,.16);border:1px solid rgba(217,178,110,.4);
+  color:var(--gold-soft);border-radius:999px;padding:4px 11px;font-size:.7rem;font-weight:800;
+  letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.pg-op p{color:var(--cream-dim);font-size:.85rem;margin-top:7px;line-height:1.55}
+.pg-op .pg-parc{color:var(--gold-soft);font-weight:700;font-size:.88rem;margin-top:8px;display:block}
+
+/* dados de transferência */
+.pg-dados{list-style:none;background:rgba(0,0,0,.26);border-radius:12px;padding:6px 18px;margin:14px 0 0}
+.pg-dados li{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:.88rem;
+  color:var(--cream-dim);padding:11px 0;border-bottom:1px dashed rgba(217,178,110,.12);min-height:44px;align-items:center}
+.pg-dados li:last-child{border:none}
+.pg-dados li b{color:var(--gold-soft);word-break:break-all;text-align:right}
+.pg-copiar{background:none;border:1px solid rgba(217,178,110,.3);color:var(--gold-soft);
+  border-radius:999px;padding:6px 13px;font-family:inherit;font-size:.72rem;font-weight:700;
+  cursor:pointer;min-height:38px;flex:none}
+.pg-copiar:hover{background:rgba(217,178,110,.12)}
+
+.pg-nota{color:var(--cream-dim);font-size:.85rem;line-height:1.6;margin-top:16px}
+.pg-seguro{display:flex;align-items:flex-start;gap:12px;background:rgba(37,211,102,.07);
+  border:1px solid rgba(37,211,102,.3);border-radius:16px;padding:17px 19px;margin-top:18px}
+.pg-seguro .ic{font-size:1.3rem;line-height:1;flex:none}
+.pg-seguro p{color:var(--cream-dim);font-size:.86rem;line-height:1.6}
+.pg-seguro b{color:var(--cream)}
+
+.pg-vazio{text-align:center;padding:20px 0}
+.pg-vazio p{color:var(--cream-dim);margin-bottom:20px}
+@media(max-width:560px){
+  .pg-card{padding:24px 20px}
+  .pg-agora b{font-size:1.9rem}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="index.html">
+      <span class="logo-mark">T</span>
+      <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
+    </a>
+    <nav class="links" id="navLinks">
+      <a href="index.html">Início</a>
+      <a href="servicos.html">O que fazemos</a>
+      <a href="pacotes.html">Pacotes</a>
+      <a href="orcamento.html">Simulador</a>
+      <a href="conta.html" id="navAccount">Entrar / Criar conta</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn btn-gold" href="orcamento.html">Pedir orçamento</a>
+      <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="page-hero">
+  <div class="wrap">
+    <p class="eyebrow">Último passo</p>
+    <h1>Pagar o <i>sinal</i></h1>
+    <p class="lead">Metade agora para arrancar. A outra metade só depois de ver o site no ar e aprovar tudo.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="pg-wrap">
+
+    <!-- resumo do orçamento, vindo do simulador -->
+    <div class="pg-card" id="pgResumo" hidden>
+      <p class="eyebrow" style="margin-bottom:12px">O seu orçamento</p>
+      <div class="pg-ref" id="pgRef">—</div>
+      <ul class="pg-linhas">
+        <li><span>Total do site</span><b id="pgTotal">—</b></li>
+        <li><span>A pagar na entrega, depois de aprovar</span><b id="pgResto">—</b></li>
+      </ul>
+      <div class="pg-agora"><span>A pagar agora</span><b id="pgSinal">—</b></div>
+    </div>
+
+    <!-- quem chega aqui sem referência -->
+    <div class="pg-card pg-vazio" id="pgSemRef">
+      <p>Esta página abre a partir do seu orçamento, para saber o valor certo a cobrar.</p>
+      <a class="btn btn-gold" href="orcamento.html" style="justify-content:center">Fazer o meu orçamento</a>
+      <p class="pg-nota">Já tem um orçamento e perdeu o link? Escreva-me pelo WhatsApp com a referência que lhe dei.</p>
+    </div>
+
+    <!-- formas de pagar -->
+    <div class="pg-card" id="pgFormas" hidden>
+      <p class="eyebrow" style="margin-bottom:16px">Como quer pagar</p>
+
+      <a class="pg-op" id="opCartao" href="#" target="_blank" rel="noopener" hidden>
+        <span class="pg-op-topo">
+          <span class="pg-op-ic">💳</span>
+          <b>Cartão, Apple Pay ou Google Pay</b>
+          <span class="pg-tag">Imediato</span>
+        </span>
+        <p>Pagamento seguro. Assim que entrar, começo o site nesse mesmo dia.</p>
+      </a>
+
+      <a class="pg-op" id="opKlarna" href="#" target="_blank" rel="noopener" hidden>
+        <span class="pg-op-topo">
+          <span class="pg-op-ic">🗓️</span>
+          <b>Pagar em 3 prestações</b>
+          <span class="pg-tag">Sem juros</span>
+        </span>
+        <p>Divide o sinal em três meses, sem juros. Eu recebo tudo de uma vez e arranco na mesma.</p>
+        <span class="pg-parc" id="pgParcelas"></span>
+      </a>
+
+      <button class="pg-op" type="button" id="opTransf">
+        <span class="pg-op-topo">
+          <span class="pg-op-ic">🏦</span>
+          <b id="opTransfTitulo">MB WAY ou transferência</b>
+          <span class="pg-tag">Sem taxas</span>
+        </span>
+        <p>A forma mais direta. Envia o comprovativo pelo WhatsApp e confirmo em poucas horas.</p>
+      </button>
+
+      <div id="pgDadosBox" hidden>
+        <ul class="pg-dados" id="pgDados"></ul>
+        <p class="pg-nota" id="pgDadosNota"></p>
+        <a class="btn btn-wa" id="pgWa" href="#" target="_blank" rel="noopener"
+           style="width:100%;justify-content:center;margin-top:14px">Enviar comprovativo pelo WhatsApp</a>
+      </div>
+
+      <div class="pg-seguro">
+        <span class="ic">🛡️</span>
+        <p><b>Só paga a segunda metade quando o site estiver no ar</b> e aprovado por si.
+        Se não gostar do que vir, não avança — e não fica preso a nada.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap footer-bottom">
+    <p>© <span id="ano"></span> TECNOVA Digital · Wesley Vianna ·
+      <a href="https://wa.me/351933113525" target="_blank" rel="noopener">WhatsApp +351 933 113 525</a></p>
+  </div>
+</footer>
+
+<script src="site.js?v=22"></script>
+<script src="i18n.js?v=22"></script>
+<script src="idiomas/en.js?v=22"></script>
+<script src="idiomas/es.js?v=22"></script>
+<script src="pagamento-config.js?v=22"></script>
+<script>
+/* ============================================================
+   Página de pagamento
+   ------------------------------------------------------------
+   Recebe o orçamento pelo endereço, vindo do simulador:
+     pagamento.html?ref=TEC-1234&total=990&sinal=495&moeda=EUR
+
+   Os links de pagamento vivem em `pagamento-config.js`, para se
+   poderem trocar sem mexer nesta página.
+   ============================================================ */
+(function () {
+  'use strict';
+  var $ = function (s) { return document.querySelector(s); };
+  var q = new URLSearchParams(location.search);
+
+  document.getElementById('ano').textContent = new Date().getFullYear();
+
+  var cfg = window.TECNOVA_PAGAMENTO || {};
+  var ref    = (q.get('ref') || '').trim();
+  var total  = parseFloat(q.get('total'));
+  var sinal  = parseFloat(q.get('sinal'));
+  var moeda  = (q.get('moeda') || 'EUR').toUpperCase();
+
+  function dinheiro(n) {
+    if (!isFinite(n)) return '—';
+    var casas = (moeda === 'EUR') ? 2 : 0;
+    var v = n.toLocaleString('pt-PT', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+    return (moeda === 'EUR') ? v + '€' : (cfg.simbolos && cfg.simbolos[moeda] || moeda + ' ') + v;
+  }
+
+  // Sem referência não se mostra valor nenhum: mais vale mandar fazer
+  // o orçamento do que arriscar cobrar o montante errado.
+  if (!ref || !isFinite(sinal)) return;
+
+  $('#pgSemRef').hidden = true;
+  $('#pgResumo').hidden = false;
+  $('#pgFormas').hidden = false;
+
+  $('#pgRef').textContent = ref;
+  $('#pgTotal').textContent = dinheiro(total);
+  $('#pgResto').textContent = dinheiro(total - sinal);
+  $('#pgSinal').textContent = dinheiro(sinal);
+
+  /* ---------- pagamento online (só aparece se estiver configurado) ---------- */
+  function comRef(url) {
+    if (!url) return '';
+    return url + (url.indexOf('?') === -1 ? '?' : '&') +
+           'client_reference_id=' + encodeURIComponent(ref);
+  }
+
+  if (cfg.linkCartao) {
+    var a = $('#opCartao'); a.href = comRef(cfg.linkCartao); a.hidden = false;
+  }
+  if (cfg.linkPrestacoes) {
+    var k = $('#opKlarna'); k.href = comRef(cfg.linkPrestacoes); k.hidden = false;
+    $('#pgParcelas').textContent = '3 × ' + dinheiro(sinal / 3) + ' por mês';
+  }
+
+  /* ---------- transferência / MB WAY ---------- */
+  var pag = (cfg.dados && (cfg.dados[moeda] || cfg.dados.EUR)) || null;
+  if (pag) {
+    $('#opTransfTitulo').textContent = pag.titulo;
+    $('#pgDados').innerHTML = pag.linhas.map(function (l) {
+      return '<li><span>' + l[0] + '</span>' +
+             '<b>' + l[1] + '</b>' +
+             '<button class="pg-copiar" type="button" data-copiar="' + l[1] + '">Copiar</button></li>';
+    }).join('');
+    $('#pgDadosNota').textContent = pag.nota || '';
+  }
+
+  $('#opTransf').addEventListener('click', function () {
+    var box = $('#pgDadosBox');
+    box.hidden = !box.hidden;
+    if (!box.hidden) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  $('#pgDados').addEventListener('click', function (e) {
+    var b = e.target.closest('.pg-copiar'); if (!b) return;
+    var txt = b.getAttribute('data-copiar');
+    var antes = b.textContent;
+    function feito() { b.textContent = '✓ Copiado'; setTimeout(function () { b.textContent = antes; }, 1600); }
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).then(feito, function () {});
+    else {
+      var t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t);
+      t.select(); try { document.execCommand('copy'); feito(); } catch (err) {}
+      document.body.removeChild(t);
+    }
+  });
+
+  $('#pgWa').href = 'https://wa.me/351933113525?text=' + encodeURIComponent(
+    'Olá Wesley! Paguei o sinal do orçamento ' + ref + ' (' + dinheiro(sinal) + '). Envio o comprovativo aqui.');
+})();
+</script>
+</body>
+</html>

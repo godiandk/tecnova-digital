@@ -938,6 +938,40 @@ window.TECNOVA_DIC.en = {
 "Para os 3 primeiros negócios da zona, em troca de um depoimento. Vagas limitadas.":
   "For the first 3 businesses in the area, in exchange for a testimonial. Limited places.",
 
+/* ---------- página de pagamento ---------- */
+"Pagar o <i>sinal</i>": "Pay the <i>deposit</i>",
+"Metade agora para arrancar. A outra metade só depois de ver o site no ar e aprovar tudo.":
+  "Half now to get started. The other half only after you see the site live and approve it.",
+"O seu orçamento": "Your quote",
+"Total do site": "Website total",
+"A pagar na entrega, depois de aprovar": "Due on delivery, after you approve",
+"A pagar agora": "Due now",
+"Esta página abre a partir do seu orçamento, para saber o valor certo a cobrar.":
+  "This page opens from your quote, so it knows the right amount to charge.",
+"Fazer o meu orçamento": "Get my quote",
+"Já tem um orçamento e perdeu o link? Escreva-me pelo WhatsApp com a referência que lhe dei.":
+  "Already have a quote and lost the link? Message me on WhatsApp with the reference I gave you.",
+"Como quer pagar": "How would you like to pay",
+"Cartão, Apple Pay ou Google Pay": "Card, Apple Pay or Google Pay",
+"Imediato": "Instant",
+"Pagamento seguro. Assim que entrar, começo o site nesse mesmo dia.":
+  "Secure payment. As soon as it lands, I start your site that same day.",
+"Pagar em 3 prestações": "Pay in 3 instalments",
+"Sem juros": "No interest",
+"Divide o sinal em três meses, sem juros. Eu recebo tudo de uma vez e arranco na mesma.":
+  "Split the deposit over three months, interest-free. I get paid in full and start all the same.",
+"MB WAY ou transferência": "MB WAY or bank transfer",
+"Sem taxas": "No fees",
+"A forma mais direta. Envia o comprovativo pelo WhatsApp e confirmo em poucas horas.":
+  "The most direct way. Send the receipt on WhatsApp and I confirm within hours.",
+"Indique a referência do orçamento na descrição da transferência.":
+  "Put the quote reference in the transfer description.",
+"Depois de pagar, envie o comprovativo pelo WhatsApp com a referência do orçamento.":
+  "After paying, send the receipt on WhatsApp with the quote reference.",
+"Enviar comprovativo pelo WhatsApp": "Send the receipt on WhatsApp",
+"Copiar": "Copy",
+"Pix": "Pix",
+
 /* ---------- barra e crédito nas páginas de modelo ---------- */
 "Quero um site assim →": "I want a site like this →",
 "criado pela TECNOVA Digital": "built by TECNOVA Digital",

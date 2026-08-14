@@ -1079,9 +1079,16 @@ const PRESETS = {
       $('#okTotal').textContent = eur(window.__ORC.total);
       $('#okSinal').textContent = eur(window.__ORC.sinal);
       $('#okWa').href = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(msg);
+      // A página de pagamento leva a referência e os valores no endereço,
+      // para cobrar o montante certo sem depender de nada guardado.
       var pay = $('#okPagar');
-      if (LINK_PAGAMENTO) { pay.href = LINK_PAGAMENTO; pay.style.display = 'inline-flex'; }
-      else { pay.style.display = 'none'; }
+      pay.href = (LINK_PAGAMENTO || 'pagamento.html') +
+        '?ref=' + encodeURIComponent(ref) +
+        '&total=' + Math.round(window.__ORC.total) +
+        '&sinal=' + Math.round(window.__ORC.sinal) +
+        '&moeda=' + M().codigo;
+      pay.style.display = 'inline-flex';
+      pay.removeAttribute('target');
       var pag = M().pagamento;
       var tit = $('#okPagTitulo'); if (tit) tit.textContent = pag.titulo;
       var dadosPag = $('#okDadosPag');

@@ -942,6 +942,40 @@ window.TECNOVA_DIC.es = {
 "Para os 3 primeiros negócios da zona, em troca de um depoimento. Vagas limitadas.":
   "Para los 3 primeros negocios de la zona, a cambio de un testimonio. Plazas limitadas.",
 
+/* ---------- página de pagamento ---------- */
+"Pagar o <i>sinal</i>": "Pagar la <i>señal</i>",
+"Metade agora para arrancar. A outra metade só depois de ver o site no ar e aprovar tudo.":
+  "La mitad ahora para empezar. La otra mitad solo después de ver la web publicada y aprobarla.",
+"O seu orçamento": "Su presupuesto",
+"Total do site": "Total de la web",
+"A pagar na entrega, depois de aprovar": "A pagar en la entrega, tras aprobarla",
+"A pagar agora": "A pagar ahora",
+"Esta página abre a partir do seu orçamento, para saber o valor certo a cobrar.":
+  "Esta página se abre desde su presupuesto, para saber el importe correcto a cobrar.",
+"Fazer o meu orçamento": "Calcular mi presupuesto",
+"Já tem um orçamento e perdeu o link? Escreva-me pelo WhatsApp com a referência que lhe dei.":
+  "¿Ya tiene un presupuesto y ha perdido el enlace? Escríbame por WhatsApp con la referencia que le di.",
+"Como quer pagar": "Cómo quiere pagar",
+"Cartão, Apple Pay ou Google Pay": "Tarjeta, Apple Pay o Google Pay",
+"Imediato": "Inmediato",
+"Pagamento seguro. Assim que entrar, começo o site nesse mesmo dia.":
+  "Pago seguro. En cuanto entre, empiezo su web ese mismo día.",
+"Pagar em 3 prestações": "Pagar en 3 plazos",
+"Sem juros": "Sin intereses",
+"Divide o sinal em três meses, sem juros. Eu recebo tudo de uma vez e arranco na mesma.":
+  "Divide la señal en tres meses, sin intereses. Yo cobro todo de una vez y empiezo igualmente.",
+"MB WAY ou transferência": "MB WAY o transferencia",
+"Sem taxas": "Sin comisiones",
+"A forma mais direta. Envia o comprovativo pelo WhatsApp e confirmo em poucas horas.":
+  "La forma más directa. Envía el justificante por WhatsApp y lo confirmo en pocas horas.",
+"Indique a referência do orçamento na descrição da transferência.":
+  "Indique la referencia del presupuesto en el concepto de la transferencia.",
+"Depois de pagar, envie o comprovativo pelo WhatsApp com a referência do orçamento.":
+  "Después de pagar, envíe el justificante por WhatsApp con la referencia del presupuesto.",
+"Enviar comprovativo pelo WhatsApp": "Enviar el justificante por WhatsApp",
+"Copiar": "Copiar",
+"Pix": "Pix",
+
 /* ---------- barra e crédito nas páginas de modelo ---------- */
 "criado pela TECNOVA Digital": "creada por TECNOVA Digital",
 "Falar com a TECNOVA Digital": "Hablar con TECNOVA Digital",
