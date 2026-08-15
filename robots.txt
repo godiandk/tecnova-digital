@@ -1,0 +1,10 @@
+# TECNOVA Digital
+# O painel e a página de pagamento não são para aparecer no Google:
+# um é privado, a outra só faz sentido com o orçamento de alguém.
+
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /pagamento.html
+
+Sitemap: https://tecnovadigital.pt/sitemap.xml
