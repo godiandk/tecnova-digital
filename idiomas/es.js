@@ -1032,8 +1032,8 @@ window.TECNOVA_DIC.es = {
   "Escriba un poco más en el mensaje, para que entienda qué necesita.",
 "Se não se abriu nada, o seu telemóvel ou computador não tem aplicação de email configurada. Não faz mal: <b>já copiámos a mensagem toda</b>. Abra o Gmail ou o site do seu email, cole no corpo da mensagem e envie para <b>wesley@tecnovadigital.pt</b>.":
   "Si no se ha abierto nada, su móvil u ordenador no tiene aplicación de correo configurada. No importa: <b>ya hemos copiado el mensaje entero</b>. Abra Gmail o la web de su correo, péguelo en el cuerpo del mensaje y envíelo a <b>wesley@tecnovadigital.pt</b>.",
-"<span class=\"ic\">⏱️</span><span><b>Quando respondo.</b> Leio tudo e respondo o mais depressa que consigo, normalmente no próprio dia. Se ao fim de 24 horas não tiver notícias minhas, insista pelo WhatsApp — é sinal de que a mensagem se perdeu pelo caminho.</span>":
-  "<span class=\"ic\">⏱️</span><span><b>Cuándo respondo.</b> Lo leo todo y respondo lo más rápido que puedo, normalmente el mismo día. Si al cabo de 24 horas no tiene noticias mías, insista por WhatsApp: es señal de que el mensaje se perdió por el camino.</span>",
+"<span class=\"ic\">⏱️</span><span><b>Quando respondo.</b> Leio tudo e respondo o mais depressa que consigo, normalmente no próprio dia. Se ao fim de 24 horas não tiver notícias minhas, escreva outra vez — é sinal de que a mensagem se perdeu pelo caminho.</span>":
+  "<span class=\"ic\">⏱️</span><span><b>Cuándo respondo.</b> Lo leo todo y respondo lo más rápido que puedo, normalmente el mismo día. Si al cabo de 24 horas no tiene noticias mías, escriba otra vez: es señal de que el mensaje se perdió por el camino.</span>",
 "<span class=\"ic\">🌍</span><span><b>Onde trabalho.</b> Faço sites a partir de Portugal, à distância, para Portugal e para o Brasil. Nunca precisa de sair do sítio onde está.</span>":
   "<span class=\"ic\">🌍</span><span><b>Dónde trabajo.</b> Hago webs desde Portugal, a distancia, para Portugal y para Brasil. Nunca necesita moverse de donde está.</span>",
 "<span class=\"ic\">💶</span><span><b>Perguntar não custa nada.</b> A conversa, a proposta e a simulação do seu site são gratuitas. Só paga se quiser avançar.</span>":
@@ -1160,5 +1160,103 @@ window.TECNOVA_DIC.es = {
 "até": "hasta el",
 "Estes são os itens que costumam fazer falta a um negócio como o seu. Se precisar de mais — loja online, reservas de mesa, área de sócios, o que for — acrescente aqui em baixo, ou peça-me e monto-lhe à medida.":
   "Estos son los elementos que suele necesitar un negocio como el suyo. Si necesita más (tienda online, reservas de mesa, área de socios, lo que sea) añádalo aquí abajo, o pídamelo y se lo monto a medida.",
-"Falar comigo →": "Hablar conmigo →"
+"Falar comigo →": "Hablar conmigo →",
+
+/* ---------- carrusel de la portada (lectores de pantalla) ---------- */
+"Destaques TECNOVA Digital": "Destacados de TECNOVA Digital",
+"Navegação dos destaques": "Navegación de los destacados",
+"Destaque anterior": "Destacado anterior",
+"Destaque seguinte": "Destacado siguiente",
+"Ir para o destaque 1": "Ir al destacado 1",
+"Ir para o destaque 2": "Ir al destacado 2",
+"Ir para o destaque 3": "Ir al destacado 3",
+"Ir para o destaque 4": "Ir al destacado 4",
+"Ir para o destaque 5": "Ir al destacado 5",
+
+/* ---------- las maquetas de la página Qué hacemos ---------- */
+"🏅 Fidelidade": "🏅 Fidelidad",
+"Corte + Barba": "Corte + Barba",
+"Corte Clássico": "Corte clásico",
+"Barba + Toalha Quente": "Barba + toalla caliente",
+"Pack Completo": "Pack completo",
+"Amanhã, 15:30 — confirmado": "Mañana, 15:30 — confirmado",
+"Nova marcação recebida": "Nueva reserva recibida",
+"Lembrete enviado": "Recordatorio enviado",
+"Organizado por categorias, elegante e sempre atual. Menos chamadas a perguntar «quanto custa?» — o cliente já chega a saber o preço e o tempo do serviço.":
+  "Organizado por categorías, elegante y siempre al día. Menos llamadas preguntando «¿cuánto cuesta?»: el cliente ya llega sabiendo el precio y el tiempo del servicio.",
+"Categorias organizadas por tipo de serviço": "Categorías organizadas por tipo de servicio",
+"Atualiza-se em minutos quando os preços mudam": "Se actualiza en minutos cuando cambian los precios",
+"Página própria de detalhe para cada serviço": "Página de detalle propia para cada servicio",
+"Selos e prémios que fazem o cliente voltar": "Sellos y premios que hacen volver al cliente",
+"Cartão de fidelidade digital: a cada visita, um selo. Ao 10.º, prémio. E ainda um cupão automático de desconto no mês de aniversário do cliente.":
+  "Tarjeta de fidelidad digital: en cada visita, un sello. Al 10.º, premio. Y además un cupón de descuento automático en el mes del cumpleaños del cliente.",
+"Selos automáticos a cada visita confirmada": "Sellos automáticos en cada visita confirmada",
+"Prémio configurável (desconto, serviço grátis)": "Premio configurable (descuento, servicio gratis)",
+"Cupão de aniversário sem esforço nenhum da sua parte": "Cupón de cumpleaños sin ningún esfuerzo por su parte",
+"Aplicação própria, sem complicações": "App propia, sin complicaciones",
+"O site abre como uma aplicação diretamente do telemóvel — sem passar pela App Store nem pela Play Store. Ideal para quem tem clientes com iPhone e Android ao mesmo tempo, sem custos nem demoras de aprovação de lojas de aplicações.":
+  "La web se abre como una app directamente desde el móvil, sin pasar por la App Store ni por Play Store. Ideal para quien tiene clientes con iPhone y Android a la vez, sin costes ni esperas de aprobación de las tiendas.",
+"Adicionar ao ecrã principal": "Añadir a la pantalla de inicio",
+"sem loja, sem download, sem APK": "sin tienda, sin descarga, sin APK",
+"Conta de cliente": "Cuenta de cliente",
+"login próprio, histórico e cupões": "acceso propio, historial y cupones",
+"Abre em ecrã inteiro": "Se abre a pantalla completa",
+"sensação de aplicação nativa": "sensación de app nativa",
+"Conta de cliente com login e senha": "Cuenta de cliente con usuario y contraseña",
+"Ecrãs próprios, com a imagem da sua marca": "Pantallas propias, con la imagen de su marca",
+"Zero fricção: abre direto do site, em qualquer telemóvel": "Cero fricción: se abre directo desde la web, en cualquier móvil",
+"agenda cheia": "agenda llena",
+"imagem premium": "imagen premium",
+
+/* ---------- renovación ---------- */
+"Pacote Renovação": "Pack Renovación",
+"Simular a minha remodelação →": "Simular mi rediseño →",
+"Ver o Pacote Renovação (450€) →": "Ver el Pack Renovación (450€) →",
+
+/* ---------- sobre mí ---------- */
+"Fundador & CEO · TECNOVA Digital": "Fundador y CEO · TECNOVA Digital",
+"Construção": "Construcción",
+"Pedir simulação gratuita": "Pedir una simulación gratuita",
+"Vê primeiro, paga depois. O risco é todo meu.": "Primero lo ve, después paga. El riesgo es todo mío.",
+". Vê primeiro, paga depois. O risco é todo meu.»": ". Primero lo ve, después paga. El riesgo es todo mío.»",
+
+/* ---------- contacto ---------- */
+"Chat no site": "Chat en la web",
+"Falamos aqui mesmo, e a conversa fica guardada na sua conta — não se perde nada entre mensagens.":
+  "Hablamos aquí mismo, y la conversación queda guardada en su cuenta: no se pierde nada entre mensajes.",
+"Quando respondo.": "Cuándo respondo.",
+"Leio tudo e respondo o mais depressa que consigo, normalmente no próprio dia. Se ao fim de 24 horas não tiver notícias minhas, escreva outra vez — é sinal de que a mensagem se perdeu pelo caminho.":
+  "Lo leo todo y respondo lo más rápido que puedo, normalmente el mismo día. Si al cabo de 24 horas no tiene noticias mías, escriba otra vez: es señal de que el mensaje se perdió por el camino.",
+
+/* ---------- la cuenta del cliente ---------- */
+"Envie a sua própria foto, ou escolha um personagem abaixo.": "Suba su propia foto o elija un personaje abajo.",
+"Conversa direta, guardada na sua conta. Sem números perdidos e sem repetir a história a cada vez.":
+  "Conversación directa, guardada en su cuenta. Sin números perdidos y sin repetir la historia cada vez.",
+"Sair da conta": "Cerrar sesión",
+"mínimo 6 caracteres": "mínimo 6 caracteres",
+"Tenho um código (ex: TEC-XXXXXX)": "Tengo un código (ej.: TEC-XXXXXX)",
+"🛠️ Painel de administração — gerar cupões": "🛠️ Panel de administración — generar cupones",
+"Personagem 1": "Personaje 1",
+"Personagem 2": "Personaje 2",
+"Personagem 3": "Personaje 3",
+"Personagem 4": "Personaje 4",
+"Personagem 5": "Personaje 5",
+"Personagem 6": "Personaje 6",
+"Personagem 7": "Personaje 7",
+"Personagem 8": "Personaje 8",
+"Personagem 9": "Personaje 9",
+"Personagem 10": "Personaje 10",
+
+/* ---------- calculadora ---------- */
+"O visitante escreve-lhe ali mesmo, sem sair do site. As conversas ficam guardadas e nada se perde.":
+  "El visitante le escribe allí mismo, sin salir de la web. Las conversaciones quedan guardadas y no se pierde nada.",
+"Escolhe serviço, dia e hora. O pedido cai organizado na sua caixa de entrada.":
+  "Elige servicio, día y hora. La solicitud le llega ordenada a su bandeja de entrada.",
+"Deixa de andar à procura de encomendas perdidas no meio das mensagens.":
+  "Se acabó buscar pedidos perdidos entre los mensajes.",
+"Prefere pensar melhor? O preço fica-lhe garantido 15 dias. Guarde a referência e volte quando quiser — ou fale comigo em":
+  "¿Prefiere pensarlo? El precio le queda garantizado 15 días. Guarde la referencia y vuelva cuando quiera, o hable conmigo en",
+"contacto": "contacto",
+"Escreva à vontade, mesmo que não saiba o nome técnico. Por exemplo: «queria que os clientes pudessem ver a encomenda a ser preparada», «tenho 800 produtos numa folha de Excel», «queria ligar isto ao meu programa de faturação», «já tenho logótipo e fotos», «preciso disto pronto até ao fim do mês».":
+  "Escriba con libertad, aunque no sepa el nombre técnico. Por ejemplo: «querría que los clientes pudieran ver el pedido preparándose», «tengo 800 productos en una hoja de Excel», «querría conectar esto a mi programa de facturación», «ya tengo logotipo y fotos», «necesito esto listo para fin de mes»."
 };

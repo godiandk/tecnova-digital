@@ -222,7 +222,10 @@ window.TecnovaI18N = (function () {
       atual.innerHTML = '<i class="la-bandeira"></i><span class="la-nome"></span>';
       atual.querySelector('.la-bandeira').textContent = IDIOMAS[idioma].bandeira;
       atual.querySelector('.la-nome').textContent = IDIOMAS[idioma].nome;
-      atual.setAttribute('aria-label', 'Idioma: ' + IDIOMAS[idioma].nome);
+      // A etiqueta do próprio seletor também é lida por quem não vê o ecrã,
+      // e não fazia sentido ficar em português depois de trocar de idioma.
+      var rotulo = { pt: 'Idioma', en: 'Language', es: 'Idioma' }[idioma] || 'Idioma';
+      atual.setAttribute('aria-label', rotulo + ': ' + IDIOMAS[idioma].nome);
     }
   }
 

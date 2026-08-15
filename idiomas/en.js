@@ -1030,8 +1030,8 @@ window.TECNOVA_DIC.en = {
   "Write a little more in the message, so I can understand what you need.",
 "Se não se abriu nada, o seu telemóvel ou computador não tem aplicação de email configurada. Não faz mal: <b>já copiámos a mensagem toda</b>. Abra o Gmail ou o site do seu email, cole no corpo da mensagem e envie para <b>wesley@tecnovadigital.pt</b>.":
   "If nothing opened, your phone or computer has no email app set up. Never mind: <b>we have already copied the whole message</b>. Open Gmail or your webmail, paste it into the body and send it to <b>wesley@tecnovadigital.pt</b>.",
-"<span class=\"ic\">⏱️</span><span><b>Quando respondo.</b> Leio tudo e respondo o mais depressa que consigo, normalmente no próprio dia. Se ao fim de 24 horas não tiver notícias minhas, insista pelo WhatsApp — é sinal de que a mensagem se perdeu pelo caminho.</span>":
-  "<span class=\"ic\">⏱️</span><span><b>When I reply.</b> I read everything and answer as fast as I can, usually the same day. If after 24 hours you have not heard from me, try again on WhatsApp — it means the message got lost along the way.</span>",
+"<span class=\"ic\">⏱️</span><span><b>Quando respondo.</b> Leio tudo e respondo o mais depressa que consigo, normalmente no próprio dia. Se ao fim de 24 horas não tiver notícias minhas, escreva outra vez — é sinal de que a mensagem se perdeu pelo caminho.</span>":
+  "<span class=\"ic\">⏱️</span><span><b>When I reply.</b> I read everything and answer as fast as I can, usually the same day. If after 24 hours you have not heard from me, write again — it means the message got lost along the way.</span>",
 "<span class=\"ic\">🌍</span><span><b>Onde trabalho.</b> Faço sites a partir de Portugal, à distância, para Portugal e para o Brasil. Nunca precisa de sair do sítio onde está.</span>":
   "<span class=\"ic\">🌍</span><span><b>Where I work.</b> I build websites from Portugal, remotely, for Portugal and Brazil. You never have to leave where you are.</span>",
 "<span class=\"ic\">💶</span><span><b>Perguntar não custa nada.</b> A conversa, a proposta e a simulação do seu site são gratuitas. Só paga se quiser avançar.</span>":
@@ -1158,5 +1158,103 @@ window.TECNOVA_DIC.en = {
 "até": "until",
 "Estes são os itens que costumam fazer falta a um negócio como o seu. Se precisar de mais — loja online, reservas de mesa, área de sócios, o que for — acrescente aqui em baixo, ou peça-me e monto-lhe à medida.":
   "These are the things a business like yours usually needs. If you need more — an online shop, table bookings, a members' area, whatever it is — add it below, or ask me and I will build it to measure.",
-"Falar comigo →": "Talk to me →"
+"Falar comigo →": "Talk to me →",
+
+/* ---------- carrossel da página inicial (leitores de ecrã) ---------- */
+"Destaques TECNOVA Digital": "TECNOVA Digital highlights",
+"Navegação dos destaques": "Highlights navigation",
+"Destaque anterior": "Previous highlight",
+"Destaque seguinte": "Next highlight",
+"Ir para o destaque 1": "Go to highlight 1",
+"Ir para o destaque 2": "Go to highlight 2",
+"Ir para o destaque 3": "Go to highlight 3",
+"Ir para o destaque 4": "Go to highlight 4",
+"Ir para o destaque 5": "Go to highlight 5",
+
+/* ---------- as maquetas da página O que fazemos ---------- */
+"🏅 Fidelidade": "🏅 Loyalty",
+"Corte + Barba": "Cut + Beard",
+"Corte Clássico": "Classic Cut",
+"Barba + Toalha Quente": "Beard + Hot Towel",
+"Pack Completo": "Full Package",
+"Amanhã, 15:30 — confirmado": "Tomorrow, 3:30 pm — confirmed",
+"Nova marcação recebida": "New booking received",
+"Lembrete enviado": "Reminder sent",
+"Organizado por categorias, elegante e sempre atual. Menos chamadas a perguntar «quanto custa?» — o cliente já chega a saber o preço e o tempo do serviço.":
+  "Organised by category, elegant and always current. Fewer calls asking «how much is it?» — the customer already knows the price and how long it takes.",
+"Categorias organizadas por tipo de serviço": "Categories organised by type of service",
+"Atualiza-se em minutos quando os preços mudam": "Updated in minutes when prices change",
+"Página própria de detalhe para cada serviço": "A detail page of its own for each service",
+"Selos e prémios que fazem o cliente voltar": "Stamps and rewards that bring customers back",
+"Cartão de fidelidade digital: a cada visita, um selo. Ao 10.º, prémio. E ainda um cupão automático de desconto no mês de aniversário do cliente.":
+  "A digital loyalty card: a stamp for every visit. On the 10th, a reward. Plus an automatic discount voucher in the customer's birthday month.",
+"Selos automáticos a cada visita confirmada": "Automatic stamps on every confirmed visit",
+"Prémio configurável (desconto, serviço grátis)": "Configurable reward (discount, free service)",
+"Cupão de aniversário sem esforço nenhum da sua parte": "A birthday voucher with no effort at all on your part",
+"Aplicação própria, sem complicações": "Your own app, without the fuss",
+"O site abre como uma aplicação diretamente do telemóvel — sem passar pela App Store nem pela Play Store. Ideal para quem tem clientes com iPhone e Android ao mesmo tempo, sem custos nem demoras de aprovação de lojas de aplicações.":
+  "The site opens like an app straight from the phone — with no App Store and no Play Store in the way. Ideal for anyone whose customers use iPhone and Android alike, with no cost and no waiting for store approval.",
+"Adicionar ao ecrã principal": "Add to home screen",
+"sem loja, sem download, sem APK": "no store, no download, no APK",
+"Conta de cliente": "Customer account",
+"login próprio, histórico e cupões": "own login, history and vouchers",
+"Abre em ecrã inteiro": "Opens full screen",
+"sensação de aplicação nativa": "feels like a native app",
+"Conta de cliente com login e senha": "Customer account with login and password",
+"Ecrãs próprios, com a imagem da sua marca": "Screens of your own, in your brand's colours",
+"Zero fricção: abre direto do site, em qualquer telemóvel": "Zero friction: opens straight from the site, on any phone",
+"agenda cheia": "a full diary",
+"imagem premium": "a premium image",
+
+/* ---------- renovação ---------- */
+"Pacote Renovação": "Renewal Package",
+"Simular a minha remodelação →": "Simulate my redesign →",
+"Ver o Pacote Renovação (450€) →": "See the Renewal Package (€450) →",
+
+/* ---------- sobre ---------- */
+"Fundador & CEO · TECNOVA Digital": "Founder & CEO · TECNOVA Digital",
+"Construção": "Building",
+"Pedir simulação gratuita": "Ask for a free mock-up",
+"Vê primeiro, paga depois. O risco é todo meu.": "See it first, pay afterwards. The risk is all mine.",
+". Vê primeiro, paga depois. O risco é todo meu.»": ". See it first, pay afterwards. The risk is all mine.»",
+
+/* ---------- contacto ---------- */
+"Chat no site": "Chat on the site",
+"Falamos aqui mesmo, e a conversa fica guardada na sua conta — não se perde nada entre mensagens.":
+  "We talk right here, and the conversation stays saved in your account — nothing gets lost between messages.",
+"Quando respondo.": "When I reply.",
+"Leio tudo e respondo o mais depressa que consigo, normalmente no próprio dia. Se ao fim de 24 horas não tiver notícias minhas, escreva outra vez — é sinal de que a mensagem se perdeu pelo caminho.":
+  "I read everything and answer as fast as I can, usually the same day. If after 24 hours you have not heard from me, write again — it means the message got lost along the way.",
+
+/* ---------- a conta do cliente ---------- */
+"Envie a sua própria foto, ou escolha um personagem abaixo.": "Upload your own photo, or pick a character below.",
+"Conversa direta, guardada na sua conta. Sem números perdidos e sem repetir a história a cada vez.":
+  "A direct conversation, kept in your account. No lost numbers and no retelling the story every time.",
+"Sair da conta": "Sign out",
+"mínimo 6 caracteres": "at least 6 characters",
+"Tenho um código (ex: TEC-XXXXXX)": "I have a code (e.g. TEC-XXXXXX)",
+"🛠️ Painel de administração — gerar cupões": "🛠️ Admin panel — generate vouchers",
+"Personagem 1": "Character 1",
+"Personagem 2": "Character 2",
+"Personagem 3": "Character 3",
+"Personagem 4": "Character 4",
+"Personagem 5": "Character 5",
+"Personagem 6": "Character 6",
+"Personagem 7": "Character 7",
+"Personagem 8": "Character 8",
+"Personagem 9": "Character 9",
+"Personagem 10": "Character 10",
+
+/* ---------- simulador ---------- */
+"O visitante escreve-lhe ali mesmo, sem sair do site. As conversas ficam guardadas e nada se perde.":
+  "The visitor writes to you right there, without leaving the site. Conversations are kept and nothing gets lost.",
+"Escolhe serviço, dia e hora. O pedido cai organizado na sua caixa de entrada.":
+  "They pick service, day and time. The request lands neatly in your inbox.",
+"Deixa de andar à procura de encomendas perdidas no meio das mensagens.":
+  "No more hunting for orders lost in among the messages.",
+"Prefere pensar melhor? O preço fica-lhe garantido 15 dias. Guarde a referência e volte quando quiser — ou fale comigo em":
+  "Rather think it over? The price is held for you for 15 days. Keep the reference and come back whenever you like — or talk to me at",
+"contacto": "contact",
+"Escreva à vontade, mesmo que não saiba o nome técnico. Por exemplo: «queria que os clientes pudessem ver a encomenda a ser preparada», «tenho 800 produtos numa folha de Excel», «queria ligar isto ao meu programa de faturação», «já tenho logótipo e fotos», «preciso disto pronto até ao fim do mês».":
+  "Write freely, even if you do not know the technical name for it. For example: «I would like customers to watch their order being prepared», «I have 800 products in an Excel sheet», «I would like to connect this to my invoicing software», «I already have a logo and photos», «I need this ready by the end of the month»."
 };
