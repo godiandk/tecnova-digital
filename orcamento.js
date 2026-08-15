@@ -8,15 +8,24 @@
 /* --- Campanha ativa ------------------------------------------------ */
 const PROMO = {
   ativo: true,
-  fim: '2026-08-31',        // último dia da campanha (AAAA-MM-DD)
-  desconto: 0.20,           // 20% sobre o valor total do site
-  codigo: 'AGOSTO20',
+  fim: '2026-09-30',        // último dia da campanha (AAAA-MM-DD)
+  desconto: 0.40,           // 40% sobre o valor total do site
+  codigo: 'INOVA40',
   mesGratis: true           // 1.ª mensalidade de manutenção grátis
 };
 
+/* A data por extenso, para não ficar escrita à mão em cinco sítios e
+   depois um deles esquecer-se de acompanhar a campanha seguinte. */
+const MESES_PT = ['janeiro','fevereiro','março','abril','maio','junho',
+                  'julho','agosto','setembro','outubro','novembro','dezembro'];
+function fimPorExtenso() {
+  var p = PROMO.fim.split('-');
+  return Number(p[2]) + ' de ' + MESES_PT[Number(p[1]) - 1];
+}
+
 /* --- Link de pagamento --------------------------------------------
    Enquanto estiver vazio (""), o botão "Finalizar" abre a caixa com as
-   instruções de pagamento + WhatsApp. Assim que tiveres um link de
+   instruções de pagamento por MB WAY e transferência. Assim que tiveres um link de
    pagamento (Stripe Payment Link, MB WAY, SumUp, etc.), cola-o aqui e o
    botão passa a levar o cliente direto para o pagamento.               */
 const LINK_PAGAMENTO = "";
@@ -62,7 +71,7 @@ const MOEDAS = {
         ['Nome do titular', 'Wesley Vianna'],
         ['Banco', 'Bradesco']
       ],
-      nota: 'O pagamento é por Pix. Depois de pagar, envie o comprovativo pelo WhatsApp com a referência do orçamento.'
+      nota: 'O pagamento é por Pix. Depois de pagar, envie o comprovativo por email com a referência do orçamento.'
     }
   },
   us: {
@@ -70,7 +79,7 @@ const MOEDAS = {
     sufixo: false, taxa: 1.15, ajuste: 1, casas: 0,
     pagamento: {
       titulo: 'Payment details / Dados para o sinal',
-      linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por WhatsApp'],
+      linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por email'],
                ['Transferência internacional', ''], ['Titular', 'Wesley Vianna']],
       nota: 'Paga com cartão, Apple Pay ou Google Pay pelo link que lhe enviamos. Sem taxas escondidas.'
     }
@@ -80,7 +89,7 @@ const MOEDAS = {
     sufixo: false, taxa: 0.86, ajuste: 1, casas: 0,
     pagamento: {
       titulo: 'Dados para o sinal',
-      linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por WhatsApp'],
+      linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por email'],
                ['Transferência internacional', ''], ['Titular', 'Wesley Vianna']],
       nota: 'Paga com cartão, Apple Pay ou Google Pay pelo link que lhe enviamos.'
     }
@@ -90,7 +99,7 @@ const MOEDAS = {
     sufixo: false, taxa: 0.93, ajuste: 1, casas: 0,
     pagamento: {
       titulo: 'Dados para o sinal',
-      linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por WhatsApp'],
+      linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por email'],
                ['Transferência (IBAN)', ''], ['Titular', 'Wesley Vianna']],
       nota: 'Paga com cartão, Apple Pay, Google Pay ou transferência SEPA.'
     }
@@ -100,7 +109,7 @@ const MOEDAS = {
     sufixo: false, taxa: 1.61, ajuste: 1, casas: 0,
     pagamento: {
       titulo: 'Dados para o sinal',
-      linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por WhatsApp'],
+      linhas: [['Cartão, Apple Pay ou Google Pay', 'link enviado por email'],
                ['Transferência internacional', ''], ['Titular', 'Wesley Vianna']],
       nota: 'Paga com cartão, Apple Pay ou Google Pay pelo link que lhe enviamos.'
     }
@@ -140,7 +149,6 @@ const GEO = {
   timeout: 2500
 };
 
-const WHATSAPP = '351933113525';
 
 /* --- Remodelação de um site que já existe --------------------------
    Quem já tem site não parte do zero: a estrutura está pensada, os textos
@@ -203,7 +211,7 @@ const MANUTENCAO = [
   { id: 'm0', nome: 'Sem manutenção', preco: 0,
     desc: 'O site fica seu. Se precisar de alterações, pede quando quiser.' },
   { id: 'm1', nome: 'Manutenção Essencial', preco: 19.90, destaque: true,
-    desc: 'Alterações de preços e serviços, banners de promoções e suporte prioritário por WhatsApp.' },
+    desc: 'Alterações de preços e serviços, banners de promoções e suporte prioritário por email.' },
   { id: 'm2', nome: 'Manutenção Completa', preco: 39.90,
     desc: 'Tudo do Essencial + pequenas alterações ilimitadas e campanhas de cupões e fidelidade feitas por nós.' }
 ];
@@ -229,11 +237,11 @@ const GRUPOS = [
     nome: 'Trazer clientes',
     sub: 'O que faz o visitante deixar de ser visitante e passar a marcação ou encomenda.',
     itens: [
-      { id: 'wa',        nome: 'Botão de WhatsApp com mensagem automática', preco: 30,  desc: 'O cliente carrega e a conversa abre já escrita. Menos atrito, mais contactos.' },
+      { id: 'chatvivo',  nome: 'Chat ao vivo no site',                      preco: 30,  desc: 'O visitante escreve-lhe ali mesmo, sem sair do site. As conversas ficam guardadas e nada se perde.' },
       { id: 'form',      nome: 'Formulário de contacto por email',          preco: 40,  desc: 'Para quem prefere escrever em vez de telefonar. Chega-lhe ao email.' },
       { id: 'orc',       nome: 'Pedido de orçamento com perguntas próprias', preco: 60, desc: 'O cliente responde às perguntas certas e o pedido já lhe chega completo.' },
-      { id: 'marcacao',  nome: 'Marcação online',                            preco: 110, desc: 'Escolhe serviço, dia e hora. O pedido cai organizado no seu WhatsApp.', exemplo: 'modelo-barbearia.html',
-        simples: 'O cliente escolhe serviço, dia e hora no site. O pedido chega-lhe ao WhatsApp já escrito e organizado, sem telefonemas.' },
+      { id: 'marcacao',  nome: 'Marcação online',                            preco: 110, desc: 'Escolhe serviço, dia e hora. O pedido cai organizado na sua caixa de entrada.', exemplo: 'modelo-barbearia.html',
+        simples: 'O cliente escolhe serviço, dia e hora no site. O pedido chega-lhe ao email já escrito e organizado, sem telefonemas.' },
       { id: 'calendario',nome: 'Calendário com horários reais',              preco: 90,  req: ['marcacao'], desc: 'Só mostra as horas que tem mesmo livres e confirma automaticamente.' },
       { id: 'lembrete',  nome: 'Lembrete automático antes da hora',          preco: 60,  req: ['marcacao'], desc: 'Aviso ao cliente horas antes. Reduz faltas — e faltas são dinheiro perdido.' },
       { id: 'chat',      nome: 'Chat automático de atendimento',             preco: 80,  desc: 'Responde sozinho às perguntas de sempre: horários, preços, morada, estacionamento.',
@@ -353,7 +361,7 @@ const GRUPOS = [
         simples: 'É o painel que lhe diz se o negócio está a crescer ou a cair, sem ter de fazer contas.' },
       { id: 'painelOrc', nome: 'Painel de encomendas e orçamentos', preco: 140, req: ['admin'],
         desc: 'Todos os pedidos que entram pelo site, organizados por estado: novo, pago, em preparação, entregue.',
-        simples: 'Deixa de andar à procura de encomendas perdidas no WhatsApp.' },
+        simples: 'Deixa de andar à procura de encomendas perdidas no meio das mensagens.' },
       { id: 'painelProd', nome: 'Gestão de produtos',          preco: 150, req: ['admin'],
         desc: 'Criar, editar, mudar preço, esconder ou marcar como esgotado — tudo por si, sem mexer em código.' },
       { id: 'painelCli', nome: 'Ficheiro de clientes',         preco: 90,  req: ['admin'],
@@ -399,7 +407,7 @@ const GRUPOS = [
       { id: 'logo',     nome: 'Logótipo novo',                 preco: 150, desc: 'Logótipo original, em todos os formatos que vai precisar.' },
       { id: 'identidade', nome: 'Identidade visual',           preco: 90,  desc: 'Cores e tipografia definidas para usar no site, nas redes e nos cartazes.' },
       { id: 'personagem', nome: 'Personagem 3D da marca',      preco: 130, desc: 'Uma mascote ou o seu retrato em 3D, para se destacar nas redes.', exemplo: 'modelo-confeitaria-sobre.html' },
-      { id: 'cartao',   nome: 'Cartão de visita digital com QR', preco: 45, desc: 'O cliente aponta e fica com os seus contactos guardados.' }
+      { id: 'cartaoqr', nome: 'Cartão de visita digital com QR', preco: 45, desc: 'O cliente aponta e fica com os seus contactos guardados.' }
     ]
   },
   {
@@ -413,26 +421,26 @@ const GRUPOS = [
 /* --- Pacotes fechados (para sugerir poupança) ----------------------- */
 const PACOTES = [
   { nome: 'ESSENCIAL', preco: 350, base: 'b3a5', link: 'pacotes.html',
-    inclui: ['b3a5','wa','mapa'] },
+    inclui: ['b3a5','chatvivo','mapa'] },
   { nome: 'PROFISSIONAL', preco: 650, base: 'b6a10', link: 'pacotes.html',
-    inclui: ['b6a10','wa','mapa','precario','marcacao','chat','pagserv','form'] },
+    inclui: ['b6a10','chatvivo','mapa','precario','marcacao','chat','pagserv','form'] },
   { nome: 'PREMIUM', preco: 990, base: 'b6a10', link: 'pacotes.html',
-    inclui: ['b6a10','wa','mapa','precario','marcacao','chat','pagserv','form',
+    inclui: ['b6a10','chatvivo','mapa','precario','marcacao','chat','pagserv','form',
              'pwa','contas','fidelidade','cupoes','aniver','admin'] }
 ];
 
 /* --- Sugestões por tipo de negócio ---------------------------------- */
 const PRESETS = {
-  barbearia:   { nome: 'Barbearia',            modelo: 'modelo-barbearia.html',   itens: ['b3a5','wa','marcacao','calendario','lembrete','precario','galeria','testemunhos','equipa','seo','gmn','insta','rgpd','mapa'] },
-  estetica:    { nome: 'Clínica de Estética',  modelo: 'modelo-estetica.html',    itens: ['b3a5','wa','marcacao','calendario','lembrete','precario','pagserv','antesdepois','galeria','testemunhos','equipa','seo','gmn','insta','rgpd','mapa'] },
-  restaurante: { nome: 'Restaurante ou Café',  modelo: 'modelo-restaurante.html', itens: ['b3a5','wa','cardapio','vol100','fotosProd','galeria','carrossel','testemunhos','seo','gmn','insta','rgpd','mapa'] },
-  ginasio:     { nome: 'Ginásio / Personal',   modelo: 'modelo-ginasio.html',     itens: ['b3a5','wa','precario','marcacao','calendario','equipa','numeros','testemunhos','contas','seo','gmn','insta','rgpd','mapa'] },
-  oficina:     { nome: 'Oficina Automóvel',    modelo: 'modelo-oficina.html',     itens: ['b3a5','wa','orc','marcacao','precario','testemunhos','numeros','seo','gmn','rgpd','mapa'] },
-  salao:       { nome: 'Salão de Beleza',      modelo: 'modelo-salao.html',       itens: ['b3a5','wa','marcacao','calendario','lembrete','precario','galeria','catalogo','vol25','testemunhos','equipa','seo','gmn','insta','rgpd','mapa'] },
-  confeitaria: { nome: 'Confeitaria / Bolos',  modelo: 'modelo-confeitaria.html', itens: ['b3a5','wa','catalogo','ficha','vol25','fotosProd','variantes','simulador','comprov','galeria','carrossel','testemunhos','seo','gmn','insta','rgpd','mapa'] },
-  loja:        { nome: 'Loja / Comércio',      modelo: 'modelo-confeitaria-catalogo.html', itens: ['b6a10','wa','catalogo','ficha','vol500','fotosProd','importar','variantes','loja','stock','cartao','promo','admin','painelFat','painelOrc','painelProd','galeria','seo','gmn','insta','rgpd','mapa'] },
-  servicos:    { nome: 'Serviços ao domicílio', modelo: '',                       itens: ['b3a5','wa','orc','form','precario','testemunhos','galeria','seo','gmn','rgpd','mapa'] },
-  outro:       { nome: 'Outro negócio',        modelo: 'modelos.html',            itens: ['b3a5','wa','precario','galeria','testemunhos','seo','gmn','rgpd','mapa'] }
+  barbearia:   { nome: 'Barbearia',            modelo: 'modelo-barbearia.html',   itens: ['b3a5','chatvivo','marcacao','calendario','lembrete','precario','galeria','testemunhos','equipa','seo','gmn','insta','rgpd','mapa'] },
+  estetica:    { nome: 'Clínica de Estética',  modelo: 'modelo-estetica.html',    itens: ['b3a5','chatvivo','marcacao','calendario','lembrete','precario','pagserv','antesdepois','galeria','testemunhos','equipa','seo','gmn','insta','rgpd','mapa'] },
+  restaurante: { nome: 'Restaurante ou Café',  modelo: 'modelo-restaurante.html', itens: ['b3a5','chatvivo','cardapio','vol100','fotosProd','galeria','carrossel','testemunhos','seo','gmn','insta','rgpd','mapa'] },
+  ginasio:     { nome: 'Ginásio / Personal',   modelo: 'modelo-ginasio.html',     itens: ['b3a5','chatvivo','precario','marcacao','calendario','equipa','numeros','testemunhos','contas','seo','gmn','insta','rgpd','mapa'] },
+  oficina:     { nome: 'Oficina Automóvel',    modelo: 'modelo-oficina.html',     itens: ['b3a5','chatvivo','orc','marcacao','precario','testemunhos','numeros','seo','gmn','rgpd','mapa'] },
+  salao:       { nome: 'Salão de Beleza',      modelo: 'modelo-salao.html',       itens: ['b3a5','chatvivo','marcacao','calendario','lembrete','precario','galeria','catalogo','vol25','testemunhos','equipa','seo','gmn','insta','rgpd','mapa'] },
+  confeitaria: { nome: 'Confeitaria / Bolos',  modelo: 'modelo-confeitaria.html', itens: ['b3a5','chatvivo','catalogo','ficha','vol25','fotosProd','variantes','simulador','comprov','galeria','carrossel','testemunhos','seo','gmn','insta','rgpd','mapa'] },
+  loja:        { nome: 'Loja / Comércio',      modelo: 'modelo-confeitaria-catalogo.html', itens: ['b6a10','chatvivo','catalogo','ficha','vol500','fotosProd','importar','variantes','loja','stock','cartao','promo','admin','painelFat','painelOrc','painelProd','galeria','seo','gmn','insta','rgpd','mapa'] },
+  servicos:    { nome: 'Serviços ao domicílio', modelo: '',                       itens: ['b3a5','chatvivo','orc','form','precario','testemunhos','galeria','seo','gmn','rgpd','mapa'] },
+  outro:       { nome: 'Outro negócio',        modelo: 'modelos.html',            itens: ['b3a5','chatvivo','precario','galeria','testemunhos','seo','gmn','rgpd','mapa'] }
 };
 
 /* ============================================================
@@ -736,14 +744,126 @@ const PRESETS = {
       else sel[id] = true;
     });
     pintar(); calcular();
-    var m = PRESETS[k].modelo;
+
     var av = $('#presetAviso');
-    av.style.display = 'block';
-    av.innerHTML = 'Selecionámos o que costuma fazer sentido para <b>' + PRESETS[k].nome +
-      '</b>. Tire ou acrescente o que quiser — o preço acompanha.' +
-      (m ? ' <a href="' + m + '" target="_blank" rel="noopener">Ver um site destes a funcionar →</a>' : '');
-    var g = $('#grupos');
-    if (g) window.scrollTo({ top: g.offsetTop - 90, behavior: 'smooth' });
+    if (av) av.style.display = 'none';   // a proposta diz tudo o que ele dizia
+
+    mostrarProposta(k);
+  }
+
+  /* ---------- a proposta pronta ----------
+     Quem chega aqui quer saber três coisas: o que leva, quanto custa e o que
+     fazer a seguir. A lista ao pormenor continua a existir, mas atrás de um
+     botão — porque oitenta caixas de seleção à frente de quem só quer um site
+     não são liberdade de escolha, são um obstáculo. */
+
+  // Nome do negócio na frase, tal como se diz a falar.
+  var COMO_SE_CHAMA = {
+    barbearia:   'uma barbearia',
+    estetica:    'uma clínica de estética',
+    restaurante: 'um restaurante',
+    ginasio:     'um ginásio',
+    oficina:     'uma oficina',
+    salao:       'um salão de beleza',
+    confeitaria: 'uma confeitaria',
+    loja:        'uma loja',
+    servicos:    'quem presta serviços ao domicílio',
+    outro:       'um negócio como o seu'
+  };
+
+  var COMO_SE_DIZ = {
+    barbearia:   'da sua barbearia',
+    estetica:    'da sua clínica',
+    restaurante: 'do seu restaurante',
+    ginasio:     'do seu ginásio',
+    oficina:     'da sua oficina',
+    salao:       'do seu salão',
+    confeitaria: 'da sua confeitaria',
+    loja:        'da sua loja',
+    servicos:    'do seu serviço',
+    outro:       'do seu negócio'
+  };
+
+  /* A lista sai do que está seleccionado neste momento, e não do preset —
+     senão bastava tirar um item na lista detalhada para a proposta passar a
+     dizer uma coisa e o preço outra. */
+  function pintarListaProposta() {
+    var alvo = $('#prLista');
+    if (!alvo) return;
+    var lis = ['<li><b>' + TODOS[base].nome + '</b></li>'];
+    GRUPOS.forEach(function (g) {
+      if (g.tipo === 'base') return;
+      if (g.so_remod && projeto !== 'remod') return;
+      if (g.tipo === 'vol') {
+        if (vol !== 'vol0' && TODOS[vol]) lis.push('<li>' + TODOS[vol].nome + '</li>');
+        return;
+      }
+      g.itens.forEach(function (it) {
+        if (!sel[it.id] || indisponivel(it)) return;
+        lis.push('<li>' + it.nome.replace(/&amp;/g, '&') + '</li>');
+      });
+    });
+    alvo.innerHTML = lis.join('');
+  }
+
+  /* O tradutor do site não mexe em elementos com `id` — e faz bem, porque são
+     os que o JavaScript reescreve. Só que a proposta vive toda dentro deles.
+     Então pedimos a tradução ao dicionário nós próprios, na altura de
+     escrever. O que não estiver traduzido fica em português, como sempre. */
+  function frase(pt) {
+    try {
+      var l = window.TecnovaI18N && window.TecnovaI18N.atual();
+      var d = l && window.TECNOVA_DIC && window.TECNOVA_DIC[l];
+      return (d && d[pt]) || pt;
+    } catch (e) { return pt; }
+  }
+
+  function refrescarProposta() {
+    var caixa = $('#proposta');
+    if (!caixa || caixa.hidden) return;
+    var o = window.__ORC;
+    if (!o) return;
+    pintarListaProposta();
+    // Se houver campanha, mostra-se o antes riscado: o desconto vê-se, não
+    // se anuncia.
+    var antes = $('#prAntes'), nota = $('#prNota');
+    if (o.desconto) {
+      antes.textContent = eur(o.aposRemod);
+      antes.hidden = false;
+      nota.innerHTML = frase('já com') + ' <b>' + (PROMO.desconto * 100) + '%</b> ' +
+        frase('de desconto') + ' · ' + frase('código') + ' ' + PROMO.codigo +
+        ' · ' + frase('até') + ' ' + frase(fimPorExtenso());
+    } else {
+      antes.hidden = true;
+      nota.textContent = frase('preço fechado, sem extras a meio');
+    }
+    $('#prTotal').textContent = eur(o.total);
+    $('#prSinal').textContent = eur(o.sinal);
+  }
+
+  function mostrarPropostaTexto(k) {
+    var t = $('#prTitulo'), sub = $('#prSub');
+    if (!t || !sub) return;
+    t.innerHTML = frase('O site ' + (COMO_SE_DIZ[k] || 'do seu negócio') + ' fica <em>assim</em>.');
+    sub.textContent = frase(
+      'Escolhemos o que costuma fazer falta a ' + (COMO_SE_CHAMA[k] || 'um negócio como o seu') +
+      '. Está tudo incluído no preço — não há extras a aparecer a meio.');
+  }
+
+  function mostrarProposta(k) {
+    var caixa = $('#proposta');
+    if (!caixa) return;
+
+    mostrarPropostaTexto(k);
+
+    pintarListaProposta();
+
+    var mod = $('#prModelo'), m = PRESETS[k].modelo;
+    if (m) { mod.href = m; mod.hidden = false; } else { mod.hidden = true; }
+
+    caixa.hidden = false;
+    refrescarProposta();
+    window.scrollTo({ top: caixa.offsetTop - 90, behavior: 'smooth' });
   }
 
   /* ---------- cálculo ---------- */
@@ -889,9 +1009,10 @@ const PRESETS = {
     window.__ORC = { linhas: L, subtotal: subtotal, pack: pack, baseFinal: baseFinal,
                      projeto: projeto, descRemod: descRemod, aposRemod: aposRemod,
                      desconto: desconto, total: total, sinal: sinal, manut: mens };
+    refrescarProposta();
   }
 
-  /* ---------- referência, WhatsApp, gravar ---------- */
+  /* ---------- referência, texto do orçamento, gravar ---------- */
   function referencia() {
     var d = new Date();
     var p = function (n) { return ('0' + n).slice(-2); };
@@ -1000,6 +1121,31 @@ const PRESETS = {
     montarProjeto();
     montarNegocios();
     montarGrupos();
+
+    // O tradutor não chega ao que escrevemos dentro dos elementos com id,
+    // por isso reescrevemo-los sempre que o idioma muda.
+    document.addEventListener('tecnova:idioma', function () {
+      if (negocio) mostrarPropostaTexto(negocio);
+      refrescarProposta();
+    });
+
+    // "Ver e mudar item a item": abre a lista detalhada, uma vez só.
+    var afinar = $('#prAfinar');
+    if (afinar) {
+      afinar.addEventListener('click', function () {
+        var g = $('#grupos');
+        if (!g) return;
+        g.hidden = false;
+        afinar.hidden = true;
+        var av = $('#presetAviso');
+        if (av) {
+          av.style.display = 'block';
+          av.innerHTML = 'Tire ou acrescente o que quiser — a proposta lá em cima e o ' +
+            'preço acompanham cada mudança.';
+        }
+        window.scrollTo({ top: g.offsetTop - 90, behavior: 'smooth' });
+      });
+    }
     PRESETS.outro.itens.forEach(function (id) {
       if (TODOS[id] && GRUPO_DE[id].tipo !== 'base') sel[id] = true;
     });
@@ -1009,7 +1155,7 @@ const PRESETS = {
     var pb = $('#promoBar');
     if (promoAtiva()) {
       var d = diasQueFaltam();
-      pb.innerHTML = '<b>' + (PROMO.desconto * 100) + '% de desconto</b> em todo o site até <b>31 de agosto</b>' +
+      pb.innerHTML = '<b>' + (PROMO.desconto * 100) + '% de desconto</b> em todo o site até <b>' + fimPorExtenso() + '</b>' +
         (PROMO.mesGratis ? ' + <b>1.ª mensalidade de manutenção grátis</b>' : '') +
         ' · código <span class="cod">' + PROMO.codigo + '</span> · ' +
         '<i>' + (d === 1 ? 'último dia' : 'faltam ' + d + ' dias') + '</i>';
@@ -1064,13 +1210,15 @@ const PRESETS = {
       var ref = referencia();
       var msg = texto(ref, dados);
       gravar(ref, dados).catch(function (e) {
-        // Se o Firestore recusar, o pedido não chega ao painel. O cliente
-        // continua a ter o WhatsApp à frente, mas tem de saber disto.
+        // Se o Firestore recusar, o pedido não chega ao painel. Não podemos
+        // deixar o cliente a pensar que está tratado — mandamo-lo pelo email,
+        // que não depende de nada do nosso lado estar de pé.
         console.error('Orçamento não gravado:', e);
         var av = $('#okAviso');
         if (av) {
-          av.textContent = 'Não conseguimos guardar o pedido no nosso sistema. ' +
-            'Envie-o pelo WhatsApp no botão abaixo — a referência ' + ref + ' chega na mensagem.';
+          av.innerHTML = 'Não conseguimos guardar o pedido no nosso sistema. ' +
+            'Carregue em <b>Receber o orçamento por email</b> aqui em baixo e envie-mo — ' +
+            'a referência ' + ref + ' vai na mensagem.';
           av.style.display = 'block';
         }
       });
@@ -1078,7 +1226,9 @@ const PRESETS = {
       $('#okRef').textContent = ref;
       $('#okTotal').textContent = eur(window.__ORC.total);
       $('#okSinal').textContent = eur(window.__ORC.sinal);
-      $('#okWa').href = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(msg);
+      $('#okEmail').href = 'mailto:wesley@tecnovadigital.pt' +
+        '?subject=' + encodeURIComponent('Orçamento ' + ref + ' — TECNOVA Digital') +
+        '&body=' + encodeURIComponent(msg);
       // A página de pagamento leva a referência e os valores no endereço,
       // para cobrar o montante certo sem depender de nada guardado.
       var pay = $('#okPagar');
@@ -1087,16 +1237,10 @@ const PRESETS = {
         '&total=' + Math.round(window.__ORC.total) +
         '&sinal=' + Math.round(window.__ORC.sinal) +
         '&moeda=' + M().codigo;
-      pay.style.display = 'inline-flex';
       pay.removeAttribute('target');
-      var pag = M().pagamento;
-      var tit = $('#okPagTitulo'); if (tit) tit.textContent = pag.titulo;
-      var dadosPag = $('#okDadosPag');
-      dadosPag.innerHTML =
-        pag.linhas.filter(function (l) { return l[1]; })
-          .map(function (l) { return '<li><span>' + l[0] + '</span><b>' + l[1] + '</b></li>'; }).join('') +
-        '<li><span>Referência a indicar</span><b>' + ref + '</b></li>';
-      var nota = $('#okPagNota'); if (nota) nota.textContent = pag.nota || '';
+      // Os dados de pagamento deixaram de estar repetidos aqui: vivem só na
+      // página de pagamento, para não haver dois sítios a dizer o mesmo e um
+      // deles a ficar desatualizado.
 
       // se o cliente estiver com sessão iniciada, o orçamento fica logo na
       // conversa da conta dele — passa a poder falar connosco por lá

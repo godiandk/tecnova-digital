@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="chat.css?v=23">
+<link rel="stylesheet" href="chat.css?v=24">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -186,7 +186,7 @@ tr:last-child td{border-bottom:none}
       <h2 style="font-size:1.1rem;margin:0 0 4px">Conversas com clientes</h2>
       <p style="font-size:.82rem;color:var(--cream-dim);margin:0 0 18px">
         Cada cliente com conta tem aqui uma conversa direta consigo. As mensagens chegam em tempo real
-        e ficam guardadas — nada se perde entre WhatsApp, email e chamadas.</p>
+        e ficam guardadas — nada se perde entre email e chamadas.</p>
       <div id="chatAdmin"></div>
     </div>
   </div>
@@ -312,13 +312,6 @@ const ESTADOS = {
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const eur = n => (Number(n)||0).toLocaleString('pt-PT') + '€';
 
-// número pronto para o wa.me: só dígitos e, se vier sem indicativo, assume Portugal
-function waNum(tel){
-  let n = String(tel||'').replace(/\D/g,'');
-  if(n.length === 9) n = '351' + n;
-  return n;
-}
-
 document.querySelectorAll('#filtrosOrc .filtro').forEach(b=>{
   b.addEventListener('click',()=>{
     filtroOrc = b.dataset.f;
@@ -420,8 +413,7 @@ function renderOrcamentos(){
           </select>
           <button class="btn line" onclick="copiarBriefing('${esc(o.id)}', this)">Copiar briefing</button>
           <a class="btn line" style="text-decoration:none;display:inline-block"
-             href="https://wa.me/${esc(waNum(o.tel))}?text=${encodeURIComponent('Olá '+(o.nome||'')+'! Aqui é o Wesley da TECNOVA Digital. Recebi o seu orçamento '+(o.ref||'')+'. Podemos falar?')}"
-             target="_blank" rel="noopener">Falar no WhatsApp</a>
+             href="mailto:${esc(o.email||'')}?subject=${encodeURIComponent('O seu orçamento '+(o.ref||'')+' — TECNOVA Digital')}&body=${encodeURIComponent('Olá '+(o.nome||'')+'!\n\nAqui é o Wesley da TECNOVA Digital. Recebi o seu orçamento '+(o.ref||'')+' e queria falar consigo sobre ele.\n\n')}">Responder por email</a>
         </div>
       </div>
     </div>`;

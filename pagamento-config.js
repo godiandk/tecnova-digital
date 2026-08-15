@@ -13,7 +13,7 @@
    3. Em Pagamentos > Links de pagamento, cria um link.
       Como o valor muda de cliente para cliente, a forma mais
       simples com este volume é criar um link por orçamento,
-      já com o valor do sinal, e enviá-lo pelo chat ou WhatsApp.
+      já com o valor do sinal, e enviá-lo pelo chat do site ou por email.
       Nesse caso deixa `linkCartao` e `linkPrestacoes` vazios e
       manda o link à mão.
    4. Se um dia quiser um link fixo (por exemplo, para o pacote
@@ -57,7 +57,7 @@ window.TECNOVA_PAGAMENTO = {
         ["Nome do titular", "Wesley Vianna"],
         ["Banco", "Bradesco"]
       ],
-      nota: "Depois de pagar, envie o comprovativo pelo WhatsApp com a referência do orçamento."
+      nota: "Depois de pagar, envie o comprovativo por email com a referência do orçamento."
     }
   }
 };

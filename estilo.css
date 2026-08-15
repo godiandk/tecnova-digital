@@ -121,8 +121,8 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
 .footer-bottom a{color:var(--gold);text-decoration:none;display:inline-flex;align-items:center;min-height:38px}
 @media(max-width:820px){.footer-grid{grid-template-columns:1fr;gap:26px}}
 
-/* WhatsApp flutuante */
-/* O assistente ocupa o canto inferior direito; o WhatsApp fica logo acima. */
+/* (o botão flutuante de WhatsApp foi retirado do site) */
+/* O assistente ocupa o canto inferior direito. */
 .wa-float{
   position:fixed;right:22px;bottom:92px;z-index:60;
   width:58px;height:58px;border-radius:50%;background:var(--wa);

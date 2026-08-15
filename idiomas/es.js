@@ -1048,5 +1048,117 @@ window.TECNOVA_DIC.es = {
 "Enviar comprovativo por email": "Enviar el justificante por correo",
 "Alguma dúvida antes de pagar? Fale comigo:": "¿Alguna duda antes de pagar? Hable conmigo:",
 "<b>Só paga a segunda metade quando o site estiver no ar</b> e aprovado por si. Se não gostar do que vir, não avança — e não fica preso a nada.":
-  "<b>Solo paga la segunda mitad cuando la web esté en línea</b> y aprobada por usted. Si no le gusta lo que ve, no sigue adelante, y no queda atado a nada."
+  "<b>Solo paga la segunda mitad cuando la web esté en línea</b> y aprobada por usted. Si no le gusta lo que ve, no sigue adelante, y no queda atado a nada.",
+
+/* ---------- campanha de lançamento (setembro) ---------- */
+"Campanha de lançamento · termina a 30 de setembro": "Campaña de lanzamiento · termina el 30 de septiembre",
+"<span class=\"of-pulse\"></span>Campanha de lançamento · termina a 30 de setembro":
+  "<span class=\"of-pulse\"></span>Campaña de lanzamiento · termina el 30 de septiembre",
+"Campanha de lançamento": "Campaña de lanzamiento",
+"40% de desconto": "40% de descuento",
+"30 de setembro": "30 de septiembre",
+"· válido até 30 de setembro": "· válido hasta el 30 de septiembre",
+"até 30 set": "hasta el 30 sep",
+"· código INOVA40 · até 30 de setembro": "· código INOVA40 · hasta el 30 de septiembre",
+"40% de desconto sobre o valor total do site em todos os orçamentos fechados até <b>30 de setembro</b> — e a <b>1.ª mensalidade de manutenção grátis</b>.":
+  "40% de descuento sobre el total de la web en todos los presupuestos cerrados hasta el <b>30 de septiembre</b>, y la <b>1.ª mensualidad de mantenimiento gratis</b>.",
+
+/* ---------- las reservas pasan a hacerse en la propia web ---------- */
+"Sites &amp; Apps que trabalham por si. Sites profissionais, marcações pelo próprio site e cartões de fidelidade digital para negócios locais.":
+  "Webs &amp; apps que trabajan para usted. Webs profesionales, reservas desde la propia web y tarjetas de fidelidad digitales para negocios locales.",
+"Sites & Apps que trabalham por si. Sites profissionais, marcações pelo próprio site e cartões de fidelidade digital para negócios locais.":
+  "Webs & apps que trabajan para usted. Webs profesionales, reservas desde la propia web y tarjetas de fidelidad digitales para negocios locales.",
+"Site profissional + aplicação própria + marcações pelo próprio site + cartão de fidelidade digital que faz os seus clientes voltarem.":
+  "Web profesional + app propia + reservas desde la propia web + tarjeta de fidelidad digital que hace volver a sus clientes.",
+"✆ Marcar pelo site": "✆ Reservar en la web",
+"o pedido cai direto no seu email": "la solicitud le llega directa al correo",
+"enviado automaticamente para o seu email": "enviado automáticamente a su correo",
+"O cliente escolhe o serviço, o dia e a hora diretamente no site — o pedido cai organizado no seu email, sem chamadas nem confusão de agenda.":
+  "El cliente elige el servicio, el día y la hora en la propia web: la solicitud le llega ordenada al correo, sin llamadas ni líos de agenda.",
+"O cliente escolhe serviço, dia e hora no site. O pedido chega-lhe ao email já escrito e organizado, sem telefonemas.":
+  "El cliente elige servicio, día y hora en la web. La solicitud le llega al correo ya escrita y ordenada, sin llamadas.",
+"Chat ao vivo no site": "Chat en directo en la web",
+"<span>Chat ao vivo no site</span><b>30€</b>": "<span>Chat en directo en la web</span><b>30€</b>",
+"Marcação online (o pedido chega-lhe ao email)": "Reserva online (la solicitud le llega al correo)",
+"Menu digital, reservas pelo próprio site e destaque visual dos pratos. Um dos setores que mais perde clientes por falta de site.":
+  "Carta digital, reservas desde la propia web y platos bien presentados. Uno de los sectores que más clientes pierde por no tener web.",
+"Cinco páginas com carrossel, catálogo com preços por tamanho, galeria e encomenda pelo próprio site — o fim das tabelas em PDF.":
+  "Cinco páginas con carrusel, catálogo con precios por tamaño, galería y pedidos desde la propia web: se acabaron las listas de precios en PDF.",
+"Redesenho completo e moderno · mantém o seu domínio e conteúdos · marcações pelo próprio site incluídas · migração sem perder nada · <b style=\"color:var(--gold-soft)\">diagnóstico grátis em 24h</b>.":
+  "Rediseño completo y moderno · mantiene su dominio y contenidos · reservas desde la propia web incluidas · migración sin perder nada · <b style=\"color:var(--gold-soft)\">diagnóstico gratis en 24h</b>.",
+"Alterações de preços e serviços · banners de promoções · suporte prioritário por email.":
+  "Cambios de precios y servicios · banners de promociones · soporte prioritario por correo.",
+"Alterações de preços e serviços, banners de promoções e suporte prioritário por email.":
+  "Cambios de precios y servicios, banners de promociones y soporte prioritario por correo.",
+"Falar comigo": "Hablar conmigo",
+"Prefere escrever?": "¿Prefiere escribir?",
+"Fale comigo por email": "Escríbame un correo",
+"Telemóvel *": "Móvil *",
+
+/* ---------- la propuesta lista ---------- */
+"A nossa proposta": "Nuestra propuesta",
+"Falta-lhe alguma coisa?": "¿Le falta algo?",
+"Quero este site →": "Quiero esta web →",
+"Ver e mudar item a item": "Ver y cambiar punto por punto",
+"Ver um site destes a funcionar": "Ver una web así funcionando",
+"Para arrancar": "Para empezar",
+"o resto só na entrega, depois de aprovar": "el resto solo en la entrega, tras aprobarla",
+"preço fechado, sem extras a meio": "precio cerrado, sin extras a media obra",
+"Tire ou acrescente o que quiser — a proposta lá em cima e o preço acompanham cada mudança.":
+  "Quite o añada lo que quiera: la propuesta de arriba y el precio siguen cada cambio.",
+"O site da sua barbearia fica <em>assim</em>.": "La web de su barbería queda <em>así</em>.",
+"O site da sua clínica fica <em>assim</em>.": "La web de su clínica queda <em>así</em>.",
+"O site do seu restaurante fica <em>assim</em>.": "La web de su restaurante queda <em>así</em>.",
+"O site do seu ginásio fica <em>assim</em>.": "La web de su gimnasio queda <em>así</em>.",
+"O site da sua oficina fica <em>assim</em>.": "La web de su taller queda <em>así</em>.",
+"O site do seu salão fica <em>assim</em>.": "La web de su salón queda <em>así</em>.",
+"O site da sua confeitaria fica <em>assim</em>.": "La web de su pastelería queda <em>así</em>.",
+"O site da sua loja fica <em>assim</em>.": "La web de su tienda queda <em>así</em>.",
+"O site do seu serviço fica <em>assim</em>.": "La web de su servicio queda <em>así</em>.",
+"O site do seu negócio fica <em>assim</em>.": "La web de su negocio queda <em>así</em>.",
+"Escolhemos o que costuma fazer falta a uma barbearia. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "Hemos elegido lo que suele necesitar una barbería. Está todo incluido en el precio: no aparecen extras a media obra.",
+"Escolhemos o que costuma fazer falta a uma clínica de estética. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "Hemos elegido lo que suele necesitar una clínica de estética. Está todo incluido en el precio: no aparecen extras a media obra.",
+"Escolhemos o que costuma fazer falta a um restaurante. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "Hemos elegido lo que suele necesitar un restaurante. Está todo incluido en el precio: no aparecen extras a media obra.",
+"Escolhemos o que costuma fazer falta a um ginásio. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "Hemos elegido lo que suele necesitar un gimnasio. Está todo incluido en el precio: no aparecen extras a media obra.",
+"Escolhemos o que costuma fazer falta a uma oficina. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "Hemos elegido lo que suele necesitar un taller. Está todo incluido en el precio: no aparecen extras a media obra.",
+"Escolhemos o que costuma fazer falta a um salão de beleza. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "Hemos elegido lo que suele necesitar un salón de belleza. Está todo incluido en el precio: no aparecen extras a media obra.",
+"Escolhemos o que costuma fazer falta a uma confeitaria. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "Hemos elegido lo que suele necesitar una pastelería. Está todo incluido en el precio: no aparecen extras a media obra.",
+"Escolhemos o que costuma fazer falta a uma loja. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "Hemos elegido lo que suele necesitar una tienda. Está todo incluido en el precio: no aparecen extras a media obra.",
+"Escolhemos o que costuma fazer falta a quem presta serviços ao domicílio. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "Hemos elegido lo que suele necesitar quien presta servicios a domicilio. Está todo incluido en el precio: no aparecen extras a media obra.",
+"Escolhemos o que costuma fazer falta a um negócio como o seu. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "Hemos elegido lo que suele necesitar un negocio como el suyo. Está todo incluido en el precio: no aparecen extras a media obra.",
+
+/* ---------- del presupuesto directo al pago ---------- */
+"Pagar o sinal e arrancar →": "Pagar la señal y empezar →",
+"Receber o orçamento por email": "Recibir el presupuesto por correo",
+"Paga o sinal de 50%. É o que reserva a sua vaga na agenda.":
+  "Paga la señal del 50%. Es lo que le reserva el hueco en la agenda.",
+"Assim que o pagamento entra, começo o site e digo-lhe a data exata de entrega.":
+  "En cuanto entra el pago, empiezo la web y le digo la fecha exacta de entrega.",
+"Vê o site pronto no ar e pede as alterações que quiser.":
+  "Ve la web terminada en línea y pide los cambios que quiera.",
+"Só depois de aprovar tudo é que paga a outra metade.":
+  "Solo después de aprobarlo todo paga la otra mitad.",
+"A forma mais direta. Envia o comprovativo por email e confirmo em poucas horas.":
+  "La forma más directa. Envía el justificante por correo y lo confirmo en pocas horas.",
+"Depois de pagar, mande-me o comprovativo por email. Confirmo e arranco com o site.":
+  "Después de pagar, envíeme el justificante por correo. Lo confirmo y arranco con la web.",
+
+/* ---------- pedaços da proposta ---------- */
+"já com": "ya con",
+"de desconto": "de descuento",
+"código": "código",
+"até": "hasta el",
+"Estes são os itens que costumam fazer falta a um negócio como o seu. Se precisar de mais — loja online, reservas de mesa, área de sócios, o que for — acrescente aqui em baixo, ou peça-me e monto-lhe à medida.":
+  "Estos son los elementos que suele necesitar un negocio como el suyo. Si necesita más (tienda online, reservas de mesa, área de socios, lo que sea) añádalo aquí abajo, o pídamelo y se lo monto a medida.",
+"Falar comigo →": "Hablar conmigo →"
 };

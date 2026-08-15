@@ -4,21 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulador de Orçamento — TECNOVA Digital</title>
-<meta name="description" content="Monte o site do seu negócio e veja o preço na hora. 20% de desconto até 31 de agosto e 1.ª mensalidade de manutenção grátis.">
+<meta name="description" content="Monte o site do seu negócio e veja o preço na hora. 40% de desconto até 30 de setembro e 1.ª mensalidade de manutenção grátis.">
 <link rel="canonical" href="https://tecnovadigital.pt/orcamento.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="TECNOVA Digital">
 <meta property="og:locale" content="pt_PT">
 <meta property="og:url" content="https://tecnovadigital.pt/orcamento.html">
 <meta property="og:title" content="Simulador de Orçamento">
-<meta property="og:description" content="Monte o site do seu negócio e veja o preço na hora. 20% de desconto até 31 de agosto e 1.ª mensalidade de manutenção grátis.">
+<meta property="og:description" content="Monte o site do seu negócio e veja o preço na hora. 40% de desconto até 30 de setembro e 1.ª mensalidade de manutenção grátis.">
 <meta property="og:image" content="https://tecnovadigital.pt/img/og-tecnova.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="TECNOVA Digital — sites que trabalham por si, a partir de 350€">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Simulador de Orçamento">
-<meta name="twitter:description" content="Monte o site do seu negócio e veja o preço na hora. 20% de desconto até 31 de agosto e 1.ª mensalidade de manutenção grátis.">
+<meta name="twitter:description" content="Monte o site do seu negócio e veja o preço na hora. 40% de desconto até 30 de setembro e 1.ª mensalidade de manutenção grátis.">
 <meta name="twitter:image" content="https://tecnovadigital.pt/img/og-tecnova.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#16100b">
@@ -27,10 +27,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=23">
-<link rel="stylesheet" href="assistente.css?v=23">
-<link rel="stylesheet" href="i18n.css?v=23">
-<link rel="stylesheet" href="orcamento.css?v=23">
+<link rel="stylesheet" href="estilo.css?v=24">
+<link rel="stylesheet" href="assistente.css?v=24">
+<link rel="stylesheet" href="i18n.css?v=24">
+<link rel="stylesheet" href="orcamento.css?v=24">
 
 </head>
 <body class="pagina-orcamento">
@@ -63,7 +63,7 @@
       <a href="conta.html" id="navAccount">Entrar / Criar conta</a>
     </nav>
     <div class="nav-right">
-      <a class="btn btn-gold" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Quero%20um%20site%20para%20o%20meu%20neg%C3%B3cio." target="_blank" rel="noopener">Falar consigo</a>
+      <a class="btn btn-gold" href="contacto.html">Falar consigo</a>
       <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -115,7 +115,45 @@
         <div class="preset-aviso" id="presetAviso"></div>
       </div>
 
-      <div id="grupos"></div>
+      <!-- A proposta pronta. Aparece assim que se escolhe o tipo de negócio,
+           em linguagem de quem compra e não de quem constrói. A lista ao
+           pormenor fica escondida por trás de um botão, para quem quiser. -->
+      <div class="proposta" id="proposta" hidden>
+        <div class="pr-topo">
+          <p class="eyebrow">A nossa proposta</p>
+          <h3 id="prTitulo"></h3>
+          <p class="pr-sub" id="prSub"></p>
+        </div>
+
+        <ul class="pr-lista" id="prLista"></ul>
+
+        <div class="pr-preco">
+          <div class="pr-val">
+            <s id="prAntes"></s>
+            <b id="prTotal"></b>
+            <span id="prNota"></span>
+          </div>
+          <div class="pr-sinal">
+            <span>Para arrancar</span>
+            <b id="prSinal"></b>
+            <span class="pr-sinal-nota">o resto só na entrega, depois de aprovar</span>
+          </div>
+        </div>
+
+        <div class="pr-mais">
+          <b>Falta-lhe alguma coisa?</b>
+          <p>Estes são os itens que costumam fazer falta a um negócio como o seu. Se precisar de mais — loja online, reservas de mesa, área de sócios, o que for — acrescente aqui em baixo, ou peça-me e monto-lhe à medida.</p>
+          <p style="margin-top:8px"><a href="contacto.html">Falar comigo →</a></p>
+        </div>
+
+        <div class="pr-btns">
+          <a class="btn btn-gold btn-lg" href="#final" id="prQuero">Quero este site →</a>
+          <button class="btn btn-line" type="button" id="prAfinar">Ver e mudar item a item</button>
+          <a class="btn btn-line" id="prModelo" href="#" target="_blank" rel="noopener" hidden>Ver um site destes a funcionar</a>
+        </div>
+      </div>
+
+      <div id="grupos" hidden></div>
     </div>
 
     <aside>
@@ -163,7 +201,7 @@
       <div class="campos">
         <div class="campo"><label for="fNome">O seu nome *</label><input id="fNome" type="text" autocomplete="name" required></div>
         <div class="campo"><label for="fNegocio">Nome do negócio</label><input id="fNegocio" type="text" autocomplete="organization"></div>
-        <div class="campo"><label for="fTel">Telemóvel / WhatsApp *</label><input id="fTel" type="tel" autocomplete="tel" required></div>
+        <div class="campo"><label for="fTel">Telemóvel *</label><input id="fTel" type="tel" autocomplete="tel" required></div>
         <div class="campo"><label for="fEmail">Email</label><input id="fEmail" type="email" autocomplete="email"></div>
         <div class="campo full">
           <label for="fNotas">O que mais quer no site que não viu aqui?</label>
@@ -193,21 +231,22 @@
 
     <h3 style="font-size:1.15rem">Como avançamos a partir daqui</h3>
     <ol class="passos">
-      <li>Envie-me o orçamento pelo WhatsApp (botão em baixo). Confirmo tudo consigo em poucas horas.</li>
-      <li>Paga o sinal de 50% por MB WAY ou transferência, indicando a referência acima.</li>
-      <li>Assim que confirmo o pagamento, começo o site e digo-lhe a data exata de entrega.</li>
-      <li>Vê o site pronto no ar. Só depois de aprovar tudo é que paga o restante.</li>
+      <li>Paga o sinal de 50%. É o que reserva a sua vaga na agenda.</li>
+      <li>Assim que o pagamento entra, começo o site e digo-lhe a data exata de entrega.</li>
+      <li>Vê o site pronto no ar e pede as alterações que quiser.</li>
+      <li>Só depois de aprovar tudo é que paga a outra metade.</li>
     </ol>
 
-    <h3 style="font-size:1.15rem" id="okPagTitulo">Dados para o sinal</h3>
-    <ul class="ok-pag" id="okDadosPag"></ul>
-    <p style="color:var(--cream-dim);font-size:.84rem;margin:-10px 0 22px" id="okPagNota"></p>
-
     <div class="ok-btns">
-      <a class="btn btn-wa" id="okWa" href="#" target="_blank" rel="noopener">Enviar orçamento pelo WhatsApp</a>
-      <a class="btn btn-gold" id="okPagar" href="#" style="display:none" target="_blank" rel="noopener">Pagar o sinal agora</a>
+      <a class="btn btn-gold btn-lg" id="okPagar" href="#">Pagar o sinal e arrancar →</a>
+      <a class="btn btn-line" id="okEmail" href="#">Receber o orçamento por email</a>
       <button class="btn btn-line" type="button" onclick="window.print()">Guardar em PDF</button>
     </div>
+
+    <p style="color:var(--cream-dim);font-size:.86rem;margin-top:18px">
+      Prefere pensar melhor? O preço fica-lhe garantido 15 dias. Guarde a referência
+      e volte quando quiser — ou fale comigo em <a href="contacto.html">contacto</a>.
+    </p>
   </div>
 
   <div class="garantias">
@@ -231,7 +270,7 @@
           <span class="logo-mark">T</span>
           <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
         </a>
-        <p>Sites &amp; Apps que trabalham por si. Sites profissionais, marcações pelo WhatsApp e cartões de fidelidade digital para negócios locais.</p>
+        <p>Sites &amp; Apps que trabalham por si. Sites profissionais, marcações pelo próprio site e cartões de fidelidade digital para negócios locais.</p>
       </div>
       <div class="footer-col">
         <h4>Navegação</h4>
@@ -246,37 +285,32 @@
       <div class="footer-col">
         <h4>Contacto</h4>
         <a href="mailto:wesley@tecnovadigital.pt">wesley@tecnovadigital.pt</a>
-        <a href="https://wa.me/351933113525" target="_blank" rel="noopener">WhatsApp +351 933 113 525</a>
         <a href="conta.html">Entrar / Criar conta</a>
       </div>
     </div>
     <div class="footer-bottom">
       TECNOVA Digital · Wesley Vianna ·
-      <a href="mailto:wesley@tecnovadigital.pt">wesley@tecnovadigital.pt</a> ·
-      <a href="https://wa.me/351933113525" target="_blank" rel="noopener">WhatsApp +351 933 113 525</a>
+      <a href="mailto:wesley@tecnovadigital.pt">wesley@tecnovadigital.pt</a>
     </div>
   </div>
 </footer>
 
-<a class="wa-float" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Tenho%20uma%20d%C3%BAvida%20sobre%20o%20or%C3%A7amento." target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="#062b14"><path d="M17.5 14.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.14-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.5 0 1.47 1.07 2.9 1.22 3.1.15.2 2.1 3.2 5.1 4.49.71.3 1.27.49 1.7.63.72.23 1.37.2 1.88.12.58-.09 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35zM12 2a10 10 0 0 0-8.66 15L2 22l5.15-1.35A10 10 0 1 0 12 2z"/></svg>
-</a>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="auth-nav.js?v=23"></script>
+<script src="auth-nav.js?v=24"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
 }
 </script>
 <script src="site.js"></script>
-<script src="orcamento.js?v=23"></script>
-<script src="idiomas/en.js?v=23"></script>
-<script src="idiomas/es.js?v=23"></script>
-<script src="i18n.js?v=23"></script>
+<script src="orcamento.js?v=24"></script>
+<script src="idiomas/en.js?v=24"></script>
+<script src="idiomas/es.js?v=24"></script>
+<script src="i18n.js?v=24"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

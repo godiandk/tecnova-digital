@@ -31,7 +31,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="profile.js?v=23"></script>
+<script src="profile.js?v=24"></script>
 <style>
 :root{
   --ink:#16100b;--ink-2:#211812;--ink-3:#2b2016;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
@@ -195,10 +195,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .tabbar button .tb-ic{font-size:1.25rem;line-height:1}
 .tabbar button.active{color:var(--gold)}
 </style>
-<link rel="stylesheet" href="orcamento.css?v=23">
-<link rel="stylesheet" href="app-orcamento.css?v=23">
-<link rel="stylesheet" href="assistente.css?v=23">
-<link rel="stylesheet" href="i18n.css?v=23">
+<link rel="stylesheet" href="orcamento.css?v=24">
+<link rel="stylesheet" href="app-orcamento.css?v=24">
+<link rel="stylesheet" href="assistente.css?v=24">
+<link rel="stylesheet" href="i18n.css?v=24">
 </head>
 <body class="tecnova-app">
 
@@ -226,7 +226,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   <div class="qa-grid">
     <button class="qa-card" data-goto="pedir"><span class="qa-ic">🚀</span>Pedir o meu site<small>orçamento em minutos</small></button>
     <button class="qa-card" data-goto="modelos"><span class="qa-ic">🖼️</span>Ver modelos<small>por tipo de negócio</small></button>
-    <a class="qa-card" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Vim%20da%20app%20da%20TECNOVA." target="_blank" rel="noopener"><span class="qa-ic">💬</span>WhatsApp<small>fale connosco já</small></a>
     <a class="qa-card" href="pacotes.html"><span class="qa-ic">💶</span>Pacotes<small>preços claros</small></a>
     <button class="qa-card" data-goto="conta"><span class="qa-ic">🎟️</span>Os meus cupões<small>a minha conta</small></button>
     <a class="qa-card" href="mailto:wesley@tecnovadigital.pt?subject=Contacto%20pela%20app%20da%20TECNOVA%20Digital"><span class="qa-ic">✉️</span>Email<small>escreva-nos</small></a>
@@ -338,7 +337,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
       <div class="campos">
         <div class="campo"><label for="fNome">O seu nome *</label><input id="fNome" type="text" autocomplete="name" required></div>
         <div class="campo"><label for="fNegocio">Nome do negócio</label><input id="fNegocio" type="text" autocomplete="organization"></div>
-        <div class="campo"><label for="fTel">Telemóvel / WhatsApp *</label><input id="fTel" type="tel" autocomplete="tel" required></div>
+        <div class="campo"><label for="fTel">Telemóvel *</label><input id="fTel" type="tel" autocomplete="tel" required></div>
         <div class="campo"><label for="fEmail">Email</label><input id="fEmail" type="email" autocomplete="email"></div>
         <div class="campo full">
           <label for="fNotas">O que mais quer no site que não viu aqui?</label>
@@ -368,21 +367,22 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 
     <h3 style="font-size:1.15rem">Como avançamos a partir daqui</h3>
     <ol class="passos">
-      <li>Envie-me o orçamento pelo WhatsApp (botão em baixo). Confirmo tudo consigo em poucas horas.</li>
-      <li>Paga o sinal de 50% por MB WAY ou transferência, indicando a referência acima.</li>
-      <li>Assim que confirmo o pagamento, começo o site e digo-lhe a data exata de entrega.</li>
-      <li>Vê o site pronto no ar. Só depois de aprovar tudo é que paga o restante.</li>
+      <li>Paga o sinal de 50%. É o que reserva a sua vaga na agenda.</li>
+      <li>Assim que o pagamento entra, começo o site e digo-lhe a data exata de entrega.</li>
+      <li>Vê o site pronto no ar e pede as alterações que quiser.</li>
+      <li>Só depois de aprovar tudo é que paga a outra metade.</li>
     </ol>
 
-    <h3 style="font-size:1.15rem" id="okPagTitulo">Dados para o sinal</h3>
-    <ul class="ok-pag" id="okDadosPag"></ul>
-    <p style="color:var(--cream-dim);font-size:.84rem;margin:-10px 0 22px" id="okPagNota"></p>
-
     <div class="ok-btns">
-      <a class="btn btn-wa" id="okWa" href="#" target="_blank" rel="noopener">Enviar orçamento pelo WhatsApp</a>
-      <a class="btn btn-gold" id="okPagar" href="#" style="display:none" target="_blank" rel="noopener">Pagar o sinal agora</a>
+      <a class="btn btn-gold btn-lg" id="okPagar" href="#">Pagar o sinal e arrancar →</a>
+      <a class="btn btn-line" id="okEmail" href="#">Receber o orçamento por email</a>
       <button class="btn btn-line" type="button" onclick="window.print()">Guardar em PDF</button>
     </div>
+
+    <p style="color:var(--cream-dim);font-size:.86rem;margin-top:18px">
+      Prefere pensar melhor? O preço fica-lhe garantido 15 dias. Guarde a referência
+      e volte quando quiser — ou fale comigo em <a href="contacto.html">contacto</a>.
+    </p>
   </div>
 
   <div class="garantias">
@@ -486,8 +486,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 
 <script>
 (function(){
-  var WA = "https://wa.me/351933113525?text=";
-
   /* ---- Navegação por abas ---- */
   function show(tab){
     document.querySelectorAll(".app-screen").forEach(function(s){s.classList.remove("active");});
@@ -726,7 +724,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
     var el=document.getElementById("vouchersList");
     try{
       var snap=await db.collection("vouchers").where("clienteUid","==",uid).get();
-      if(snap.empty){ el.innerHTML='<p class="empty">Ainda não tem cupões. Fale connosco no WhatsApp!</p>'; return; }
+      if(snap.empty){ el.innerHTML='<p class="empty">Ainda não tem cupões. Faça um orçamento para começar.</p>'; return; }
       el.innerHTML="";
       snap.forEach(function(doc){
         var v=doc.data();
@@ -746,10 +744,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   }
 })();
 </script>
-<script src="orcamento.js?v=23"></script>
-<script src="idiomas/en.js?v=23"></script>
-<script src="idiomas/es.js?v=23"></script>
-<script src="i18n.js?v=23"></script>
+<script src="orcamento.js?v=24"></script>
+<script src="idiomas/en.js?v=24"></script>
+<script src="idiomas/es.js?v=24"></script>
+<script src="i18n.js?v=24"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

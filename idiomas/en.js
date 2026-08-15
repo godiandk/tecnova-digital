@@ -1046,5 +1046,117 @@ window.TECNOVA_DIC.en = {
 "Enviar comprovativo por email": "Send the receipt by email",
 "Alguma dúvida antes de pagar? Fale comigo:": "Any doubts before paying? Talk to me:",
 "<b>Só paga a segunda metade quando o site estiver no ar</b> e aprovado por si. Se não gostar do que vir, não avança — e não fica preso a nada.":
-  "<b>You only pay the second half once the site is live</b> and approved by you. If you do not like what you see, it does not go ahead — and you are not tied to anything."
+  "<b>You only pay the second half once the site is live</b> and approved by you. If you do not like what you see, it does not go ahead — and you are not tied to anything.",
+
+/* ---------- campanha de lançamento (setembro) ---------- */
+"Campanha de lançamento · termina a 30 de setembro": "Launch campaign · ends 30 September",
+"<span class=\"of-pulse\"></span>Campanha de lançamento · termina a 30 de setembro":
+  "<span class=\"of-pulse\"></span>Launch campaign · ends 30 September",
+"Campanha de lançamento": "Launch campaign",
+"40% de desconto": "40% off",
+"30 de setembro": "30 September",
+"· válido até 30 de setembro": "· valid until 30 September",
+"até 30 set": "until 30 Sep",
+"· código INOVA40 · até 30 de setembro": "· code INOVA40 · until 30 September",
+"40% de desconto sobre o valor total do site em todos os orçamentos fechados até <b>30 de setembro</b> — e a <b>1.ª mensalidade de manutenção grátis</b>.":
+  "40% off the whole website price on every quote closed by <b>30 September</b> — plus the <b>1st month of maintenance free</b>.",
+
+/* ---------- marcações passam a ser pelo próprio site ---------- */
+"Sites &amp; Apps que trabalham por si. Sites profissionais, marcações pelo próprio site e cartões de fidelidade digital para negócios locais.":
+  "Websites &amp; apps that work for you. Professional websites, bookings through your own site and digital loyalty cards for local businesses.",
+"Sites & Apps que trabalham por si. Sites profissionais, marcações pelo próprio site e cartões de fidelidade digital para negócios locais.":
+  "Websites & apps that work for you. Professional websites, bookings through your own site and digital loyalty cards for local businesses.",
+"Site profissional + aplicação própria + marcações pelo próprio site + cartão de fidelidade digital que faz os seus clientes voltarem.":
+  "Professional website + your own app + bookings through your own site + a digital loyalty card that brings your customers back.",
+"✆ Marcar pelo site": "✆ Book on the site",
+"o pedido cai direto no seu email": "the request lands straight in your inbox",
+"enviado automaticamente para o seu email": "sent automatically to your inbox",
+"O cliente escolhe o serviço, o dia e a hora diretamente no site — o pedido cai organizado no seu email, sem chamadas nem confusão de agenda.":
+  "The customer picks the service, the day and the time on the site — the request lands neatly in your inbox, with no calls and no diary confusion.",
+"O cliente escolhe serviço, dia e hora no site. O pedido chega-lhe ao email já escrito e organizado, sem telefonemas.":
+  "The customer picks service, day and time on the site. The request reaches your inbox already written and organised, with no phone calls.",
+"Chat ao vivo no site": "Live chat on the site",
+"<span>Chat ao vivo no site</span><b>30€</b>": "<span>Live chat on the site</span><b>€30</b>",
+"Marcação online (o pedido chega-lhe ao email)": "Online booking (the request reaches your inbox)",
+"Menu digital, reservas pelo próprio site e destaque visual dos pratos. Um dos setores que mais perde clientes por falta de site.":
+  "Digital menu, bookings through the site itself and dishes shown at their best. One of the sectors that loses most customers for want of a website.",
+"Cinco páginas com carrossel, catálogo com preços por tamanho, galeria e encomenda pelo próprio site — o fim das tabelas em PDF.":
+  "Five pages with a carousel, a catalogue priced by size, a gallery and ordering through the site itself — the end of PDF price lists.",
+"Redesenho completo e moderno · mantém o seu domínio e conteúdos · marcações pelo próprio site incluídas · migração sem perder nada · <b style=\"color:var(--gold-soft)\">diagnóstico grátis em 24h</b>.":
+  "A complete, modern redesign · keeps your domain and content · bookings through your own site included · migration without losing anything · <b style=\"color:var(--gold-soft)\">free diagnosis in 24h</b>.",
+"Alterações de preços e serviços · banners de promoções · suporte prioritário por email.":
+  "Price and service changes · promotional banners · priority support by email.",
+"Alterações de preços e serviços, banners de promoções e suporte prioritário por email.":
+  "Price and service changes, promotional banners and priority email support.",
+"Falar comigo": "Talk to me",
+"Prefere escrever?": "Prefer to write?",
+"Fale comigo por email": "Email me",
+"Telemóvel *": "Mobile *",
+
+/* ---------- a proposta pronta ---------- */
+"A nossa proposta": "Our proposal",
+"Falta-lhe alguma coisa?": "Is something missing?",
+"Quero este site →": "I want this website →",
+"Ver e mudar item a item": "See and change item by item",
+"Ver um site destes a funcionar": "See one of these sites in action",
+"Para arrancar": "To get started",
+"o resto só na entrega, depois de aprovar": "the rest only on delivery, after you approve",
+"preço fechado, sem extras a meio": "fixed price, no extras appearing halfway",
+"Tire ou acrescente o que quiser — a proposta lá em cima e o preço acompanham cada mudança.":
+  "Remove or add whatever you like — the proposal above and the price follow every change.",
+"O site da sua barbearia fica <em>assim</em>.": "Your barbershop website will look <em>like this</em>.",
+"O site da sua clínica fica <em>assim</em>.": "Your clinic website will look <em>like this</em>.",
+"O site do seu restaurante fica <em>assim</em>.": "Your restaurant website will look <em>like this</em>.",
+"O site do seu ginásio fica <em>assim</em>.": "Your gym website will look <em>like this</em>.",
+"O site da sua oficina fica <em>assim</em>.": "Your garage website will look <em>like this</em>.",
+"O site do seu salão fica <em>assim</em>.": "Your salon website will look <em>like this</em>.",
+"O site da sua confeitaria fica <em>assim</em>.": "Your cake shop website will look <em>like this</em>.",
+"O site da sua loja fica <em>assim</em>.": "Your shop website will look <em>like this</em>.",
+"O site do seu serviço fica <em>assim</em>.": "Your service website will look <em>like this</em>.",
+"O site do seu negócio fica <em>assim</em>.": "Your business website will look <em>like this</em>.",
+"Escolhemos o que costuma fazer falta a uma barbearia. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "We picked what a barbershop usually needs. It is all included in the price — no extras appear halfway.",
+"Escolhemos o que costuma fazer falta a uma clínica de estética. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "We picked what a beauty clinic usually needs. It is all included in the price — no extras appear halfway.",
+"Escolhemos o que costuma fazer falta a um restaurante. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "We picked what a restaurant usually needs. It is all included in the price — no extras appear halfway.",
+"Escolhemos o que costuma fazer falta a um ginásio. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "We picked what a gym usually needs. It is all included in the price — no extras appear halfway.",
+"Escolhemos o que costuma fazer falta a uma oficina. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "We picked what a garage usually needs. It is all included in the price — no extras appear halfway.",
+"Escolhemos o que costuma fazer falta a um salão de beleza. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "We picked what a beauty salon usually needs. It is all included in the price — no extras appear halfway.",
+"Escolhemos o que costuma fazer falta a uma confeitaria. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "We picked what a cake shop usually needs. It is all included in the price — no extras appear halfway.",
+"Escolhemos o que costuma fazer falta a uma loja. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "We picked what a shop usually needs. It is all included in the price — no extras appear halfway.",
+"Escolhemos o que costuma fazer falta a quem presta serviços ao domicílio. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "We picked what a call-out service usually needs. It is all included in the price — no extras appear halfway.",
+"Escolhemos o que costuma fazer falta a um negócio como o seu. Está tudo incluído no preço — não há extras a aparecer a meio.":
+  "We picked what a business like yours usually needs. It is all included in the price — no extras appear halfway.",
+
+/* ---------- do orçamento direto para o pagamento ---------- */
+"Pagar o sinal e arrancar →": "Pay the deposit and start →",
+"Receber o orçamento por email": "Get the quote by email",
+"Paga o sinal de 50%. É o que reserva a sua vaga na agenda.":
+  "You pay the 50% deposit. That is what books your slot in the diary.",
+"Assim que o pagamento entra, começo o site e digo-lhe a data exata de entrega.":
+  "As soon as the payment lands, I start the site and give you the exact delivery date.",
+"Vê o site pronto no ar e pede as alterações que quiser.":
+  "You see the finished site live and ask for whatever changes you want.",
+"Só depois de aprovar tudo é que paga a outra metade.":
+  "Only after you approve everything do you pay the other half.",
+"A forma mais direta. Envia o comprovativo por email e confirmo em poucas horas.":
+  "The most direct way. Send the receipt by email and I confirm within hours.",
+"Depois de pagar, mande-me o comprovativo por email. Confirmo e arranco com o site.":
+  "After paying, send me the receipt by email. I confirm it and start the site.",
+
+/* ---------- pedaços da proposta ---------- */
+"já com": "already with",
+"de desconto": "off",
+"código": "code",
+"até": "until",
+"Estes são os itens que costumam fazer falta a um negócio como o seu. Se precisar de mais — loja online, reservas de mesa, área de sócios, o que for — acrescente aqui em baixo, ou peça-me e monto-lhe à medida.":
+  "These are the things a business like yours usually needs. If you need more — an online shop, table bookings, a members' area, whatever it is — add it below, or ask me and I will build it to measure.",
+"Falar comigo →": "Talk to me →"
 };

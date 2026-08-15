@@ -22,7 +22,7 @@
 <meta name="twitter:image" content="https://tecnovadigital.pt/img/og-tecnova.png">
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="modelo-confeitaria.css?v=23">
+<link rel="stylesheet" href="modelo-confeitaria.css?v=24">
 <style>
 .order-grid{display:grid;grid-template-columns:1.3fr .7fr;gap:26px;align-items:start}
 @media(max-width:980px){.order-grid{grid-template-columns:1fr}}
@@ -129,18 +129,18 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
   <span>🎂 Este é um <b>modelo demonstrativo</b> criado pela TECNOVA Digital</span>
   <div>
     <a href="modelos.html">← Voltar aos modelos</a>
-    <a href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Gostei%20do%20modelo%20de%20confeitaria%20e%20quero%20um%20site%20assim." target="_blank" rel="noopener">Quero um site assim →</a>
+    <a href="orcamento.html">Quero um site assim →</a>
   </div>
 </div>
 
 <header class="wrap">
   <div class="nav">
     <a class="logo" href="modelo-confeitaria.html">
-      <span class="logo-ic"><img src="img/modelos/confeitaria/logo.png?v=23" alt="Doce Aurora"></span>
+      <span class="logo-ic"><img src="img/modelos/confeitaria/logo.png?v=24" alt="Doce Aurora"></span>
       <div><b>Doce Aurora</b><span class="tagline">Confeitaria Artesanal</span></div>
     </a>
     <div class="nav-right">
-      <a class="btn btn-rose" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20encomendar%20na%20Doce%20Aurora%20(modelo)." target="_blank" rel="noopener">WhatsApp</a>
+      <a class="btn btn-rose" href="#marcar">Pedir marcação</a>
       <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
     <nav class="links" id="navLinks">
@@ -149,7 +149,7 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
       <a href="modelo-confeitaria-galeria.html">Galeria</a>
       <a href="modelo-confeitaria-sobre.html">Sobre</a>
       <a class="on" href="modelo-confeitaria-contactos.html">Contactos</a>
-      <a class="btn btn-rose menu-cta" href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20encomendar%20na%20Doce%20Aurora%20(modelo)." target="_blank" rel="noopener">Encomendar</a>
+      <a class="btn btn-rose menu-cta" href="#marcar">Encomendar</a>
     </nav>
   </div>
 </header>
@@ -162,9 +162,9 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
   </div>
 </section>
 
-<section style="padding-top:18px">
+<section style="padding-top:18px" id="marcar">
   <div class="wrap">
-    <form id="orderForm" class="order-grid">
+    <form id="orderForm" class="order-grid" tabindex="-1">
 
       <div>
         <!-- 1. BOLO -->
@@ -328,11 +328,11 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
           <div class="box">
             <div><span class="n">1.</span><span>Vamos <b>analisar o comprovativo</b> e confirmar a entrada dos 50%.</span></div>
             <div><span class="n">2.</span><span>Assim que estiver confirmado, <b>começamos já a preparar a sua encomenda</b>.</span></div>
-            <div><span class="n">3.</span><span>Recebe uma <b>notificação no WhatsApp</b> a dizer que o pedido está em preparação, com o <b>prazo e a data de entrega</b> certinhos.</span></div>
+            <div><span class="n">3.</span><span>Recebe uma <b>notificação por email</b> a dizer que o pedido está em preparação, com o <b>prazo e a data de entrega</b> certinhos.</span></div>
             <div><span class="n">4.</span><span>Os restantes <b>50%</b> são pagos na entrega ou no levantamento.</span></div>
           </div>
           <p style="font-style:italic;color:var(--rose)">Obrigada por confiar na Doce Aurora — o seu bolo vai ser feito com todo o carinho. 💗</p>
-          <a class="btn btn-rose btn-lg" id="waBtn" href="#" target="_blank" rel="noopener" style="width:100%">Enviar também pelo WhatsApp</a>
+          <a class="btn btn-rose btn-lg" id="waBtn" href="#" style="width:100%">Enviar a encomenda por email</a>
           <button type="button" class="btn btn-line" id="newOrder" style="width:100%;margin-top:10px">Fazer outra encomenda</button>
         </div>
       </div>
@@ -365,7 +365,7 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
         <div class="faq" style="margin-top:22px">
           <details><summary>Porque é preciso pagar 50% antes?</summary><p>Cada bolo é feito de raiz só para si, com ingredientes comprados de propósito. O sinal reserva a sua data na nossa agenda e garante que compramos tudo a tempo.</p></details>
           <details><summary>E se eu não anexar o comprovativo?</summary><p>A encomenda fica pendente e <b>não entra em produção</b>. Só começamos a preparar depois de confirmarmos a entrada do sinal de 50%.</p></details>
-          <details><summary>Quando recebo a confirmação?</summary><p>No mesmo dia útil. Assim que verificarmos o pagamento, recebe uma mensagem no WhatsApp a dizer que o pedido está em preparação, com o prazo e a data de entrega.</p></details>
+          <details><summary>Quando recebo a confirmação?</summary><p>No mesmo dia útil. Assim que verificarmos o pagamento, recebe um email a dizer que o pedido está em preparação, com o prazo e a data de entrega.</p></details>
           <details><summary>O recheio está incluído no preço?</summary><p>Sim. Chocolate, brigadeiro e doce de leite estão incluídos. Sabores especiais como maracujá, morango ou ninho com Nutella têm um pequeno acréscimo, que aparece logo no total.</p></details>
           <details><summary>Posso cancelar?</summary><p>Até 5 dias antes da data devolvemos o sinal na totalidade. Depois disso os ingredientes já foram comprados e o valor não é devolvido.</p></details>
         </div>
@@ -393,7 +393,7 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
     </div>
 
     <div class="contact-ways">
-      <div class="way"><div class="ic">💬</div><b>WhatsApp</b><a href="https://wa.me/351933113525?text=Ol%C3%A1!%20Quero%20encomendar%20na%20Doce%20Aurora%20(modelo)." target="_blank" rel="noopener">+351 933 113 525</a></div>
+      <div class="way"><div class="ic">📅</div><b>Encomenda pelo site</b><a href="#marcar">Montar a minha encomenda</a></div>
       <div class="way"><div class="ic">✉️</div><b>Email</b><a href="mailto:ola@doceaurora.pt">ola@doceaurora.pt</a></div>
       <div class="way"><div class="ic">📍</div><b>Loja</b><a href="#" onclick="return false">Rua Exemplo, 120 · Lisboa</a></div>
     </div>
@@ -519,7 +519,8 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
       ($('fObs').value.trim()?'\n• Observações: '+$('fObs').value.trim():'')+
       '\n\nComprovativo: '+ficheiro.name+' (vou anexar a seguir)';
 
-    $('waBtn').href='https://wa.me/351933113525?text='+encodeURIComponent(msg);
+    $('waBtn').href='mailto:ola@doceaurora.pt?subject='+encodeURIComponent('Encomenda pelo site')+
+                    '&body='+encodeURIComponent(msg);
     $('doneMsg').innerHTML='Recebemos o seu pedido de <b>'+eur(total)+'</b> e o comprovativo do sinal de <b>'+eur(dep)+'</b>.';
     var cards=document.querySelectorAll('#orderForm .card');
     for(var i=0;i<cards.length;i++){

@@ -3,7 +3,7 @@
    ------------------------------------------------------------
    Responde às perguntas mais comuns sobre criação de sites,
    preços, prazos, vendas e marketing — e passa a conversa para
-   o WhatsApp quando não sabe ou quando o visitante quer falar.
+   o email quando não sabe ou quando o visitante quer falar.
 
    Funciona sem servidor e sem custos: as respostas estão todas
    aqui em baixo. Para acrescentar uma, copia um bloco de RESPOSTAS.
@@ -11,9 +11,11 @@
 (function () {
   'use strict';
 
-  var WA = '351933113525';
-  var waLink = function (msg) {
-    return 'https://wa.me/' + WA + '?text=' + encodeURIComponent(msg || 'Olá Wesley! Vim do site da TECNOVA.');
+  var EMAIL = 'wesley@tecnovadigital.pt';
+  var emailLink = function (msg) {
+    return 'mailto:' + EMAIL +
+      '?subject=' + encodeURIComponent('Pergunta pelo site da TECNOVA Digital') +
+      '&body=' + encodeURIComponent(msg || 'Olá Wesley! Vim do site da TECNOVA.');
   };
 
   /* --------------------------------------------------------
@@ -27,7 +29,7 @@
       id: 'preco',
       chaves: ['preço', 'preco', 'quanto custa', 'custa', 'valor', 'orçamento', 'orcamento', 'caro', 'barato', 'pagar quanto', 'quanto fica', 'investimento'],
       resposta: 'Depende do que o site precisa de fazer — mas não é um mistério, dá para ver na hora.\n\n' +
-        'Um site profissional começa nos <b>350€</b> (3 a 5 páginas, botão de WhatsApp, perfeito no telemóvel). ' +
+        'Um site profissional começa nos <b>350€</b> (3 a 5 páginas, chat no site, perfeito no telemóvel). ' +
         'Com marcações online, preçário e chat de atendimento, fica em <b>650€</b>. ' +
         'Com aplicação própria, contas de cliente e cartão de fidelidade, <b>990€</b>.\n\n' +
         'No simulador escolhe exatamente o que quer e o preço aparece à frente dos olhos, item a item.',
@@ -35,10 +37,10 @@
     },
     {
       id: 'campanha',
-      chaves: ['desconto', 'promoção', 'promocao', 'campanha', 'cupão', 'cupao', 'voucher', 'código', 'codigo', 'agosto'],
+      chaves: ['desconto', 'promoção', 'promocao', 'campanha', 'cupão', 'cupao', 'voucher', 'código', 'codigo', 'setembro'],
       resposta: 'Está a apanhar a campanha certa. 🎉\n\n' +
-        'Até <b>31 de agosto</b>: <b>20% de desconto</b> sobre o valor total do site e a <b>1.ª mensalidade de manutenção grátis</b>. ' +
-        'O código é <b>AGOSTO20</b> e é aplicado automaticamente no simulador.\n\n' +
+        'Até <b>30 de setembro</b>: <b>40% de desconto</b> sobre o valor total do site e a <b>1.ª mensalidade de manutenção grátis</b>. ' +
+        'O código é <b>INOVA40</b> e é aplicado automaticamente no simulador.\n\n' +
         'Ao fechar o orçamento, o preço fica-lhe garantido 15 dias — mesmo que a campanha termine entretanto.',
       acoes: [['Simular com desconto', 'orcamento.html']]
     },
@@ -48,7 +50,7 @@
       resposta: 'Entre <b>5 e 15 dias úteis</b>, conforme o tamanho.\n\n' +
         '• Site essencial: 5 dias úteis\n• Site profissional: 10 dias úteis\n• Com aplicação e contas de cliente: 15 dias úteis\n\n' +
         'O relógio começa a contar quando recebemos o sinal e os conteúdos. Se não tiver textos ou fotos, tratamos disso — só acrescenta uns dias.',
-      acoes: [['Ver o que está incluído', 'servicos.html'], ['Falar com o Wesley', waLink('Olá Wesley! Preciso do site pronto para uma data. Consegue?')]]
+      acoes: [['Ver o que está incluído', 'servicos.html'], ['Escrever ao Wesley', emailLink('Olá Wesley! Preciso do site pronto para uma data. Consegue?')]]
     },
     {
       id: 'pagamento',
@@ -66,7 +68,7 @@
         'A estrutura fica <b>30% mais barata</b> e o trabalho de textos e imagem <b>20% mais barato</b>, porque já existe muita coisa aproveitável.\n\n' +
         'Há só um cuidado importante: ao mudar de site é preciso fazer <b>redirecionamentos</b>, senão quem o encontrava no Google passa a bater numa página de erro. Tratamos disso.\n\n' +
         'O diagnóstico do seu site atual é gratuito e chega em 24h.',
-      acoes: [['Simular a remodelação', 'orcamento.html?projeto=remod'], ['Pedir diagnóstico grátis', waLink('Olá Wesley! Quero o diagnóstico grátis do meu site atual.')]]
+      acoes: [['Simular a remodelação', 'orcamento.html?projeto=remod'], ['Pedir diagnóstico grátis', emailLink('Olá Wesley! Quero o diagnóstico grátis do meu site atual.')]]
     },
     {
       id: 'nao-tem-site',
@@ -83,7 +85,7 @@
       id: 'vendas',
       chaves: ['vender', 'vendas', 'mais clientes', 'trazer clientes', 'faturar', 'faturação', 'faturacao', 'converter', 'aumentar'],
       resposta: 'Um site bonito que não vende não serve para nada. O que faz diferença é isto, por ordem:\n\n' +
-        '<b>1. Tirar o atrito.</b> Botão de WhatsApp com a mensagem já escrita e marcação online. Cada clique a mais perde clientes.\n' +
+        '<b>1. Tirar o atrito.</b> Chat no site e marcação online. Cada clique a mais perde clientes.\n' +
         '<b>2. Mostrar o preço.</b> Quem esconde o preço perde o cliente para quem o mostra. O preçário à vista poupa-lhe chamadas e traz gente já decidida.\n' +
         '<b>3. Provar.</b> Fotos dos seus trabalhos e testemunhos reais. As pessoas compram a quem confiam, não a quem é mais barato.\n' +
         '<b>4. Fazer voltar.</b> Cartão de fidelidade e cupões. Trazer um cliente novo custa; fazer voltar o que já tem é lucro quase puro.',
@@ -98,7 +100,7 @@
         '<b>Depois as redes.</b> Instagram com o link do site na bio, a levar ao preçário ou à marcação — não a uma conversa que tem de responder à mão.\n' +
         '<b>Só no fim, anúncios pagos.</b> E aí já sabe quanto lhe custa cada cliente, porque tem números.\n\n' +
         'Muita gente faz isto ao contrário e queima o orçamento todo na última etapa.',
-      acoes: [['Simular com SEO incluído', 'orcamento.html'], ['Falar sobre a minha situação', waLink('Olá Wesley! Queria falar sobre como divulgar o meu negócio.')]]
+      acoes: [['Simular com SEO incluído', 'orcamento.html'], ['Escrever sobre a minha situação', emailLink('Olá Wesley! Queria falar sobre como divulgar o meu negócio.')]]
     },
     {
       id: 'design',
@@ -128,7 +130,7 @@
     {
       id: 'marcacoes',
       chaves: ['marcação', 'marcacao', 'marcações', 'agenda', 'agendar', 'reserva', 'reservas', 'horário', 'horario', 'calendário', 'calendario'],
-      resposta: 'O cliente escolhe o serviço, o dia e a hora no site, e o pedido cai-lhe no WhatsApp já escrito e organizado. Sem telefonemas e sem confusão de agenda.\n\n' +
+      resposta: 'O cliente escolhe o serviço, o dia e a hora no site, e o pedido cai-lhe no email já escrito e organizado. Sem telefonemas e sem confusão de agenda.\n\n' +
         'Pode ainda ter calendário com as horas que tem mesmo livres, confirmação automática e lembrete horas antes — que é o que faz mesmo baixar as faltas. E faltas são dinheiro perdido.',
       acoes: [['Experimentar num modelo', 'modelo-barbearia.html'], ['Simular com marcações', 'orcamento.html']]
     },
@@ -159,7 +161,7 @@
         '• <b>Preço fechado.</b> O que está no orçamento é o que paga. Nada aparece a meio a dizer «afinal isto é extra».\n' +
         '• <b>O site é seu.</b> Fica com domínio, conteúdos e ficheiros.\n' +
         '• <b>Fala sempre com quem faz.</b> Sem call centers nem tickets — trata diretamente com o Wesley.',
-      acoes: [['Conhecer o Wesley', 'sobre.html'], ['Falar já', waLink('Olá Wesley! Tenho algumas dúvidas antes de avançar.')]]
+      acoes: [['Conhecer o Wesley', 'sobre.html'], ['Escrever já', emailLink('Olá Wesley! Tenho algumas dúvidas antes de avançar.')]]
     },
     {
       id: 'loja',
@@ -182,7 +184,7 @@
       chaves: ['quem é', 'quem e', 'wesley', 'sobre', 'empresa', 'agência', 'agencia', 'equipa', 'quem faz'],
       resposta: 'A TECNOVA Digital é o Wesley Vianna. Não é uma agência com camadas de atendimento — é a pessoa que faz o seu site a falar diretamente consigo, do primeiro dia ao último.\n\n' +
         'É por isso que consegue preços de 350€ a 990€ para o que uma agência cobraria vários milhares. E é também por isso que responde no mesmo dia.',
-      acoes: [['Ver a página Sobre', 'sobre.html'], ['Falar com o Wesley', waLink('Olá Wesley! Queria falar consigo sobre um site.')]]
+      acoes: [['Ver a página Sobre', 'sobre.html'], ['Escrever ao Wesley', emailLink('Olá Wesley! Queria falar consigo sobre um site.')]]
     },
     {
       id: 'conta',
@@ -311,7 +313,7 @@
           bolha('bot',
             'Essa não sei responder bem — e prefiro não inventar.\n\n' +
             'O Wesley responde-lhe diretamente, normalmente em poucas horas. Quer falar com ele?',
-            [['Falar no WhatsApp', waLink('Olá Wesley! Perguntei isto no site: "' + mostrar + '"')],
+            [['Escrever ao Wesley', emailLink('Olá Wesley! Perguntei isto no site: "' + mostrar + '"')],
              ['Ver preços', 'orcamento.html']]);
         }
       }, 480);
