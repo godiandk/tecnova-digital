@@ -989,5 +989,64 @@ window.TECNOVA_DIC.es = {
   "🖼️ Esta es una plantilla de demostración creada por TECNOVA Digital",
 "Este modelo foi feito pela TECNOVA Digital. O seu pode ficar assim — ou com a sua própria identidade.":
   "Esta plantilla la ha hecho TECNOVA Digital. La suya puede quedar así, o con su propia identidad.",
-"Voltar aos modelos": "Volver a las plantillas"
+"Voltar aos modelos": "Volver a las plantillas",
+
+/* ---------- página de contacto ---------- */
+"Fale <i>diretamente</i> comigo": "Hable <i>directamente</i> conmigo",
+"Não há central telefónica nem formulário que ninguém lê do outro lado. Quem responde sou eu, o Wesley. Diga-me o que tem em mãos e digo-lhe se consigo ajudar — mesmo que a resposta seja que não.":
+  "No hay centralita telefónica ni formulario que nadie lee al otro lado. Quien responde soy yo, Wesley. Dígame qué tiene entre manos y le diré si puedo ayudarle, aunque la respuesta sea que no.",
+"Para propostas, dúvidas sobre preços ou envio de ficheiros. Toque para escrever.":
+  "Para propuestas, dudas sobre precios o envío de archivos. Toque para escribir.",
+"Para o que é rápido: uma pergunta, uma foto, uma ideia à pressa.":
+  "Para lo que es rápido: una pregunta, una foto, una idea a la carrera.",
+"Copiar o endereço de email": "Copiar la dirección de correo",
+"✓ Copiado": "✓ Copiado",
+"Ou escreva aqui": "O escriba aquí",
+"Preencha e carregue em enviar. Abre-se a sua aplicação de email com a mensagem já escrita — só tem de confirmar.":
+  "Rellene y pulse enviar. Se abre su aplicación de correo con el mensaje ya escrito: solo tiene que confirmar.",
+"O seu email": "Su correo electrónico",
+"Negócio <span class=\"ct-opcional\">(opcional)</span>":
+  "Negocio <span class=\"ct-opcional\">(opcional)</span>",
+"Telemóvel <span class=\"ct-opcional\">(opcional)</span>":
+  "Móvil <span class=\"ct-opcional\">(opcional)</span>",
+"Sobre o que é": "Sobre qué es",
+"Quero um site novo": "Quiero una web nueva",
+"Já tenho site e quero renovar": "Ya tengo web y quiero renovarla",
+"Dúvida sobre preços ou pacotes": "Duda sobre precios o paquetes",
+"Dúvida sobre um orçamento que já fiz": "Duda sobre un presupuesto que ya hice",
+"Pagamento ou fatura": "Pago o factura",
+"Outro assunto": "Otro asunto",
+"A sua mensagem": "Su mensaje",
+"Enviar email": "Enviar correo",
+"oseuemail@exemplo.com": "sucorreo@ejemplo.com",
+"Nome e apelido": "Nombre y apellidos",
+"Ex.: Barbearia Imperio": "Ej.: Barbería Imperio",
+"Conte-me o que faz, o que precisa e para quando. Quanto mais souber, melhor lhe respondo.":
+  "Cuénteme a qué se dedica, qué necesita y para cuándo. Cuanto más sepa, mejor le respondo.",
+"Falta o seu nome.": "Falta su nombre.",
+"Falta o seu email — sem ele não lhe consigo responder.":
+  "Falta su correo: sin él no puedo responderle.",
+"Esse email não parece estar bem escrito. Confirme, por favor.":
+  "Ese correo no parece estar bien escrito. Compruébelo, por favor.",
+"Escreva um pouco mais na mensagem, para eu perceber o que precisa.":
+  "Escriba un poco más en el mensaje, para que entienda qué necesita.",
+"Se não se abriu nada, o seu telemóvel ou computador não tem aplicação de email configurada. Não faz mal: <b>já copiámos a mensagem toda</b>. Abra o Gmail ou o site do seu email, cole no corpo da mensagem e envie para <b>wesley@tecnovadigital.pt</b>.":
+  "Si no se ha abierto nada, su móvil u ordenador no tiene aplicación de correo configurada. No importa: <b>ya hemos copiado el mensaje entero</b>. Abra Gmail o la web de su correo, péguelo en el cuerpo del mensaje y envíelo a <b>wesley@tecnovadigital.pt</b>.",
+"<span class=\"ic\">⏱️</span><span><b>Quando respondo.</b> Leio tudo e respondo o mais depressa que consigo, normalmente no próprio dia. Se ao fim de 24 horas não tiver notícias minhas, insista pelo WhatsApp — é sinal de que a mensagem se perdeu pelo caminho.</span>":
+  "<span class=\"ic\">⏱️</span><span><b>Cuándo respondo.</b> Lo leo todo y respondo lo más rápido que puedo, normalmente el mismo día. Si al cabo de 24 horas no tiene noticias mías, insista por WhatsApp: es señal de que el mensaje se perdió por el camino.</span>",
+"<span class=\"ic\">🌍</span><span><b>Onde trabalho.</b> Faço sites a partir de Portugal, à distância, para Portugal e para o Brasil. Nunca precisa de sair do sítio onde está.</span>":
+  "<span class=\"ic\">🌍</span><span><b>Dónde trabajo.</b> Hago webs desde Portugal, a distancia, para Portugal y para Brasil. Nunca necesita moverse de donde está.</span>",
+"<span class=\"ic\">💶</span><span><b>Perguntar não custa nada.</b> A conversa, a proposta e a simulação do seu site são gratuitas. Só paga se quiser avançar.</span>":
+  "<span class=\"ic\">💶</span><span><b>Preguntar no cuesta nada.</b> La conversación, la propuesta y la simulación de su web son gratuitas. Solo paga si quiere seguir adelante.</span>",
+"Ver quanto custa o meu site": "Ver cuánto cuesta mi web",
+
+/* ---------- página de pagamento (acrescentos) ---------- */
+"Já tem um orçamento e perdeu o link? Diga-me a referência que lhe dei e eu volto a enviá-lo:":
+  "¿Ya tiene un presupuesto y ha perdido el enlace? Dígame la referencia que le di y se lo vuelvo a enviar:",
+"Depois de pagar, mande-me o comprovativo por onde lhe der mais jeito. Confirmo e arranco com o site.":
+  "Después de pagar, envíeme el justificante por donde le resulte más cómodo. Lo confirmo y arranco con la web.",
+"Enviar comprovativo por email": "Enviar el justificante por correo",
+"Alguma dúvida antes de pagar? Fale comigo:": "¿Alguna duda antes de pagar? Hable conmigo:",
+"<b>Só paga a segunda metade quando o site estiver no ar</b> e aprovado por si. Se não gostar do que vir, não avança — e não fica preso a nada.":
+  "<b>Solo paga la segunda mitad cuando la web esté en línea</b> y aprobada por usted. Si no le gusta lo que ve, no sigue adelante, y no queda atado a nada."
 };

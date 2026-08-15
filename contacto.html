@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contacto — TECNOVA Digital | Wesley Vianna</title>
+<meta name="description" content="Fale com a TECNOVA Digital: escreva para wesley@tecnovadigital.pt ou pelo WhatsApp +351 933 113 525. Resposta rápida, sem compromisso.">
+<link rel="canonical" href="https://tecnovadigital.pt/contacto.html">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16100b">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=23">
+<link rel="stylesheet" href="assistente.css?v=23">
+<link rel="stylesheet" href="i18n.css?v=23">
+<style>
+/* Uma regra de classe (0,1,0) vence o [hidden] do navegador, que não tem
+   especificidade nenhuma. Sem este !important, tudo o que devia estar
+   escondido aparece na mesma. */
+[hidden]{display:none!important}
+
+.ct-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:34px}
+@media(max-width:760px){.ct-grid{grid-template-columns:1fr}}
+
+/* os dois caminhos diretos: email e WhatsApp */
+.ct-via{display:block;background:var(--ink-2);border:1px solid rgba(217,178,110,.22);
+  border-radius:20px;padding:26px 24px;text-decoration:none;color:var(--cream);
+  transition:border-color .2s,transform .2s}
+.ct-via:hover{border-color:var(--gold);transform:translateY(-3px)}
+.ct-via .ic{font-size:1.7rem;line-height:1;display:block;margin-bottom:12px}
+.ct-via h3{font-size:1.05rem;color:var(--gold-soft);margin-bottom:6px}
+.ct-via .val{color:var(--gold);font-weight:700;font-size:.98rem;word-break:break-all}
+.ct-via p{color:var(--cream-dim);font-size:.85rem;margin-top:8px;line-height:1.55}
+.ct-via.wa:hover{border-color:var(--wa)}
+.ct-via.wa .val{color:var(--wa)}
+
+.ct-copiar{margin-top:14px;background:none;border:1px solid rgba(217,178,110,.3);
+  color:var(--gold-soft);border-radius:999px;padding:8px 15px;font-family:inherit;
+  font-size:.74rem;font-weight:700;cursor:pointer;min-height:40px}
+.ct-copiar:hover{background:rgba(217,178,110,.12)}
+
+/* o formulário */
+.ct-form{background:var(--ink-2);border:1px solid rgba(217,178,110,.22);
+  border-radius:22px;padding:32px 30px;margin-top:18px}
+@media(max-width:560px){.ct-form{padding:26px 20px}.ct-via{padding:22px 20px}}
+.ct-form label{display:block;font-size:.78rem;color:var(--gold-soft);
+  margin:16px 0 6px;font-weight:700}
+.ct-form input,.ct-form select,.ct-form textarea{
+  width:100%;padding:13px 14px;border-radius:10px;border:1px solid rgba(217,178,110,.25);
+  background:#0f0b07;color:var(--cream);font-family:inherit;
+  /* 16px é o mínimo: abaixo disso o iPhone dá zoom sozinho ao tocar no campo. */
+  font-size:16px;
+}
+.ct-form textarea{min-height:130px;resize:vertical;line-height:1.6}
+.ct-form input:focus,.ct-form select:focus,.ct-form textarea:focus{
+  outline:none;border-color:var(--gold)}
+.ct-dupla{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+@media(max-width:560px){.ct-dupla{grid-template-columns:1fr}}
+.ct-opcional{color:var(--cream-dim);font-weight:600;text-transform:none;letter-spacing:0}
+
+.ct-erro{color:#ff9c8a;font-size:.85rem;margin-top:10px}
+.ct-aviso{background:rgba(217,178,110,.08);border:1px solid rgba(217,178,110,.3);
+  border-radius:14px;padding:16px 18px;margin-top:18px;color:var(--cream-dim);
+  font-size:.86rem;line-height:1.6}
+.ct-aviso b{color:var(--cream)}
+
+.ct-linhas{list-style:none;margin-top:34px;display:grid;gap:0}
+.ct-linhas li{display:flex;gap:14px;align-items:flex-start;padding:15px 0;
+  border-bottom:1px dashed rgba(217,178,110,.14);color:var(--cream-dim);font-size:.9rem;line-height:1.6}
+.ct-linhas li:last-child{border:none}
+.ct-linhas .ic{font-size:1.1rem;line-height:1.4;flex:none}
+.ct-linhas b{color:var(--cream)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="index.html">
+      <span class="logo-mark">T</span>
+      <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
+    </a>
+    <nav class="links" id="navLinks">
+      <a class="" href="index.html">Início</a>
+      <a class="" href="servicos.html">O que fazemos</a>
+      <a class="" href="pacotes.html">Pacotes</a>
+      <span class="nav-drop">
+        <a class="nav-drop-toggle" href="modelos.html">Modelos</a>
+        <div class="nav-drop-menu">
+          <a href="modelo-barbearia.html">Barbearia</a>
+          <a href="modelo-estetica.html">Clínica de Estética</a>
+          <a href="modelo-restaurante.html">Restaurante &amp; Café</a>
+          <a href="modelo-ginasio.html">Ginásio &amp; Personal Trainer</a>
+          <a href="modelo-oficina.html">Oficina Automóvel</a>
+          <a href="modelo-salao.html">Salão de Beleza</a>
+          <a href="modelo-confeitaria.html">Confeitaria &amp; Bolos</a>
+          <a class="dd-all" href="modelos.html">Todos os modelos →</a>
+        </div>
+      </span>
+      <a class="" href="orcamento.html">Simulador</a>
+      <a class="" href="renovacao.html">Já tem site?</a>
+      <a class="" href="sobre.html">Sobre</a>
+      <a href="conta.html" id="navAccount">Entrar / Criar conta</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn btn-gold" href="orcamento.html">Pedir orçamento</a>
+      <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<section class="page-hero">
+  <div class="wrap">
+    <p class="eyebrow">Contacto</p>
+    <h1>Fale <i>diretamente</i> comigo</h1>
+    <p class="lead">Não há central telefónica nem formulário que ninguém lê do outro lado. Quem responde sou eu, o Wesley. Diga-me o que tem em mãos e digo-lhe se consigo ajudar — mesmo que a resposta seja que não.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap" style="max-width:820px">
+
+    <div class="ct-grid">
+      <a class="ct-via reveal" href="mailto:wesley@tecnovadigital.pt?subject=Contacto%20pelo%20site%20da%20TECNOVA%20Digital">
+        <span class="ic">✉️</span>
+        <h3>Email</h3>
+        <span class="val">wesley@tecnovadigital.pt</span>
+        <p>Para propostas, dúvidas sobre preços ou envio de ficheiros. Toque para escrever.</p>
+      </a>
+      <a class="ct-via wa reveal" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Vim%20da%20p%C3%A1gina%20de%20contacto%20do%20site." target="_blank" rel="noopener">
+        <span class="ic">💬</span>
+        <h3>WhatsApp</h3>
+        <span class="val">+351 933 113 525</span>
+        <p>Para o que é rápido: uma pergunta, uma foto, uma ideia à pressa.</p>
+      </a>
+    </div>
+
+    <div style="text-align:center">
+      <button class="ct-copiar" type="button" id="ctCopiar">Copiar o endereço de email</button>
+    </div>
+
+    <!-- Formulário. Não há servidor nenhum por trás deste site, por isso a
+         mensagem não é enviada por nós: montamos o email já escrito e
+         entregamo-lo à aplicação de email de quem está a escrever. Quem
+         carrega no botão fica com a mensagem à frente dos olhos, e é ele que
+         a envia. Nada se perde por o nosso lado ter falhado, porque não há
+         lado nenhum a falhar. -->
+    <form class="ct-form reveal" id="ctForm" novalidate>
+      <p class="eyebrow" style="margin-bottom:6px">Ou escreva aqui</p>
+      <p style="color:var(--cream-dim);font-size:.9rem;margin-top:10px">
+        Preencha e carregue em enviar. Abre-se a sua aplicação de email com a
+        mensagem já escrita — só tem de confirmar.
+      </p>
+
+      <div class="ct-dupla">
+        <div>
+          <label for="ctNome">O seu nome</label>
+          <input type="text" id="ctNome" name="nome" autocomplete="name" placeholder="Nome e apelido">
+        </div>
+        <div>
+          <label for="ctNegocio">Negócio <span class="ct-opcional">(opcional)</span></label>
+          <input type="text" id="ctNegocio" name="negocio" autocomplete="organization" placeholder="Ex.: Barbearia Imperio">
+        </div>
+      </div>
+
+      <div class="ct-dupla">
+        <div>
+          <label for="ctEmail">O seu email</label>
+          <input type="email" id="ctEmail" name="email" autocomplete="email" placeholder="oseuemail@exemplo.com">
+        </div>
+        <div>
+          <label for="ctTel">Telemóvel <span class="ct-opcional">(opcional)</span></label>
+          <input type="tel" id="ctTel" name="tel" autocomplete="tel" placeholder="+351 9xx xxx xxx">
+        </div>
+      </div>
+
+      <label for="ctAssunto">Sobre o que é</label>
+      <select id="ctAssunto" name="assunto">
+        <option value="Quero um site novo">Quero um site novo</option>
+        <option value="Já tenho site e quero renovar">Já tenho site e quero renovar</option>
+        <option value="Dúvida sobre preços ou pacotes">Dúvida sobre preços ou pacotes</option>
+        <option value="Dúvida sobre um orçamento que já fiz">Dúvida sobre um orçamento que já fiz</option>
+        <option value="Pagamento ou fatura">Pagamento ou fatura</option>
+        <option value="Outro assunto">Outro assunto</option>
+      </select>
+
+      <label for="ctMensagem">A sua mensagem</label>
+      <textarea id="ctMensagem" name="mensagem" placeholder="Conte-me o que faz, o que precisa e para quando. Quanto mais souber, melhor lhe respondo."></textarea>
+
+      <p class="ct-erro" id="ctErro" hidden></p>
+
+      <button class="btn btn-gold" type="submit" id="ctEnviar"
+              style="width:100%;justify-content:center;margin-top:20px">Enviar email</button>
+
+      <div class="ct-aviso" id="ctFalhou" hidden>
+        <p>Se não se abriu nada, o seu telemóvel ou computador não tem aplicação
+        de email configurada. Não faz mal: <b>já copiámos a mensagem toda</b>.
+        Abra o Gmail ou o site do seu email, cole no corpo da mensagem e envie
+        para <b>wesley@tecnovadigital.pt</b>.</p>
+      </div>
+    </form>
+
+    <ul class="ct-linhas reveal">
+      <li><span class="ic">⏱️</span><span><b>Quando respondo.</b> Leio tudo e respondo o mais depressa que consigo, normalmente no próprio dia. Se ao fim de 24 horas não tiver notícias minhas, insista pelo WhatsApp — é sinal de que a mensagem se perdeu pelo caminho.</span></li>
+      <li><span class="ic">🌍</span><span><b>Onde trabalho.</b> Faço sites a partir de Portugal, à distância, para Portugal e para o Brasil. Nunca precisa de sair do sítio onde está.</span></li>
+      <li><span class="ic">💶</span><span><b>Perguntar não custa nada.</b> A conversa, a proposta e a simulação do seu site são gratuitas. Só paga se quiser avançar.</span></li>
+    </ul>
+
+    <div style="text-align:center;margin-top:46px">
+      <a class="btn btn-gold reveal" href="orcamento.html">Ver quanto custa o meu site</a>
+    </div>
+
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="logo" href="index.html">
+          <span class="logo-mark">T</span>
+          <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
+        </a>
+        <p>Sites &amp; Apps que trabalham por si. Sites profissionais, marcações pelo WhatsApp e cartões de fidelidade digital para negócios locais.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navegação</h4>
+        <a href="servicos.html">O que fazemos</a>
+        <a href="pacotes.html">Pacotes</a>
+        <a href="orcamento.html">Simulador de orçamento</a>
+        <a href="modelos.html">Modelos</a>
+        <a href="renovacao.html">Já tem site?</a>
+        <a href="sobre.html">Sobre</a>
+        <a href="contacto.html">Contacto</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contacto</h4>
+        <a href="mailto:wesley@tecnovadigital.pt">wesley@tecnovadigital.pt</a>
+        <a href="https://wa.me/351933113525" target="_blank" rel="noopener">WhatsApp +351 933 113 525</a>
+        <a href="conta.html">Entrar / Criar conta</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      TECNOVA Digital · Wesley Vianna ·
+      <a href="mailto:wesley@tecnovadigital.pt">wesley@tecnovadigital.pt</a> ·
+      <a href="https://wa.me/351933113525" target="_blank" rel="noopener">WhatsApp +351 933 113 525</a>
+    </div>
+  </div>
+</footer>
+
+<a class="wa-float" href="https://wa.me/351933113525?text=Ol%C3%A1%20Wesley!%20Vim%20do%20site%20da%20TECNOVA." target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#062b14"><path d="M17.5 14.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.14-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.5 0 1.47 1.07 2.9 1.22 3.1.15.2 2.1 3.2 5.1 4.49.71.3 1.27.49 1.7.63.72.23 1.37.2 1.88.12.58-.09 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35zM12 2a10 10 0 0 0-8.66 15L2 22l5.15-1.35A10 10 0 1 0 12 2z"/></svg>
+</a>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="auth-nav.js?v=23"></script>
+
+<script>
+/* ============================================================
+   Página de contacto
+   ------------------------------------------------------------
+   O site é estático: não há servidor para receber formulários.
+   Em vez de fingir que enviámos a mensagem, montamos o email e
+   entregamo-lo a quem está a escrever, para ele carregar em
+   enviar. Fica no «enviados» dele e ninguém perde nada.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var EMAIL = 'wesley@tecnovadigital.pt';
+  var $ = function (s) { return document.querySelector(s); };
+
+  /* ---------- copiar o endereço para a área de transferência ---------- */
+  function copiar(texto, botao, feito) {
+    var antes = botao ? botao.textContent : '';
+    function ok() {
+      if (!botao) return;
+      botao.textContent = feito;
+      setTimeout(function () { botao.textContent = antes; }, 1800);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(texto).then(ok, funcaoAntiga);
+    }
+    return funcaoAntiga();
+
+    // Safari antigo e páginas sem HTTPS não têm a API moderna.
+    function funcaoAntiga() {
+      var t = document.createElement('textarea');
+      t.value = texto;
+      t.setAttribute('readonly', '');
+      t.style.position = 'fixed';
+      t.style.top = '-1000px';
+      document.body.appendChild(t);
+      t.select();
+      try { document.execCommand('copy'); ok(); } catch (e) {}
+      document.body.removeChild(t);
+    }
+  }
+
+  $('#ctCopiar').addEventListener('click', function () {
+    copiar(EMAIL, this, '✓ Copiado');
+  });
+
+  /* ---------- o formulário ---------- */
+  var form  = $('#ctForm');
+  var erro  = $('#ctErro');
+  var aviso = $('#ctFalhou');
+
+  function queixa(mensagem, campo) {
+    erro.textContent = mensagem;
+    erro.hidden = false;
+    if (campo) { campo.focus(); }
+    return false;
+  }
+
+  // Um email válido tem alguma coisa, um @, alguma coisa, um ponto e um fim.
+  // Não vale a pena ser mais esperto do que isto: só serve para o visitante
+  // não se enganar a si próprio no endereço de resposta.
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  function validar() {
+    erro.hidden = true;
+    var nome = $('#ctNome').value.trim();
+    var mail = $('#ctEmail').value.trim();
+    var msg  = $('#ctMensagem').value.trim();
+
+    if (!nome) return queixa('Falta o seu nome.', $('#ctNome'));
+    if (!mail) return queixa('Falta o seu email — sem ele não lhe consigo responder.', $('#ctEmail'));
+    if (!EMAIL_RE.test(mail)) return queixa('Esse email não parece estar bem escrito. Confirme, por favor.', $('#ctEmail'));
+    if (msg.length < 10) return queixa('Escreva um pouco mais na mensagem, para eu perceber o que precisa.', $('#ctMensagem'));
+    return true;
+  }
+
+  function corpo() {
+    var linhas = [
+      $('#ctMensagem').value.trim(),
+      '',
+      '---',
+      'Nome: ' + $('#ctNome').value.trim()
+    ];
+    var negocio = $('#ctNegocio').value.trim();
+    var tel     = $('#ctTel').value.trim();
+    if (negocio) linhas.push('Negócio: ' + negocio);
+    linhas.push('Email: ' + $('#ctEmail').value.trim());
+    if (tel) linhas.push('Telemóvel: ' + tel);
+    linhas.push('Enviado pela página de contacto de tecnovadigital.pt');
+    return linhas.join('\n');
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!validar()) return;
+
+    var assunto = $('#ctAssunto').value + ' — ' + $('#ctNome').value.trim();
+    var texto   = corpo();
+
+    // Copiamos primeiro. Se a aplicação de email não abrir, a mensagem já
+    // está na área de transferência e não se perdeu nada do que escreveu.
+    copiar(texto, null, '');
+
+    // Abrimos com um link a sério em vez de `location.href`. O Safari do
+    // iPhone é esquisito com endereços mailto atribuídos por JavaScript, mas
+    // nunca recusa o toque numa ligação — e é disto que ele veio, do toque
+    // do visitante no botão.
+    var ligacao = document.createElement('a');
+    ligacao.href = 'mailto:' + EMAIL +
+      '?subject=' + encodeURIComponent(assunto) +
+      '&body='    + encodeURIComponent(texto);
+    ligacao.style.display = 'none';
+    document.body.appendChild(ligacao);
+    ligacao.click();
+    document.body.removeChild(ligacao);
+
+    // Quem não tem aplicação de email associada não vê nada acontecer.
+    // Passado um instante, dizemos-lhe o que fazer em vez de o deixar a
+    // olhar para um botão que aparentemente não fez nada.
+    setTimeout(function () { aviso.hidden = false; }, 1200);
+  });
+})();
+</script>
+
+<script>
+const io=new IntersectionObserver(es=>{
+  es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})
+},{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+</script>
+<script src="site.js?v=23"></script>
+<script src="idiomas/en.js?v=23"></script>
+<script src="idiomas/es.js?v=23"></script>
+<script src="i18n.js?v=23"></script>
+<script src="assistente.js?v=23"></script>
+</body>
+</html>

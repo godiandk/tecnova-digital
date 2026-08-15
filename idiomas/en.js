@@ -987,5 +987,64 @@ window.TECNOVA_DIC.en = {
 "Este modelo foi feito pela TECNOVA Digital. O seu pode ficar assim — ou com a sua própria identidade.":
   "This template was made by TECNOVA Digital. Yours can look like this — or carry your own identity.",
 "Voltar aos modelos": "Back to templates",
-"← Voltar aos modelos": "← Back to templates"
+"← Voltar aos modelos": "← Back to templates",
+
+/* ---------- página de contacto ---------- */
+"Fale <i>diretamente</i> comigo": "Talk to me <i>directly</i>",
+"Não há central telefónica nem formulário que ninguém lê do outro lado. Quem responde sou eu, o Wesley. Diga-me o que tem em mãos e digo-lhe se consigo ajudar — mesmo que a resposta seja que não.":
+  "There is no call centre and no form that nobody reads at the other end. The person who answers is me, Wesley. Tell me what you have in hand and I will tell you whether I can help — even if the answer is no.",
+"Para propostas, dúvidas sobre preços ou envio de ficheiros. Toque para escrever.":
+  "For proposals, questions about prices or sending files. Tap to write.",
+"Para o que é rápido: uma pergunta, uma foto, uma ideia à pressa.":
+  "For the quick things: a question, a photo, an idea in a hurry.",
+"Copiar o endereço de email": "Copy the email address",
+"✓ Copiado": "✓ Copied",
+"Ou escreva aqui": "Or write here",
+"Preencha e carregue em enviar. Abre-se a sua aplicação de email com a mensagem já escrita — só tem de confirmar.":
+  "Fill it in and press send. Your email app opens with the message already written — you only have to confirm.",
+"O seu email": "Your email",
+"Negócio <span class=\"ct-opcional\">(opcional)</span>":
+  "Business <span class=\"ct-opcional\">(optional)</span>",
+"Telemóvel <span class=\"ct-opcional\">(opcional)</span>":
+  "Mobile <span class=\"ct-opcional\">(optional)</span>",
+"Sobre o que é": "What is it about",
+"Quero um site novo": "I want a new website",
+"Já tenho site e quero renovar": "I already have a site and want to renew it",
+"Dúvida sobre preços ou pacotes": "Question about prices or packages",
+"Dúvida sobre um orçamento que já fiz": "Question about a quote I already made",
+"Pagamento ou fatura": "Payment or invoice",
+"Outro assunto": "Something else",
+"A sua mensagem": "Your message",
+"Enviar email": "Send email",
+"oseuemail@exemplo.com": "youremail@example.com",
+"Nome e apelido": "First and last name",
+"Ex.: Barbearia Imperio": "E.g.: Imperio Barbershop",
+"Conte-me o que faz, o que precisa e para quando. Quanto mais souber, melhor lhe respondo.":
+  "Tell me what you do, what you need and by when. The more I know, the better I can answer.",
+"Falta o seu nome.": "Your name is missing.",
+"Falta o seu email — sem ele não lhe consigo responder.":
+  "Your email is missing — without it I cannot reply to you.",
+"Esse email não parece estar bem escrito. Confirme, por favor.":
+  "That email does not look right. Please check it.",
+"Escreva um pouco mais na mensagem, para eu perceber o que precisa.":
+  "Write a little more in the message, so I can understand what you need.",
+"Se não se abriu nada, o seu telemóvel ou computador não tem aplicação de email configurada. Não faz mal: <b>já copiámos a mensagem toda</b>. Abra o Gmail ou o site do seu email, cole no corpo da mensagem e envie para <b>wesley@tecnovadigital.pt</b>.":
+  "If nothing opened, your phone or computer has no email app set up. Never mind: <b>we have already copied the whole message</b>. Open Gmail or your webmail, paste it into the body and send it to <b>wesley@tecnovadigital.pt</b>.",
+"<span class=\"ic\">⏱️</span><span><b>Quando respondo.</b> Leio tudo e respondo o mais depressa que consigo, normalmente no próprio dia. Se ao fim de 24 horas não tiver notícias minhas, insista pelo WhatsApp — é sinal de que a mensagem se perdeu pelo caminho.</span>":
+  "<span class=\"ic\">⏱️</span><span><b>When I reply.</b> I read everything and answer as fast as I can, usually the same day. If after 24 hours you have not heard from me, try again on WhatsApp — it means the message got lost along the way.</span>",
+"<span class=\"ic\">🌍</span><span><b>Onde trabalho.</b> Faço sites a partir de Portugal, à distância, para Portugal e para o Brasil. Nunca precisa de sair do sítio onde está.</span>":
+  "<span class=\"ic\">🌍</span><span><b>Where I work.</b> I build websites from Portugal, remotely, for Portugal and Brazil. You never have to leave where you are.</span>",
+"<span class=\"ic\">💶</span><span><b>Perguntar não custa nada.</b> A conversa, a proposta e a simulação do seu site são gratuitas. Só paga se quiser avançar.</span>":
+  "<span class=\"ic\">💶</span><span><b>Asking costs nothing.</b> The conversation, the proposal and the mock-up of your site are free. You only pay if you decide to go ahead.</span>",
+"Ver quanto custa o meu site": "See what my website costs",
+
+/* ---------- página de pagamento (acrescentos) ---------- */
+"Já tem um orçamento e perdeu o link? Diga-me a referência que lhe dei e eu volto a enviá-lo:":
+  "Already have a quote and lost the link? Tell me the reference I gave you and I will send it again:",
+"Depois de pagar, mande-me o comprovativo por onde lhe der mais jeito. Confirmo e arranco com o site.":
+  "After paying, send me the receipt whichever way suits you best. I confirm it and start the site.",
+"Enviar comprovativo por email": "Send the receipt by email",
+"Alguma dúvida antes de pagar? Fale comigo:": "Any doubts before paying? Talk to me:",
+"<b>Só paga a segunda metade quando o site estiver no ar</b> e aprovado por si. Se não gostar do que vir, não avança — e não fica preso a nada.":
+  "<b>You only pay the second half once the site is live</b> and approved by you. If you do not like what you see, it does not go ahead — and you are not tied to anything."
 };
