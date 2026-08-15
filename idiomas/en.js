@@ -1256,5 +1256,9 @@ window.TECNOVA_DIC.en = {
   "Rather think it over? The price is held for you for 15 days. Keep the reference and come back whenever you like — or talk to me at",
 "contacto": "contact",
 "Escreva à vontade, mesmo que não saiba o nome técnico. Por exemplo: «queria que os clientes pudessem ver a encomenda a ser preparada», «tenho 800 produtos numa folha de Excel», «queria ligar isto ao meu programa de faturação», «já tenho logótipo e fotos», «preciso disto pronto até ao fim do mês».":
-  "Write freely, even if you do not know the technical name for it. For example: «I would like customers to watch their order being prepared», «I have 800 products in an Excel sheet», «I would like to connect this to my invoicing software», «I already have a logo and photos», «I need this ready by the end of the month»."
+  "Write freely, even if you do not know the technical name for it. For example: «I would like customers to watch their order being prepared», «I have 800 products in an Excel sheet», «I would like to connect this to my invoicing software», «I already have a logo and photos», «I need this ready by the end of the month».",
+
+/* ---------- comandos do carrossel ---------- */
+"Parar a rotação dos destaques": "Pause the highlights",
+"Retomar a rotação dos destaques": "Resume the highlights"
 };

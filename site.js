@@ -56,7 +56,49 @@
       dots.forEach(function (d, n) { d.classList.toggle("active", n === idx); });
     }
     function next() { go(idx + 1); }
-    function restart() { clearInterval(timer); timer = setInterval(next, DELAY); }
+
+    /* ---------- parar e voltar a andar ----------
+       `pausado` manda em tudo: com ele ligado, nem o rato a sair da zona nem
+       um toque nas setas voltam a pôr o carrossel a andar. Se o visitante
+       carregou em parar, é porque quer ler. */
+    var pausado = false;
+    var btnPausa = document.getElementById("hsPausa");
+
+    function restart() {
+      clearInterval(timer);
+      if (pausado) return;
+      timer = setInterval(next, DELAY);
+    }
+
+    function pintarPausa() {
+      if (!btnPausa) return;
+      var ip = btnPausa.querySelector(".ic-pausa");
+      var it = btnPausa.querySelector(".ic-play");
+      if (ip) ip.hidden = pausado;
+      if (it) it.hidden = !pausado;
+      btnPausa.setAttribute("aria-pressed", pausado ? "true" : "false");
+      btnPausa.setAttribute("aria-label",
+        pausado ? "Retomar a rotação dos destaques" : "Parar a rotação dos destaques");
+    }
+
+    if (btnPausa) {
+      btnPausa.addEventListener("mousedown", function (e) { e.preventDefault(); });
+      btnPausa.addEventListener("click", function () {
+        pausado = !pausado;
+        pintarPausa();
+        restart();
+      });
+    }
+
+    // Quem pediu ao sistema para reduzir animações não quer isto a mexer
+    // sozinho. Fica parado, mas com o botão à mão para pôr a andar.
+    try {
+      if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        pausado = true;
+      }
+    } catch (e) {}
+    pintarPausa();
+
 
     var prev = slider.querySelector(".hs-arrow.prev");
     var nxt = slider.querySelector(".hs-arrow.next");

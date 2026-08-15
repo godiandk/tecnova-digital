@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=25">
-<link rel="stylesheet" href="assistente.css?v=25">
-<link rel="stylesheet" href="i18n.css?v=25">
+<link rel="stylesheet" href="estilo.css?v=26">
+<link rel="stylesheet" href="assistente.css?v=26">
+<link rel="stylesheet" href="i18n.css?v=26">
 <style>
 .hero{
   min-height:100vh;display:flex;align-items:center;
@@ -41,13 +41,41 @@
 }
 .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:60px;align-items:center}
 /* carrossel do hero */
+/* ============================================================
+   O palco do carrossel
+   ------------------------------------------------------------
+   Altura FIXA e igual para os cinco slides. Antes, cada slide
+   arrastava a secção para a sua própria altura — 941px num,
+   692px no seguinte — e a página dava um pulo de 355px de um
+   fotograma para o outro. Não é coisa que se resolva a animar:
+   resolve-se dando ao palco uma medida só, e fazendo o conteúdo
+   caber lá dentro.
+
+   `svh` em vez de `vh` porque no telemóvel a barra do navegador
+   aparece e desaparece; com `vh` o hero mudava de altura ao rolar.
+   ============================================================ */
 .hero-slider{position:relative;overflow:hidden;padding:0;
+  height:min(100svh,820px);
+  min-height:600px;
   background:
     radial-gradient(900px 500px at 80% -10%,rgba(217,178,110,.12),transparent 60%),
     radial-gradient(700px 500px at -10% 100%,rgba(217,178,110,.07),transparent 60%),
     var(--ink);}
-.hs-slide{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .8s ease;pointer-events:none;display:flex;align-items:center;min-height:min(100vh,800px);padding:108px 0 80px}
-.hs-slide.active{position:relative;opacity:1;visibility:visible;pointer-events:auto}
+/* Os cinco empilhados no mesmo sítio, cada um a preencher o palco todo e a
+   centrar o que tem dentro. `overflow-y:auto` é a válvula de segurança: se
+   um dia o texto crescer de mais, rola em vez de ser cortado. */
+.hs-slide{position:absolute;inset:0;opacity:0;visibility:hidden;
+  /* Sem a espera no `visibility`, o slide que saía desaparecia de repente e
+     ficava um vazio de quase um segundo até o seguinte aparecer. */
+  transition:opacity .6s ease, visibility 0s linear .6s;
+  pointer-events:none;display:flex;align-items:center;
+  overflow-y:auto;overscroll-behavior:contain;
+  padding:100px 0 78px}
+.hs-slide.active{opacity:1;visibility:visible;pointer-events:auto;z-index:2;
+  transition:opacity .6s ease, visibility 0s}
+@media(prefers-reduced-motion:reduce){
+  .hs-slide{transition:none}
+}
 .hs-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:60px;align-items:center;width:100%}
 .hs-grid.solo{grid-template-columns:1fr;max-width:820px}
 .hs-slide h1,.hs-slide h2{font-size:clamp(2.6rem,6vw,4.4rem);line-height:1.06;font-weight:800;margin:22px 0 26px;max-width:15em}
@@ -57,12 +85,50 @@
 .hs-arrow{display:none}
 .hs-arrow.prev{left:24px}.hs-arrow.next{right:24px}
 @media(min-width:1180px){.hs-arrow{display:grid}}
-.hs-dots{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:0;z-index:10}
+.hs-comandos{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:4px;z-index:10;
+  /* um vidro escuro por trás: separa os comandos do fundo do slide e dá-lhes
+     ar próprio, em vez de ficarem a boiar sobre o texto */
+  background:rgba(15,11,7,.5);border:1px solid rgba(217,178,110,.18);
+  border-radius:999px;padding:3px 8px;backdrop-filter:blur(6px)}
+.hs-dots{display:flex;gap:0}
+.hs-pausa{width:34px;height:34px;border-radius:50%;border:1px solid rgba(217,178,110,.4);
+  background:transparent;color:var(--gold-soft);cursor:pointer;
+  display:grid;place-items:center;padding:0;margin-left:4px;transition:background .2s,color .2s}
+.hs-pausa:hover{background:var(--gold);color:var(--ink)}
+.hs-pausa svg{width:12px;height:12px;fill:currentColor;display:block}
+
 /* ponto de 10px, área de toque de 34px (o ponto vai no ::before) */
 .hs-dots button{width:34px;height:34px;border:none;background:none;cursor:pointer;padding:0;display:grid;place-items:center}
 .hs-dots button::before{content:"";width:10px;height:10px;border-radius:50%;border:1px solid var(--gold-soft);background:transparent;transition:all .25s}
 .hs-dots button.active::before{background:var(--gold-soft);transform:scale(1.25)}
-@media(max-width:900px){.hs-grid{grid-template-columns:1fr}.hs-grid.solo{max-width:none}.phone{display:none}.hs-arrow{display:none}.hs-slide{align-items:flex-start;min-height:82vh;padding:104px 0 84px}}
+/* No telemóvel os comandos disputavam o fundo do ecrã com o botão da app e
+   com a bolha do chat. Encolhem, e o botão da app sai desta página — o
+   último slide já convida a criar conta, não é preciso dizê-lo duas vezes.
+   Este bloco vem DEPOIS das regras acima de propósito: à mesma
+   especificidade, quem vem por último é que manda. */
+@media(max-width:900px){
+  /* Os pontos ficam nos 34px de área de toque — encolhi-os para 28px e a
+     auditoria apanhou-me: um alvo de 28px é pequeno para um polegar. Quem
+     dá o espaço é o alinhamento à esquerda, não o tamanho do botão. */
+  .hs-comandos{gap:2px;padding:2px 6px}
+  .hs-pausa{width:34px;height:34px;margin-left:3px}
+  .hs-pausa svg{width:12px;height:12px}
+  body > .app-float{display:none}
+}
+/* Num ecrã de 320px nem assim o grupo centrado escapa à bolha do chat.
+   Encosta-se à esquerda, que é o lado livre. */
+@media(max-width:400px){
+  .hs-comandos{left:14px;transform:none}
+}
+@media(max-width:900px){
+  .hs-grid{grid-template-columns:1fr}
+  .hs-grid.solo{max-width:none}
+  .phone{display:none}
+  .hs-arrow{display:none}
+  .hero-slider{height:min(100svh,740px);min-height:560px}
+  .hs-slide{align-items:center;padding:88px 0 72px}
+}
 .hero h1{font-size:clamp(2.6rem,6vw,4.4rem);line-height:1.06;font-weight:800;margin:22px 0 26px}
 .hero h1 em{font-style:italic;color:var(--gold);position:relative;white-space:nowrap}
 .hero h1 em::after{content:"";position:absolute;left:0;right:0;bottom:-10px;height:3px;background:linear-gradient(90deg,var(--gold),transparent)}
@@ -72,11 +138,11 @@
 .of-flag{display:inline-flex;align-items:center;gap:10px;background:rgba(217,178,110,.14);border:1px solid rgba(217,178,110,.45);color:var(--gold-soft);border-radius:999px;padding:7px 18px 7px 14px;font-size:.74rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
 .of-pulse{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:ofp 1.6s infinite}
 @keyframes ofp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
-.of-txt h1{margin:20px 0 18px;font-size:clamp(2.4rem,5.4vw,4rem)}
+.of-txt h1{margin:12px 0 12px;font-size:clamp(2.3rem,5vw,3.6rem)}
 .of-txt .lead{font-size:1.02rem;max-width:34em}
-.of-chips{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 24px}
+.of-chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 16px}
 .of-chips span{background:rgba(255,255,255,.045);border:1px solid rgba(217,178,110,.22);border-radius:999px;padding:7px 14px;font-size:.79rem;color:var(--cream-dim);font-weight:600;white-space:nowrap}
-.of-oferta{display:flex;align-items:center;gap:18px;background:linear-gradient(120deg,rgba(217,178,110,.18),rgba(217,178,110,.04));border:1px solid rgba(217,178,110,.45);border-radius:16px;padding:16px 20px;margin-bottom:26px;flex-wrap:wrap}
+.of-oferta{display:flex;align-items:center;gap:18px;background:linear-gradient(120deg,rgba(217,178,110,.18),rgba(217,178,110,.04));border:1px solid rgba(217,178,110,.45);border-radius:16px;padding:14px 18px;margin-bottom:18px;flex-wrap:wrap}
 .of-off{flex:none;text-align:center;padding-right:18px;border-right:1px solid rgba(217,178,110,.3)}
 .of-off b{display:block;font-family:'Playfair Display',serif;font-size:2.3rem;color:var(--gold);line-height:1}
 .of-off span{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--cream-dim);font-weight:700}
@@ -93,21 +159,25 @@
   .of-oferta{margin-bottom:18px;padding:13px 18px}
   .of-off b{font-size:2rem}
 }
-.of-nota{margin-top:18px;font-size:.82rem;color:var(--cream-dim)}
+.of-nota{margin-top:12px;font-size:.82rem;color:var(--cream-dim)}
 .of-foto{position:relative;justify-self:center;max-width:390px}
-.of-foto img{width:100%;height:auto;border-radius:22px;border:1px solid rgba(217,178,110,.32);box-shadow:0 30px 70px rgba(0,0,0,.55)}
+.of-foto img{width:100%;height:auto;max-height:min(52svh,520px);object-fit:cover;object-position:52% 22%;
+  border-radius:22px;border:1px solid rgba(217,178,110,.32);box-shadow:0 30px 70px rgba(0,0,0,.55)}
 .of-foto::after{content:"";position:absolute;inset:auto 0 0 0;height:32%;border-radius:0 0 22px 22px;background:linear-gradient(to top,var(--ink) 4%,transparent 100%);pointer-events:none}
 .of-selo{position:absolute;left:-16px;bottom:12%;z-index:2;display:grid;place-items:center;width:98px;height:98px;border-radius:50%;background:linear-gradient(140deg,var(--gold-soft),var(--gold));color:var(--ink);box-shadow:0 14px 34px rgba(217,178,110,.35);transform:rotate(-11deg)}
 .of-selo b{font-family:'Playfair Display',serif;font-size:1.65rem;line-height:1}
 .of-selo i{font-style:normal;font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 @media(max-width:900px){
-  .hs-slide.oferta{padding-top:78px;padding-bottom:56px;min-height:0}
+  .hs-slide.oferta{padding-top:88px;padding-bottom:74px}
   .of-grid{grid-template-columns:1fr;gap:14px}
   /* no telemóvel a fotografia passa a faixa larga, com o rosto à vista */
   .of-foto{order:-1;max-width:none;width:100%}
-  .of-foto img{height:150px;object-fit:cover;object-position:52% 18%;border-radius:16px}
+  .of-foto img{height:106px;max-height:106px;object-fit:cover;object-position:52% 18%;border-radius:16px}
+  /* As etiquetas repetiam, uma a uma, o que o resumo já diz numa frase.
+     No telemóvel custavam 111px de altura e não acrescentavam nada. */
+  .of-chips{display:none}
   .of-foto::after{height:52%;border-radius:0 0 16px 16px}
-  .of-flag{font-size:.64rem;letter-spacing:.1em;padding:6px 13px 6px 10px;align-self:flex-start}
+  .of-flag{font-size:.64rem;letter-spacing:.1em;padding:6px 13px 6px 10px;align-self:flex-start;max-width:100%;box-sizing:border-box}
   /* no telemóvel a oferta e o botão sobem, para ficarem à vista sem rolar */
   .of-txt{display:flex;flex-direction:column}
   .of-flag{order:1} .of-txt h1{order:2} .of-txt .lead{order:3}
@@ -117,6 +187,8 @@
   .hs-slide.oferta .lead{font-size:.88rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   @media(max-width:400px){.hs-slide.oferta .lead{-webkit-line-clamp:2}}
   .of-oferta{margin:14px 0 16px;padding:11px 14px;gap:12px;flex-wrap:nowrap}
+  .of-oferta>div{min-width:0}
+  .of-off{flex:none}
   .of-off{padding-right:12px}
   .of-off b{font-size:1.6rem}
   .of-off span{font-size:.72rem;letter-spacing:.06em}
@@ -141,6 +213,73 @@
 .hero-proof{display:flex;gap:34px;margin-top:52px;flex-wrap:wrap}
 .proof b{display:block;font-family:'Playfair Display',serif;font-size:1.7rem;color:var(--gold)}
 .proof span{font-size:.8rem;color:var(--cream-dim)}
+
+/* ------------------------------------------------------------
+   O hero no telemóvel
+   ------------------------------------------------------------
+   Com o palco de altura fixa, o conteúdo tem de caber — e os
+   slides 1 e 2 tinham o triplo dos outros. O que mais pesava
+   eram as três provas empilhadas (282px) e os botões um debaixo
+   do outro. Aqui ficam em linha, e o hero passa a ter a mesma
+   medida em todos os cinco.
+   ------------------------------------------------------------ */
+@media(max-width:900px){
+  .hs-slide h1,.hs-slide h2{font-size:clamp(1.9rem,7vw,2.5rem);margin:12px 0 14px}
+  .hs-slide .lead{font-size:.93rem;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .hero-price{margin:4px 0 18px;font-size:.95rem}
+
+  /* Dois botões lado a lado, cada um a metade. Sem `white-space:nowrap`:
+     com ele, a caixa encolhia e o texto derramava para fora do ecrã — e como
+     é o texto e não a caixa que transborda, nem se via a medir o elemento. */
+  .hero-cta{gap:10px;flex-wrap:nowrap}
+  .hero-cta .btn{flex:1 1 0;justify-content:center;padding:12px 10px;font-size:.84rem;
+    min-width:0;line-height:1.2;text-align:center;overflow-wrap:break-word}
+
+  /* as três provas passam a uma fila só, com um traço a separá-las */
+  .hero-proof{gap:0;margin-top:22px;flex-wrap:nowrap;
+    border-top:1px solid rgba(217,178,110,.22);padding-top:14px}
+  .hero-proof .proof{flex:1 1 0;min-width:0;padding:0 10px;
+    border-left:1px solid rgba(217,178,110,.16)}
+  .hero-proof .proof:first-child{padding-left:0;border-left:0}
+  .hero-proof .proof:last-child{padding-right:0}
+  .proof b{font-size:1.15rem;line-height:1.15}
+  .proof span{font-size:.68rem;line-height:1.3;display:block}
+}
+/* Entre o tablet e o portátil o palco é mais baixo do que no desktop, e a
+   folga por cima das provas era o que fazia o slide 2 não caber. */
+@media(min-width:901px) and (max-width:1500px){
+  .hero-proof{margin-top:26px;gap:26px}
+  .hs-slide h1,.hs-slide h2{margin:16px 0 18px}
+}
+/* Nos ecrãs mais estreitos o título ocupa quase tudo. As provas são apoio,
+   não são a mensagem — saem, e o essencial fica à vista sem rolar. */
+@media(max-width:360px){
+  .hero-proof{display:none}
+  .hs-slide h1,.hs-slide h2{font-size:1.75rem}
+  .hs-slide .lead{-webkit-line-clamp:2}
+  .hero-cta .btn{font-size:.76rem;padding:10px 7px;line-height:1.15}
+  .hero-cta{gap:8px}
+  .hs-slide{padding:84px 0 68px}
+  /* Num ecrã de 320px de altura útil, a fotografia é o que menos trabalha:
+     a mensagem e a oferta valem mais do que uma faixa decorativa. Sai. */
+  .of-foto{display:none}
+  .of-flag{font-size:.58rem;padding:5px 11px 5px 9px}
+  .of-txt h1{margin:9px 0 7px}
+  /* A 320px a coluna da direita fica com 200px e o texto desdobrava-se em
+     seis linhas: 218px só para esta caixa. Com o corpo mais pequeno cabe
+     em três, e a caixa passa a ocupar menos de metade. */
+  .of-oferta{margin:10px 0 10px;padding:8px 10px;gap:8px}
+  .of-off{padding-right:9px}
+  .of-off b{font-size:1.5rem}
+  .of-off span{font-size:.73rem;letter-spacing:.04em}
+  .of-oferta>div:last-child b{font-size:.76rem;line-height:1.3}
+  .of-oferta>div:last-child span{font-size:.66rem;line-height:1.32;display:block}
+  .of-nota{display:none}
+  .of-selo{width:54px;height:54px;top:-10px}
+  .of-selo b{font-size:.95rem}
+  .of-selo i{font-size:.6rem}
+}
 .phone{width:290px;margin:0 auto;background:var(--ink-2);border:1px solid rgba(217,178,110,.3);border-radius:38px;padding:14px;box-shadow:0 40px 80px rgba(0,0,0,.55),0 0 0 6px rgba(217,178,110,.06);transform:rotate(3deg)}
 .phone-screen{background:#0f0b07;border-radius:26px;overflow:hidden}
 .ps-hero{padding:26px 18px 20px;background:linear-gradient(160deg,#241a10,#0f0b07)}
@@ -416,7 +555,13 @@
 
   <button type="button" class="hs-arrow prev" aria-label="Destaque anterior">‹</button>
   <button type="button" class="hs-arrow next" aria-label="Destaque seguinte">›</button>
-  <div class="hs-dots" aria-label="Navegação dos destaques"></div>
+  <div class="hs-comandos">
+    <div class="hs-dots" aria-label="Navegação dos destaques"></div>
+    <button type="button" class="hs-pausa" id="hsPausa" aria-label="Parar a rotação dos destaques">
+      <svg viewBox="0 0 12 12" aria-hidden="true" class="ic-pausa"><rect x="1" y="0" width="3.5" height="12" rx="1"/><rect x="7.5" y="0" width="3.5" height="12" rx="1"/></svg>
+      <svg viewBox="0 0 12 12" aria-hidden="true" class="ic-play" hidden><path d="M2 0.5 L11 6 L2 11.5 Z"/></svg>
+    </button>
+  </div>
 </section>
 
 <section class="why">
@@ -559,7 +704,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="auth-nav.js?v=25"></script>
+<script src="auth-nav.js?v=26"></script>
 
 <script>
 const io=new IntersectionObserver(es=>{
@@ -571,9 +716,9 @@ if('serviceWorker' in navigator){
 }
 </script>
 <script src="site.js"></script>
-<script src="idiomas/en.js?v=25"></script>
-<script src="idiomas/es.js?v=25"></script>
-<script src="i18n.js?v=25"></script>
+<script src="idiomas/en.js?v=26"></script>
+<script src="idiomas/es.js?v=26"></script>
+<script src="i18n.js?v=26"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

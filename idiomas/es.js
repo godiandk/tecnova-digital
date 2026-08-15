@@ -1258,5 +1258,9 @@ window.TECNOVA_DIC.es = {
   "¿Prefiere pensarlo? El precio le queda garantizado 15 días. Guarde la referencia y vuelva cuando quiera, o hable conmigo en",
 "contacto": "contacto",
 "Escreva à vontade, mesmo que não saiba o nome técnico. Por exemplo: «queria que os clientes pudessem ver a encomenda a ser preparada», «tenho 800 produtos numa folha de Excel», «queria ligar isto ao meu programa de faturação», «já tenho logótipo e fotos», «preciso disto pronto até ao fim do mês».":
-  "Escriba con libertad, aunque no sepa el nombre técnico. Por ejemplo: «querría que los clientes pudieran ver el pedido preparándose», «tengo 800 productos en una hoja de Excel», «querría conectar esto a mi programa de facturación», «ya tengo logotipo y fotos», «necesito esto listo para fin de mes»."
+  "Escriba con libertad, aunque no sepa el nombre técnico. Por ejemplo: «querría que los clientes pudieran ver el pedido preparándose», «tengo 800 productos en una hoja de Excel», «querría conectar esto a mi programa de facturación», «ya tengo logotipo y fotos», «necesito esto listo para fin de mes».",
+
+/* ---------- comandos do carrossel ---------- */
+"Parar a rotação dos destaques": "Pausar los destacados",
+"Retomar a rotação dos destaques": "Reanudar los destacados"
 };
