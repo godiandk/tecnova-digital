@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="chat.css?v=26">
+<link rel="stylesheet" href="chat.css?v=27">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -234,6 +234,45 @@ tr:last-child td{border-bottom:none}
     <input type="text" id="inpValidar" placeholder="Ex: TEC-4F8K2Q" style="text-transform:uppercase">
     <button class="btn line" onclick="validarCupom()">Verificar código</button>
     <div id="validarMsg" class="msg"></div>
+  </div>
+
+  <!-- Gerar link de pagamento -->
+  <div class="card">
+    <h2 style="font-size:1.1rem;margin:0 0 4px">Gerar link de pagamento</h2>
+    <p style="font-size:.82rem;color:var(--cream-dim);margin:0">Para quando o valor é combinado por email ou pelo chat, sem passar pelo simulador. Sai um link pronto a enviar, já com o valor certo lá dentro.</p>
+    <div class="row2">
+      <div>
+        <label>Referência</label>
+        <input type="text" id="pgRefIn" placeholder="Ex: TEC-4F8K2Q" style="text-transform:uppercase">
+      </div>
+      <div>
+        <label>Moeda</label>
+        <select id="pgMoedaIn">
+          <option value="EUR">€ Euro</option>
+          <option value="BRL">R$ Real</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div>
+        <label>A pagar agora</label>
+        <input type="number" id="pgAgoraIn" placeholder="Ex: 495" min="1" step="1">
+      </div>
+      <div>
+        <label>Total do projeto (opcional)</label>
+        <input type="number" id="pgTotalIn" placeholder="Ex: 990" min="1" step="1">
+      </div>
+    </div>
+    <p style="font-size:.75rem;color:var(--cream-dim);margin:6px 0 0">Com o total preenchido, o cliente vê quanto falta pagar na entrega. Sem ele, vê só o valor de agora.</p>
+    <button class="btn" onclick="gerarLinkPagamento()">Gerar link</button>
+    <div id="pgLinkMsg" class="msg"></div>
+    <div id="pgLinkCaixa" style="display:none;margin-top:12px">
+      <input type="text" id="pgLinkOut" readonly onclick="this.select()" style="font-size:.82rem">
+      <div class="row2" style="margin-top:10px">
+        <button class="btn line" onclick="copiarLinkPagamento()">Copiar link</button>
+        <a class="btn line" id="pgLinkEmail" href="#" style="text-align:center;text-decoration:none">Enviar por email</a>
+      </div>
+    </div>
   </div>
 
   <!-- Clientes -->
@@ -605,6 +644,61 @@ async function validarCupom(){
     else if(err.message === 'expirado'){ msg.className='msg err'; msg.textContent = `Este cupom expirou em ${err.data.validade.split('-').reverse().join('/')} e já não é válido.`; }
     else{ msg.className='msg err'; msg.textContent='Erro ao verificar o código.'; }
   }
+}
+
+/* ------------------------------------------------------------------
+   Link de pagamento
+   ------------------------------------------------------------------
+   A página pagamento.html sabe ler ref/total/sinal do endereço. Aqui só
+   montamos esse endereço, para não o andar a escrever à mão e trocar um
+   número sem dar por isso.
+   ------------------------------------------------------------------ */
+function gerarLinkPagamento(){
+  // O endereço fica aqui dentro de propósito. Como constante no topo do
+  // script, bastava uma linha acima falhar (o Firebase a não carregar, por
+  // exemplo) para ela nunca chegar a ser inicializada — e o botão morria
+  // calado com um erro que ninguém percebia.
+  const PG_BASE = 'https://tecnovadigital.pt/pagamento.html';
+  const msg   = document.getElementById('pgLinkMsg');
+  const caixa = document.getElementById('pgLinkCaixa');
+  const ref   = document.getElementById('pgRefIn').value.trim().toUpperCase();
+  const agora = parseFloat(document.getElementById('pgAgoraIn').value);
+  const total = parseFloat(document.getElementById('pgTotalIn').value);
+  const moeda = document.getElementById('pgMoedaIn').value;
+
+  function erro(t){ msg.textContent = t; msg.className = 'msg err'; caixa.style.display = 'none'; }
+
+  if (ref.length < 2)               return erro('Escreva uma referência. É por ela que identifica o pagamento quando o dinheiro entrar.');
+  if (!isFinite(agora) || agora <= 0) return erro('Escreva quanto o cliente paga agora.');
+  if (isFinite(total) && total < agora) return erro('O total não pode ser menor do que o valor a pagar agora.');
+
+  let url = PG_BASE + '?ref=' + encodeURIComponent(ref) + '&sinal=' + agora + '&moeda=' + moeda;
+  if (isFinite(total) && total > 0) url += '&total=' + total;
+
+  document.getElementById('pgLinkOut').value = url;
+
+  const valor   = moeda === 'EUR' ? agora + '€' : 'R$ ' + agora;
+  document.getElementById('pgLinkEmail').href = 'mailto:?subject=' +
+    encodeURIComponent('Pagamento do seu site — ' + ref) + '&body=' +
+    encodeURIComponent('Olá!\n\nAqui fica o link para pagar ' + valor +
+      ' referente ao orçamento ' + ref + ':\n\n' + url +
+      '\n\nPode pagar por MB WAY ou transferência. Qualquer dúvida, responda a este email.\n\n' +
+      'Wesley Vianna\nTECNOVA Digital\nwesley@tecnovadigital.pt');
+
+  msg.textContent = 'Link pronto. Copie e envie ao cliente.';
+  msg.className = 'msg ok';
+  caixa.style.display = 'block';
+}
+
+function copiarLinkPagamento(){
+  const campo = document.getElementById('pgLinkOut');
+  campo.select();
+  const feito = () => {
+    const m = document.getElementById('pgLinkMsg');
+    m.textContent = 'Link copiado.'; m.className = 'msg ok';
+  };
+  if (navigator.clipboard) navigator.clipboard.writeText(campo.value).then(feito, () => {});
+  else { try { document.execCommand('copy'); feito(); } catch(e){} }
 }
 </script>
 </body>

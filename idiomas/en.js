@@ -939,6 +939,46 @@ window.TECNOVA_DIC.en = {
   "For the first 3 businesses in the area, in exchange for a testimonial. Limited places.",
 
 /* ---------- página de pagamento ---------- */
+/* --- pagar sem vir do simulador --- */
+"Confirmo o pagamento no próprio dia": "I confirm your payment the same day",
+"e digo-lhe logo o passo seguinte. Qualquer dúvida antes de pagar, escreva-me primeiro — respondo depressa.":
+  "and tell you the next step right away. Any doubts before paying, write to me first — I answer fast.",
+"<b>Confirmo o pagamento no próprio dia</b> e digo-lhe logo o passo seguinte. Qualquer dúvida antes de pagar, escreva-me primeiro — respondo depressa.":
+  "<b>I confirm your payment the same day</b> and tell you the next step right away. Any doubts before paying, write to me first — I answer fast.",
+"Pagar o seu <i>projeto</i>": "Pay for your <i>project</i>",
+"Pagamento": "Payment",
+"Escolha como quer pagar. Assim que o pagamento entrar, avanço com o seu trabalho.":
+  "Choose how you would like to pay. As soon as the payment lands, I get to work.",
+"Combinou um valor comigo?": "Agreed on an amount with me?",
+"Escreva-o aqui para ver como pagar": "Enter it here to see how to pay",
+"Só serve para lhe mostrar os dados certos. Nada é cobrado nesta página nem fica guardado em lado nenhum.":
+  "This only shows you the right details. Nothing is charged on this page and nothing is stored anywhere.",
+"Referência do orçamento, ou o nome do seu negócio": "Quote reference, or your business name",
+"TEC-1234 ou Barbearia do Zé": "TEC-1234 or Joe's Barbershop",
+"Valor a pagar agora": "Amount to pay now",
+"Moeda": "Currency",
+"€ Euro": "€ Euro",
+"R$ Real": "R$ Real",
+"Ver como pagar": "See how to pay",
+"Ainda não temos valor combinado?": "No amount agreed yet?",
+"Faça o orçamento em 1 minuto": "Get your quote in 1 minute",
+"Perdeu o link que lhe enviei? Diga-me a referência e eu volto a mandá-lo:":
+  "Lost the link I sent you? Tell me the reference and I will send it again:",
+"Pagar um orçamento": "Pay a quote",
+"O seu pagamento": "Your payment",
+"Copiado": "Copied",
+"por mês": "per month",
+"Comprovativo de pagamento": "Payment receipt",
+"Olá Wesley! Acabei de pagar": "Hi Wesley! I have just paid",
+"Junto o comprovativo em anexo.": "The receipt is attached.",
+"Referência": "Reference",
+"Valor pago": "Amount paid",
+"Escreva a referência do orçamento ou o nome do seu negócio.":
+  "Enter the quote reference or your business name.",
+"Escreva o valor combinado, só com números. Por exemplo: 495":
+  "Enter the agreed amount, numbers only. For example: 495",
+"Esse valor parece alto demais. Confirme comigo por email antes de pagar.":
+  "That amount looks too high. Please confirm it with me by email before paying.",
 "Pagar o <i>sinal</i>": "Pay the <i>deposit</i>",
 "Metade agora para arrancar. A outra metade só depois de ver o site no ar e aprovar tudo.":
   "Half now to get started. The other half only after you see the site live and approve it.",

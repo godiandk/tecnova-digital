@@ -13,8 +13,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=26">
-<link rel="stylesheet" href="i18n.css?v=26">
+<link rel="stylesheet" href="estilo.css?v=27">
+<link rel="stylesheet" href="i18n.css?v=27">
 <style>
 .pg-wrap{max-width:640px;margin:0 auto;padding:0 24px 120px}
 .pg-card{background:var(--ink-2);border:1px solid rgba(217,178,110,.2);border-radius:22px;padding:30px;margin-bottom:18px}
@@ -71,8 +71,36 @@
 .pg-seguro p{color:var(--cream-dim);font-size:.86rem;line-height:1.6}
 .pg-seguro b{color:var(--cream)}
 
+/* Na página de pagar não há botão flutuante nenhum a tapar os campos. */
+.app-float{display:none!important}
+
 .pg-vazio{text-align:center;padding:20px 0}
 .pg-vazio p{color:var(--cream-dim);margin-bottom:20px}
+
+/* formulário de quem chega sem link */
+.pg-h2{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--cream);line-height:1.25}
+.pg-sub{color:var(--cream-dim);font-size:.88rem;line-height:1.6;margin:10px 0 22px}
+.pg-campo{display:block;margin-bottom:14px}
+.pg-campo>span{display:block;color:var(--gold-soft);font-size:.78rem;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px}
+/* 16px cravados: abaixo disto o Safari do iPhone dá zoom ao tocar no campo
+   e o cliente perde a página de vista a meio do pagamento. */
+.pg-campo input,.pg-campo select{width:100%;min-height:52px;background:rgba(0,0,0,.3);
+  border:1px solid rgba(217,178,110,.28);border-radius:12px;padding:0 15px;
+  color:var(--cream);font-family:inherit;font-size:16px}
+.pg-campo input:focus,.pg-campo select:focus{outline:none;border-color:var(--gold)}
+.pg-campo input::placeholder{color:rgba(240,232,222,.35)}
+.pg-campo select{appearance:none;-webkit-appearance:none;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--gold-soft) 50%),
+                   linear-gradient(135deg,var(--gold-soft) 50%,transparent 50%);
+  background-position:calc(100% - 20px) 23px,calc(100% - 14px) 23px;
+  background-size:6px 6px,6px 6px;background-repeat:no-repeat;padding-right:42px}
+.pg-campo select option{background:var(--ink-2);color:var(--cream)}
+.pg-dupla{display:grid;grid-template-columns:1fr 140px;gap:12px}
+.pg-erro{color:#ff9d8a;font-size:.85rem;font-weight:600;margin:0 0 14px;line-height:1.5}
+.pg-voltar{background:none;border:none;color:var(--gold-soft);font-family:inherit;font-size:.85rem;
+  font-weight:700;cursor:pointer;text-decoration:underline;min-height:44px;padding:0}
+@media(max-width:420px){ .pg-dupla{grid-template-columns:1fr} }
 @media(max-width:560px){
   .pg-card{padding:24px 20px}
   .pg-agora b{font-size:1.9rem}
@@ -119,9 +147,16 @@
 <main>
 <section class="page-hero">
   <div class="wrap">
-    <p class="eyebrow">Último passo</p>
-    <h1>Pagar o <i>sinal</i></h1>
-    <p class="lead">Metade agora para arrancar. A outra metade só depois de ver o site no ar e aprovar tudo.</p>
+    <div id="heroSinal" hidden>
+      <p class="eyebrow">Último passo</p>
+      <h1>Pagar o <i>sinal</i></h1>
+      <p class="lead">Metade agora para arrancar. A outra metade só depois de ver o site no ar e aprovar tudo.</p>
+    </div>
+    <div id="heroLivre">
+      <p class="eyebrow">Pagamento</p>
+      <h1>Pagar o seu <i>projeto</i></h1>
+      <p class="lead">Escolha como quer pagar. Assim que o pagamento entrar, avanço com o seu trabalho.</p>
+    </div>
   </div>
 </section>
 
@@ -130,23 +165,50 @@
 
     <!-- resumo do orçamento, vindo do simulador -->
     <div class="pg-card" id="pgResumo" hidden>
-      <p class="eyebrow" style="margin-bottom:12px">O seu orçamento</p>
+      <p class="eyebrow" style="margin-bottom:12px" id="pgTituloResumo">O seu orçamento</p>
       <div class="pg-ref" id="pgRef">—</div>
-      <ul class="pg-linhas">
+      <ul class="pg-linhas" id="pgLinhas">
         <li><span>Total do site</span><b id="pgTotal">—</b></li>
         <li><span>A pagar na entrega, depois de aprovar</span><b id="pgResto">—</b></li>
       </ul>
       <div class="pg-agora"><span>A pagar agora</span><b id="pgSinal">—</b></div>
     </div>
 
-    <!-- quem chega aqui sem referência -->
-    <div class="pg-card pg-vazio" id="pgSemRef">
-      <p>Esta página abre a partir do seu orçamento, para saber o valor certo a cobrar.</p>
-      <a class="btn btn-gold" href="orcamento.html" style="justify-content:center">Fazer o meu orçamento</a>
-      <!-- Frase e ligações separadas de propósito. Com os links pelo meio, o
-           tradutor via três pedaços soltos ("por", "ou pelo", ", e eu volto a
-           enviá-lo") e em inglês a ordem das palavras não bate certo. -->
-      <p class="pg-nota">Já tem um orçamento e perdeu o link? Diga-me a referência que lhe dei e eu volto a enviá-lo:</p>
+    <!-- Quem chega sem link (de um anúncio, do rodapé, de uma mensagem minha)
+         escreve aqui o que combinámos e vê logo como pagar. Antes esta página
+         era um beco sem saída para toda a gente que não viesse do simulador. -->
+    <div class="pg-card" id="pgSemRef">
+      <p class="eyebrow" style="margin-bottom:10px">Combinou um valor comigo?</p>
+      <h2 class="pg-h2">Escreva-o aqui para ver como pagar</h2>
+      <p class="pg-sub">Só serve para lhe mostrar os dados certos. Nada é cobrado nesta página nem fica guardado em lado nenhum.</p>
+
+      <form id="pgForm" novalidate>
+        <label class="pg-campo">
+          <span>Referência do orçamento, ou o nome do seu negócio</span>
+          <input id="fRef" type="text" inputmode="text" autocomplete="off"
+                 placeholder="TEC-1234 ou Barbearia do Zé" maxlength="60" required>
+        </label>
+
+        <div class="pg-dupla">
+          <label class="pg-campo">
+            <span>Valor a pagar agora</span>
+            <input id="fValor" type="text" inputmode="decimal" placeholder="495" required>
+          </label>
+          <label class="pg-campo">
+            <span>Moeda</span>
+            <select id="fMoeda">
+              <option value="EUR">€ Euro</option>
+              <option value="BRL">R$ Real</option>
+            </select>
+          </label>
+        </div>
+
+        <p class="pg-erro" id="fErro" hidden></p>
+        <button class="btn btn-gold" type="submit" style="width:100%;justify-content:center">Ver como pagar</button>
+      </form>
+
+      <p class="pg-nota">Ainda não temos valor combinado? <a href="orcamento.html">Faça o orçamento em 1 minuto</a></p>
+      <p class="pg-nota">Perdeu o link que lhe enviei? Diga-me a referência e eu volto a mandá-lo:</p>
       <p class="pg-nota">
         <a href="mailto:wesley@tecnovadigital.pt?subject=Perdi%20o%20link%20do%20meu%20or%C3%A7amento">wesley@tecnovadigital.pt</a>
       </p>
@@ -193,10 +255,18 @@
            style="width:100%;justify-content:center;margin-top:14px">Enviar comprovativo por email</a>
       </div>
 
-      <div class="pg-seguro">
+      <!-- Duas garantias, porque nem todos os pagamentos são um sinal. Quem
+           escreve o valor à mão pode estar a pagar a segunda metade, ou tudo
+           de uma vez, e prometer-lhe "a segunda metade" não fazia sentido. -->
+      <div class="pg-seguro" id="segSinal" hidden>
         <span class="ic">🛡️</span>
         <p><b>Só paga a segunda metade quando o site estiver no ar</b> e aprovado por si.
         Se não gostar do que vir, não avança — e não fica preso a nada.</p>
+      </div>
+      <div class="pg-seguro" id="segLivre">
+        <span class="ic">🛡️</span>
+        <p><b>Confirmo o pagamento no próprio dia</b> e digo-lhe logo o passo seguinte.
+        Qualquer dúvida antes de pagar, escreva-me primeiro — respondo depressa.</p>
       </div>
     </div>
 
@@ -230,6 +300,7 @@
         <a href="renovacao.html">Já tem site?</a>
         <a href="sobre.html">Sobre</a>
         <a href="contacto.html">Contacto</a>
+        <a href="pagamento.html">Pagar um orçamento</a>
       </div>
       <div class="footer-col">
         <h4>Contacto</h4>
@@ -249,22 +320,30 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="auth-nav.js?v=26"></script>
+<script src="auth-nav.js?v=27"></script>
 
-<script src="site.js?v=26"></script>
+<script src="site.js?v=27"></script>
 <!-- Os dicionários antes do i18n, como em todas as outras páginas.
      A ordem inversa também funcionava, mas ninguém tem de descobrir isso
      ao ler o ficheiro. -->
-<script src="idiomas/en.js?v=26"></script>
-<script src="idiomas/es.js?v=26"></script>
-<script src="i18n.js?v=26"></script>
-<script src="pagamento-config.js?v=26"></script>
+<script src="idiomas/en.js?v=27"></script>
+<script src="idiomas/es.js?v=27"></script>
+<script src="i18n.js?v=27"></script>
+<script src="pagamento-config.js?v=27"></script>
 <script>
 /* ============================================================
    Página de pagamento
    ------------------------------------------------------------
-   Recebe o orçamento pelo endereço, vindo do simulador:
-     pagamento.html?ref=TEC-1234&total=990&sinal=495&moeda=EUR
+   Abre de duas maneiras:
+
+   1. Com o orçamento no endereço, vindo do simulador:
+        pagamento.html?ref=TEC-1234&total=990&sinal=495&moeda=EUR
+
+   2. Sem nada. Nesse caso mostra um formulário onde o cliente
+      escreve a referência e o valor que combinámos. É por aqui
+      que entra quem vem de um anúncio, do rodapé ou de uma
+      mensagem minha — antes esta página não servia para nada
+      a quem não passasse pelo simulador.
 
    Os links de pagamento vivem em `pagamento-config.js`, para se
    poderem trocar sem mexer nesta página.
@@ -273,14 +352,21 @@
   'use strict';
   var $ = function (s) { return document.querySelector(s); };
   var q = new URLSearchParams(location.search);
+  var cfg = window.TECNOVA_PAGAMENTO || {};
 
   document.getElementById('ano').textContent = new Date().getFullYear();
 
-  var cfg = window.TECNOVA_PAGAMENTO || {};
-  var ref    = (q.get('ref') || '').trim();
-  var total  = parseFloat(q.get('total'));
-  var sinal  = parseFloat(q.get('sinal'));
-  var moeda  = (q.get('moeda') || 'EUR').toUpperCase();
+  /* Os textos escritos por JavaScript não passam pelo tradutor, porque o
+     i18n salta de propósito tudo o que tem id. Vamos buscá-los à mão. */
+  function frase(pt) {
+    try {
+      var l = window.TecnovaI18N && window.TecnovaI18N.atual();
+      var d = l && window.TECNOVA_DIC && window.TECNOVA_DIC[l];
+      return (d && d[pt]) || pt;
+    } catch (e) { return pt; }
+  }
+
+  var moeda = (q.get('moeda') || 'EUR').toUpperCase();
 
   function dinheiro(n) {
     if (!isFinite(n)) return '—';
@@ -289,57 +375,106 @@
     return (moeda === 'EUR') ? v + '€' : (cfg.simbolos && cfg.simbolos[moeda] || moeda + ' ') + v;
   }
 
-  // Sem referência não se mostra valor nenhum: mais vale mandar fazer
-  // o orçamento do que arriscar cobrar o montante errado.
-  if (!ref || !isFinite(sinal)) return;
-
-  $('#pgSemRef').hidden = true;
-  $('#pgResumo').hidden = false;
-  $('#pgFormas').hidden = false;
-
-  $('#pgRef').textContent = ref;
-  $('#pgTotal').textContent = dinheiro(total);
-  $('#pgResto').textContent = dinheiro(total - sinal);
-  $('#pgSinal').textContent = dinheiro(sinal);
-
-  /* ---------- pagamento online (só aparece se estiver configurado) ---------- */
-  function comRef(url) {
-    if (!url) return '';
-    return url + (url.indexOf('?') === -1 ? '?' : '&') +
-           'client_reference_id=' + encodeURIComponent(ref);
+  /* ------------------------------------------------------------------
+     Ler um valor escrito por uma pessoa.
+     Aceita 495 · 495,50 · 495.50 · 1.234,56 · 1,234.56 · €495
+     A regra: se aparecerem os dois separadores, o último manda. Se só
+     aparecer um, só é decimal quando tem uma ou duas casas atrás.
+     ------------------------------------------------------------------ */
+  function lerValor(txt) {
+    var t = String(txt || '').replace(/[^\d.,-]/g, '').trim();
+    if (!t) return NaN;
+    var ultimaV = t.lastIndexOf(','), ultimoP = t.lastIndexOf('.');
+    var corte = -1;
+    if (ultimaV > -1 && ultimoP > -1) corte = Math.max(ultimaV, ultimoP);
+    else {
+      var so = Math.max(ultimaV, ultimoP);
+      if (so > -1 && t.length - so - 1 <= 2 && t.length - so - 1 >= 1) corte = so;
+    }
+    var limpo = corte > -1
+      ? t.slice(0, corte).replace(/[.,]/g, '') + '.' + t.slice(corte + 1).replace(/[.,]/g, '')
+      : t.replace(/[.,]/g, '');
+    var n = parseFloat(limpo);
+    return isFinite(n) ? n : NaN;
   }
 
-  if (cfg.linkCartao) {
-    var a = $('#opCartao'); a.href = comRef(cfg.linkCartao); a.hidden = false;
-  }
-  if (cfg.linkPrestacoes) {
-    var k = $('#opKlarna'); k.href = comRef(cfg.linkPrestacoes); k.hidden = false;
-    $('#pgParcelas').textContent = '3 × ' + dinheiro(sinal / 3) + ' por mês';
+  /* ------------------------------------------------------------------
+     Mostrar o resumo e as formas de pagar.
+     `total` pode vir vazio: quando o valor foi escrito à mão não sabemos
+     o preço cheio do projeto, e mais vale não mostrar nada do que mostrar
+     um número inventado.
+     ------------------------------------------------------------------ */
+  function mostrar(ref, total, agora) {
+    var temTotal = isFinite(total) && total > agora;
+
+    // O cabeçalho tem duas versões escritas no HTML, para o tradutor lhes
+    // chegar. Aqui só se decide qual delas fica à vista.
+    $('#heroSinal').hidden = !temTotal;
+    $('#heroLivre').hidden = temTotal;
+    $('#segSinal').hidden = !temTotal;
+    $('#segLivre').hidden = temTotal;
+
+    $('#pgSemRef').hidden = true;
+    $('#pgResumo').hidden = false;
+    $('#pgFormas').hidden = false;
+
+    $('#pgLinhas').hidden = !temTotal;
+    $('#pgTituloResumo').textContent = frase(temTotal ? 'O seu orçamento' : 'O seu pagamento');
+
+    $('#pgRef').textContent = ref;
+    $('#pgSinal').textContent = dinheiro(agora);
+    if (temTotal) {
+      $('#pgTotal').textContent = dinheiro(total);
+      $('#pgResto').textContent = dinheiro(total - agora);
+    }
+
+    /* ---------- pagamento online (só aparece se estiver configurado) ---------- */
+    function comRef(url) {
+      if (!url) return '';
+      return url + (url.indexOf('?') === -1 ? '?' : '&') +
+             'client_reference_id=' + encodeURIComponent(ref);
+    }
+    if (cfg.linkCartao) {
+      var a = $('#opCartao'); a.href = comRef(cfg.linkCartao); a.hidden = false;
+    }
+    if (cfg.linkPrestacoes) {
+      var k = $('#opKlarna'); k.href = comRef(cfg.linkPrestacoes); k.hidden = false;
+      $('#pgParcelas').textContent = '3 × ' + dinheiro(agora / 3) + ' ' + frase('por mês');
+    }
+
+    /* ---------- transferência / MB WAY ---------- */
+    var pag = (cfg.dados && (cfg.dados[moeda] || cfg.dados.EUR)) || null;
+    if (pag) {
+      $('#opTransfTitulo').textContent = pag.titulo;
+      $('#pgDados').innerHTML = pag.linhas.map(function (l) {
+        return '<li><span>' + l[0] + '</span>' +
+               '<b>' + l[1] + '</b>' +
+               '<button class="pg-copiar" type="button" data-copiar="' + l[1] + '">' +
+               frase('Copiar') + '</button></li>';
+      }).join('');
+      $('#pgDadosNota').textContent = pag.nota || '';
+    }
+
+    /* ---------- entregar o comprovativo ---------- */
+    // A referência vai no assunto: assim o comprovativo cai já identificado
+    // na caixa de entrada, sem ter de andar a cruzar valores.
+    var assunto = frase('Comprovativo de pagamento') + ' — ' + ref;
+    var corpo = frase('Olá Wesley! Acabei de pagar') + ' ' + dinheiro(agora) +
+                ' (' + ref + ').\n\n' + frase('Junto o comprovativo em anexo.') + '\n\n' +
+                frase('Referência') + ': ' + ref + '\n' +
+                frase('Valor pago') + ': ' + dinheiro(agora) + '\n';
+    $('#pgEmail').href = 'mailto:wesley@tecnovadigital.pt' +
+      '?subject=' + encodeURIComponent(assunto) + '&body=' + encodeURIComponent(corpo);
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  /* ---------- transferência / MB WAY ---------- */
-  var pag = (cfg.dados && (cfg.dados[moeda] || cfg.dados.EUR)) || null;
-  if (pag) {
-    $('#opTransfTitulo').textContent = pag.titulo;
-    $('#pgDados').innerHTML = pag.linhas.map(function (l) {
-      return '<li><span>' + l[0] + '</span>' +
-             '<b>' + l[1] + '</b>' +
-             '<button class="pg-copiar" type="button" data-copiar="' + l[1] + '">Copiar</button></li>';
-    }).join('');
-    $('#pgDadosNota').textContent = pag.nota || '';
-  }
-
-  $('#opTransf').addEventListener('click', function () {
-    var box = $('#pgDadosBox');
-    box.hidden = !box.hidden;
-    if (!box.hidden) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  });
-
+  /* ---------- copiar os dados (vale para os dois caminhos) ---------- */
   $('#pgDados').addEventListener('click', function (e) {
     var b = e.target.closest('.pg-copiar'); if (!b) return;
     var txt = b.getAttribute('data-copiar');
     var antes = b.textContent;
-    function feito() { b.textContent = '✓ Copiado'; setTimeout(function () { b.textContent = antes; }, 1600); }
+    function feito() { b.textContent = '✓ ' + frase('Copiado'); setTimeout(function () { b.textContent = antes; }, 1600); }
     if (navigator.clipboard) navigator.clipboard.writeText(txt).then(feito, function () {});
     else {
       var t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t);
@@ -348,17 +483,56 @@
     }
   });
 
-  /* ---------- entregar o comprovativo ---------- */
-  var recado = 'Olá Wesley! Paguei o sinal do orçamento ' + ref + ' (' + dinheiro(sinal) + ').';
+  $('#opTransf').addEventListener('click', function () {
+    var box = $('#pgDadosBox');
+    box.hidden = !box.hidden;
+    if (!box.hidden) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
 
-  // O email leva a referência no assunto: assim o comprovativo cai já
-  // identificado na caixa de entrada, sem ter de andar a cruzar valores.
-  $('#pgEmail').href = 'mailto:wesley@tecnovadigital.pt' +
-    '?subject=' + encodeURIComponent('Comprovativo do sinal — ' + ref) +
-    '&body='    + encodeURIComponent(
-      recado + '\n\nJunto o comprovativo em anexo.\n\n' +
-      'Referência: ' + ref + '\n' +
-      'Valor pago: ' + dinheiro(sinal) + '\n');
+  /* ------------------------------------------------------------------
+     Caminho 1: veio do simulador, com tudo no endereço.
+     ------------------------------------------------------------------ */
+  var refUrl = (q.get('ref') || '').trim();
+  var sinalUrl = parseFloat(q.get('sinal'));
+  if (refUrl && isFinite(sinalUrl) && sinalUrl > 0) {
+    mostrar(refUrl, parseFloat(q.get('total')), sinalUrl);
+    return;
+  }
+
+  /* ------------------------------------------------------------------
+     Caminho 2: chegou sem nada. Escreve o que combinámos.
+     ------------------------------------------------------------------ */
+  var fMoeda = $('#fMoeda');
+  fMoeda.value = (cfg.dados && cfg.dados[moeda]) ? moeda : 'EUR';
+
+  $('#pgForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var erro = $('#fErro');
+    var ref = $('#fRef').value.trim();
+    var valor = lerValor($('#fValor').value);
+
+    function falha(msg) {
+      erro.textContent = frase(msg);
+      erro.hidden = false;
+    }
+
+    if (ref.length < 2) return falha('Escreva a referência do orçamento ou o nome do seu negócio.');
+    if (!isFinite(valor) || valor <= 0) return falha('Escreva o valor combinado, só com números. Por exemplo: 495');
+    // Um zero a mais numa transferência não tem volta. Mais vale travar aqui
+    // e mandar falar comigo do que deixar passar um valor absurdo.
+    if (valor > 50000) return falha('Esse valor parece alto demais. Confirme comigo por email antes de pagar.');
+
+    erro.hidden = true;
+    moeda = fMoeda.value;
+
+    // Fica no endereço para que recarregar a página não apague nada.
+    try {
+      history.replaceState(null, '', 'pagamento.html?ref=' + encodeURIComponent(ref) +
+        '&sinal=' + valor + '&moeda=' + moeda);
+    } catch (err) {}
+
+    mostrar(ref, NaN, valor);
+  });
 })();
 </script>
 

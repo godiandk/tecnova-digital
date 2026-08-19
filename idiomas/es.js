@@ -943,6 +943,46 @@ window.TECNOVA_DIC.es = {
   "Para los 3 primeros negocios de la zona, a cambio de un testimonio. Plazas limitadas.",
 
 /* ---------- página de pagamento ---------- */
+/* --- pagar sin venir del simulador --- */
+"Confirmo o pagamento no próprio dia": "Confirmo el pago el mismo día",
+"e digo-lhe logo o passo seguinte. Qualquer dúvida antes de pagar, escreva-me primeiro — respondo depressa.":
+  "y le digo enseguida el paso siguiente. Cualquier duda antes de pagar, escríbame primero — respondo rápido.",
+"<b>Confirmo o pagamento no próprio dia</b> e digo-lhe logo o passo seguinte. Qualquer dúvida antes de pagar, escreva-me primeiro — respondo depressa.":
+  "<b>Confirmo el pago el mismo día</b> y le digo enseguida el paso siguiente. Cualquier duda antes de pagar, escríbame primero — respondo rápido.",
+"Pagar o seu <i>projeto</i>": "Pagar su <i>proyecto</i>",
+"Pagamento": "Pago",
+"Escolha como quer pagar. Assim que o pagamento entrar, avanço com o seu trabalho.":
+  "Elija cómo quiere pagar. En cuanto entre el pago, sigo adelante con su trabajo.",
+"Combinou um valor comigo?": "¿Acordó un importe conmigo?",
+"Escreva-o aqui para ver como pagar": "Escríbalo aquí para ver cómo pagar",
+"Só serve para lhe mostrar os dados certos. Nada é cobrado nesta página nem fica guardado em lado nenhum.":
+  "Solo sirve para mostrarle los datos correctos. No se cobra nada en esta página ni se guarda nada en ningún sitio.",
+"Referência do orçamento, ou o nome do seu negócio": "Referencia del presupuesto, o el nombre de su negocio",
+"TEC-1234 ou Barbearia do Zé": "TEC-1234 o Barbería de José",
+"Valor a pagar agora": "Importe a pagar ahora",
+"Moeda": "Moneda",
+"€ Euro": "€ Euro",
+"R$ Real": "R$ Real",
+"Ver como pagar": "Ver cómo pagar",
+"Ainda não temos valor combinado?": "¿Todavía no hay un importe acordado?",
+"Faça o orçamento em 1 minuto": "Haga su presupuesto en 1 minuto",
+"Perdeu o link que lhe enviei? Diga-me a referência e eu volto a mandá-lo:":
+  "¿Perdió el enlace que le envié? Dígame la referencia y se lo vuelvo a mandar:",
+"Pagar um orçamento": "Pagar un presupuesto",
+"O seu pagamento": "Su pago",
+"Copiado": "Copiado",
+"por mês": "al mes",
+"Comprovativo de pagamento": "Comprobante de pago",
+"Olá Wesley! Acabei de pagar": "¡Hola Wesley! Acabo de pagar",
+"Junto o comprovativo em anexo.": "Adjunto el comprobante.",
+"Referência": "Referencia",
+"Valor pago": "Importe pagado",
+"Escreva a referência do orçamento ou o nome do seu negócio.":
+  "Escriba la referencia del presupuesto o el nombre de su negocio.",
+"Escreva o valor combinado, só com números. Por exemplo: 495":
+  "Escriba el importe acordado, solo números. Por ejemplo: 495",
+"Esse valor parece alto demais. Confirme comigo por email antes de pagar.":
+  "Ese importe parece demasiado alto. Confírmelo conmigo por email antes de pagar.",
 "Pagar o <i>sinal</i>": "Pagar la <i>señal</i>",
 "Metade agora para arrancar. A outra metade só depois de ver o site no ar e aprovar tudo.":
   "La mitad ahora para empezar. La otra mitad solo después de ver la web publicada y aprobarla.",
