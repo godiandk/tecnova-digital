@@ -17,9 +17,17 @@ service cloud.firestore {
 
     // O administrador é reconhecido pelo email da conta com que entra.
     // Tem de ser o mesmo que está em ADMIN_EMAILS no firebase-config.js.
+    //
+    // São dois de propósito: se um dia perder o acesso a um deles, entra
+    // pelo outro em vez de ficar de fora do seu próprio painel. Cada um
+    // destes emails precisa de ter conta criada no Firebase Authentication
+    // para servir de alguma coisa — estar aqui na lista não cria a conta.
     function ehAdmin() {
       return request.auth != null
-          && request.auth.token.email in ['wly.vianna@gmail.com'];
+          && request.auth.token.email in [
+               'wly.vianna@gmail.com',
+               'wesley@tecnovadigital.pt'
+             ];
     }
 
     function ehDono(uid) {
