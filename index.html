@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=31">
-<link rel="stylesheet" href="assistente.css?v=31">
-<link rel="stylesheet" href="i18n.css?v=31">
+<link rel="stylesheet" href="estilo.css?v=32">
+<link rel="stylesheet" href="assistente.css?v=32">
+<link rel="stylesheet" href="i18n.css?v=32">
 <style>
 .hero{
   min-height:100vh;display:flex;align-items:center;
@@ -150,8 +150,23 @@
 /* ---------- slide de entrada: pedido ---------- */
 .hs-slide.oferta{background:radial-gradient(1100px 700px at 78% 40%,rgba(217,178,110,.16),transparent 70%)}
 .of-grid{grid-template-columns:1.12fr .88fr;gap:40px}
-.of-flag{display:inline-flex;align-items:center;gap:10px;background:rgba(217,178,110,.14);border:1px solid rgba(217,178,110,.45);color:var(--gold-soft);border-radius:999px;padding:7px 18px 7px 14px;font-size:.74rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
-.of-pulse{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:ofp 1.6s infinite}
+/* A faixa é uma frase só. Era `align-items:center` com o ponto a contar
+   como item do flex: quando o texto passava a duas linhas, o ponto ficava
+   no meio e a segunda linha desencostava. Agora o ponto alinha pelo topo
+   da primeira linha e o texto corre normalmente por baixo. */
+/* Uma placa: duas linhas centradas, com um ponto a piscar de cada lado.
+   Antes era uma frase corrida que, quando não cabia, partia com o «·»
+   pendurado a começar a segunda linha. */
+.of-flag{display:inline-flex;align-items:center;gap:12px;
+  background:rgba(217,178,110,.1);border:1px solid rgba(217,178,110,.4);
+  border-radius:14px;padding:9px 18px;max-width:100%}
+.of-flag-txt{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;text-align:center}
+.ff-topo{font-size:.62rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--cream-dim);line-height:1.3}
+.ff-fundo{font-size:.82rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--gold-soft);line-height:1.25;white-space:nowrap}
+.ff-fundo b{color:var(--gold);font-weight:800}
+.of-pulse{flex:none;width:7px;height:7px;border-radius:50%;background:var(--gold);animation:ofp 1.6s infinite}
 @keyframes ofp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
 .of-txt h1{margin:12px 0 12px;font-size:clamp(2.3rem,5vw,3.6rem)}
 .of-txt .lead{font-size:1.02rem;max-width:34em}
@@ -159,8 +174,15 @@
 .of-chips span{background:rgba(255,255,255,.045);border:1px solid rgba(217,178,110,.22);border-radius:999px;padding:7px 14px;font-size:.79rem;color:var(--cream-dim);font-weight:600;white-space:nowrap}
 .of-oferta{display:flex;align-items:center;gap:18px;background:linear-gradient(120deg,rgba(217,178,110,.18),rgba(217,178,110,.04));border:1px solid rgba(217,178,110,.45);border-radius:16px;padding:14px 18px;margin-bottom:18px;flex-wrap:wrap}
 .of-off{flex:none;text-align:center;padding-right:18px;border-right:1px solid rgba(217,178,110,.3)}
-.of-off b{display:block;font-family:'Playfair Display',serif;font-size:2.3rem;color:var(--gold);line-height:1}
+.of-off b{display:block;font-family:var(--fonte-valor,'Manrope',sans-serif);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-weight:800;font-size:2.3rem;color:var(--gold);line-height:1}
 .of-off span{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--cream-dim);font-weight:700}
+/* Os <span> que a campanha reescreve vivem dentro dos números grandes e
+   não são legendas: têm de herdar o tamanho de quem os contém, senão
+   apanham a regra das legendas pequenas e o "−40%" parte-se ao meio. */
+.of-off b [data-promo-pct],
+.of-selo b [data-promo-pct],
+.sim-off [data-promo-pct],
+.pr-val > b [data-promo-pct]{font:inherit;letter-spacing:inherit;text-transform:none;color:inherit}
 .of-oferta>div:last-child b{display:block;color:var(--cream);font-size:.98rem}
 .of-oferta>div:last-child span{font-size:.8rem;color:var(--cream-dim)}
 .of-oferta i{font-style:normal;background:var(--gold);color:var(--ink);font-weight:800;letter-spacing:.1em;padding:1px 8px;border-radius:5px}
@@ -176,12 +198,20 @@
 }
 .of-nota{margin-top:12px;font-size:.82rem;color:var(--cream-dim)}
 .of-foto{position:relative;justify-self:center;max-width:390px}
-.of-foto img{width:100%;height:auto;max-height:min(52svh,520px);object-fit:cover;object-position:52% 22%;
+.of-foto img{width:100%;height:auto;max-height:min(52svh,520px);object-fit:cover;object-position:52% 14%;
   border-radius:22px;border:1px solid rgba(217,178,110,.32);box-shadow:0 30px 70px rgba(0,0,0,.55)}
 .of-foto::after{content:"";position:absolute;inset:auto 0 0 0;height:32%;border-radius:0 0 22px 22px;background:linear-gradient(to top,var(--ink) 4%,transparent 100%);pointer-events:none}
-.of-selo{position:absolute;left:-16px;bottom:12%;z-index:2;display:grid;place-items:center;width:98px;height:98px;border-radius:50%;background:linear-gradient(140deg,var(--gold-soft),var(--gold));color:var(--ink);box-shadow:0 14px 34px rgba(217,178,110,.35);transform:rotate(-11deg)}
-.of-selo b{font-family:'Playfair Display',serif;font-size:1.65rem;line-height:1}
-.of-selo i{font-style:normal;font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+/* O selo estava inclinado, com duas linhas de texto que não cabiam na
+   roda e, no telemóvel, ia parar em cima da cara. Deixa de ser um círculo
+   torto e passa a ser uma etiqueta direita, encostada ao canto de baixo,
+   longe do rosto e com espaço para o que lá está escrito. */
+.of-selo{position:absolute;left:12px;bottom:12px;z-index:2;
+  display:inline-flex;align-items:baseline;gap:7px;
+  padding:8px 15px;border-radius:12px;
+  background:linear-gradient(140deg,var(--gold-soft),var(--gold));color:var(--ink);
+  box-shadow:0 10px 26px rgba(0,0,0,.45)}
+.of-selo b{font-family:var(--fonte-valor,'Manrope',sans-serif);font-variant-numeric:tabular-nums;letter-spacing:-.03em;font-weight:800;font-size:1.5rem;line-height:1}
+.of-selo i{font-style:normal;font-size:.68rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;opacity:.78}
 @media(max-width:900px){
   .hs-slide.oferta{padding-top:88px;padding-bottom:74px}
   .of-grid{grid-template-columns:1fr;gap:14px}
@@ -192,7 +222,7 @@
      No telemóvel custavam 111px de altura e não acrescentavam nada. */
   .of-chips{display:none}
   .of-foto::after{height:52%;border-radius:0 0 16px 16px}
-  .of-flag{font-size:.64rem;letter-spacing:.1em;padding:6px 13px 6px 10px;align-self:flex-start;max-width:100%;box-sizing:border-box}
+  .of-flag{padding:8px 15px;align-self:flex-start;max-width:100%;box-sizing:border-box}
   /* no telemóvel a oferta e o botão sobem, para ficarem à vista sem rolar */
   .of-txt{display:flex;flex-direction:column}
   .of-flag{order:1} .of-txt h1{order:2} .of-txt .lead{order:3}
@@ -213,7 +243,9 @@
   .of-nota{margin-top:12px;font-size:.78rem}
   .of-txt .hero-cta{gap:10px}
   .of-txt .hero-cta .btn{width:100%;justify-content:center}
-  .of-selo{width:66px;height:66px;left:auto;right:12px;bottom:auto;top:-14px}
+  .of-selo{left:10px;right:auto;bottom:10px;top:auto;padding:7px 12px}
+  .of-selo b{font-size:1.25rem}
+  .of-selo i{font-size:.62rem}
   .of-selo b{font-size:1.1rem}
   .of-selo i{font-size:.7rem}
   .of-chips{gap:6px;margin:16px 0 18px}
@@ -226,7 +258,7 @@
 .hero-price{font-weight:800;color:var(--gold-soft);margin:6px 0 34px;font-size:1.05rem}
 .hero-cta{display:flex;gap:16px;flex-wrap:wrap}
 .hero-proof{display:flex;gap:34px;margin-top:52px;flex-wrap:wrap}
-.proof b{display:block;font-family:'Playfair Display',serif;font-size:1.7rem;color:var(--gold)}
+.proof b{display:block;font-family:var(--fonte-valor,'Manrope',sans-serif);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-weight:800;font-size:1.7rem;color:var(--gold)}
 .proof span{font-size:.8rem;color:var(--cream-dim)}
 
 /* ------------------------------------------------------------
@@ -279,7 +311,9 @@
   /* Num ecrã de 320px de altura útil, a fotografia é o que menos trabalha:
      a mensagem e a oferta valem mais do que uma faixa decorativa. Sai. */
   .of-foto{display:none}
-  .of-flag{font-size:.58rem;padding:5px 11px 5px 9px}
+  .of-flag{padding:7px 13px;gap:10px}
+  .ff-topo{font-size:.56rem;letter-spacing:.16em}
+  .ff-fundo{font-size:.74rem}
   .of-txt h1{margin:9px 0 7px}
   /* A 320px a coluna da direita fica com 200px e o texto desdobrava-se em
      seis linhas: 218px só para esta caixa. Com o corpo mais pequeno cabe
@@ -325,7 +359,7 @@
 .sim-pontos li{position:relative;padding:7px 0 7px 28px;color:var(--cream-dim);font-size:.93rem}
 .sim-pontos li::before{content:"";position:absolute;left:0;top:15px;width:9px;height:9px;background:var(--gold);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
 .sim-promo{background:linear-gradient(160deg,rgba(217,178,110,.2),rgba(217,178,110,.05));border:1px solid rgba(217,178,110,.4);border-radius:20px;padding:28px 24px;text-align:center}
-.sim-off{display:block;font-family:'Playfair Display',serif;font-size:3.4rem;line-height:1;color:var(--gold)}
+.sim-off{display:block;font-family:var(--fonte-valor,'Manrope',sans-serif);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-weight:800;font-size:3.4rem;line-height:1;color:var(--gold)}
 .sim-promo b{display:block;margin:8px 0 12px;color:var(--cream);font-size:1rem}
 .sim-promo p{color:var(--cream-dim);font-size:.85rem;line-height:1.6}
 .sim-promo p b{display:inline;color:var(--gold-soft)}
@@ -456,7 +490,14 @@
   <div class="hs-slide oferta active">
     <div class="wrap hs-grid of-grid">
       <div class="of-txt">
-        <p class="of-flag" data-promo><span class="of-pulse"></span>Campanha de lançamento · termina a <span data-promo-fim>30 de setembro</span></p>
+        <p class="of-flag" data-promo>
+          <span class="of-pulse" aria-hidden="true"></span>
+          <span class="of-flag-txt">
+            <span class="ff-topo">Campanha de lançamento</span>
+            <span class="ff-fundo">termina a <b data-promo-fim>30 de setembro</b></span>
+          </span>
+          <span class="of-pulse" aria-hidden="true"></span>
+        </p>
         <h1>Monte o seu site e veja o preço <em>na hora.</em></h1>
         <p class="lead">Site profissional, aplicação no telemóvel, carrossel de destaques, marcações, preçário, loja online — escolha o que quer e o valor aparece à frente dos olhos. Sem telefonemas, sem esperar dias, sem «depois digo-lhe alguma coisa».</p>
         <div class="of-chips">
@@ -733,10 +774,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="campanha.js?v=31"></script>
-<script src="medir-config.js?v=31"></script>
-<script src="medir.js?v=31"></script>
-<script src="auth-nav.js?v=31"></script>
+<script src="campanha.js?v=32"></script>
+<script src="medir-config.js?v=32"></script>
+<script src="medir.js?v=32"></script>
+<script src="auth-nav.js?v=32"></script>
 
 <script>
 const io=new IntersectionObserver(es=>{
@@ -748,9 +789,9 @@ if('serviceWorker' in navigator){
 }
 </script>
 <script src="site.js"></script>
-<script src="idiomas/en.js?v=31"></script>
-<script src="idiomas/es.js?v=31"></script>
-<script src="i18n.js?v=31"></script>
+<script src="idiomas/en.js?v=32"></script>
+<script src="idiomas/es.js?v=32"></script>
+<script src="i18n.js?v=32"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

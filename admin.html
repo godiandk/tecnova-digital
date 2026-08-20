@@ -7,17 +7,24 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="chat.css?v=31">
+<link rel="stylesheet" href="chat.css?v=32">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="avisos-config.js?v=31"></script>
+<script src="avisos-config.js?v=32"></script>
 <script src="chat.js"></script>
 <style>
 :root{
   --ink:#16100b;--ink-2:#211812;--ink-3:#2b2016;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
-  --cream:#f6efe2;--cream-dim:#c9bda6;--wa:#25d366;--bad:#e0715c;
+  --cream:#f6efe2;
+  /* A letra dos VALORES. O Playfair é uma serifada de títulos: tem
+     traços finíssimos que, ao lado das etiquetas em Manrope, ficavam
+     frágeis e desencaixados. Os números passam a usar a letra do
+     próprio site, com algarismos de largura fixa para alinharem em
+     coluna. Para experimentar outra, muda-se só esta linha. */
+  --fonte-valor:'Manrope',-apple-system,'Segoe UI',sans-serif;
+--cream-dim:#c9bda6;--wa:#25d366;--bad:#e0715c;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--ink);color:var(--cream);font-family:'Manrope',sans-serif;min-height:100vh}
@@ -34,7 +41,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:14p
 .card{background:var(--ink-2);border:1px solid rgba(217,178,110,.16);border-radius:18px;padding:26px;margin-bottom:22px}
 .grid-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
 .stat{background:var(--ink-2);border:1px solid rgba(217,178,110,.16);border-radius:16px;padding:20px;text-align:center}
-.stat b{display:block;font-family:'Playfair Display',serif;font-size:1.9rem;color:var(--gold)}
+.stat b{display:block;font-family:var(--fonte-valor,'Manrope',sans-serif);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-weight:800;font-size:1.9rem;color:var(--gold)}
 .stat span{font-size:.78rem;color:var(--cream-dim)}
 
 label{display:block;font-size:.78rem;color:var(--gold-soft);margin:12px 0 6px;font-weight:700}
@@ -84,11 +91,11 @@ tr:last-child td{border-bottom:none}
 .orc{background:var(--ink-2);border:1px solid rgba(217,178,110,.16);border-radius:16px;margin-bottom:12px;overflow:hidden}
 .orc-top{display:flex;align-items:center;gap:14px;padding:16px 20px;cursor:pointer;flex-wrap:wrap}
 .orc-top:hover{background:rgba(217,178,110,.04)}
-.orc-ref{font-family:'Playfair Display',serif;color:var(--gold);letter-spacing:.04em;font-size:.9rem;flex:none}
+.orc-ref{font-family:var(--fonte-valor,'Manrope',sans-serif);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-weight:800;color:var(--gold);letter-spacing:.04em;font-size:.9rem;flex:none}
 .orc-quem{flex:1;min-width:150px}
 .orc-quem b{display:block;font-size:.95rem;color:var(--cream)}
 .orc-quem span{font-size:.76rem;color:var(--cream-dim)}
-.orc-val{font-family:'Playfair Display',serif;font-size:1.35rem;color:var(--gold);flex:none}
+.orc-val{font-family:var(--fonte-valor,'Manrope',sans-serif);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-weight:800;font-size:1.35rem;color:var(--gold);flex:none}
 .orc-data{font-size:.74rem;color:var(--cream-dim);flex:none}
 .badge.novo{background:rgba(217,178,110,.18);color:var(--gold-soft)}
 .badge.sinal{background:rgba(37,211,102,.15);color:#8fe3ac}
@@ -197,7 +204,7 @@ td.valor{text-align:right;color:var(--cream);font-weight:700;white-space:nowrap}
 .fn-barra.curta span{left:auto;right:-8px;transform:translate(100%,-50%);
   color:var(--cream);text-shadow:none}
 .fn-num{flex:none;width:104px;text-align:right}
-.fn-num b{display:block;font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--gold);line-height:1.1}
+.fn-num b{display:block;font-family:var(--fonte-valor,'Manrope',sans-serif);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-weight:800;font-size:1.5rem;color:var(--gold);line-height:1.1}
 .fn-num span{display:block;font-size:.72rem;color:var(--cream-dim)}
 .fn-queda{font-size:.78rem;color:var(--cream-dim);margin:-4px 0 14px 0;padding-left:2px}
 .fn-queda b{color:#f0a292}

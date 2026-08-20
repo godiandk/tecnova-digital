@@ -1302,37 +1302,92 @@ const PRESETS = {
        3. email já registado      -> entra aqui mesmo, sem perder o pedido
      ================================================================== */
 
+  /* Todos os campos de identificação, e não só as palavras-passe: quem já
+     tem conta não pode ser obrigado a escrever outra vez o que já nos deu. */
+  var CAMPOS_DADOS = ['#fNome', '#fNegocio', '#fTel', '#fEmail'];
+  var CAMPOS_PASSE = ['#fPass', '#fPass2'];
+  var aEditar = false;      // o cliente pediu para corrigir os dados
+
+  function mostrarCampos(lista, mostrar, obrigatorios) {
+    lista.forEach(function (sel) {
+      var c = $(sel); if (!c) return;
+      c.required = mostrar && obrigatorios;
+      var caixa = c.closest('.campo');
+      if (caixa) caixa.hidden = !mostrar;
+    });
+  }
+
+  /* Vai buscar a ficha do cliente e enche o formulário. Se a ficha ainda
+     não existir (conta antiga, criada antes disto), fica-se pelo que o
+     Firebase Auth sabe: o email e o nome. */
+  function encherComOsDados() {
+    if (!sessao) return Promise.resolve({});
+    var base = { nome: sessao.displayName || '', email: sessao.email || '' };
+    if (!haFirebase()) return Promise.resolve(base);
+    return db.collection('clientes').doc(sessao.uid).get()
+      .then(function (d) { return Object.assign(base, (d && d.exists) ? d.data() : {}); })
+      .catch(function () { return base; })
+      .then(function (c) {
+        var pares = [['#fNome', c.nome], ['#fNegocio', c.empresa || c.negocio],
+                     ['#fTel', c.telefone || c.tel], ['#fEmail', c.email]];
+        pares.forEach(function (par) {
+          var el = $(par[0]);
+          if (el && !el.value && par[1]) el.value = par[1];
+        });
+        return c;
+      });
+  }
+
+  function resumoDaConta(c) {
+    var linhas = [c.nome, c.empresa || c.negocio, c.telefone || c.tel, c.email]
+                   .filter(Boolean).map(escapaHtml);
+    return '<b>' + frase('Já sabemos quem é') + '</b>' +
+      '<span class="cs-linhas">' + (linhas.join(' · ') || escapaHtml(sessao.email)) + '</span>' +
+      '<span class="cs-acoes">' +
+        '<button type="button" id="btnEditar">' + frase('Alterar estes dados') + '</button>' +
+        '<button type="button" id="btnSair">' + frase('Não sou eu — sair') + '</button>' +
+      '</span>';
+  }
+
   function pintarSessao() {
     var cx = $('#contaSessao');
     if (!cx) return;
-    var campos = ['#fPass', '#fPass2'];
     var aviso = $('#contaAviso');
-    if (sessao) {
-      cx.innerHTML = frase('Sessão iniciada como') + ' <b>' + escapaHtml(sessao.email) + '</b>. ' +
-        frase('O pedido fica ligado a esta conta.') +
-        ' <button type="button" id="btnSair">' + frase('Não sou eu — sair') + '</button>';
-      cx.hidden = false;
-      if (aviso) aviso.hidden = true;
-      // Com sessão iniciada não se pedem palavras-passe nenhumas.
-      campos.forEach(function (sel) {
-        var c = $(sel); if (!c) return;
-        c.required = false;
-        c.closest('.campo').hidden = true;
-      });
-      var em = $('#fEmail');
-      if (em && !em.value) em.value = sessao.email;
-      var bs = $('#btnSair');
-      if (bs) bs.addEventListener('click', function () { auth.signOut(); });
-      esconderJaTem();
-    } else {
+
+    if (!sessao) {
       cx.hidden = true;
       if (aviso) aviso.hidden = false;
-      campos.forEach(function (sel) {
-        var c = $(sel); if (!c) return;
-        c.required = true;
-        c.closest('.campo').hidden = false;
-      });
+      aEditar = false;
+      mostrarCampos(CAMPOS_DADOS, true, true);
+      mostrarCampos(CAMPOS_PASSE, true, true);
+      return;
     }
+
+    // Com sessão iniciada: nunca se pedem palavras-passe.
+    if (aviso) aviso.hidden = true;
+    mostrarCampos(CAMPOS_PASSE, false, false);
+    esconderJaTem();
+
+    encherComOsDados().then(function (c) {
+      // Falta alguma coisa na ficha? Então mostram-se os campos, senão o
+      // pedido ficava sem telefone e sem nome do negócio.
+      var completo = !!($('#fNome').value && $('#fNegocio').value &&
+                        $('#fTel').value && $('#fEmail').value);
+      var esconder = completo && !aEditar;
+      mostrarCampos(CAMPOS_DADOS, !esconder, true);
+
+      cx.innerHTML = esconder
+        ? resumoDaConta(c)
+        : frase('Sessão iniciada como') + ' <b>' + escapaHtml(sessao.email) + '</b>. ' +
+          frase('Confirme os dados e avance.') +
+          ' <button type="button" id="btnSair">' + frase('Não sou eu — sair') + '</button>';
+      cx.hidden = false;
+
+      var be = $('#btnEditar');
+      if (be) be.addEventListener('click', function () { aEditar = true; pintarSessao(); });
+      var bs = $('#btnSair');
+      if (bs) bs.addEventListener('click', function () { aEditar = false; auth.signOut(); });
+    });
   }
 
   function escapaHtml(t) {

@@ -9,6 +9,13 @@
   --gold-soft:#e8cf9e;
   --gold-dim:#8a7350;
   --cream:#f6efe2;
+  /* A letra dos VALORES. O Playfair é uma serifada de títulos: tem
+     traços finíssimos que, ao lado das etiquetas em Manrope, ficavam
+     frágeis e desencaixados. Os números passam a usar a letra do
+     próprio site, com algarismos de largura fixa para alinharem em
+     coluna. Para experimentar outra, muda-se só esta linha. */
+  --fonte-valor:'Manrope',-apple-system,'Segoe UI',sans-serif;
+
   --cream-dim:#c9bda6;
   --wa:#25d366;
   --radius:18px;

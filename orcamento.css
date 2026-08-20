@@ -89,7 +89,7 @@
 .res-l.desc{color:#7ff0a8}
 .res-total{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;padding-top:14px;border-top:1px solid rgba(217,178,110,.25)}
 .res-total span{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--cream-dim);font-weight:700}
-.res-total b{font-family:'Playfair Display',serif;font-size:2.4rem;color:var(--gold);line-height:1}
+.res-total b{font-family:var(--fonte-valor,'Manrope',sans-serif);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-weight:800;font-size:2.4rem;color:var(--gold);line-height:1}
 .res-nota{color:var(--cream-dim);font-size:.76rem;margin-top:4px;text-align:right}
 .res-pag{margin-top:16px;background:rgba(0,0,0,.24);border-radius:12px;padding:14px 16px}
 .res-pag div{display:flex;justify-content:space-between;font-size:.82rem;color:var(--cream-dim);padding:3px 0}
@@ -244,13 +244,13 @@
 .pr-val s{display:block;color:var(--cream-dim);font-size:1rem;opacity:.75}
 /* O `>` não é enfeite: sem ele, esta regra apanhava também o <b> que vai
    dentro da nota ("já com <b>40%</b> de desconto") e punha-o a 2,7rem. */
-.pr-val > b{font-family:'Playfair Display',serif;font-size:2.7rem;color:var(--gold);line-height:1;display:block}
+.pr-val > b{font-family:var(--fonte-valor,'Manrope',sans-serif);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-weight:800;font-size:2.7rem;color:var(--gold);line-height:1;display:block}
 .pr-val span{display:block;color:var(--cream-dim);font-size:.82rem;margin-top:6px;line-height:1.5}
 .pr-val span b{font-size:inherit;font-family:inherit;color:var(--gold-soft);font-weight:800}
 .pr-sinal{text-align:right}
 .pr-sinal > span:first-child{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
   color:var(--gold-soft);font-weight:800}
-.pr-sinal b{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--cream);line-height:1.2;display:block}
+.pr-sinal b{font-family:var(--fonte-valor,'Manrope',sans-serif);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-weight:800;font-size:1.6rem;color:var(--cream);line-height:1.2;display:block}
 .pr-sinal .pr-sinal-nota{display:block;color:var(--cream-dim);font-size:.8rem;
   letter-spacing:0;text-transform:none;font-weight:500;margin-top:2px}
 
@@ -286,7 +286,7 @@
   border-radius:16px;padding:20px 22px;margin:18px 0}
 .av-topo{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
   padding-bottom:14px;margin-bottom:16px;border-bottom:1px dashed rgba(217,178,110,.22)}
-.av-topo b{font-family:'Playfair Display',serif;font-size:1.9rem;color:var(--gold);line-height:1}
+.av-topo b{font-family:var(--fonte-valor,'Manrope',sans-serif);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-weight:800;font-size:1.9rem;color:var(--gold);line-height:1}
 .av-topo span{color:var(--cream-dim);font-size:.84rem}
 .av-cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
 .av-col h4{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;
@@ -344,3 +344,5 @@
   background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.3);
   color:var(--cream-dim);font-size:.88rem;line-height:1.6}
 .ok-conta b{color:var(--cream)}
+.conta-sessao .cs-linhas{display:block;color:var(--cream);font-size:.9rem;margin:6px 0 4px;line-height:1.5}
+.conta-sessao .cs-acoes{display:flex;flex-wrap:wrap;gap:6px 20px;align-items:center}
