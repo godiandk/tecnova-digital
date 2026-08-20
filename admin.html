@@ -119,6 +119,69 @@ tr:last-child td{border-bottom:none}
 #gate p{color:var(--cream-dim);font-size:.9rem;margin-top:10px}
 #gate a{color:var(--gold)}
 .table-wrap{overflow-x:auto}
+
+/* ---------- Faturação ---------- */
+.periodos{display:flex;flex-wrap:wrap;gap:8px}
+.per{background:var(--ink-3);border:1px solid rgba(217,178,110,.2);color:var(--cream-dim);
+  border-radius:999px;padding:9px 15px;font:inherit;font-size:.8rem;font-weight:700;cursor:pointer;min-height:40px}
+.per:hover{border-color:var(--gold-dim)}
+.per.on{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+.fat-legenda{margin:14px 0 0;font-size:.85rem;color:var(--cream-dim)}
+.fat-comparar{margin:-8px 0 22px;font-size:.88rem;font-weight:700}
+/* A cor sozinha não diz nada a quem não a distingue: vai sempre com
+   uma seta e com a frase escrita por extenso. */
+.fat-comparar .sobe{color:#8fe3ac}
+.fat-comparar .desce{color:#f0a292}
+.fat-comparar .igual{color:var(--cream-dim)}
+.fat-moedas{margin:-8px 0 22px;font-size:.85rem;color:var(--cream-dim)}
+.fat-moedas b{color:var(--gold-soft)}
+.fat-topo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.fat-dica{font-size:.72rem;color:var(--cream-dim)}
+
+.fat-grafico{margin-top:18px;position:relative}
+.fat-grafico svg{display:block;width:100%;height:auto;overflow:visible}
+.fat-eixo{fill:var(--cream-dim);font-size:10px;font-family:'Manrope',sans-serif}
+.fat-grelha{stroke:rgba(217,178,110,.13);stroke-width:1}
+.fat-barra{fill:var(--gold);cursor:pointer}
+.fat-barra:hover{fill:var(--gold-soft)}
+.fat-pico{fill:var(--cream);font-size:11px;font-weight:800;font-family:'Manrope',sans-serif}
+.fat-balao{position:absolute;pointer-events:none;background:var(--ink-3);border:1px solid var(--gold-dim);
+  border-radius:10px;padding:8px 12px;font-size:.8rem;color:var(--cream);white-space:nowrap;
+  box-shadow:0 8px 22px rgba(0,0,0,.5);transform:translate(-50%,-115%);opacity:0;transition:opacity .12s}
+.fat-balao b{color:var(--gold-soft);display:block;font-size:.9rem}
+
+/* repartições: cada linha diz o nome e o valor, por isso a barra é só
+   uma ajuda a comparar — não precisa de cor própria nenhuma. */
+.fat-fatia{margin-bottom:14px}
+.fat-fatia-topo{display:flex;justify-content:space-between;gap:12px;font-size:.85rem;margin-bottom:6px}
+.fat-fatia-topo b{color:var(--cream)}
+.fat-fatia-topo span{color:var(--cream-dim)}
+.fat-tubo{height:8px;background:rgba(217,178,110,.12);border-radius:999px;overflow:hidden}
+.fat-tubo i{display:block;height:100%;background:var(--gold);border-radius:999px}
+
+.fat-apagar{background:none;border:none;color:var(--bad);cursor:pointer;font:inherit;font-size:1rem;
+  padding:4px 8px;min-height:44px;min-width:44px;line-height:1}
+.fat-apagar:hover{color:#f0a292}
+td.valor{text-align:right;color:var(--cream);font-weight:700;white-space:nowrap}
+
+@media(max-width:720px){
+  .fat-topo{flex-direction:column;align-items:stretch}
+  .per{flex:1 1 auto;text-align:center}
+}
+
+/* No telemóvel os três números em fila ficavam com 120px cada e a
+   partir-se a meio. Um por linha lê-se, e é o que se vem aqui ver. */
+@media(max-width:560px){
+  .grid-stats{grid-template-columns:1fr}
+  .stat{display:flex;align-items:baseline;justify-content:space-between;text-align:left;padding:16px 20px}
+  .stat b{font-size:1.6rem}
+  .stat span{text-align:right}
+}
+/* A tabela de pagamentos tem colunas que são só contexto. Num ecrã
+   estreito o que não pode faltar é o dia, o cliente e o valor. */
+@media(max-width:620px){
+  #paneFat th.col-sec, #paneFat td.col-sec{display:none}
+}
 </style>
 </head>
 <body>
@@ -149,6 +212,7 @@ tr:last-child td{border-bottom:none}
     <button class="tab on" data-pane="paneOrc">Orçamentos <span class="n" id="tabNovos">0</span></button>
     <button class="tab" data-pane="paneMsg">Mensagens <span class="n" id="tabMsgs">0</span></button>
     <button class="tab" data-pane="paneCli">Clientes &amp; Cupões</button>
+    <button class="tab" data-pane="paneFat">Faturação</button>
   </div>
 
   <!-- =============== ORÇAMENTOS =============== -->
@@ -298,6 +362,131 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
   </div><!-- /paneCli -->
+
+  <!-- =============== FATURAÇÃO =============== -->
+  <div class="pane" id="paneFat">
+
+    <!-- que período estamos a ver -->
+    <div class="card">
+      <h2 style="font-size:1.1rem;margin:0 0 4px">Quanto faturei</h2>
+      <p style="font-size:.82rem;color:var(--cream-dim);margin:0 0 14px">Só entra aqui o dinheiro que registou como recebido. Nada é contado sozinho — o MB WAY e as transferências não avisam ninguém.</p>
+      <div class="periodos" id="fatPeriodos">
+        <button class="per" data-per="hoje">Hoje</button>
+        <button class="per" data-per="ontem">Ontem</button>
+        <button class="per" data-per="semana">Esta semana</button>
+        <button class="per" data-per="semana-1">Semana passada</button>
+        <button class="per on" data-per="mes">Este mês</button>
+        <button class="per" data-per="mes-1">Mês passado</button>
+        <button class="per" data-per="ano">Este ano</button>
+        <button class="per" data-per="ano-1">Ano passado</button>
+        <button class="per" data-per="tudo">Desde sempre</button>
+        <button class="per" data-per="datas">De tal data a tal data</button>
+      </div>
+      <div id="fatDatas" hidden style="margin-top:16px">
+        <div class="row2">
+          <div><label for="fatDe">De</label><input type="date" id="fatDe"></div>
+          <div><label for="fatAte">Até</label><input type="date" id="fatAte"></div>
+        </div>
+        <button class="btn line" onclick="periodoPorDatas()">Ver este intervalo</button>
+        <div id="fatDatasMsg" class="msg"></div>
+      </div>
+      <p id="fatLegenda" class="fat-legenda">—</p>
+    </div>
+
+    <!-- os números -->
+    <div class="grid-stats">
+      <div class="stat"><b id="fatTotal">–</b><span>Faturado no período</span></div>
+      <div class="stat"><b id="fatNum">–</b><span>Pagamentos recebidos</span></div>
+      <div class="stat"><b id="fatMedia">–</b><span>Média por pagamento</span></div>
+    </div>
+    <p id="fatComparar" class="fat-comparar" hidden></p>
+    <div id="fatMoedas" class="fat-moedas" hidden></div>
+
+    <!-- o gráfico -->
+    <div class="card">
+      <div class="fat-topo">
+        <h2 style="font-size:1.1rem;margin:0" id="fatGrafTitulo">Faturação dia a dia</h2>
+        <span class="fat-dica">Passe o rato ou toque numa barra</span>
+      </div>
+      <div id="fatGrafico" class="fat-grafico"><p class="empty">A carregar…</p></div>
+    </div>
+
+    <!-- de onde veio -->
+    <div class="row2" style="align-items:start">
+      <div class="card">
+        <h2 style="font-size:1.1rem;margin:0 0 14px">Como recebeu</h2>
+        <div id="fatMetodos"><p class="empty">—</p></div>
+      </div>
+      <div class="card">
+        <h2 style="font-size:1.1rem;margin:0 0 14px">A que se refere</h2>
+        <div id="fatTipos"><p class="empty">—</p></div>
+      </div>
+    </div>
+
+    <!-- registar uma entrada -->
+    <div class="card">
+      <h2 style="font-size:1.1rem;margin:0 0 4px">Registar um pagamento</h2>
+      <p style="font-size:.82rem;color:var(--cream-dim);margin:0">Sempre que entrar dinheiro, registe-o aqui. Se escolher um orçamento, o resto preenche-se sozinho.</p>
+
+      <label for="pagOrc">Orçamento (opcional)</label>
+      <select id="pagOrc" onchange="preencherPorOrcamento()"><option value="">— escrever à mão —</option></select>
+
+      <div class="row2">
+        <div><label for="pagData">Dia em que entrou</label><input type="date" id="pagData"></div>
+        <div><label for="pagValor">Valor recebido</label><input type="text" id="pagValor" inputmode="decimal" placeholder="495"></div>
+      </div>
+      <div class="row2">
+        <div>
+          <label for="pagMoeda">Moeda</label>
+          <select id="pagMoeda"><option value="EUR">€ Euro</option><option value="BRL">R$ Real</option></select>
+        </div>
+        <div>
+          <label for="pagMetodo">Como recebeu</label>
+          <select id="pagMetodo">
+            <option value="mbway">MB WAY</option>
+            <option value="transferencia">Transferência</option>
+            <option value="pix">Pix</option>
+            <option value="cartao">Cartão</option>
+            <option value="dinheiro">Dinheiro</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div><label for="pagCliente">Cliente</label><input type="text" id="pagCliente" placeholder="Barbearia do Zé"></div>
+        <div>
+          <label for="pagTipo">A que se refere</label>
+          <select id="pagTipo">
+            <option value="sinal">Sinal (primeira metade)</option>
+            <option value="final">Entrega (segunda metade)</option>
+            <option value="total">Pagamento completo</option>
+            <option value="manutencao">Manutenção mensal</option>
+            <option value="extra">Trabalho extra</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+      </div>
+      <label for="pagNotas">Nota (opcional)</label>
+      <input type="text" id="pagNotas" placeholder="Ex: faltou 20€, paga na entrega">
+      <button class="btn" onclick="guardarPagamento()">Registar pagamento</button>
+      <div id="pagMsg" class="msg"></div>
+    </div>
+
+    <!-- a lista -->
+    <div class="card">
+      <div class="fat-topo">
+        <h2 style="font-size:1.1rem;margin:0">Pagamentos do período</h2>
+        <button class="btn line" style="margin:0" onclick="exportarCSV()">Descarregar em CSV</button>
+      </div>
+      <div class="table-wrap" style="margin-top:14px">
+        <table>
+          <thead><tr><th>Dia</th><th>Cliente</th><th class="col-sec">Refª</th><th class="col-sec">Como</th><th class="col-sec">Refere-se a</th><th style="text-align:right">Valor</th><th></th></tr></thead>
+          <tbody id="tabelaPagamentos"><tr><td colspan="7" class="empty">A carregar…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /paneFat -->
 </div>
 
 <script>
@@ -320,7 +509,10 @@ auth.onAuthStateChanged(async (user)=>{
   document.getElementById('painel').classList.remove('hidden');
   carregarClientes();
   carregarVouchers();
-  carregarOrcamentos();
+  // A faturação só depois dos orçamentos: é deles que sai a lista para
+  // preencher o formulário de um pagamento com um clique.
+  await carregarOrcamentos();
+  carregarPagamentos();
   try{
     TecnovaChat.admin('#chatAdmin', function(porResponder){
       document.getElementById('tabMsgs').textContent = porResponder;
@@ -333,6 +525,10 @@ document.querySelectorAll('.tab').forEach(t=>{
   t.addEventListener('click',()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x===t));
     document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on', p.id===t.dataset.pane));
+    // Um painel escondido tem largura zero. Como o gráfico é desenhado à
+    // largura real, tem de esperar por ser visível para saber que tamanho tem.
+    if(t.dataset.pane === 'paneFat' && typeof desenharFaturacao === 'function' && pagCache.length)
+      desenharFaturacao();
   });
 });
 
@@ -700,6 +896,511 @@ function copiarLinkPagamento(){
   if (navigator.clipboard) navigator.clipboard.writeText(campo.value).then(feito, () => {});
   else { try { document.execCommand('copy'); feito(); } catch(e){} }
 }
+
+/* ==================================================================
+   FATURAÇÃO
+   ------------------------------------------------------------------
+   Aqui não se adivinha nada. O MB WAY e as transferências não avisam
+   ninguém, por isso cada entrada de dinheiro é registada à mão na
+   coleção `pagamentos`. Os orçamentos servem só para preencher o
+   formulário mais depressa — um orçamento não é dinheiro recebido.
+
+   As datas são strings 'AAAA-MM-DD' de propósito. Comparadas como
+   texto dão o mesmo resultado que comparadas como datas, e assim não
+   há fusos horários a mexer no dia de um pagamento.
+   ================================================================== */
+
+let pagCache = [];
+let fatPeriodo = { de: '', ate: '', nome: '', chave: 'mes' };
+
+const METODOS = { mbway:'MB WAY', transferencia:'Transferência', pix:'Pix',
+                  cartao:'Cartão', dinheiro:'Dinheiro', outro:'Outro' };
+const TIPOS = { sinal:'Sinal', final:'Entrega', total:'Pagamento completo',
+                manutencao:'Manutenção', extra:'Trabalho extra', outro:'Outro' };
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho',
+               'julho','agosto','setembro','outubro','novembro','dezembro'];
+const MESES_CURTO = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+/* ---------- datas ---------- */
+function iso(d){
+  // Nada de toISOString(): esse converte para UTC e, à noite, devolve o dia
+  // anterior. Montamos o dia com os números locais.
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function deIso(s){ const p = s.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+function maisDias(s, n){ const d = deIso(s); d.setDate(d.getDate()+n); return iso(d); }
+function diasEntre(a, b){ return Math.round((deIso(b) - deIso(a)) / 86400000) + 1; }
+
+function porExtenso(s){
+  const d = deIso(s);
+  return d.getDate() + ' de ' + MESES[d.getMonth()] + ' de ' + d.getFullYear();
+}
+
+/* Segunda-feira da semana de `d`. Em Portugal a semana começa à segunda,
+   e o getDay() do JavaScript põe o domingo a zero. */
+function segundaDe(d){
+  const x = new Date(d);
+  const dow = (x.getDay() + 6) % 7;
+  x.setDate(x.getDate() - dow);
+  return x;
+}
+
+function calcularPeriodo(chave){
+  const hoje = new Date();
+  const a = hoje.getFullYear(), m = hoje.getMonth();
+  switch(chave){
+    case 'hoje':     return { de: iso(hoje), ate: iso(hoje), nome: 'Hoje' };
+    case 'ontem': {
+      const o = new Date(hoje); o.setDate(o.getDate()-1);
+      return { de: iso(o), ate: iso(o), nome: 'Ontem' };
+    }
+    case 'semana': {
+      const s = segundaDe(hoje), f = new Date(s); f.setDate(f.getDate()+6);
+      return { de: iso(s), ate: iso(f), nome: 'Esta semana' };
+    }
+    case 'semana-1': {
+      const s = segundaDe(hoje); s.setDate(s.getDate()-7);
+      const f = new Date(s); f.setDate(f.getDate()+6);
+      return { de: iso(s), ate: iso(f), nome: 'Semana passada' };
+    }
+    case 'mes':      return { de: iso(new Date(a,m,1)),     ate: iso(new Date(a,m+1,0)),   nome: MESES[m] + ' de ' + a };
+    case 'mes-1':    return { de: iso(new Date(a,m-1,1)),   ate: iso(new Date(a,m,0)),     nome: MESES[(m+11)%12] + ' de ' + (m===0 ? a-1 : a) };
+    case 'ano':      return { de: iso(new Date(a,0,1)),     ate: iso(new Date(a,11,31)),   nome: 'Ano de ' + a };
+    case 'ano-1':    return { de: iso(new Date(a-1,0,1)),   ate: iso(new Date(a-1,11,31)), nome: 'Ano de ' + (a-1) };
+    case 'tudo': {
+      const datas = pagCache.map(p=>p.data).filter(Boolean).sort();
+      return { de: datas[0] || iso(hoje), ate: datas[datas.length-1] || iso(hoje), nome: 'Desde sempre' };
+    }
+    default:         return { de: iso(new Date(a,m,1)), ate: iso(new Date(a,m+1,0)), nome: MESES[m] + ' de ' + a };
+  }
+}
+
+function escolherPeriodo(chave, botao){
+  document.querySelectorAll('#fatPeriodos .per').forEach(b=>b.classList.toggle('on', b===botao));
+  const caixa = document.getElementById('fatDatas');
+  if(chave === 'datas'){
+    caixa.hidden = false;
+    // arranca com o mês corrente lá dentro, para não obrigar a escrever tudo
+    const p = calcularPeriodo('mes');
+    if(!document.getElementById('fatDe').value)  document.getElementById('fatDe').value = p.de;
+    if(!document.getElementById('fatAte').value) document.getElementById('fatAte').value = p.ate;
+    return;
+  }
+  caixa.hidden = true;
+  fatPeriodo = Object.assign(calcularPeriodo(chave), { chave: chave });
+  desenharFaturacao();
+}
+
+function periodoPorDatas(){
+  const msg = document.getElementById('fatDatasMsg');
+  const de = document.getElementById('fatDe').value;
+  const ate = document.getElementById('fatAte').value;
+  if(!de || !ate){ msg.textContent = 'Escolha as duas datas.'; msg.className = 'msg err'; return; }
+  if(de > ate){ msg.textContent = 'A data de início é depois da data de fim.'; msg.className = 'msg err'; return; }
+  msg.className = 'msg';
+  fatPeriodo = { de: de, ate: ate, chave: 'datas',
+                 nome: 'De ' + porExtenso(de) + ' a ' + porExtenso(ate) };
+  desenharFaturacao();
+}
+
+/* ---------- dinheiro ---------- */
+function dinheiro(n, moeda){
+  // Cada moeda com a escrita do seu país. Em pt-PT só há separador de
+  // milhares a partir das cinco casas (4225,50€ mas 12 500,00€) — é assim
+  // mesmo, não é um esquecimento.
+  const local = (moeda === 'BRL') ? 'pt-BR' : 'pt-PT';
+  const v = (n || 0).toLocaleString(local, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return moeda === 'BRL' ? 'R$ ' + v : v + '€';
+}
+function dinheiroCurto(n){
+  // Abaixo dos 10 000 o valor exato cabe e não engana: 1250€ é 1250€,
+  // e não "1.3k€" — que ainda por cima traz o ponto decimal do inglês.
+  if(n >= 10000) return String(Math.round(n/100)/10).replace('.', ',') + 'k€';
+  return Math.round(n) + '€';
+}
+
+/* ---------- carregar ---------- */
+async function carregarPagamentos(){
+  try{
+    const snap = await db.collection('pagamentos').orderBy('data','desc').get();
+    pagCache = snap.docs.map(d=>Object.assign({ id: d.id }, d.data()));
+  }catch(e){
+    pagCache = [];
+    console.error('Não foi possível ler os pagamentos:', e);
+  }
+  fatPeriodo = Object.assign(calcularPeriodo('mes'), { chave: 'mes' });
+  document.getElementById('pagData').value = iso(new Date());
+  encherOrcamentos();
+  desenharFaturacao();
+}
+
+function encherOrcamentos(){
+  const sel = document.getElementById('pagOrc');
+  if(!sel || !orcCache) return;
+  sel.innerHTML = '<option value="">— escrever à mão —</option>' +
+    orcCache.map(o => `<option value="${o.id}">${o.ref || o.id} · ${o.nome || ''} · ${dinheiro(o.total, o.moeda || 'EUR')}</option>`).join('');
+}
+
+function preencherPorOrcamento(){
+  const id = document.getElementById('pagOrc').value;
+  if(!id) return;
+  const o = orcCache.find(x=>x.id===id); if(!o) return;
+  document.getElementById('pagCliente').value = o.nome || o.negocio || '';
+  document.getElementById('pagMoeda').value = (o.moeda === 'BRL') ? 'BRL' : 'EUR';
+  // O sinal é o que se cobra primeiro; fica sugerido, mas dá para trocar.
+  document.getElementById('pagValor').value = o.sinal || o.total || '';
+  document.getElementById('pagTipo').value = 'sinal';
+}
+
+/* ---------- guardar e apagar ---------- */
+function lerNumero(txt){
+  const t = String(txt||'').replace(/[^\d.,-]/g,'').trim();
+  if(!t) return NaN;
+  const uv = t.lastIndexOf(','), up = t.lastIndexOf('.');
+  let corte = -1;
+  if(uv > -1 && up > -1) corte = Math.max(uv, up);
+  else { const so = Math.max(uv, up); const casas = t.length - so - 1;
+         if(so > -1 && casas >= 1 && casas <= 2) corte = so; }
+  const limpo = corte > -1
+    ? t.slice(0,corte).replace(/[.,]/g,'') + '.' + t.slice(corte+1).replace(/[.,]/g,'')
+    : t.replace(/[.,]/g,'');
+  const n = parseFloat(limpo);
+  return isFinite(n) ? n : NaN;
+}
+
+async function guardarPagamento(){
+  const msg = document.getElementById('pagMsg');
+  const erro = t => { msg.textContent = t; msg.className = 'msg err'; };
+  const data = document.getElementById('pagData').value;
+  const valor = lerNumero(document.getElementById('pagValor').value);
+  const cliente = document.getElementById('pagCliente').value.trim();
+  const orcId = document.getElementById('pagOrc').value;
+  const orc = orcId ? orcCache.find(x=>x.id===orcId) : null;
+
+  if(!data) return erro('Escolha o dia em que o dinheiro entrou.');
+  if(!isFinite(valor) || valor <= 0) return erro('Escreva o valor recebido.');
+  if(!cliente) return erro('Escreva de quem veio o pagamento.');
+
+  const registo = {
+    data: data,
+    valor: valor,
+    moeda: document.getElementById('pagMoeda').value,
+    cliente: cliente,
+    ref: orc ? (orc.ref || orc.id) : '',
+    metodo: document.getElementById('pagMetodo').value,
+    tipo: document.getElementById('pagTipo').value,
+    notas: document.getElementById('pagNotas').value.trim(),
+    criadoEm: new Date().toISOString()
+  };
+
+  try{
+    const doc = await db.collection('pagamentos').add(registo);
+    pagCache.unshift(Object.assign({ id: doc.id }, registo));
+    pagCache.sort((a,b)=> (a.data < b.data ? 1 : -1));
+    msg.textContent = 'Registado: ' + dinheiro(valor, registo.moeda) + ' de ' + cliente + '.';
+    msg.className = 'msg ok';
+    document.getElementById('pagValor').value = '';
+    document.getElementById('pagNotas').value = '';
+    document.getElementById('pagCliente').value = '';
+    document.getElementById('pagOrc').value = '';
+    desenharFaturacao();
+  }catch(e){
+    erro('Não foi possível guardar. Verifique a ligação e tente outra vez.');
+    console.error(e);
+  }
+}
+
+async function apagarPagamento(id){
+  const p = pagCache.find(x=>x.id===id); if(!p) return;
+  if(!confirm('Apagar o pagamento de ' + dinheiro(p.valor, p.moeda) + ' de ' + p.cliente + ', em ' + porExtenso(p.data) + '?\n\nIsto não tem volta.')) return;
+  try{
+    await db.collection('pagamentos').doc(id).delete();
+    pagCache = pagCache.filter(x=>x.id!==id);
+    desenharFaturacao();
+  }catch(e){ alert('Não foi possível apagar.'); }
+}
+
+/* ---------- desenhar ---------- */
+function noPeriodo(de, ate){
+  return pagCache.filter(p => p.data >= de && p.data <= ate);
+}
+
+function desenharFaturacao(){
+  const { de, ate, nome } = fatPeriodo;
+  const dias = diasEntre(de, ate);
+  const lista = noPeriodo(de, ate);
+
+  document.getElementById('fatLegenda').textContent =
+    nome + ' · ' + (dias === 1 ? porExtenso(de) : porExtenso(de) + ' a ' + porExtenso(ate) + ' (' + dias + ' dias)');
+
+  // Euros e reais não se somam. O euro manda; o resto aparece à parte.
+  const eur = lista.filter(p => (p.moeda||'EUR') === 'EUR');
+  const outras = lista.filter(p => (p.moeda||'EUR') !== 'EUR');
+  const total = eur.reduce((s,p)=>s+(p.valor||0), 0);
+
+  document.getElementById('fatTotal').textContent = dinheiro(total, 'EUR');
+  document.getElementById('fatNum').textContent = lista.length;
+  document.getElementById('fatMedia').textContent = eur.length ? dinheiro(total/eur.length, 'EUR') : '–';
+
+  const cxMoedas = document.getElementById('fatMoedas');
+  if(outras.length){
+    const porMoeda = {};
+    outras.forEach(p => { porMoeda[p.moeda] = (porMoeda[p.moeda]||0) + (p.valor||0); });
+    cxMoedas.innerHTML = 'Além disso, recebeu ' +
+      Object.keys(porMoeda).map(m => '<b>' + dinheiro(porMoeda[m], m) + '</b>').join(' e ') +
+      '. Não somo moedas diferentes: o total e a média acima contam só os euros.';
+    cxMoedas.hidden = false;
+  } else cxMoedas.hidden = true;
+
+  compararComAnterior(de, ate, dias, total);
+  desenharGrafico(eur, de, ate, dias);
+  desenharFatias('fatMetodos', eur, 'metodo', METODOS, total);
+  desenharFatias('fatTipos',   eur, 'tipo',   TIPOS,   total);
+  desenharTabela(lista);
+}
+
+function compararComAnterior(de, ate, dias, total){
+  const cx = document.getElementById('fatComparar');
+  if(fatPeriodo.chave === 'tudo'){ cx.hidden = true; return; }
+
+  const anteDe = maisDias(de, -dias), anteAte = maisDias(de, -1);
+  const antes = noPeriodo(anteDe, anteAte)
+    .filter(p => (p.moeda||'EUR') === 'EUR')
+    .reduce((s,p)=>s+(p.valor||0), 0);
+
+  const quando = dias === 1 ? 'no dia anterior' : 'nos ' + dias + ' dias anteriores';
+  if(!antes && !total){ cx.hidden = true; return; }
+  if(!antes){
+    cx.innerHTML = '<span class="igual">Não há nada registado ' + quando + ' para comparar.</span>';
+    cx.hidden = false; return;
+  }
+  const dif = total - antes;
+  const pct = Math.round(Math.abs(dif) / antes * 100);
+  // A seta e a frase dizem tudo. A cor é só um reforço — quem não a
+  // distingue continua a perceber o mesmo.
+  if(dif > 0)      cx.innerHTML = '<span class="sobe">▲ ' + pct + '% acima</span> <span class="igual">dos ' + dinheiro(antes,'EUR') + ' ' + quando + '</span>';
+  else if(dif < 0) cx.innerHTML = '<span class="desce">▼ ' + pct + '% abaixo</span> <span class="igual">dos ' + dinheiro(antes,'EUR') + ' ' + quando + '</span>';
+  else             cx.innerHTML = '<span class="igual">Igual ' + quando + ' (' + dinheiro(antes,'EUR') + ')</span>';
+  cx.hidden = false;
+}
+
+/* Agrupa por dia, por mês ou por ano, conforme o período dá para ver.
+   Mais de 62 barras num telemóvel não se lê. */
+function agrupar(lista, de, ate, dias){
+  const caixas = [];
+  if(dias <= 62){
+    for(let d = de; d <= ate; d = maisDias(d, 1)){
+      const dt = deIso(d);
+      caixas.push({ chave: d, rotulo: String(dt.getDate()),
+                    titulo: porExtenso(d), valor: 0 });
+    }
+    const idx = {}; caixas.forEach((c,i)=>idx[c.chave]=i);
+    lista.forEach(p => { if(idx[p.data] !== undefined) caixas[idx[p.data]].valor += p.valor||0; });
+    return { caixas: caixas, titulo: 'Faturação dia a dia' };
+  }
+  const anos = deIso(ate).getFullYear() - deIso(de).getFullYear();
+  if(anos <= 3){
+    const d0 = deIso(de), d1 = deIso(ate);
+    const varios = d0.getFullYear() !== d1.getFullYear();
+    for(let y = d0.getFullYear(), m = d0.getMonth();
+        y < d1.getFullYear() || (y === d1.getFullYear() && m <= d1.getMonth()); ){
+      caixas.push({ chave: y + '-' + String(m+1).padStart(2,'0'),
+                    rotulo: MESES_CURTO[m] + (varios ? ' ' + String(y).slice(2) : ''),
+                    titulo: MESES[m] + ' de ' + y, valor: 0 });
+      m++; if(m > 11){ m = 0; y++; }
+    }
+    const idx = {}; caixas.forEach((c,i)=>idx[c.chave]=i);
+    lista.forEach(p => { const k = p.data.slice(0,7); if(idx[k] !== undefined) caixas[idx[k]].valor += p.valor||0; });
+    return { caixas: caixas, titulo: 'Faturação mês a mês' };
+  }
+  for(let y = deIso(de).getFullYear(); y <= deIso(ate).getFullYear(); y++)
+    caixas.push({ chave: String(y), rotulo: String(y), titulo: 'Ano de ' + y, valor: 0 });
+  const idx = {}; caixas.forEach((c,i)=>idx[c.chave]=i);
+  lista.forEach(p => { const k = p.data.slice(0,4); if(idx[k] !== undefined) caixas[idx[k]].valor += p.valor||0; });
+  return { caixas: caixas, titulo: 'Faturação ano a ano' };
+}
+
+/* Um número redondo acima do máximo, para o eixo não ter valores esquisitos. */
+function tetoRedondo(max){
+  if(max <= 0) return 100;
+  const escala = Math.pow(10, Math.floor(Math.log10(max)));
+  for(const passo of [1, 2, 2.5, 5, 10]){
+    const t = escala * passo;
+    if(t >= max) return t;
+  }
+  return escala * 10;
+}
+
+function desenharGrafico(lista, de, ate, dias){
+  const cx = document.getElementById('fatGrafico');
+  const { caixas, titulo } = agrupar(lista, de, ate, dias);
+  document.getElementById('fatGrafTitulo').textContent = titulo;
+
+  const max = Math.max(...caixas.map(c=>c.valor), 0);
+  if(!max){
+    cx.innerHTML = '<p class="empty">Ainda não há nada registado neste período.</p>';
+    return;
+  }
+
+  // O SVG é desenhado com a largura REAL da caixa, em píxeis. Com um
+  // viewBox fixo de 720, no telemóvel o desenho encolhia para 284px e a
+  // letra ia atrás — ficava um gráfico bonito e ilegível.
+  const W = Math.max(260, Math.round(cx.clientWidth || 720));
+  const estreito = W < 420;
+  const L = estreito ? 46 : 52, R = 8, T = 22, B = 26;      // margens
+  const H = estreito ? 200 : 260;
+  const larguraUtil = W - L - R, alturaUtil = H - T - B;
+  const banda = larguraUtil / caixas.length;
+  // 24px é o limite: mais grosso do que isto a barra vira um bloco. A
+  // folga que sobra na banda é o espaço entre barras, e nunca menos de 2px.
+  const largura = Math.max(2, Math.min(24, banda - 2));
+  const teto = tetoRedondo(max);
+
+  let svg = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H +
+            '" role="img" aria-label="' + titulo + '">';
+
+  // grelha e eixo dos valores
+  for(let i = 0; i <= 2; i++){
+    const v = teto / 2 * i;
+    const y = T + alturaUtil - (v / teto) * alturaUtil;
+    svg += '<line class="fat-grelha" x1="' + L + '" y1="' + y + '" x2="' + (W-R) + '" y2="' + y + '"/>';
+    svg += '<text class="fat-eixo" x="' + (L-8) + '" y="' + (y+3) + '" text-anchor="end">' + dinheiroCurto(v) + '</text>';
+  }
+
+  // quantos rótulos cabem no eixo de baixo sem se sobreporem
+  const salto = Math.ceil(caixas.length / (estreito ? 6 : 16));
+  const pico = caixas.reduce((a,c,i)=> c.valor > caixas[a].valor ? i : a, 0);
+  let ultimoFim = -1e9;   // onde acabou o último rótulo escrito no eixo
+
+  caixas.forEach((c, i) => {
+    const x = L + banda * i + (banda - largura) / 2;
+    const alt = (c.valor / teto) * alturaUtil;
+    if(c.valor > 0){
+      const y = T + alturaUtil - alt;
+      const r = Math.min(4, largura/2, alt);
+      // topo redondo, base quadrada: a barra assenta na linha de base
+      svg += '<path class="fat-barra" data-i="' + i + '" d="M' + x + ' ' + (T+alturaUtil) +
+             ' L' + x + ' ' + (y+r) + ' Q' + x + ' ' + y + ' ' + (x+r) + ' ' + y +
+             ' L' + (x+largura-r) + ' ' + y + ' Q' + (x+largura) + ' ' + y + ' ' + (x+largura) + ' ' + (y+r) +
+             ' L' + (x+largura) + ' ' + (T+alturaUtil) + ' Z"><title>' +
+             c.titulo + ': ' + dinheiro(c.valor,'EUR') + '</title></path>';
+      // só o pico leva o valor escrito: um número em cada barra não se lê
+      // O valor só vai escrito na barra mais alta, e só se couber: um
+      // número por barra não se lê, e um número cortado é pior que nenhum.
+      if(i === pico){
+        const texto = estreito ? dinheiroCurto(c.valor) : dinheiro(c.valor,'EUR');
+        const meia = texto.length * 3.2;
+        const cx2 = Math.min(W - R - meia, Math.max(L + meia, x + largura/2));
+        svg += '<text class="fat-pico" x="' + cx2 + '" y="' + (y-7) + '" text-anchor="middle">' + texto + '</text>';
+      }
+    }
+    // O rótulo só entra se não encostar ao anterior. Saltar de N em N não
+    // chega: o último é sempre desenhado e ia bater no penúltimo.
+    if(i % salto === 0 || i === caixas.length-1){
+      const meio = x + largura/2;
+      const meiaLargura = c.rotulo.length * 3 + 4;
+      if(meio - meiaLargura >= ultimoFim){
+        svg += '<text class="fat-eixo" x="' + meio + '" y="' + (H-8) + '" text-anchor="middle">' + c.rotulo + '</text>';
+        ultimoFim = meio + meiaLargura;
+      }
+    }
+  });
+
+  svg += '<line class="fat-grelha" x1="' + L + '" y1="' + (T+alturaUtil) + '" x2="' + (W-R) + '" y2="' + (T+alturaUtil) + '"/>';
+  svg += '</svg><div class="fat-balao" id="fatBalao"></div>';
+  cx.innerHTML = svg;
+
+  // balão a seguir o rato ou o dedo
+  const balao = document.getElementById('fatBalao');
+  cx.querySelectorAll('.fat-barra').forEach(b => {
+    const mostrar = ev => {
+      const c = caixas[+b.dataset.i];
+      const cr = cx.getBoundingClientRect(), br = b.getBoundingClientRect();
+      balao.innerHTML = '<b>' + dinheiro(c.valor,'EUR') + '</b>' + c.titulo;
+      balao.style.left = (br.left - cr.left + br.width/2) + 'px';
+      balao.style.top  = (br.top - cr.top) + 'px';
+      balao.style.opacity = '1';
+    };
+    b.addEventListener('mouseenter', mostrar);
+    b.addEventListener('touchstart', mostrar, { passive: true });
+    b.addEventListener('mouseleave', ()=>{ balao.style.opacity = '0'; });
+  });
+}
+
+function desenharFatias(alvo, lista, campo, nomes, total){
+  const cx = document.getElementById(alvo);
+  if(!lista.length){ cx.innerHTML = '<p class="empty">—</p>'; return; }
+  const soma = {};
+  lista.forEach(p => { const k = p[campo] || 'outro'; soma[k] = (soma[k]||0) + (p.valor||0); });
+  const ordem = Object.keys(soma).sort((a,b)=>soma[b]-soma[a]);
+  cx.innerHTML = ordem.map(k => {
+    const pct = total ? Math.round(soma[k]/total*100) : 0;
+    return '<div class="fat-fatia">' +
+      '<div class="fat-fatia-topo"><b>' + (nomes[k] || k) + '</b>' +
+      '<span>' + dinheiro(soma[k],'EUR') + ' · ' + pct + '%</span></div>' +
+      '<div class="fat-tubo"><i style="width:' + pct + '%"></i></div></div>';
+  }).join('');
+}
+
+function desenharTabela(lista){
+  const tb = document.getElementById('tabelaPagamentos');
+  if(!lista.length){
+    tb.innerHTML = '<tr><td colspan="7" class="empty">Nenhum pagamento neste período.</td></tr>';
+    return;
+  }
+  tb.innerHTML = lista.map(p => {
+    const d = deIso(p.data);
+    return '<tr>' +
+      '<td>' + d.getDate() + ' ' + MESES_CURTO[d.getMonth()] + '</td>' +
+      '<td>' + escapar(p.cliente || '—') + (p.notas ? '<br><span style="font-size:.75rem;opacity:.7">' + escapar(p.notas) + '</span>' : '') + '</td>' +
+      '<td class="col-sec">' + escapar(p.ref || '—') + '</td>' +
+      '<td class="col-sec">' + (METODOS[p.metodo] || '—') + '</td>' +
+      '<td class="col-sec">' + (TIPOS[p.tipo] || '—') + '</td>' +
+      '<td class="valor">' + dinheiro(p.valor, p.moeda) + '</td>' +
+      '<td><button class="fat-apagar" title="Apagar" onclick="apagarPagamento(\'' + p.id + '\')">✕</button></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function escapar(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- CSV para as contas ---------- */
+function exportarCSV(){
+  const lista = noPeriodo(fatPeriodo.de, fatPeriodo.ate);
+  if(!lista.length){ alert('Não há pagamentos neste período para exportar.'); return; }
+  const campo = v => '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"';
+  const linhas = [['Data','Cliente','Referencia','Metodo','Refere-se a','Valor','Moeda','Nota']
+    .map(campo).join(';')];
+  // do mais antigo para o mais recente, que é como se lançam as contas
+  lista.slice().sort((a,b)=> a.data < b.data ? -1 : 1).forEach(p => {
+    linhas.push([p.data, p.cliente, p.ref, METODOS[p.metodo]||p.metodo,
+                 TIPOS[p.tipo]||p.tipo, Number(p.valor||0).toFixed(2).replace('.',','), p.moeda, p.notas]
+                .map(campo).join(';'));
+  });
+  // BOM à cabeça, senão o Excel come os acentos
+  const blob = new Blob(['﻿' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'faturacao-' + fatPeriodo.de + '-a-' + fatPeriodo.ate + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+document.querySelectorAll('#fatPeriodos .per').forEach(b => {
+  b.addEventListener('click', () => escolherPeriodo(b.dataset.per, b));
+});
+
+/* Como o gráfico é desenhado à largura real, tem de ser redesenhado quando
+   a janela muda — ao rodar o telemóvel, por exemplo. */
+let redesenhar;
+window.addEventListener('resize', () => {
+  clearTimeout(redesenhar);
+  redesenhar = setTimeout(() => {
+    if(document.getElementById('paneFat').classList.contains('on') && pagCache.length) desenharFaturacao();
+  }, 200);
+});
 </script>
 </body>
 </html>

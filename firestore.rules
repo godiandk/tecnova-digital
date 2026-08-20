@@ -74,6 +74,17 @@ service cloud.firestore {
     }
 
     // ----------------------------------------------------------
+    // pagamentos/{id} — o dinheiro que entrou mesmo
+    // Nada disto vem do site: é o administrador que regista cada
+    // entrada. Não há aqui nenhum caso em que um cliente precise de
+    // ler ou escrever, por isso fecha-se por completo a toda a gente
+    // menos ao administrador.
+    // ----------------------------------------------------------
+    match /pagamentos/{id} {
+      allow read, write: if ehAdmin();
+    }
+
+    // ----------------------------------------------------------
     // conversas/{uid} — o chat entre o cliente e o Wesley
     // Uma conversa por cliente, com o id da conta dele.
     // ----------------------------------------------------------
