@@ -7,12 +7,12 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="chat.css?v=36">
+<link rel="stylesheet" href="chat.css?v=37">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="avisos-config.js?v=36"></script>
+<script src="avisos-config.js?v=37"></script>
 <script src="chat.js"></script>
 <style>
 :root{
@@ -36,7 +36,15 @@ header{display:flex;align-items:center;justify-content:space-between;padding:14p
 .logo-name{letter-spacing:.28em;font-weight:800;color:var(--gold-soft);font-size:.85rem}
 .logo-name small{display:block;letter-spacing:.4em;font-size:.5rem;color:var(--cream-dim)}
 .tag{background:rgba(217,178,110,.14);color:var(--gold);font-size:.7rem;font-weight:800;padding:5px 12px;border-radius:999px;letter-spacing:.1em}
-.logout{color:var(--cream-dim);font-size:.82rem;cursor:pointer;text-decoration:underline;background:none;border:none;font-family:inherit}
+.logout{color:var(--cream-dim);font-size:.82rem;cursor:pointer;text-decoration:underline;background:none;border:none;font-family:inherit;
+  /* eram 15px de altura: um dedo nao acerta. 44px e o minimo. */
+  display:inline-flex;align-items:center;min-height:44px;padding:0 4px}
+/* O logotipo do painel nao era um link: para voltar ao site era preciso
+   escrever o dominio outra vez na barra do browser. Passa a levar ao
+   inicio, como leva em todas as outras paginas. */
+.brand-link{display:flex;align-items:center;gap:12px;text-decoration:none;border-radius:12px;transition:opacity .2s}
+.brand-link:hover{opacity:.82}
+.brand-link:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
 
 .card{background:var(--ink-2);border:1px solid rgba(217,178,110,.16);border-radius:18px;padding:26px;margin-bottom:22px}
 .grid-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
@@ -235,8 +243,10 @@ td.valor{text-align:right;color:var(--cream);font-weight:700;white-space:nowrap}
 <!-- BLOQUEIO DE ACESSO -->
 <div id="gate" class="wrap hidden">
   <div class="brand" style="justify-content:center;margin-bottom:20px">
-    <span class="logo-mark">T</span>
-    <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
+    <a class="brand-link" href="index.html" title="Voltar ao site">
+      <span class="logo-mark">T</span>
+      <span class="logo-name">TECNOVA<small>DIGITAL</small></span>
+    </a>
   </div>
   <h2 class="serif">Acesso restrito</h2>
   <p id="gateText">Este painel é só para a administração da TECNOVA Digital.</p>
@@ -247,11 +257,14 @@ td.valor{text-align:right;color:var(--cream);font-weight:700;white-space:nowrap}
 <div id="painel" class="wrap hidden">
   <header>
     <div class="brand">
-      <span class="logo-mark">T</span>
-      <div><span class="logo-name">TECNOVA<small>DIGITAL</small></span></div>
+      <a class="brand-link" href="index.html" title="Voltar ao site">
+        <span class="logo-mark">T</span>
+        <div><span class="logo-name">TECNOVA<small>DIGITAL</small></span></div>
+      </a>
       <span class="tag">ADMIN</span>
     </div>
     <button class="logout" id="btnAvisos" onclick="pedirPermissaoAvisos()" style="margin-right:14px">Ligar avisos</button>
+    <a class="logout" href="index.html" style="margin-right:14px">Ver o site</a>
     <button class="logout" onclick="auth.signOut()">Sair</button>
   </header>
 

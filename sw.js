@@ -4,7 +4,7 @@
 //    usando o cache apenas como reserva quando não há internet.
 //  - Restantes ficheiros (CSS/JS/imagens): stale-while-revalidate —
 //    abrem rápido a partir do cache e atualizam-se em segundo plano.
-const CACHE_NAME = 'tecnova-v36';
+const CACHE_NAME = 'tecnova-v37';
 const ASSETS = [
   './index.html',
   './servicos.html',
@@ -104,13 +104,27 @@ self.addEventListener('fetch', (event) => {
 
   if (isHTML) {
     // Página: tenta a rede primeiro; só recorre ao cache se estiver offline.
+    //
+    // `cache:'no-cache'` não é um exagero, é o que faz isto funcionar de
+    // verdade. O servidor manda `Cache-Control: max-age=600` nas páginas,
+    // por isso durante dez minutos este `fetch` era respondido pela cache
+    // do próprio browser sem sequer chegar à rede: a pessoa recebia a
+    // página antiga, com as ligações antigas aos ficheiros, e tinha de
+    // recarregar à mão para ver o que já estava publicado.
+    // Com `no-cache` o browser pergunta sempre ao servidor; se nada mudou
+    // ele responde 304 e não se transfere nada.
+    // Pedimos pelo endereço em vez do pedido original de propósito: um
+    // pedido de navegação não se deixa reconstruir com outras opções.
     event.respondWith(
-      fetch(req).then((res) => {
+      fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }).then((res) => {
         const copy = res.clone();
         caches.open(CACHE_NAME).then((c) => c.put(req, copy));
         return res;
       }).catch(() =>
-        caches.match(req).then((c) => c || caches.match('./index.html'))
+        // sem rede: primeiro o que estiver guardado, depois a página inicial
+        fetch(req).catch(() =>
+          caches.match(req).then((c) => c || caches.match('./index.html'))
+        )
       )
     );
     return;
