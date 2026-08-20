@@ -31,10 +31,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="campanha.js?v=39"></script>
-<script src="medir-config.js?v=39"></script>
-<script src="medir.js?v=39"></script>
-<script src="profile.js?v=39"></script>
+<script src="campanha.js?v=40"></script>
+<script src="medir-config.js?v=40"></script>
+<script src="medir.js?v=40"></script>
+<script src="profile.js?v=40"></script>
 <style>
 :root{
   --ink:#16100b;--ink-2:#211812;--ink-3:#2b2016;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
@@ -68,6 +68,13 @@ img{max-width:100%;display:block}
 .logo-mark{width:34px;height:38px;display:grid;place-items:center;background:linear-gradient(160deg,var(--gold-soft),var(--gold));clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);color:var(--ink);font-family:'Playfair Display',serif;font-weight:800;font-size:1.05rem}
 .ab-btn{display:inline-flex;align-items:center;gap:6px;min-height:40px;background:rgba(217,178,110,.1);border:1px solid rgba(217,178,110,.3);color:var(--gold-soft);border-radius:999px;padding:8px 14px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit}
 .ab-btn:hover{background:rgba(217,178,110,.18)}
+/* as ligacoes legais no fundo do ecra da conta */
+.app-legal{margin:30px 0 10px;text-align:center;font-size:.76rem;line-height:1.9;
+  color:var(--cream-dim)}
+.app-legal a{color:var(--gold-soft);text-decoration:none}
+.app-legal a:hover{text-decoration:underline}
+.app-legal span{opacity:.75}
+.rodape-falta{border-bottom:1px dashed var(--gold);color:var(--gold-soft)}
 .ab-avatar{width:34px;height:34px;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,var(--gold-soft),var(--gold));color:var(--ink);display:grid;place-items:center;font-weight:800;font-family:'Playfair Display',serif;flex:none;cursor:pointer;border:2px solid transparent;transition:border-color .2s}
 .ab-avatar:hover,.ab-avatar:active{border-color:var(--gold-soft)}
 .ab-avatar img{width:100%;height:100%;object-fit:cover}
@@ -198,10 +205,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .tabbar button .tb-ic{font-size:1.25rem;line-height:1}
 .tabbar button.active{color:var(--gold)}
 </style>
-<link rel="stylesheet" href="orcamento.css?v=39">
-<link rel="stylesheet" href="app-orcamento.css?v=39">
-<link rel="stylesheet" href="assistente.css?v=39">
-<link rel="stylesheet" href="i18n.css?v=39">
+<link rel="stylesheet" href="orcamento.css?v=40">
+<link rel="stylesheet" href="app-orcamento.css?v=40">
+<link rel="stylesheet" href="assistente.css?v=40">
+<link rel="stylesheet" href="i18n.css?v=40">
 </head>
 <body class="tecnova-app">
 
@@ -510,6 +517,17 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
     <a class="btn btn-line" href="index.html" style="margin-top:18px">🌐 Voltar ao site</a>
     <span class="logout" id="logoutBtn">Sair da conta</span>
   </div>
+
+  <!-- A aplicacao recolhe nome, email, telefone e foto. Quem os da tem de
+       poder chegar as regras a partir daqui, sem ter de sair para o site. -->
+  <p class="app-legal">
+    <a href="privacidade.html">Privacidade</a> ·
+    <a href="termos.html">Termos</a> ·
+    <a href="cookies.html">Cookies</a> ·
+    <a href="reembolso.html">Reembolsos</a><br>
+    <span>TECNOVA Digital · Wesley Vianna, profissional independente ·
+    NIF <span class="rodape-falta">a preencher</span></span>
+  </p>
 </section>
 
 <!-- ===== BARRA DE ABAS ===== -->
@@ -780,10 +798,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   }
 })();
 </script>
-<script src="orcamento.js?v=39"></script>
-<script src="idiomas/en.js?v=39"></script>
-<script src="idiomas/es.js?v=39"></script>
-<script src="i18n.js?v=39"></script>
+<script src="orcamento.js?v=40"></script>
+<script src="idiomas/en.js?v=40"></script>
+<script src="idiomas/es.js?v=40"></script>
+<script src="i18n.js?v=40"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

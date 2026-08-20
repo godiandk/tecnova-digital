@@ -129,7 +129,13 @@ main{padding-top:74px}
 
 /* ---------- footer ---------- */
 footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
-.footer-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:40px;margin-bottom:34px}
+/* Passou a haver uma quarta coluna, a das paginas legais. Com
+   `auto-fit` e um minimo, as colunas reagrupam-se sozinhas em vez de
+   espremerem: quatro no computador, duas no tablet, uma no telemovel. */
+.footer-grid{display:grid;grid-template-columns:1.5fr repeat(auto-fit,minmax(150px,1fr));
+  gap:36px 40px;margin-bottom:34px}
+/* o que falta o Wesley preencher, marcado para nao passar despercebido */
+.rodape-falta{border-bottom:1px dashed var(--gold);color:var(--gold-soft)}
 .footer-grid .logo{margin-bottom:12px}
 .footer-grid p{color:var(--cream-dim);font-size:.85rem;max-width:320px}
 .footer-col h4{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-soft);margin-bottom:14px}
@@ -139,7 +145,7 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
 .footer-col a:hover{color:var(--gold)}
 .footer-bottom{text-align:center;color:var(--cream-dim);font-size:.8rem;border-top:1px solid rgba(217,178,110,.1);padding-top:24px}
 .footer-bottom a{color:var(--gold);text-decoration:none;display:inline-flex;align-items:center;min-height:38px}
-@media(max-width:820px){.footer-grid{grid-template-columns:1fr;gap:26px}}
+@media(max-width:640px){.footer-grid{grid-template-columns:1fr;gap:26px}}
 
 /* (o botão flutuante de WhatsApp foi retirado do site) */
 /* O assistente ocupa o canto inferior direito. */

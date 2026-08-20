@@ -139,7 +139,21 @@ const PAGAMENTO = {
    Se falhar (sem rede, serviço em baixo, bloqueador de anúncios), fica
    simplesmente Portugal. Nunca trava o carregamento da página.          */
 const GEO = {
-  ativo: true,
+  // ------------------------------------------------------------------
+  // DESLIGADO de propósito.
+  // ------------------------------------------------------------------
+  // Isto mandava o endereço IP de cada visitante para dois serviços de
+  // fora (get.geojs.io e ipwho.is) só para adivinhar a moeda. Custava
+  // duas coisas: uma transferência de dados pessoais para fora que era
+  // preciso justificar e explicar na política de privacidade, e um
+  // preço em dólares a aparecer sozinho a quem estava a ler a página em
+  // português — foi assim que apareceu na auditoria.
+  // A página está desenhada em euros, e quem precisar de outra moeda
+  // troca no seletor ou entra com ?moeda=br. Vale mais um preço certo
+  // e previsível do que um palpite pelo IP.
+  // Para voltar a ligar, basta pôr `ativo: true` — o resto do código
+  // ficou como estava.
+  ativo: false,
   servicos: [
     'https://get.geojs.io/v1/ip/country.json',   // devolve {"country":"BR"}
     'https://ipwho.is/'                          // reserva

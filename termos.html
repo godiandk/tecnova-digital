@@ -3,22 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contacto — TECNOVA Digital | Wesley Vianna</title>
-<meta name="description" content="Fale com a TECNOVA Digital: escreva para wesley@tecnovadigital.pt ou use o chat do site. Resposta rápida, sem compromisso.">
-<link rel="canonical" href="https://tecnovadigital.pt/contacto.html">
+<title>Termos e Condições — TECNOVA Digital</title>
+<meta name="description" content="As regras de quem encomenda um site à TECNOVA Digital: preços, pagamento 50/50, prazos, garantia de 90 dias e de quem fica o site.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://tecnovadigital.pt/termos.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="TECNOVA Digital">
 <meta property="og:locale" content="pt_PT">
-<meta property="og:url" content="https://tecnovadigital.pt/contacto.html">
-<meta property="og:title" content="Contacto — TECNOVA Digital | Wesley Vianna">
-<meta property="og:description" content="Fale com a TECNOVA Digital: escreva para wesley@tecnovadigital.pt ou use o chat do site. Resposta rápida, sem compromisso.">
+<meta property="og:url" content="https://tecnovadigital.pt/termos.html">
+<meta property="og:title" content="Termos e Condições — TECNOVA Digital">
+<meta property="og:description" content="As regras de quem encomenda um site à TECNOVA Digital: preços, pagamento 50/50, prazos, garantia de 90 dias e de quem fica o site.">
 <meta property="og:image" content="https://tecnovadigital.pt/img/og-tecnova.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="TECNOVA Digital — sites que trabalham por si, a partir de 350€">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Contacto — TECNOVA Digital | Wesley Vianna">
-<meta name="twitter:description" content="Fale com a TECNOVA Digital: escreva para wesley@tecnovadigital.pt ou use o chat do site. Resposta rápida, sem compromisso.">
+<meta name="twitter:title" content="Termos e Condições — TECNOVA Digital">
+<meta name="twitter:description" content="As regras de quem encomenda um site à TECNOVA Digital: preços, pagamento 50/50, prazos, garantia de 90 dias e de quem fica o site.">
 <meta name="twitter:image" content="https://tecnovadigital.pt/img/og-tecnova.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#16100b">
@@ -31,67 +32,52 @@
 <link rel="stylesheet" href="assistente.css?v=40">
 <link rel="stylesheet" href="i18n.css?v=40">
 <style>
-/* Uma regra de classe (0,1,0) vence o [hidden] do navegador, que não tem
-   especificidade nenhuma. Sem este !important, tudo o que devia estar
-   escondido aparece na mesma. */
 [hidden]{display:none!important}
-
-.ct-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:34px}
-@media(max-width:760px){.ct-grid{grid-template-columns:1fr}}
-
-/* os dois caminhos diretos: email e chat */
-.ct-via{display:block;background:var(--ink-2);border:1px solid rgba(217,178,110,.22);
-  border-radius:20px;padding:26px 24px;text-decoration:none;color:var(--cream);
-  transition:border-color .2s,transform .2s}
-.ct-via:hover{border-color:var(--gold);transform:translateY(-3px)}
-.ct-via .ic{font-size:1.7rem;line-height:1;display:block;margin-bottom:12px}
-.ct-via h3{font-size:1.05rem;color:var(--gold-soft);margin-bottom:6px}
-.ct-via .val{color:var(--gold);font-weight:700;font-size:.98rem;word-break:break-all}
-.ct-via p{color:var(--cream-dim);font-size:.85rem;margin-top:8px;line-height:1.55}
-.ct-via.chat:hover{border-color:var(--gold-soft)}
-
-.ct-copiar{margin-top:14px;background:none;border:1px solid rgba(217,178,110,.3);
-  color:var(--gold-soft);border-radius:999px;padding:8px 15px;font-family:inherit;
-  font-size:.74rem;font-weight:700;cursor:pointer;min-height:40px}
-.ct-copiar:hover{background:rgba(217,178,110,.12)}
-
-/* o formulário */
-.ct-form{background:var(--ink-2);border:1px solid rgba(217,178,110,.22);
-  border-radius:22px;padding:32px 30px;margin-top:18px}
-@media(max-width:560px){.ct-form{padding:26px 20px}.ct-via{padding:22px 20px}}
-.ct-form label{display:block;font-size:.78rem;color:var(--gold-soft);
-  margin:16px 0 6px;font-weight:700}
-.ct-form input,.ct-form select,.ct-form textarea{
-  width:100%;padding:13px 14px;border-radius:10px;border:1px solid rgba(217,178,110,.25);
-  background:#0f0b07;color:var(--cream);font-family:inherit;
-  /* 16px é o mínimo: abaixo disso o iPhone dá zoom sozinho ao tocar no campo. */
-  font-size:16px;
+/* ------------------------------------------------------------
+   Paginas legais
+   ------------------------------------------------------------
+   Isto e para ser LIDO, nao para ser bonito. Coluna estreita,
+   entrelinha larga, titulos que se distinguem a olho. Ninguem
+   le uma politica de privacidade em tres colunas.
+   ------------------------------------------------------------ */
+.lg{max-width:760px;margin:0 auto;padding:0 24px}
+.lg h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,2.9rem);
+  line-height:1.12;margin:0 0 10px}
+.lg .lg-data{color:var(--cream-dim);font-size:.84rem;margin:0 0 8px}
+.lg .lg-intro{font-size:1.02rem;line-height:1.7;color:var(--cream-dim);margin:0 0 34px}
+.lg h2{font-family:'Playfair Display',serif;font-size:1.35rem;margin:42px 0 12px;
+  color:var(--gold-soft);scroll-margin-top:100px}
+.lg h3{font-size:1rem;margin:26px 0 8px;color:var(--cream)}
+.lg p,.lg li{font-size:.95rem;line-height:1.72}
+.lg ul{padding-left:20px;margin:10px 0 18px}
+.lg li{margin-bottom:7px}
+.lg a{color:var(--gold-soft)}
+.lg b{color:var(--cream)}
+/* o indice no topo: quem procura uma coisa so nao tem de ler tudo */
+.lg-indice{border:1px solid rgba(217,178,110,.2);border-radius:16px;
+  padding:20px 24px;margin:0 0 40px;background:rgba(217,178,110,.05)}
+.lg-indice h2{margin:0 0 10px;font-size:1rem;color:var(--gold)}
+.lg-indice ol{margin:0;padding-left:20px}
+.lg-indice li{margin-bottom:5px;font-size:.9rem}
+/* a tabela do que se guarda: e o coracao da pagina, tem de se ler bem */
+.lg-tab{width:100%;border-collapse:collapse;margin:14px 0 24px;font-size:.88rem}
+.lg-tab th,.lg-tab td{text-align:left;vertical-align:top;padding:11px 12px;
+  border-bottom:1px solid rgba(217,178,110,.16)}
+.lg-tab th{color:var(--gold);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
+  font-weight:800;white-space:nowrap}
+.lg-tab td:first-child{color:var(--cream);font-weight:600}
+.lg-rolo{overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* o que ainda falta o Wesley preencher, marcado para se ver de longe */
+.lg-falta{background:rgba(217,178,110,.16);border:1px dashed var(--gold);
+  border-radius:6px;padding:1px 8px;font-weight:700;color:var(--gold-soft);
+  font-size:.9em;white-space:nowrap}
+.lg-nota{border-left:3px solid var(--gold);padding:12px 0 12px 16px;margin:18px 0;
+  color:var(--cream-dim);font-size:.9rem;line-height:1.68}
+@media(max-width:600px){
+  .lg h2{font-size:1.18rem;margin:34px 0 10px}
+  .lg-indice{padding:16px 18px}
+  .lg-tab th,.lg-tab td{padding:9px 10px}
 }
-.ct-form textarea{min-height:130px;resize:vertical;line-height:1.6}
-/* Diz que chegou mesmo. Sem isto, quem carrega no botão fica sem saber
-   se a mensagem saiu — e volta a carregar, ou desiste. */
-.ct-feito{margin-top:18px;padding:16px 18px;border-radius:14px;
-  border:1px solid rgba(217,178,110,.45);background:rgba(217,178,110,.10)}
-.ct-feito p{margin:0;font-size:.9rem;line-height:1.62}
-.ct-feito a{color:var(--gold-soft)}
-.ct-form input:focus,.ct-form select:focus,.ct-form textarea:focus{
-  outline:none;border-color:var(--gold)}
-.ct-dupla{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
-@media(max-width:560px){.ct-dupla{grid-template-columns:1fr}}
-.ct-opcional{color:var(--cream-dim);font-weight:600;text-transform:none;letter-spacing:0}
-
-.ct-erro{color:#ff9c8a;font-size:.85rem;margin-top:10px}
-.ct-aviso{background:rgba(217,178,110,.08);border:1px solid rgba(217,178,110,.3);
-  border-radius:14px;padding:16px 18px;margin-top:18px;color:var(--cream-dim);
-  font-size:.86rem;line-height:1.6}
-.ct-aviso b{color:var(--cream)}
-
-.ct-linhas{list-style:none;margin-top:34px;display:grid;gap:0}
-.ct-linhas li{display:flex;gap:14px;align-items:flex-start;padding:15px 0;
-  border-bottom:1px dashed rgba(217,178,110,.14);color:var(--cream-dim);font-size:.9rem;line-height:1.6}
-.ct-linhas li:last-child{border:none}
-.ct-linhas .ic{font-size:1.1rem;line-height:1.4;flex:none}
-.ct-linhas b{color:var(--cream)}
 </style>
 </head>
 <body>
@@ -132,115 +118,132 @@
 </header>
 
 <main>
+<section style="padding-top:120px">
+<div class="lg">
 
-<section class="page-hero">
-  <div class="wrap">
-    <p class="eyebrow">Contacto</p>
-    <h1>Fale <i>diretamente</i> comigo</h1>
-    <p class="lead">Não há central telefónica nem formulário que ninguém lê do outro lado. Quem responde sou eu, o Wesley. Diga-me o que tem em mãos e digo-lhe se consigo ajudar — mesmo que a resposta seja que não.</p>
-  </div>
-</section>
+<h1>Termos e Condições</h1>
+<p class="lg-data">Última atualização: 20 de agosto de 2026</p>
+<p class="lg-intro">As regras do que acontece quando me encomenda um site: o que
+está incluído, quanto custa, quando se paga, de quem é o que se faz, e o que
+acontece se as coisas correrem mal. Sem letras pequenas — o que está escrito é
+o que vale.</p>
 
-<section style="padding-top:0">
-  <div class="wrap" style="max-width:820px">
+<div class="lg-indice">
+  <h2>O que está aqui</h2>
+  <ol>
+    <li><a href="#t-quem">Quem sou</a></li>
+    <li><a href="#t-oque">O que vendo</a></li>
+    <li><a href="#t-pedido">Como se faz um pedido</a></li>
+    <li><a href="#t-precos">Preços e o que está incluído</a></li>
+    <li><a href="#t-pagar">Como e quando se paga</a></li>
+    <li><a href="#t-prazos">Prazos</a></li>
+    <li><a href="#t-seu">O que tem de me dar</a></li>
+    <li><a href="#t-avenca">Avença mensal</a></li>
+    <li><a href="#t-dono">De quem fica o site</a></li>
+    <li><a href="#t-garantia">Garantia</a></li>
+    <li><a href="#t-limites">O que não prometo</a></li>
+    <li><a href="#t-lei">Lei aplicável e conflitos</a></li>
+  </ol>
+</div>
 
-    <div class="ct-grid">
-      <a class="ct-via reveal" href="mailto:wesley@tecnovadigital.pt?subject=Contacto%20pelo%20site%20da%20TECNOVA%20Digital">
-        <span class="ic">✉️</span>
-        <h3>Email</h3>
-        <span class="val">wesley@tecnovadigital.pt</span>
-        <p>Para propostas, dúvidas sobre preços ou envio de ficheiros. Toque para escrever.</p>
-      </a>
-      <a class="ct-via chat reveal" href="conta.html">
-        <span class="ic">💬</span>
-        <h3>Chat no site</h3>
-        <span class="val">Entrar na minha conta</span>
-        <p>Falamos aqui mesmo, e a conversa fica guardada na sua conta — não se perde nada entre mensagens.</p>
-      </a>
-    </div>
+<h2 id="t-quem">1. Quem sou</h2>
+<p><b>Wesley Vianna</b>, profissional independente, sob o nome comercial
+<b>TECNOVA Digital</b>. NIF <span class="lg-falta">a preencher</span>, morada <span class="lg-falta">a preencher</span>,
+email <a href="mailto:wesley@tecnovadigital.pt">wesley@tecnovadigital.pt</a>.</p>
 
-    <div style="text-align:center">
-      <button class="ct-copiar" type="button" id="ctCopiar">Copiar o endereço de email</button>
-    </div>
+<h2 id="t-oque">2. O que vendo</h2>
+<p>Sites profissionais, aplicação web instalável no telemóvel, marcações pelo
+próprio site, preçário, galeria, loja e cartão de fidelidade digital, e a
+manutenção mensal desses sites.</p>
+<div class="lg-nota"><b>Sobre a «aplicação própria», para não haver enganos:</b>
+o que entrego é uma <i>aplicação web</i> (PWA). Instala-se no telemóvel com dois
+toques, ganha ícone no ecrã e abre em ecrã inteiro como qualquer outra
+aplicação. <b>Não</b> é uma aplicação publicada na App Store da Apple nem na
+Play Store da Google — isso é outro trabalho, com contas de programador pagas
+e aprovações que não estão incluídas aqui.</div>
 
-    <!-- Formulário. Não há servidor nenhum por trás deste site, por isso a
-         mensagem não é enviada por nós: montamos o email já escrito e
-         entregamo-lo à aplicação de email de quem está a escrever. Quem
-         carrega no botão fica com a mensagem à frente dos olhos, e é ele que
-         a envia. Nada se perde por o nosso lado ter falhado, porque não há
-         lado nenhum a falhar. -->
-    <form class="ct-form reveal" id="ctForm" novalidate>
-      <p class="eyebrow" style="margin-bottom:6px">Ou escreva aqui</p>
-      <p style="color:var(--cream-dim);font-size:.9rem;margin-top:10px">
-        Preencha e carregue em enviar. Abre-se a sua aplicação de email com a
-        mensagem já escrita — só tem de confirmar.
-      </p>
+<h2 id="t-pedido">3. Como se faz um pedido</h2>
+<p>Escolhe o que quer no simulador, vê o preço na hora e confirma o pedido. Nesse
+momento cria conta, para poder acompanhar o trabalho e falar comigo pelo chat.
+O pedido só se torna contrato quando eu o confirmar por email e o sinal entrar —
+até aí, pode desistir sem custo nenhum e sem justificação.</p>
 
-      <div class="ct-dupla">
-        <div>
-          <label for="ctNome">O seu nome</label>
-          <input type="text" id="ctNome" name="nome" autocomplete="name" placeholder="Nome e apelido">
-        </div>
-        <div>
-          <label for="ctNegocio">Negócio <span class="ct-opcional">(opcional)</span></label>
-          <input type="text" id="ctNegocio" name="negocio" autocomplete="organization" placeholder="Ex.: Barbearia Imperio">
-        </div>
-      </div>
+<h2 id="t-precos">4. Preços e o que está incluído</h2>
+<p>Os preços do site são os que aparecem no simulador e na página de pacotes, em
+euros. Cada extra tem o preço à frente antes de o escolher: o que vê ao montar o
+pedido é o que paga, e nada é acrescentado depois sem lhe perguntar.</p>
+<p>Se estiver a decorrer uma campanha, a condição está escrita na própria página
+com a data em que acaba, e é a mesma em todo o site.</p>
+<p>Trabalho fora do que foi combinado — páginas novas, funcionalidades novas,
+mudanças de fundo depois de aprovado — é orçamentado à parte e só avança depois
+de o aprovar por escrito.</p>
 
-      <div class="ct-dupla">
-        <div>
-          <label for="ctEmail">O seu email</label>
-          <input type="email" id="ctEmail" name="email" autocomplete="email" placeholder="oseuemail@exemplo.com">
-        </div>
-        <div>
-          <label for="ctTel">Telemóvel <span class="ct-opcional">(opcional)</span></label>
-          <input type="tel" id="ctTel" name="tel" autocomplete="tel" placeholder="+351 9xx xxx xxx">
-        </div>
-      </div>
+<h2 id="t-pagar">5. Como e quando se paga</h2>
+<ul>
+  <li><b>50% no início</b>, para eu começar.</li>
+  <li><b>50% no fim</b>, só quando o site estiver no ar e aprovado por si.</li>
+</ul>
+<p>Os meios de pagamento disponíveis estão na
+<a href="pagamento.html">página de pagamento</a>. Emito recibo ou fatura de
+tudo o que receber.</p>
 
-      <label for="ctAssunto">Sobre o que é</label>
-      <select id="ctAssunto" name="assunto">
-        <option value="Quero um site novo">Quero um site novo</option>
-        <option value="Já tenho site e quero renovar">Já tenho site e quero renovar</option>
-        <option value="Dúvida sobre preços ou pacotes">Dúvida sobre preços ou pacotes</option>
-        <option value="Dúvida sobre um pedido que já fiz">Dúvida sobre um pedido que já fiz</option>
-        <option value="Pagamento ou fatura">Pagamento ou fatura</option>
-        <option value="Outro assunto">Outro assunto</option>
-      </select>
+<h2 id="t-prazos">6. Prazos</h2>
+<p>O prazo de cada pacote está indicado na página de pacotes e conta a partir do
+dia em que o sinal entra <b>e</b> em que tenho na mão os textos, fotografias e
+acessos de que preciso. Se esse material demorar, o prazo desloca-se pelo mesmo
+tempo — e digo-lho na hora, não no fim.</p>
 
-      <label for="ctMensagem">A sua mensagem</label>
-      <textarea id="ctMensagem" name="mensagem" placeholder="Conte-me o que faz, o que precisa e para quando. Quanto mais souber, melhor lhe respondo."></textarea>
+<h2 id="t-seu">7. O que tem de me dar</h2>
+<p>Textos, fotografias, logótipo e os acessos que forem precisos. Ao enviar-mos,
+está a garantir-me que tem o direito de os usar. Se me enviar material de outra
+pessoa sem autorização, a responsabilidade é sua — eu não tenho forma de
+verificar de onde vem uma fotografia.</p>
 
-      <p class="ct-erro" id="ctErro" hidden></p>
+<h2 id="t-avenca">8. Avença mensal</h2>
+<p>A avença mensal custa <b>35€ por mês</b>, com o <b>primeiro mês grátis</b>.
+Inclui as alterações de conteúdo do dia a dia, as atualizações de segurança, as
+cópias de segurança e a correção do que deixar de funcionar. Enquanto for
+cliente de avença, tem <b>20% de desconto</b> em tudo o que acrescentar ao site.</p>
+<p>Cancela quando quiser, avisando com <b>30 dias</b>. Não há fidelização nem
+multa por sair. Se cancelar, o site continua a ser seu e continua no ar —
+o que acaba é o trabalho de manutenção da minha parte.</p>
 
-      <button class="btn btn-gold" type="submit" id="ctEnviar"
-              style="width:100%;justify-content:center;margin-top:20px">Enviar mensagem</button>
+<h2 id="t-dono">9. De quem fica o site</h2>
+<p>Depois de pago por inteiro, <b>o site é seu</b>: as páginas, os textos, as
+imagens que me deu e o próprio código. Entrego-lhe os acessos todos e pode
+levá-lo para onde quiser, com quem quiser, quando quiser. Não fico com o site
+refém para o obrigar a ficar comigo.</p>
+<p>Reservo apenas o direito de mostrar o trabalho no meu portefólio. Se preferir
+que não o mostre, basta dizer-mo — e não mostro.</p>
 
-      <div class="ct-feito" id="ctFeito" hidden>
-        <p><b>✓ Mensagem enviada.</b> Chegou-me agora mesmo e respondo normalmente
-        no próprio dia. Se quiser adiantar caminho, pode desde já
-        <a href="orcamento.html">ver o preço do seu site</a> — leva 2 minutos e não
-        precisa de esperar pela minha resposta.</p>
-      </div>
+<h2 id="t-garantia">10. Garantia</h2>
+<p>Durante <b>90 dias</b> depois da entrega, corrijo sem cobrar nada tudo o que
+não estiver a funcionar como combinado. Isto é além dos direitos que a lei já
+lhe dá, não em vez deles.</p>
 
-      <div class="ct-aviso" id="ctFalhou" hidden>
-        <p>Não consegui enviar daqui — deve ser a ligação. <b>Já copiámos a mensagem
-        toda</b>: abra o Gmail ou o site do seu email, cole no corpo e envie para
-        <b>wesley@tecnovadigital.pt</b>. Ou tente outra vez daqui a pouco.</p>
-      </div>
-    </form>
+<h2 id="t-limites">11. O que não prometo</h2>
+<p>Prefiro dizer isto à frente do que deixar você descobrir depois:</p>
+<ul>
+  <li><b>Não prometo posições no Google.</b> Preparo o site para ser encontrado
+    — estrutura, velocidade, textos, dados do negócio. Quem decide a ordem dos
+    resultados é a Google, e ninguém no mundo lha pode garantir.</li>
+  <li><b>Não prometo um número de clientes.</b> O site trabalha por si, mas
+    quem fecha negócio é você.</li>
+  <li><b>Não respondo por serviços de terceiros</b> que falhem — alojamento,
+    domínios, redes sociais, sistemas de pagamento.</li>
+  <li>A minha responsabilidade, em qualquer caso, está limitada ao valor que me
+    pagou pelo trabalho em causa.</li>
+</ul>
 
-    <ul class="ct-linhas reveal">
-      <li><span class="ic">⏱️</span><span><b>Quando respondo.</b> Leio tudo e respondo o mais depressa que consigo, normalmente no próprio dia. Se ao fim de 24 horas não tiver notícias minhas, escreva outra vez — é sinal de que a mensagem se perdeu pelo caminho.</span></li>
-      <li><span class="ic">🌍</span><span><b>Onde trabalho.</b> Faço sites a partir de Portugal, à distância, para Portugal e para o Brasil. Nunca precisa de sair do sítio onde está.</span></li>
-      <li><span class="ic">💶</span><span><b>Perguntar não custa nada.</b> A conversa, a proposta e a simulação do seu site são gratuitas. Só paga se quiser avançar.</span></li>
-    </ul>
+<h2 id="t-lei">12. Lei aplicável e conflitos</h2>
+<p>Aplica-se a lei portuguesa. Se houver um problema, a primeira coisa a fazer é
+falar comigo — resolve-se quase sempre assim. Se não se resolver, e for
+consumidor, pode recorrer a um centro de arbitragem de conflitos de consumo
+antes de ir a tribunal. Veja as
+<a href="reembolso.html">condições de cancelamento e reembolso</a> para saber
+como reclamar.</p>
 
-    <div style="text-align:center;margin-top:46px">
-      <a class="btn btn-gold reveal" href="orcamento.html">Ver quanto custa o meu site</a>
-    </div>
-
-  </div>
+</div>
 </section>
 </main>
 

@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=39">
-<link rel="stylesheet" href="assistente.css?v=39">
-<link rel="stylesheet" href="i18n.css?v=39">
+<link rel="stylesheet" href="estilo.css?v=40">
+<link rel="stylesheet" href="assistente.css?v=40">
+<link rel="stylesheet" href="i18n.css?v=40">
 <style>
 .stat-strip{display:flex;gap:40px;flex-wrap:wrap;margin:36px 0 10px}
 .stat-strip div{min-width:140px}
@@ -286,10 +286,25 @@
         <a href="mailto:wesley@tecnovadigital.pt">wesley@tecnovadigital.pt</a>
         <a href="conta.html">Entrar / Criar conta</a>
       </div>
+      <!-- Sem estas ligações visíveis não se pode anunciar: o Meta e a Google
+           exigem política de privacidade acessível de qualquer página, e o
+           RGPD exige que quem dá os dados saiba o que lhes acontece. -->
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="privacidade.html">Privacidade</a>
+        <a href="termos.html">Termos e Condições</a>
+        <a href="cookies.html">Cookies</a>
+        <a href="reembolso.html">Cancelamento e reembolso</a>
+      </div>
     </div>
     <div class="footer-bottom">
-      TECNOVA Digital · Wesley Vianna ·
-      <a href="mailto:wesley@tecnovadigital.pt">wesley@tecnovadigital.pt</a>
+      TECNOVA Digital · Wesley Vianna, profissional independente ·
+      NIF <span class="rodape-falta">a preencher</span> ·
+      <a href="mailto:wesley@tecnovadigital.pt">wesley@tecnovadigital.pt</a><br>
+      <a href="privacidade.html">Privacidade</a> ·
+      <a href="termos.html">Termos</a> ·
+      <a href="cookies.html">Cookies</a> ·
+      <a href="reembolso.html">Reembolsos</a>
     </div>
   </div>
 </footer>
@@ -299,10 +314,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="campanha.js?v=39"></script>
-<script src="medir-config.js?v=39"></script>
-<script src="medir.js?v=39"></script>
-<script src="auth-nav.js?v=39"></script>
+<script src="campanha.js?v=40"></script>
+<script src="medir-config.js?v=40"></script>
+<script src="medir.js?v=40"></script>
+<script src="auth-nav.js?v=40"></script>
 
 <script>
 const io=new IntersectionObserver(es=>{
@@ -314,9 +329,9 @@ if('serviceWorker' in navigator){
 }
 </script>
 <script src="site.js"></script>
-<script src="idiomas/en.js?v=39"></script>
-<script src="idiomas/es.js?v=39"></script>
-<script src="i18n.js?v=39"></script>
+<script src="idiomas/en.js?v=40"></script>
+<script src="idiomas/es.js?v=40"></script>
+<script src="i18n.js?v=40"></script>
 <script src="assistente.js"></script>
 </body>
 </html>
