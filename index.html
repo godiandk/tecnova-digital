@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=34">
-<link rel="stylesheet" href="assistente.css?v=34">
-<link rel="stylesheet" href="i18n.css?v=34">
+<link rel="stylesheet" href="estilo.css?v=35">
+<link rel="stylesheet" href="assistente.css?v=35">
+<link rel="stylesheet" href="i18n.css?v=35">
 <style>
 .hero{
   min-height:100vh;display:flex;align-items:center;
@@ -54,23 +54,48 @@
    `svh` em vez de `vh` porque no telemóvel a barra do navegador
    aparece e desaparece; com `vh` o hero mudava de altura ao rolar.
    ============================================================ */
+/* ============================================================
+   O PALCO DO CARROSSEL
+   ------------------------------------------------------------
+   Tinha altura fixa (100svh, no máximo 820px). O destaque 1 tem
+   muito conteúdo e enchia-a; os outros têm menos e ficavam a
+   boiar no meio, com centenas de píxeis vazios por cima — e num
+   telemóvel isso era metade do ecrã em branco.
+
+   Agora os destaques são empilhados na MESMA célula de uma
+   grelha. O palco passa a ter exatamente a altura do destaque
+   mais alto: nem salta de um para o outro (que era o problema
+   original), nem sobra espaço arbitrário. Funciona igual num
+   telemóvel de 320px e numa televisão de 2560px, porque a
+   altura vem do conteúdo e não de uma conta com o ecrã.
+   ============================================================ */
 .hero-slider{position:relative;overflow:hidden;padding:0;
-  height:min(100svh,820px);
-  min-height:600px;
+  display:grid;
+  min-height:min(78svh,700px);
   background:
     radial-gradient(900px 500px at 80% -10%,rgba(217,178,110,.12),transparent 60%),
     radial-gradient(700px 500px at -10% 100%,rgba(217,178,110,.07),transparent 60%),
     var(--ink);}
-/* Os cinco empilhados no mesmo sítio, cada um a preencher o palco todo e a
-   centrar o que tem dentro. `overflow-y:auto` é a válvula de segurança: se
-   um dia o texto crescer de mais, rola em vez de ser cortado. */
-.hs-slide{position:absolute;inset:0;opacity:0;visibility:hidden;
+/* Os cinco empilhados no mesmo sítio, cada um a preencher o palco todo.
+   O palco tem a altura do destaque mais alto, por isso os mais curtos
+   sobram — e essa sobra tem de ir para algum lado. Encostada em baixo
+   ficava um buraco enorme por baixo dos botões; repartida ao meio, o
+   texto descaía. As três filas repartem-na a 1 para 2: um terço por
+   cima, uma vez e meia por baixo. É a proporção com que o olho lê
+   um cartaz, e é a mesma dos 320px à televisão.
+   `minmax(0,…)` é o que deixa as filas encolherem a zero quando o
+   destaque é o mais alto de todos — sem isso não cabia.
+   `overflow-y:auto` é a válvula de segurança: se um dia o texto crescer
+   de mais, rola em vez de ser cortado. */
+.hs-slide{grid-area:1/1;opacity:0;visibility:hidden;
   /* Sem a espera no `visibility`, o slide que saía desaparecia de repente e
      ficava um vazio de quase um segundo até o seguinte aparecer. */
   transition:opacity .6s ease, visibility 0s linear .6s;
-  pointer-events:none;display:flex;align-items:center;
+  pointer-events:none;
+  display:grid;grid-template-rows:minmax(0,2fr) auto minmax(0,3fr);
   overflow-y:auto;overscroll-behavior:contain;
   padding:100px 0 78px}
+.hs-slide>.hs-grid{grid-row:2}
 .hs-slide.active{opacity:1;visibility:visible;pointer-events:auto;z-index:2;
   transition:opacity .6s ease, visibility 0s}
 @media(prefers-reduced-motion:reduce){
@@ -84,6 +109,7 @@
   justify-items:center;text-align:center}
 .hs-grid.solo .eyebrow{justify-content:center}
 .hs-grid.solo .hero-cta{justify-content:center}
+.hs-grid.solo .hero-proof{justify-content:center;margin-inline:auto}
 .hs-grid.solo .lead{max-width:56ch;text-wrap:pretty}
 /* reparte as linhas do título em pedaços do mesmo tamanho, em vez de
    deixar uma palavra sozinha na última */
@@ -144,18 +170,30 @@
   .hs-pausa{margin-left:6px;padding:0 11px 0 9px;font-size:.7rem}
   body > .app-float{display:none}
 }
-/* Num ecrã de 320px nem assim o grupo centrado escapa à bolha do chat.
-   Encosta-se à esquerda, que é o lado livre. */
+/* Num ecrã de 320px nem assim o grupo escapa à bolha do chat: as cinco
+   bolinhas valem 170px (34px cada, que é o mínimo para um polegar) e o
+   botão de pausa mais 91px — 283px em 320. Encostado à esquerda, ainda
+   ia parar por baixo da bolha e o «PAUSAR» deixava de se poder carregar.
+   Passa a duas filas: as bolinhas em cima, o botão por baixo. Ninguém
+   perde área de toque nem a palavra, e o grupo nunca passa dos 200px. */
 @media(max-width:400px){
   .hs-comandos{left:14px;transform:none}
+}
+/* A bolha do chat fica a 16px da direita e mede 54px, por isso começa a
+   380−16−54 = 310px. Até aos 380px de largura o grupo numa fila só ainda
+   lá chega; daí para baixo passa a duas. */
+@media(max-width:380px){
+  .hs-comandos{flex-wrap:wrap;max-width:200px;align-items:flex-start;
+    row-gap:5px;border-radius:22px;padding:5px 8px}
+  .hs-pausa{margin-left:0}
 }
 @media(max-width:900px){
   .hs-grid{grid-template-columns:1fr}
   .hs-grid.solo{max-width:none}
   .phone{display:none}
   .hs-arrow{display:none}
-  .hero-slider{height:min(100svh,740px);min-height:560px}
-  .hs-slide{align-items:center;padding:88px 0 72px}
+  .hero-slider{min-height:min(72svh,600px)}
+  .hs-slide{padding:88px 0 92px}
 }
 .hero h1{font-size:clamp(2.6rem,6vw,4.4rem);line-height:1.06;font-weight:800;margin:22px 0 26px}
 .hero h1 em{font-style:italic;color:var(--gold);position:relative;white-space:nowrap}
@@ -226,11 +264,11 @@
 .of-selo b{font-family:var(--fonte-valor,'Manrope',sans-serif);font-variant-numeric:tabular-nums;letter-spacing:-.03em;font-weight:800;font-size:1.5rem;line-height:1}
 .of-selo i{font-style:normal;font-size:.68rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;opacity:.78}
 @media(max-width:900px){
-  .hs-slide.oferta{padding-top:88px;padding-bottom:74px}
-  .of-grid{grid-template-columns:1fr;gap:14px}
+  .hs-slide.oferta{padding-top:88px;padding-bottom:92px}
+  .of-grid{grid-template-columns:1fr;gap:12px}
   /* no telemóvel a fotografia passa a faixa larga, com o rosto à vista */
   .of-foto{order:-1;max-width:none;width:100%}
-  .of-foto img{height:106px;max-height:106px;object-fit:cover;object-position:52% 18%;border-radius:16px}
+  .of-foto img{height:92px;max-height:92px;object-fit:cover;object-position:52% 18%;border-radius:16px}
   /* As etiquetas repetiam, uma a uma, o que o resumo já diz numa frase.
      No telemóvel custavam 111px de altura e não acrescentavam nada. */
   .of-chips{display:none}
@@ -242,9 +280,8 @@
   .of-oferta{order:4} .of-txt .hero-cta{order:5} .of-nota{order:6} .of-chips{order:7}
   .of-txt h1{margin:12px 0 9px;font-size:2rem}
   /* resumo curto no telemóvel — o essencial já está no título e nas etiquetas */
-  .hs-slide.oferta .lead{font-size:.88rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-  @media(max-width:400px){.hs-slide.oferta .lead{-webkit-line-clamp:2}}
-  .of-oferta{margin:14px 0 16px;padding:11px 14px;gap:12px;flex-wrap:nowrap}
+  .hs-slide.oferta .lead{font-size:.88rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .of-oferta{margin:11px 0 13px;padding:9px 12px;gap:12px;flex-wrap:nowrap}
   .of-oferta>div{min-width:0}
   .of-off{flex:none}
   .of-off{padding-right:12px}
@@ -296,6 +333,12 @@
   .hero-cta .btn{flex:1 1 0;justify-content:center;padding:12px 10px;font-size:.84rem;
     min-width:0;line-height:1.2;text-align:center;overflow-wrap:break-word}
 
+  /* Os destaques sem fotografia sobravam quase 200px por baixo dos
+     botões. O espaço não desaparece — passa para dentro do bloco: mais
+     uma linha de resumo e as provas mais soltas do botão. */
+  .hs-grid.solo .lead{-webkit-line-clamp:4}
+  .hs-grid.solo h2{margin:14px 0 18px}
+  .hs-grid.solo .hero-proof{margin-top:34px;padding-top:18px}
   /* as três provas passam a uma fila só, com um traço a separá-las */
   .hero-proof{gap:0;margin-top:22px;flex-wrap:nowrap;
     border-top:1px solid rgba(217,178,110,.22);padding-top:14px}
@@ -312,15 +355,21 @@
   .hero-proof{margin-top:26px;gap:26px}
   .hs-slide h1,.hs-slide h2{margin:16px 0 18px}
 }
-/* Nos ecrãs mais estreitos o título ocupa quase tudo. As provas são apoio,
-   não são a mensagem — saem, e o essencial fica à vista sem rolar. */
+/* Nos ecrãs mais estreitos o título ocupa quase tudo. As provas eram
+   apoio e saíam — mas com o palco a medir-se pelo conteúdo, tirá-las só
+   servia para abrir um vazio por baixo dos botões. Ficam, mais pequenas,
+   sem os rótulos que já não se liam a este tamanho. */
 @media(max-width:360px){
-  .hero-proof{display:none}
+  .hero-proof{margin-top:20px;padding-top:12px}
+  .hs-grid.solo .hero-proof{margin-top:26px;padding-top:14px}
+  .hero-proof .proof{padding:0 6px}
+  .proof b{font-size:1rem}
+  .proof span{font-size:.6rem;line-height:1.25}
   .hs-slide h1,.hs-slide h2{font-size:1.75rem}
   .hs-slide .lead{-webkit-line-clamp:2}
   .hero-cta .btn{font-size:.76rem;padding:10px 7px;line-height:1.15}
   .hero-cta{gap:8px}
-  .hs-slide{padding:84px 0 68px}
+  .hs-slide{padding:84px 0 88px}
   /* Num ecrã de 320px de altura útil, a fotografia é o que menos trabalha:
      a mensagem e a oferta valem mais do que uma faixa decorativa. Sai. */
   .of-foto{display:none}
@@ -411,6 +460,38 @@
 .gal-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 38%,rgba(0,0,0,.62))}
 .gal-card .label{z-index:2}
 .gal-card .body{display:none}
+
+/* ============================================================
+   A MARGEM DE BAIXO DO PALCO NO TELEMÓVEL
+   ------------------------------------------------------------
+   Aqui em baixo ficam os comandos — as bolinhas e o botão de
+   pausa —, por cima do destaque. A margem de baixo tem de os
+   deixar passar: com 62px, as provas do destaque 2 ficavam a
+   quatro píxeis do botão de pausa, quase encostadas.
+   A margem de cima é a que deixa passar o cabeçalho.
+   (Este bloco já foi um aperto ao palco todo, de quando a altura
+   era uma conta com o ecrã. Agora a altura vem do conteúdo e só
+   é preciso tratar das margens.)
+   ============================================================ */
+@media(max-width:900px){
+  .hs-slide{padding:74px 0 96px}
+  .of-nota{display:none}
+  .of-oferta{padding:12px 14px}
+  .of-txt h1{margin:7px 0 6px}
+  .proof b{font-size:1.35rem}
+  .proof span{font-size:.74rem}
+}
+@media(max-width:430px){
+  .hs-slide{padding:70px 0 92px}
+}
+/* abaixo dos 380px os comandos passam a duas filas: são mais altos e a
+   margem de baixo tem de crescer com eles */
+@media(max-width:380px){
+  .hs-slide{padding-bottom:126px}
+}
+@media(max-width:360px){
+  .hs-slide{padding:66px 0 126px}
+}
 </style>
 
 <!-- Ficha do negócio para o Google. Só factos verificáveis: nada de morada
@@ -588,6 +669,11 @@
           <a class="btn btn-gold" href="pacotes.html">Ver pacotes e preços</a>
           <a class="btn btn-line" href="renovacao.html">Já tem site? Renove</a>
         </div>
+        <div class="hero-proof">
+          <div class="proof"><b>350€</b><span>Essencial · site completo</span></div>
+          <div class="proof"><b>650€</b><span>Profissional · com marcações</span></div>
+          <div class="proof"><b>990€</b><span>Premium · com fidelidade</span></div>
+        </div>
       </div>
     </div>
   </div>
@@ -603,6 +689,11 @@
           <a class="btn btn-gold" href="modelos.html">Ver os modelos</a>
           <a class="btn btn-line" href="servicos.html">O que fazemos</a>
         </div>
+        <div class="hero-proof">
+          <div class="proof"><b>7</b><span>modelos prontos a ver</span></div>
+          <div class="proof"><b>6</b><span>tipos de negócio</span></div>
+          <div class="proof"><b>0€</b><span>ver custa nada</span></div>
+        </div>
       </div>
     </div>
   </div>
@@ -617,6 +708,11 @@
         <div class="hero-cta">
           <a class="btn btn-gold" href="conta.html">Criar a minha conta</a>
           <a class="btn btn-line" href="servicos.html">Ver funcionalidades</a>
+        </div>
+        <div class="hero-proof">
+          <div class="proof"><b>10s</b><span>a instalar no telemóvel</span></div>
+          <div class="proof"><b>0</b><span>lojas de aplicações</span></div>
+          <div class="proof"><b>1</b><span>toque para abrir</span></div>
         </div>
       </div>
     </div>
@@ -787,10 +883,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="campanha.js?v=34"></script>
-<script src="medir-config.js?v=34"></script>
-<script src="medir.js?v=34"></script>
-<script src="auth-nav.js?v=34"></script>
+<script src="campanha.js?v=35"></script>
+<script src="medir-config.js?v=35"></script>
+<script src="medir.js?v=35"></script>
+<script src="auth-nav.js?v=35"></script>
 
 <script>
 const io=new IntersectionObserver(es=>{
@@ -802,9 +898,9 @@ if('serviceWorker' in navigator){
 }
 </script>
 <script src="site.js"></script>
-<script src="idiomas/en.js?v=34"></script>
-<script src="idiomas/es.js?v=34"></script>
-<script src="i18n.js?v=34"></script>
+<script src="idiomas/en.js?v=35"></script>
+<script src="idiomas/es.js?v=35"></script>
+<script src="i18n.js?v=35"></script>
 <script src="assistente.js"></script>
 </body>
 </html>
