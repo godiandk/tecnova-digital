@@ -22,7 +22,7 @@
 <meta name="twitter:image" content="https://tecnovadigital.pt/img/og-tecnova.png">
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="modelo-confeitaria.css?v=41">
+<link rel="stylesheet" href="modelo-confeitaria.css?v=42">
 <style>
 .order-grid{display:grid;grid-template-columns:1.3fr .7fr;gap:26px;align-items:start}
 @media(max-width:980px){.order-grid{grid-template-columns:1fr}}
@@ -121,6 +121,9 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
 .logo span,.logo .tagline,.logo .logo-ic + div span{font-size:.73rem}
 .tag,.pack-tag,.pack .tag,.combo .tag,.kit .tag,.price-row .tag,
 .plan .tag,.dish .tag,.cake .tag,.prow .tag,.svc-card .tag,.treat-card .tag{font-size:.73rem}
+.demo-aviso{border:1px dashed currentColor;border-radius:10px;padding:10px 12px;
+  opacity:.85;line-height:1.55}
+.demo-aviso a{color:inherit;font-weight:700}
 </style>
 </head>
 <body>
@@ -136,7 +139,7 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
 <header class="wrap">
   <div class="nav">
     <a class="logo" href="modelo-confeitaria.html">
-      <span class="logo-ic"><img src="img/modelos/confeitaria/logo.png?v=41" alt="Doce Aurora"></span>
+      <span class="logo-ic"><img src="img/modelos/confeitaria/logo.png?v=42" alt="Doce Aurora"></span>
       <div><b>Doce Aurora</b><span class="tagline">Confeitaria Artesanal</span></div>
     </a>
     <div class="nav-right">
@@ -342,6 +345,9 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
         <div class="card summary">
           <h2>Resumo do pedido</h2>
           <p class="hint">Atualiza sozinho à medida que escolhe.</p>
+        <p class="hint demo-aviso"><b>Isto é uma demonstração.</b> O negócio
+        é fictício e nada é enviado a ninguém — sirva-se à vontade para
+        experimentar. <a href="orcamento.html">Quer um destes para si?</a></p>
           <ul class="sum-list" id="sumList"></ul>
           <p class="sum-empty" id="sumEmpty">Ainda não escolheu nada.</p>
           <div class="total-row"><span>TOTAL</span><b id="total">0,00€</b></div>

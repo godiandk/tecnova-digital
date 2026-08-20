@@ -56,6 +56,9 @@ section{padding:96px 0}
 .btn:hover{transform:translateY(-2px)}
 .btn-gold{background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--ink);box-shadow:0 8px 30px rgba(217,178,110,.25)}
 .btn-line{border:1px solid var(--gold-dim);color:var(--gold-soft);background:transparent}
+/* Verde do WhatsApp. Deixou de se usar nas paginas da TECNOVA: estava em
+   botoes que vao para a pagina de contacto, e quem carregava esperava que
+   abrisse o WhatsApp. Fica para os modelos, onde e mesmo o WhatsApp. */
 .btn-wa{background:var(--wa);color:#062b14}
 .btn svg{flex:none}
 

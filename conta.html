@@ -30,10 +30,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=41">
-<link rel="stylesheet" href="assistente.css?v=41">
-<link rel="stylesheet" href="i18n.css?v=41">
-<link rel="stylesheet" href="chat.css?v=41">
+<link rel="stylesheet" href="estilo.css?v=42">
+<link rel="stylesheet" href="assistente.css?v=42">
+<link rel="stylesheet" href="i18n.css?v=42">
+<link rel="stylesheet" href="chat.css?v=42">
 <style>
 :root{ --bad:#e0715c; }
 
@@ -174,12 +174,6 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
         <input type="email" id="regEmail" required placeholder="oseuemail@exemplo.com">
         <label>Telemóvel</label>
         <input type="tel" id="regTel" required placeholder="+351 9xx xxx xxx">
-        <label>Sexo</label>
-        <select id="regSexo">
-          <option value="" selected>Prefiro não dizer</option>
-          <option value="masculino">Masculino</option>
-          <option value="feminino">Feminino</option>
-        </select>
         <label>Palavra-passe</label>
         <input type="password" id="regPass" required placeholder="mínimo 6 caracteres">
         <button class="btn btn-gold" type="submit">Criar a minha conta</button>
@@ -222,8 +216,6 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
           <input type="text" id="setNome" placeholder="O seu nome">
           <label>Telemóvel</label>
           <input type="tel" id="setTel" placeholder="+351 9xx xxx xxx">
-          <label>Sexo</label>
-          <select id="setSexo"><option value="">Prefiro não dizer</option><option value="masculino">Masculino</option><option value="feminino">Feminino</option></select>
           <button type="button" class="btn btn-gold" id="setSave" style="width:100%;justify-content:center;margin-top:16px">Guardar alterações</button>
           <div class="msg" id="setMsg"></div>
 
@@ -307,10 +299,10 @@ input:focus,select:focus{outline:none;border-color:var(--gold)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="campanha.js?v=41"></script>
-<script src="medir-config.js?v=41"></script>
-<script src="medir.js?v=41"></script>
-<script src="profile.js?v=41"></script>
+<script src="campanha.js?v=42"></script>
+<script src="medir-config.js?v=42"></script>
+<script src="medir.js?v=42"></script>
+<script src="profile.js?v=42"></script>
 <script src="chat.js"></script>
 
 <script>
@@ -421,7 +413,11 @@ document.getElementById('formRegister').addEventListener('submit', async (e)=>{
   const nome = document.getElementById('regNome').value.trim();
   const email = document.getElementById('regEmail').value.trim();
   const tel = document.getElementById('regTel').value.trim();
-  const sexo = document.getElementById('regSexo').value;
+  // O campo "Sexo" saiu do registo. Servia para escolher entre dois
+  // emojis no avatar, e estava no meio do caminho de quem esta a
+  // comprar -- alem de ser um dado pessoal que era preciso justificar
+  // na politica de privacidade. Quem ja o tem gravado continua a ver o
+  // seu emoji; a partir de agora ninguem tem de responder a isso.
   const pass = document.getElementById('regPass').value;
   try{
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
@@ -430,7 +426,7 @@ document.getElementById('formRegister').addEventListener('submit', async (e)=>{
     try { await cred.user.sendEmailVerification({ url: location.origin + '/conta.html' }); }
     catch(e){ console.warn('email de ativação não saiu:', e); }
     const dadosCliente = {
-      nome, email, telefone: tel, sexo,
+      nome, email, telefone: tel,
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
     };
     if(fotoComprimida) dadosCliente.foto = fotoComprimida;
@@ -475,7 +471,6 @@ function initSettings(user, dados){
   setUser = user; setData = Object.assign({}, dados); setDirtyAvatar = undefined;
   document.getElementById('setNome').value = dados.nome || '';
   document.getElementById('setTel').value = dados.telefone || '';
-  document.getElementById('setSexo').value = dados.sexo || '';
   window.tecnovaApplyAvatar(document.getElementById('setAvatar'), dados, dados.nome||user.email);
   buildCharGrid();
 }
@@ -536,8 +531,7 @@ document.getElementById('setSave').addEventListener('click', async function(){
   var m = document.getElementById('setMsg');
   var upd = {
     nome: document.getElementById('setNome').value.trim(),
-    telefone: document.getElementById('setTel').value.trim(),
-    sexo: document.getElementById('setSexo').value
+    telefone: document.getElementById('setTel').value.trim()
   };
   if(setDirtyAvatar !== undefined){
     upd.foto = setDirtyAvatar.foto || firebase.firestore.FieldValue.delete();
@@ -548,7 +542,7 @@ document.getElementById('setSave').addEventListener('click', async function(){
     await db.collection('clientes').doc(setUser.uid).set(upd, {merge:true});
     if(upd.nome) await setUser.updateProfile({displayName: upd.nome});
     // atualiza estado local + previews
-    setData.nome=upd.nome; setData.telefone=upd.telefone; setData.sexo=upd.sexo;
+    setData.nome=upd.nome; setData.telefone=upd.telefone;
     if(setDirtyAvatar!==undefined){ setData.foto=setDirtyAvatar.foto||null; setData.avatarChar=setDirtyAvatar.avatarChar||null; setDirtyAvatar=undefined; }
     document.getElementById('dashNome').textContent = setData.nome || setUser.email;
     window.tecnovaApplyAvatar(document.getElementById('avatarLetter'), setData, setData.nome||setUser.email);
@@ -647,9 +641,9 @@ async function carregarVouchers(uid){
 }
 </script>
 <script src="site.js"></script>
-<script src="idiomas/en.js?v=41"></script>
-<script src="idiomas/es.js?v=41"></script>
-<script src="i18n.js?v=41"></script>
+<script src="idiomas/en.js?v=42"></script>
+<script src="idiomas/es.js?v=42"></script>
+<script src="i18n.js?v=42"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

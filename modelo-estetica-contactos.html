@@ -23,7 +23,7 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="modelo-paginas.css?v=41">
+<link rel="stylesheet" href="modelo-paginas.css?v=42">
 <style>
 :root{
   --bg:#fbf3ef; --bg2:#f3e3dc; --card:#ffffff;
@@ -54,6 +54,9 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
 .logo span,.logo .tagline,.logo .logo-ic + div span{font-size:.73rem}
 .tag,.pack-tag,.pack .tag,.combo .tag,.kit .tag,.price-row .tag,
 .plan .tag,.dish .tag,.cake .tag,.prow .tag,.svc-card .tag,.treat-card .tag{font-size:.73rem}
+.demo-aviso{border:1px dashed currentColor;border-radius:10px;padding:10px 12px;
+  opacity:.85;line-height:1.55}
+.demo-aviso a{color:inherit;font-weight:700}
 </style>
 </head>
 <body>
@@ -69,7 +72,7 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
 <header class="wrap">
   <div class="nav">
     <a class="logo" href="modelo-estetica.html">
-      <span class="logo-ic selo"><img src="img/modelos/estetica/logo.png?v=41" alt="Bella Pele"></span>
+      <span class="logo-ic selo"><img src="img/modelos/estetica/logo.png?v=42" alt="Bella Pele"></span>
       <span><b>Bella Pele</b><span class="tagline">Clínica de Estética</span></span>
     </a>
     <div class="nav-right">
@@ -102,6 +105,9 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
       <div class="card reveal" id="marcar">
         <h2>Pedido de marcação</h2>
         <p class="hint">Nada é enviado sem si — no fim confere a mensagem antes de a mandar.</p>
+        <p class="hint demo-aviso"><b>Isto é uma demonstração.</b> O negócio
+        é fictício e nada é enviado a ninguém — sirva-se à vontade para
+        experimentar. <a href="orcamento.html">Quer um destes para si?</a></p>
         <form id="fMarc" novalidate>
           <label for="cNome">O seu nome *</label>
           <input id="cNome" type="text" autocomplete="name" required>
