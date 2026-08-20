@@ -7,12 +7,12 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="chat.css?v=45">
+<link rel="stylesheet" href="chat.css?v=46">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="avisos-config.js?v=45"></script>
+<script src="avisos-config.js?v=46"></script>
 <script src="chat.js"></script>
 <style>
 :root{
@@ -642,14 +642,24 @@ auth.onAuthStateChanged(async (user)=>{
   }
   document.getElementById('gate').classList.add('hidden');
   document.getElementById('painel').classList.remove('hidden');
-  carregarClientes();
-  carregarVouchers();
+  // Cada parte do painel carrega por sua conta. Antes vinham em fila e,
+  // se uma rebentasse, as seguintes nunca chegavam a correr -- uma
+  // coleccao com problemas levava atras metade do painel e ficava tudo
+  // em "A carregar..." sem dizer porque. Agora, se uma falhar, as outras
+  // aparecem na mesma e a que falhou fica escrita na consola.
+  function tentar(nome, fn){
+    try { return Promise.resolve(fn()).catch(function(e){ console.warn(nome, e); }); }
+    catch(e){ console.warn(nome, e); return Promise.resolve(); }
+  }
+
+  tentar('clientes', carregarClientes);
+  tentar('cupoes', carregarVouchers);
   // A faturação só depois dos pedidos: é deles que sai a lista para
   // preencher o formulário de um pagamento com um clique.
-  await carregarOrcamentos();
-  carregarPagamentos();
-  carregarEventos();
-  carregarContactos();
+  await tentar('pedidos', carregarOrcamentos);
+  tentar('pagamentos', carregarPagamentos);
+  tentar('visitas', carregarEventos);
+  tentar('contactos', carregarContactos);
   try{
     TecnovaChat.admin('#chatAdmin', function(porResponder){
       document.getElementById('tabMsgs').textContent = porResponder;
@@ -1674,9 +1684,15 @@ function carregarContactos(){
           '<a class="btn line" style="text-decoration:none;font-size:.8rem;padding:9px 14px" ' +
             'href="mailto:' + encodeURIComponent(c.email || '') +
             '?subject=' + encodeURIComponent(assunto) + '">Responder por email</a> ' +
-          '<button class="btn line" style="font-size:.8rem;padding:9px 14px" ' +
-            'onclick="marcarContacto(\'' + c.id + '\',' + (tratado ? 'false' : 'true') + ')">' +
-            (tratado ? 'Voltar a por por tratar' : 'Marcar como tratado') + '</button>' +
+          // Os dados vao em `data-`, nao dentro do onclick. Um nome com
+          // apostrofe -- O'Brien, D'Avila -- partia o atributo e o botao
+          // deixava de funcionar, sem dizer nada a ninguem.
+          '<button class="btn line ct-marcar" style="font-size:.8rem;padding:9px 14px" ' +
+            'data-id="' + escapar(c.id) + '" data-tratado="' + (tratado ? '1' : '0') + '">' +
+            (tratado ? 'Voltar a por por tratar' : 'Marcar como tratado') + '</button> ' +
+          '<button class="btn line ct-apagar" style="font-size:.8rem;padding:9px 14px;opacity:.7" ' +
+            'data-id="' + escapar(c.id) + '" data-nome="' + escapar(c.nome || '') + '">' +
+            'Apagar</button>' +
         '</div>';
       }).join('');
     }, function(){
@@ -1686,9 +1702,31 @@ function carregarContactos(){
     });
 }
 
+/* Um ouvinte so, na lista inteira. Os cartoes sao redesenhados a cada
+   mensagem que entra; se os botoes tivessem cada um o seu ouvinte, ficavam
+   todos para tras no primeiro redesenho. */
+document.addEventListener('click', function(ev){
+  var b = ev.target.closest && ev.target.closest('#listaContactos button');
+  if(!b) return;
+  if(b.classList.contains('ct-marcar'))
+    marcarContacto(b.dataset.id, b.dataset.tratado !== '1');
+  else if(b.classList.contains('ct-apagar'))
+    apagarContacto(b.dataset.id, b.dataset.nome);
+});
+
 function marcarContacto(id, tratado){
   db.collection('contactos').doc(id).update({ estado: tratado ? 'tratado' : 'novo' })
     .catch(function(){ alert('Nao consegui gravar. Tente outra vez.'); });
+}
+
+/* Apagar de vez. Com spam a entrar, "marcar como tratado" nao chega: a
+   lista so cresce e deixa de servir para ver o que e novo. Pergunta antes,
+   porque nao ha como voltar atras -- e um contacto apagado e um cliente
+   que se perdeu. */
+function apagarContacto(id, nome){
+  if(!confirm('Apagar a mensagem de ' + (nome || 'este contacto') + '?\n\nNao ha como voltar atras.')) return;
+  db.collection('contactos').doc(id).delete()
+    .catch(function(){ alert('Nao consegui apagar. Tente outra vez.'); });
 }
 
 function escapar(s){
