@@ -945,6 +945,45 @@ window.TECNOVA_DIC.es = {
 /* ---------- página de pagamento ---------- */
 /* --- pagar sin venir del simulador --- */
 /* --- del presupuesto al pedido de compra --- */
+/* --- cuota mensual --- */
+"Avença mensal": "Cuota mensual",
+"🛠️ Avença mensal": "🛠️ Cuota mensual",
+"Sem avença": "Sin cuota",
+"Um site não é uma coisa que se faz e se esquece: os preços mudam, as promoções mudam, e o que não é atualizado envelhece. A avença é quem trata disso por si. O <b>1.º mês é grátis</b> — só começa a pagar no segundo.":
+  "Una web no es algo que se hace y se olvida: los precios cambian, las promociones cambian, y lo que no se actualiza envejece. La cuota es quien se ocupa de eso por usted. El <b>1.er mes es gratis</b> — solo empieza a pagar el segundo.",
+"1.º mês grátis · cancela quando quiser, sem multa":
+  "1.er mes gratis · cancela cuando quiera, sin penalización",
+"Está incluído": "Está incluido",
+"É avaliado à parte": "Se presupuesta aparte",
+"Mudar preços, serviços, horários e textos sempre que precisar":
+  "Cambiar precios, servicios, horarios y textos siempre que lo necesite",
+"Trocar fotos e pôr banners de promoções": "Cambiar fotos y poner banners de promociones",
+"Atualizações de segurança e cópias de segurança do site":
+  "Actualizaciones de seguridad y copias de seguridad de la web",
+"Corrigir o que deixar de funcionar, sem custo nenhum":
+  "Arreglar lo que deje de funcionar, sin coste alguno",
+"Resposta prioritária pelo chat da sua conta — sem esperar dias":
+  "Respuesta prioritaria por el chat de su cuenta — sin esperar días",
+"Páginas novas, funcionalidades novas ou uma loja a partir do zero":
+  "Páginas nuevas, funciones nuevas o una tienda desde cero",
+"Redesenho do site de raiz": "Rediseño de la web desde cero",
+"Mas como cliente com avença tem <b>20% de desconto</b> em qualquer trabalho novo. O site é meu conhecido: não perco tempo a perceber como foi feito, e esse tempo poupado é seu.":
+  "Pero como cliente con cuota tiene un <b>20% de descuento</b> en cualquier trabajo nuevo. La web ya la conozco: no pierdo tiempo en entender cómo está hecha, y ese tiempo ahorrado es suyo.",
+"O site fica seu na mesma. Quando precisar de alterações, pede e eu digo o preço nessa altura.":
+  "La web es suya igualmente. Cuando necesite cambios, los pide y le digo el precio en ese momento.",
+"Tudo o que o site precisa para não envelhecer: alterações, segurança, cópias e resposta prioritária. O 1.º mês é grátis.":
+  "Todo lo que la web necesita para no envejecer: cambios, seguridad, copias y respuesta prioritaria. El 1.er mes es gratis.",
+"A avença é cobrada à parte do site e só a partir do 2.º mês. Hoje, no pedido, paga apenas o sinal do site.":
+  "La cuota se cobra aparte de la web y solo a partir del 2.º mes. Hoy, en el pedido, paga únicamente la señal de la web.",
+"Avenças no mercado:": "Cuotas en el mercado:",
+"<b>1.º mês grátis</b>, depois {v}/mês": "<b>1.er mes gratis</b>, después {v}/mes",
+"{v}/mês": "{v}/mes",
+"não incluída": "no incluida",
+"Escolheu a avença mensal.": "Ha elegido la cuota mensual.",
+"O 1.º mês é grátis:": "El 1.er mes es gratis:",
+"a primeira mensalidade de": "la primera mensualidad de",
+"só é cobrada a partir de": "solo se cobra a partir del",
+"Pode cancelar quando quiser, sem multa.": "Puede cancelar cuando quiera, sin penalización.",
 "Fazer o pedido": "Hacer el pedido",
 "Pagar um pedido": "Pagar un pedido",
 "Fazer o meu pedido agora →": "Hacer mi pedido ahora →",

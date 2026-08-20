@@ -206,14 +206,35 @@ const MERCADO = {
           'São intervalos típicos, não propostas de concorrentes.'
 };
 
-/* --- Manutenção mensal --------------------------------------------- */
+/* --- Avença mensal -------------------------------------------------
+   Um plano só, para a decisão ser um sim ou um não e não uma escolha
+   entre três coisas parecidas. O 1.º mês é grátis; a partir do 2.º
+   são 35€/mês.
+
+   DESCONTO_AVENCA é a percentagem que um cliente com avença poupa em
+   trabalhos novos (páginas novas, funcionalidades novas). É uma
+   promessa que fica escrita no site — para mudar, muda-se aqui e muda
+   em todo o lado sozinho.                                             */
+const DESCONTO_AVENCA = 0.20;
+
+const AVENCA_INCLUI = [
+  'Mudar preços, serviços, horários e textos sempre que precisar',
+  'Trocar fotos e pôr banners de promoções',
+  'Atualizações de segurança e cópias de segurança do site',
+  'Corrigir o que deixar de funcionar, sem custo nenhum',
+  'Resposta prioritária pelo chat da sua conta — sem esperar dias'
+];
+
+const AVENCA_NAO_INCLUI = [
+  'Páginas novas, funcionalidades novas ou uma loja a partir do zero',
+  'Redesenho do site de raiz'
+];
+
 const MANUTENCAO = [
-  { id: 'm0', nome: 'Sem manutenção', preco: 0,
-    desc: 'O site fica seu. Se precisar de alterações, pede quando quiser.' },
-  { id: 'm1', nome: 'Manutenção Essencial', preco: 19.90, destaque: true,
-    desc: 'Alterações de preços e serviços, banners de promoções e suporte prioritário por email.' },
-  { id: 'm2', nome: 'Manutenção Completa', preco: 39.90,
-    desc: 'Tudo do Essencial + pequenas alterações ilimitadas e campanhas de cupões e fidelidade feitas por nós.' }
+  { id: 'm0', nome: 'Sem avença', preco: 0,
+    desc: 'O site fica seu na mesma. Quando precisar de alterações, pede e eu digo o preço nessa altura.' },
+  { id: 'm1', nome: 'Avença mensal', preco: 35, destaque: true,
+    desc: 'Tudo o que o site precisa para não envelhecer: alterações, segurança, cópias e resposta prioritária. O 1.º mês é grátis.' }
 ];
 
 /* --- Catálogo de funcionalidades -----------------------------------
@@ -651,10 +672,33 @@ const PRESETS = {
     // Manutenção
     var s = document.createElement('section');
     s.className = 'grp'; s.id = 'grp-manut';
+    var mensal = MANUTENCAO.filter(function (m) { return m.preco; })[0];
     s.innerHTML =
       '<div class="grp-head"><span class="grp-n">' + (GRUPOS.length + 1) + '</span>' +
-        '<div><h3>🛠️ Manutenção mensal</h3><p>Opcional, mas é o que mantém o site vivo, seguro e atualizado. ' +
-        (PROMO.mesGratis ? 'O <b>1.º mês é grátis</b>, para experimentar sem compromisso.' : '') + '</p></div></div>' +
+        '<div><h3>🛠️ Avença mensal</h3><p>Um site não é uma coisa que se faz e se esquece: os preços mudam, ' +
+        'as promoções mudam, e o que não é atualizado envelhece. A avença é quem trata disso por si.' +
+        (PROMO.mesGratis ? ' O <b>1.º mês é grátis</b> — só começa a pagar no segundo.' : '') + '</p></div></div>' +
+
+      /* O que a pessoa leva por 35€/mês, escrito antes de escolher. Vender
+         uma mensalidade sem dizer o que ela inclui é como pedir um cheque
+         em branco — e depois é o cliente a cancelar ao segundo mês. */
+      '<div class="av-caixa">' +
+        '<div class="av-topo"><b>' + eur(mensal.preco) + '/mês</b>' +
+          '<span>1.º mês grátis · cancela quando quiser, sem multa</span></div>' +
+        '<div class="av-cols">' +
+          '<div class="av-col"><h4>Está incluído</h4><ul class="av-sim">' +
+            AVENCA_INCLUI.map(function (x) { return '<li>' + x + '</li>'; }).join('') +
+          '</ul></div>' +
+          '<div class="av-col"><h4>É avaliado à parte</h4><ul class="av-nao">' +
+            AVENCA_NAO_INCLUI.map(function (x) { return '<li>' + x + '</li>'; }).join('') +
+          '</ul>' +
+          '<p class="av-desc-nota">Mas como cliente com avença tem <b>' +
+            Math.round(DESCONTO_AVENCA * 100) + '% de desconto</b> em qualquer trabalho novo. ' +
+            'O site é meu conhecido: não perco tempo a perceber como foi feito, e esse tempo poupado é seu.</p>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
       '<div class="opts">' + MANUTENCAO.map(function (m) {
         return '<label class="opt" data-id="' + m.id + '">' +
           '<input type="radio" name="manut" value="' + m.id + '"' + (m.id === manut ? ' checked' : '') + '>' +
@@ -663,7 +707,9 @@ const PRESETS = {
             (m.destaque ? '<i class="tag">recomendado</i>' : '') +
             '<em class="pr">' + (m.preco ? eur(m.preco) + '/mês' : 'grátis') + '</em></span>' +
           '<span class="opt-desc">' + m.desc + '</span></span></label>';
-      }).join('') + '</div>';
+      }).join('') + '</div>' +
+      '<p class="av-rodape">A avença é cobrada à parte do site e só a partir do 2.º mês. ' +
+      'Hoje, no pedido, paga apenas o sinal do site.</p>';
     box.appendChild(s);
 
     box.addEventListener('change', function (e) {
@@ -972,9 +1018,15 @@ const PRESETS = {
     $('#resSinal').textContent = eur(sinal);
     $('#resResto').textContent = eur(total - sinal);
     $('#resPrestacao').textContent = eur(Math.ceil(total / 12));
+    // Ninguém pode pagar o sinal sem perceber que ficou com uma mensalidade.
+    // Por isso diz-se aqui o valor E quando começa a ser cobrada.
+    // Uma frase inteira como chave, não pedaços colados: assim o tradutor
+    // apanha-a toda. Antes ficava "1st month free, depois 35€/month".
     $('#resManut').innerHTML = mens.preco
-      ? eur(mens.preco) + '/mês' + (PROMO.mesGratis && promoAtiva() ? ' <s>1.º mês</s> <b>grátis</b>' : '')
-      : '—';
+      ? (PROMO.mesGratis
+          ? frase('<b>1.º mês grátis</b>, depois {v}/mês').replace('{v}', eur(mens.preco))
+          : frase('{v}/mês').replace('{v}', eur(mens.preco)))
+      : frase('não incluída');
     $('#barTotal').textContent = preco(total);
 
     // ---- comparação com o mercado ----
@@ -999,7 +1051,7 @@ const PRESETS = {
         'Um freelancer em Portugal cobra <b>' + preco(MERCADO.taxaFreelancer[0]) + ' a ' + preco(MERCADO.taxaFreelancer[1]) +
         ' por hora</b>; a nossa taxa efetiva ronda os <b>' + preco(TAXA_HORA) + '/hora</b>. ' +
         'Não há extras a meio: o que está aqui é o que paga.</p>' +
-        (mens.preco ? '<p class="merc-nota">Manutenção no mercado: <b>' + preco(MERCADO.manutencao[0]) + ' a ' +
+        (mens.preco ? '<p class="merc-nota">Avenças no mercado: <b>' + preco(MERCADO.manutencao[0]) + ' a ' +
           preco(MERCADO.manutencao[1]) + '/mês</b> · aqui <b>' + preco(mens.preco) + '/mês</b>.</p>' : '') +
         (moeda !== 'pt' ? '<p class="merc-nota">Estes valores de referência são do <b>mercado português</b>, ' +
           'convertidos para ' + M().codigo + ' só para comparar. No seu país os preços locais podem ser outros.</p>' : '') +
@@ -1044,7 +1096,9 @@ const PRESETS = {
     t += 'TOTAL: ' + eur(o.total) + '\n';
     t += 'Sinal de 50% para começar: ' + eur(o.sinal) + '\n';
     t += 'Restante na entrega: ' + eur(o.total - o.sinal) + '\n';
-    if (o.manut.preco) t += 'Manutenção: ' + eur(o.manut.preco) + '/mês' + (PROMO.mesGratis ? ' (1.º mês grátis)' : '') + '\n';
+    if (o.manut.preco) t += 'Avença mensal: ' + eur(o.manut.preco) + '/mês, a partir do 2.º mês' +
+      (PROMO.mesGratis ? ' (o 1.º é grátis)' : '') + '. Cobrada à parte do site.\n';
+    else t += 'Avença mensal: não incluída.\n';
     if (dados.notas) t += '\nObservações: ' + dados.notas + '\n';
     return t;
   }
@@ -1226,6 +1280,21 @@ const PRESETS = {
       });
 
       $('#okRef').textContent = ref;
+
+      /* Quem escolheu a avença tem de saber a data exata da primeira
+         cobrança. Dizer "a partir do 2.º mês" é vago; uma data não é. */
+      var cxAv = $('#okAvenca');
+      if (cxAv) {
+        if (window.__ORC.manut && window.__ORC.manut.preco) {
+          var d1 = new Date(); d1.setMonth(d1.getMonth() + 1);
+          cxAv.innerHTML = frase('Escolheu a avença mensal.') + ' ' +
+            frase('O 1.º mês é grátis:') + ' <b>' +
+            frase('a primeira mensalidade de') + ' ' + eur(window.__ORC.manut.preco) + ' ' +
+            frase('só é cobrada a partir de') + ' ' + d1.toLocaleDateString('pt-PT') + '</b>. ' +
+            frase('Pode cancelar quando quiser, sem multa.');
+          cxAv.hidden = false;
+        } else cxAv.hidden = true;
+      }
       $('#okTotal').textContent = eur(window.__ORC.total);
       $('#okSinal').textContent = eur(window.__ORC.sinal);
       $('#okEmail').href = 'mailto:wesley@tecnovadigital.pt' +
@@ -1253,7 +1322,12 @@ const PRESETS = {
             .then(function () {
               return TecnovaChat.enviar(u.uid, 'admin',
                 'Recebemos o seu pedido ' + ref + ' — total de ' + preco(window.__ORC.total) +
-                ', com sinal de ' + preco(window.__ORC.sinal) + '. Assim que o sinal entrar, ' +
+                ', com sinal de ' + preco(window.__ORC.sinal) + '. ' +
+                (window.__ORC.manut && window.__ORC.manut.preco
+                  ? 'Ficou com a avença mensal de ' + preco(window.__ORC.manut.preco) +
+                    '/mês, com o 1.º mês grátis. '
+                  : '') +
+                'Assim que o sinal entrar, ' +
                 'começo o seu site e digo-lhe aqui a data de entrega. Este chat é o seu canal direto ' +
                 'comigo: é por aqui que pede alterações e tira dúvidas, sempre que precisar.');
             }).catch(function () {});

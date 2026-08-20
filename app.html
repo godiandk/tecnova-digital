@@ -31,7 +31,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="profile.js?v=28"></script>
+<script src="profile.js?v=29"></script>
 <style>
 :root{
   --ink:#16100b;--ink-2:#211812;--ink-3:#2b2016;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
@@ -195,10 +195,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .tabbar button .tb-ic{font-size:1.25rem;line-height:1}
 .tabbar button.active{color:var(--gold)}
 </style>
-<link rel="stylesheet" href="orcamento.css?v=28">
-<link rel="stylesheet" href="app-orcamento.css?v=28">
-<link rel="stylesheet" href="assistente.css?v=28">
-<link rel="stylesheet" href="i18n.css?v=28">
+<link rel="stylesheet" href="orcamento.css?v=29">
+<link rel="stylesheet" href="app-orcamento.css?v=29">
+<link rel="stylesheet" href="assistente.css?v=29">
+<link rel="stylesheet" href="i18n.css?v=29">
 </head>
 <body class="tecnova-app">
 
@@ -312,7 +312,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
         <div class="res-pag">
           <div><span>Sinal para começar (50%)</span><b id="resSinal"></b></div>
           <div><span>Na entrega, após aprovar</span><b id="resResto"></b></div>
-          <div><span>Manutenção mensal</span><b id="resManut"></b></div>
+          <div><span>Avença mensal</span><b id="resManut"></b></div>
         </div>
 
         <div class="res-mercado" id="resMercado"></div>
@@ -373,6 +373,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
       <li>Vê o site pronto no ar e pede as alterações que quiser.</li>
       <li>Só depois de aprovar tudo é que paga a outra metade.</li>
     </ol>
+    <!-- só aparece a quem escolheu a avença: diz quando é a primeira cobrança -->
+    <p class="ok-avenca" id="okAvenca" hidden></p>
 
     <!-- Um botão só: nada compete com o pagamento. -->
     <div class="ok-btns">
@@ -748,10 +750,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   }
 })();
 </script>
-<script src="orcamento.js?v=28"></script>
-<script src="idiomas/en.js?v=28"></script>
-<script src="idiomas/es.js?v=28"></script>
-<script src="i18n.js?v=28"></script>
+<script src="orcamento.js?v=29"></script>
+<script src="idiomas/en.js?v=29"></script>
+<script src="idiomas/es.js?v=29"></script>
+<script src="i18n.js?v=29"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

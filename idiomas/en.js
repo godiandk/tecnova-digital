@@ -941,6 +941,45 @@ window.TECNOVA_DIC.en = {
 /* ---------- página de pagamento ---------- */
 /* --- pagar sem vir do simulador --- */
 /* --- do orçamento ao pedido de compra --- */
+/* --- avença mensal --- */
+"Avença mensal": "Monthly care plan",
+"🛠️ Avença mensal": "🛠️ Monthly care plan",
+"Sem avença": "No care plan",
+"Um site não é uma coisa que se faz e se esquece: os preços mudam, as promoções mudam, e o que não é atualizado envelhece. A avença é quem trata disso por si. O <b>1.º mês é grátis</b> — só começa a pagar no segundo.":
+  "A website is not something you build and forget: prices change, promotions change, and whatever is not updated grows old. The care plan is what handles that for you. The <b>1st month is free</b> — you only start paying on the second.",
+"1.º mês grátis · cancela quando quiser, sem multa":
+  "1st month free · cancel whenever you like, no penalty",
+"Está incluído": "Included",
+"É avaliado à parte": "Quoted separately",
+"Mudar preços, serviços, horários e textos sempre que precisar":
+  "Change prices, services, opening hours and text whenever you need",
+"Trocar fotos e pôr banners de promoções": "Swap photos and put up promotion banners",
+"Atualizações de segurança e cópias de segurança do site":
+  "Security updates and backups of your site",
+"Corrigir o que deixar de funcionar, sem custo nenhum":
+  "Fixing anything that stops working, at no cost",
+"Resposta prioritária pelo chat da sua conta — sem esperar dias":
+  "Priority replies through the chat in your account — no waiting days",
+"Páginas novas, funcionalidades novas ou uma loja a partir do zero":
+  "New pages, new features or a shop from scratch",
+"Redesenho do site de raiz": "Redesigning the site from the ground up",
+"Mas como cliente com avença tem <b>20% de desconto</b> em qualquer trabalho novo. O site é meu conhecido: não perco tempo a perceber como foi feito, e esse tempo poupado é seu.":
+  "But as a care plan client you get <b>20% off</b> any new work. I know the site already: I lose no time working out how it was built, and that saved time is yours.",
+"O site fica seu na mesma. Quando precisar de alterações, pede e eu digo o preço nessa altura.":
+  "The site is yours either way. When you need changes, ask and I quote you then.",
+"Tudo o que o site precisa para não envelhecer: alterações, segurança, cópias e resposta prioritária. O 1.º mês é grátis.":
+  "Everything the site needs so it does not grow old: changes, security, backups and priority replies. The 1st month is free.",
+"A avença é cobrada à parte do site e só a partir do 2.º mês. Hoje, no pedido, paga apenas o sinal do site.":
+  "The care plan is billed separately from the site and only from the 2nd month. Today, with this order, you pay only the site deposit.",
+"Avenças no mercado:": "Care plans on the market:",
+"<b>1.º mês grátis</b>, depois {v}/mês": "<b>1st month free</b>, then {v}/month",
+"{v}/mês": "{v}/month",
+"não incluída": "not included",
+"Escolheu a avença mensal.": "You chose the monthly care plan.",
+"O 1.º mês é grátis:": "The 1st month is free:",
+"a primeira mensalidade de": "the first monthly payment of",
+"só é cobrada a partir de": "is only charged from",
+"Pode cancelar quando quiser, sem multa.": "You can cancel whenever you like, with no penalty.",
 "Fazer o pedido": "Place your order",
 "Pagar um pedido": "Pay for an order",
 "Fazer o meu pedido agora →": "Place my order now →",

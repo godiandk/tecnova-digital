@@ -278,3 +278,36 @@
   background:none;border:none;padding:0;font:inherit;font-size:.86rem;font-weight:700;
   color:var(--gold-soft);text-decoration:underline;cursor:pointer}
 .ok-secundario a:hover,.ok-secundario button:hover{color:var(--gold)}
+
+/* ---------- Avença mensal ----------
+   A caixa que explica o que a mensalidade inclui, antes de a pessoa
+   escolher. Dourada e não verde: é uma proposta, não uma garantia. */
+.av-caixa{background:rgba(217,178,110,.06);border:1px solid rgba(217,178,110,.24);
+  border-radius:16px;padding:20px 22px;margin:18px 0}
+.av-topo{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+  padding-bottom:14px;margin-bottom:16px;border-bottom:1px dashed rgba(217,178,110,.22)}
+.av-topo b{font-family:'Playfair Display',serif;font-size:1.9rem;color:var(--gold);line-height:1}
+.av-topo span{color:var(--cream-dim);font-size:.84rem}
+.av-cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.av-col h4{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--gold-soft);margin:0 0 10px;font-weight:800}
+.av-col ul{list-style:none;margin:0;padding:0}
+.av-col li{position:relative;padding-left:24px;margin-bottom:9px;
+  color:var(--cream-dim);font-size:.88rem;line-height:1.5}
+/* O sinal vai antes do texto, não é a cor a dizer o que é: quem não
+   distingue verde de vermelho continua a ver o ✓ e o ✗. */
+.av-sim li::before{content:'✓';position:absolute;left:0;top:0;color:#8fe3ac;font-weight:800}
+.av-nao li::before{content:'✗';position:absolute;left:0;top:0;color:#e0a08c;font-weight:800}
+.av-desc-nota{margin-top:14px;padding-top:14px;border-top:1px dashed rgba(217,178,110,.18);
+  color:var(--cream-dim);font-size:.86rem;line-height:1.6}
+.av-desc-nota b{color:var(--gold-soft)}
+.av-rodape{margin-top:12px;color:var(--cream-dim);font-size:.83rem;line-height:1.6}
+@media(max-width:720px){
+  .av-cols{grid-template-columns:1fr;gap:18px}
+  .av-caixa{padding:18px}
+  .av-topo b{font-size:1.6rem}
+}
+.ok-avenca{margin-top:16px;padding:14px 18px;border-radius:14px;
+  background:rgba(217,178,110,.08);border:1px solid rgba(217,178,110,.28);
+  color:var(--cream-dim);font-size:.88rem;line-height:1.6}
+.ok-avenca b{color:var(--gold-soft)}
