@@ -6,12 +6,17 @@
    ============================================================ */
 
 /* --- Campanha ativa ------------------------------------------------ */
-const PROMO = {
+/* A campanha vem do `campanha.js`, que é a única fonte da verdade — a
+   data estava escrita à mão aqui E no HTML, e no dia seguinte ao fim a
+   página inicial prometia 40% enquanto o pedido já cobrava tudo.
+   Os valores abaixo são só o recuo, para o caso de o ficheiro não
+   carregar. */
+const PROMO = window.TECNOVA_PROMO || {
   ativo: true,
-  fim: '2026-09-30',        // último dia da campanha (AAAA-MM-DD)
-  desconto: 0.40,           // 40% sobre o valor total do site
+  fim: '2026-09-30',
+  desconto: 0.40,
   codigo: 'INOVA40',
-  mesGratis: true           // 1.ª mensalidade de manutenção grátis
+  mesGratis: true
 };
 
 /* A data por extenso, para não ficar escrita à mão em cinco sítios e
@@ -864,9 +869,21 @@ const PRESETS = {
     } catch (e) { return pt; }
   }
 
+  /* Marca uma vez por sessão que esta pessoa começou mesmo a montar um
+     pedido. É o passo que separa quem passou por aqui de quem está a
+     pensar comprar — e é por ele que se percebe se um anúncio traz
+     curiosos ou clientes. */
+  var jaMarcouComeco = false;
+  function marcarComeco() {
+    if (jaMarcouComeco) return;
+    jaMarcouComeco = true;
+    try { window.TecnovaMedir && window.TecnovaMedir.conversao('pedido_comecou'); } catch (e) {}
+  }
+
   function refrescarProposta() {
     var caixa = $('#proposta');
     if (!caixa || caixa.hidden) return;
+    marcarComeco();
     var o = window.__ORC;
     if (!o) return;
     pintarListaProposta();
@@ -1559,6 +1576,13 @@ const PRESETS = {
                 'comigo: é por aqui que pede alterações e tira dúvidas, sempre que precisar.');
             }).catch(function () {});
         }
+      } catch (e) {}
+
+      // O valor vai junto: um anúncio que traz pedidos de 200€ não vale o
+      // mesmo que um que traz pedidos de 900€.
+      try {
+        window.TecnovaMedir && window.TecnovaMedir.conversao(
+          'pedido_feito', Math.round(window.__ORC.total), ref);
       } catch (e) {}
 
       $('#final').style.display = 'none';

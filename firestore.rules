@@ -89,6 +89,43 @@ service cloud.firestore {
     }
 
     // ----------------------------------------------------------
+    // eventos/{id} — medição das visitas e do funil
+    // Qualquer visitante escreve aqui, porque a medição corre no
+    // browser de quem visita — não há outra forma sem um servidor.
+    // Por isso a regra é apertada ao milímetro: só os campos que
+    // conhecemos, com os tamanhos certos, e NADA que identifique
+    // uma pessoa. Ninguém pode ler nem apagar sem ser o
+    // administrador, e ninguém pode alterar o que já lá está.
+    // ----------------------------------------------------------
+    match /eventos/{id} {
+      allow create: if request.resource.data.keys().hasOnly(
+                        ['tipo','pagina','origem','sessao','dia','quando','valor','ref'])
+                    && request.resource.data.keys().hasAll(
+                        ['tipo','pagina','origem','sessao','dia','quando'])
+                    && request.resource.data.tipo is string
+                    && request.resource.data.tipo.size() < 31
+                    && request.resource.data.pagina is string
+                    && request.resource.data.pagina.size() < 60
+                    && request.resource.data.origem is string
+                    && request.resource.data.origem.size() < 41
+                    && request.resource.data.sessao is string
+                    && request.resource.data.sessao.size() < 20
+                    && request.resource.data.dia is string
+                    && request.resource.data.dia.size() == 10
+                    && request.resource.data.quando is string
+                    && request.resource.data.quando.size() < 30
+                    && (!('valor' in request.resource.data)
+                        || (request.resource.data.valor is int
+                            && request.resource.data.valor >= 0
+                            && request.resource.data.valor < 1000000))
+                    && (!('ref' in request.resource.data)
+                        || (request.resource.data.ref is string
+                            && request.resource.data.ref.size() < 41));
+      allow read, delete: if ehAdmin();
+      allow update: if false;
+    }
+
+    // ----------------------------------------------------------
     // pagamentos/{id} — o dinheiro que entrou mesmo
     // Nada disto vem do site: é o administrador que regista cada
     // entrada. Não há aqui nenhum caso em que um cliente precise de

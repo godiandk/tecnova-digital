@@ -39,7 +39,13 @@
       id: 'campanha',
       chaves: ['desconto', 'promoção', 'promocao', 'campanha', 'cupão', 'cupao', 'voucher', 'código', 'codigo', 'setembro'],
       resposta: 'Está a apanhar a campanha certa. 🎉\n\n' +
-        'Até <b>30 de setembro</b>: <b>40% de desconto</b> sobre o valor total do site e a <b>1.ª mensalidade de manutenção grátis</b>. ' +
+        // a data e a percentagem vêm da campanha, senão ficam a mentir
+        (function(){ var P=window.TECNOVA_PROMO;
+          if(P && P.ativa && !P.ativa()) return 'A campanha de lançamento já terminou, mas o preço continua fechado: o que vê ao montar o pedido é o que paga. ';
+          var ate = (P && P.fimPorExtenso) ? P.fimPorExtenso() : '30 de setembro';
+          var pct = P ? Math.round(P.desconto*100)+'%' : '40%';
+          return 'Até <b>'+ate+'</b>: <b>'+pct+' de desconto</b> sobre o valor total do site e a <b>1.ª mensalidade de manutenção grátis</b>. ';
+        })() +
         'O código é <b>INOVA40</b> e é aplicado automaticamente quando faz o pedido.\n\n' +
         'O preço que vê ao montar o pedido é o preço final: paga metade para arrancar e a outra metade só depois de aprovar o site.',
       acoes: [['Montar o pedido com desconto', 'orcamento.html']]

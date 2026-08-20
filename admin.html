@@ -7,11 +7,12 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="chat.css?v=30">
+<link rel="stylesheet" href="chat.css?v=31">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="avisos-config.js?v=31"></script>
 <script src="chat.js"></script>
 <style>
 :root{
@@ -182,6 +183,44 @@ td.valor{text-align:right;color:var(--cream);font-weight:700;white-space:nowrap}
 @media(max-width:620px){
   #paneFat th.col-sec, #paneFat td.col-sec{display:none}
 }
+
+/* ---------- funil das visitas ---------- */
+.fn-passo{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.fn-barra{flex:1;height:44px;border-radius:10px;background:rgba(217,178,110,.1);
+  position:relative;overflow:hidden;min-width:0}
+.fn-barra i{position:absolute;inset:0 auto 0 0;
+  background:linear-gradient(90deg,rgba(217,178,110,.55),var(--gold));border-radius:10px}
+.fn-barra span{position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  font-size:.85rem;font-weight:700;color:var(--ink);white-space:nowrap;z-index:1;
+  text-shadow:0 1px 2px rgba(255,255,255,.25)}
+/* quando a barra é curta, o nome não cabe lá dentro e fica de fora */
+.fn-barra.curta span{left:auto;right:-8px;transform:translate(100%,-50%);
+  color:var(--cream);text-shadow:none}
+.fn-num{flex:none;width:104px;text-align:right}
+.fn-num b{display:block;font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--gold);line-height:1.1}
+.fn-num span{display:block;font-size:.72rem;color:var(--cream-dim)}
+.fn-queda{font-size:.78rem;color:var(--cream-dim);margin:-4px 0 14px 0;padding-left:2px}
+.fn-queda b{color:#f0a292}
+@media(max-width:620px){
+  .fn-passo{gap:10px}
+  .fn-num{width:78px}
+  .fn-num b{font-size:1.2rem}
+  .fn-barra{height:40px}
+  .fn-barra span{font-size:.78rem}
+}
+
+/* ---------- aviso de pedido novo ---------- */
+.aviso-novo{position:fixed;right:20px;bottom:20px;z-index:300;max-width:330px;
+  background:linear-gradient(140deg,var(--gold-soft),var(--gold));color:var(--ink);
+  border-radius:16px;padding:16px 18px;box-shadow:0 16px 44px rgba(0,0,0,.55);
+  animation:avisoEntra .35s ease}
+.aviso-novo b{display:block;font-size:.98rem;margin-bottom:4px}
+.aviso-novo span{display:block;font-size:.85rem;opacity:.82;margin-bottom:10px}
+.aviso-novo button{background:rgba(0,0,0,.16);border:none;border-radius:999px;
+  padding:9px 18px;font:inherit;font-weight:800;font-size:.8rem;cursor:pointer;
+  color:var(--ink);min-height:40px}
+@keyframes avisoEntra{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media(max-width:560px){.aviso-novo{left:16px;right:16px;max-width:none;bottom:16px}}
 </style>
 </head>
 <body>
@@ -205,14 +244,19 @@ td.valor{text-align:right;color:var(--cream);font-weight:700;white-space:nowrap}
       <div><span class="logo-name">TECNOVA<small>DIGITAL</small></span></div>
       <span class="tag">ADMIN</span>
     </div>
+    <button class="logout" id="btnAvisos" onclick="pedirPermissaoAvisos()" style="margin-right:14px">Ligar avisos</button>
     <button class="logout" onclick="auth.signOut()">Sair</button>
   </header>
+
+  <!-- salta quando entra um pedido, mesmo com o som desligado -->
+  <div class="aviso-novo" id="avisoNovo" hidden></div>
 
   <div class="tabs">
     <button class="tab on" data-pane="paneOrc">Pedidos <span class="n" id="tabNovos">0</span></button>
     <button class="tab" data-pane="paneMsg">Mensagens <span class="n" id="tabMsgs">0</span></button>
     <button class="tab" data-pane="paneCli">Clientes &amp; Cupões</button>
     <button class="tab" data-pane="paneFat">Faturação</button>
+    <button class="tab" data-pane="paneVis">Visitas</button>
   </div>
 
   <!-- =============== ORÇAMENTOS =============== -->
@@ -487,6 +531,67 @@ td.valor{text-align:right;color:var(--cream);font-weight:700;white-space:nowrap}
     </div>
 
   </div><!-- /paneFat -->
+
+  <!-- =============== VISITAS =============== -->
+  <div class="pane" id="paneVis">
+
+    <div class="card">
+      <h2 style="font-size:1.1rem;margin:0 0 4px">Quem entrou e quem comprou</h2>
+      <p style="font-size:.82rem;color:var(--cream-dim);margin:0 0 14px">Medição própria, sem cookies e sem identificar ninguém. É por aqui que se vê se um anúncio traz clientes ou só curiosos.</p>
+      <div class="periodos" id="visPeriodos">
+        <button class="per" data-per="hoje">Hoje</button>
+        <button class="per" data-per="ontem">Ontem</button>
+        <button class="per on" data-per="semana">Esta semana</button>
+        <button class="per" data-per="mes">Este mês</button>
+        <button class="per" data-per="mes-1">Mês passado</button>
+        <button class="per" data-per="ano">Este ano</button>
+        <button class="per" data-per="tudo">Desde sempre</button>
+      </div>
+      <p id="visLegenda" class="fat-legenda">—</p>
+    </div>
+
+    <!-- o funil -->
+    <div class="card">
+      <h2 style="font-size:1.1rem;margin:0 0 4px">Do clique ao pagamento</h2>
+      <p style="font-size:.82rem;color:var(--cream-dim);margin:0 0 18px">Cada degrau conta pessoas diferentes, não visitas. Quem voltar duas vezes no mesmo dia conta uma.</p>
+      <div id="visFunil"><p class="empty">A carregar…</p></div>
+    </div>
+
+    <!-- de onde vieram -->
+    <div class="row2" style="align-items:start">
+      <div class="card">
+        <div class="fat-topo">
+          <h2 style="font-size:1.1rem;margin:0">De onde vieram</h2>
+          <span class="fat-dica" id="visOrigemDica"></span>
+        </div>
+        <div id="visOrigens" style="margin-top:14px"><p class="empty">—</p></div>
+      </div>
+      <div class="card">
+        <h2 style="font-size:1.1rem;margin:0 0 14px">Páginas mais vistas</h2>
+        <div id="visPaginas"><p class="empty">—</p></div>
+      </div>
+    </div>
+
+    <!-- visitas por dia -->
+    <div class="card">
+      <div class="fat-topo">
+        <h2 style="font-size:1.1rem;margin:0" id="visGrafTitulo">Visitas dia a dia</h2>
+        <span class="fat-dica">Passe o rato ou toque numa barra</span>
+      </div>
+      <div id="visGrafico" class="fat-grafico"><p class="empty">A carregar…</p></div>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:1.1rem;margin:0 0 8px">O que isto não mede</h2>
+      <p style="font-size:.84rem;color:var(--cream-dim);line-height:1.65;margin:0">
+        Não põe cookies, não segue ninguém entre sites e não guarda nada que identifique uma pessoa —
+        por isso não precisa de aviso de cookies. Em troca, quem fechar o separador e voltar amanhã
+        conta como pessoa nova, e quem usar bloqueadores muito agressivos pode não ser contado.
+        Os números servem para <b>comparar</b> dias e origens, não para uma contabilidade exata.
+      </p>
+    </div>
+
+  </div><!-- /paneVis -->
 </div>
 
 <script>
@@ -513,6 +618,7 @@ auth.onAuthStateChanged(async (user)=>{
   // preencher o formulário de um pagamento com um clique.
   await carregarOrcamentos();
   carregarPagamentos();
+  carregarEventos();
   try{
     TecnovaChat.admin('#chatAdmin', function(porResponder){
       document.getElementById('tabMsgs').textContent = porResponder;
@@ -529,6 +635,8 @@ document.querySelectorAll('.tab').forEach(t=>{
     // largura real, tem de esperar por ser visível para saber que tamanho tem.
     if(t.dataset.pane === 'paneFat' && typeof desenharFaturacao === 'function' && pagCache.length)
       desenharFaturacao();
+    if(t.dataset.pane === 'paneVis' && typeof desenharVisitas === 'function' && evtCache.length)
+      desenharVisitas();
   });
 });
 
@@ -555,15 +663,146 @@ document.querySelectorAll('#filtrosOrc .filtro').forEach(b=>{
   });
 });
 
-async function carregarOrcamentos(){
+/* ==================================================================
+   AVISO DE PEDIDO NOVO
+   ------------------------------------------------------------------
+   O painel deixa de ser uma fotografia e passa a ser uma janela
+   aberta: fica a ouvir a coleção e, mal entre um pedido, toca, avisa
+   e põe o número no separador. Sem isto, um pedido às 3 da manhã só
+   era descoberto quando alguém se lembrasse de abrir o painel.
+
+   Isto só funciona com o painel aberto nalgum separador. Para receber
+   avisos com tudo fechado é preciso um servidor a enviar emails —
+   está explicado em `avisos-config.js`.
+   ================================================================== */
+
+let jaVistos = null;          // null = primeira carga, não avisa de nada
+let porResponderAgora = 0;
+const tituloOriginal = document.title;
+
+function pintarTitulo(){
+  document.title = porResponderAgora
+    ? '(' + porResponderAgora + ') ' + tituloOriginal
+    : tituloOriginal;
+}
+
+/* Um toque curto feito no próprio browser. Um ficheiro de som teria de
+   ser descarregado e podia falhar; isto não depende de nada. */
+function tocar(){
   try{
-    const snap = await db.collection('orcamentos').orderBy('criado','desc').get();
-    orcCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
-  }catch(e){
-    document.getElementById('listaOrc').innerHTML =
-      '<p class="empty">Não foi possível carregar os pedidos. Confirme as regras do Firestore.</p>';
-    return;
+    const C = window.AudioContext || window.webkitAudioContext;
+    if(!C) return;
+    const ctx = new C();
+    [880, 1320].forEach((hz, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = hz;
+      o.connect(g); g.connect(ctx.destination);
+      const t0 = ctx.currentTime + i * 0.16;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.22, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.30);
+      o.start(t0); o.stop(t0 + 0.32);
+    });
+    setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 1200);
+  }catch(e){}
+}
+
+function avisarSistema(o){
+  try{
+    if(!('Notification' in window) || Notification.permission !== 'granted') return;
+    const n = new Notification('Pedido novo — ' + (o.nome || 'cliente'), {
+      body: (o.negocio ? o.negocio + ' · ' : '') + eur(Number(o.total)||0) +
+            ' · sinal ' + eur(Number(o.sinal)||0),
+      tag: 'pedido-' + o.id,       // não empilha o mesmo pedido duas vezes
+      icon: 'icon-192.png'
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+  }catch(e){}
+}
+
+function pedirPermissaoAvisos(){
+  try{
+    if(!('Notification' in window)) return;
+    if(Notification.permission === 'default') Notification.requestPermission();
+  }catch(e){}
+}
+
+/* Email a sério, se o EmailJS estiver configurado. Carrega-se a
+   biblioteca só na primeira vez que é precisa — se os códigos
+   estiverem vazios, não se carrega nada de fora. */
+let emailjsPronto = null;
+function prepararEmail(){
+  const c = window.TECNOVA_AVISOS || {};
+  if(!c.emailjsUtilizador || !c.emailjsServico || !c.emailjsTemplate) return null;
+  if(emailjsPronto) return emailjsPronto;
+  emailjsPronto = new Promise((ok, falha) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+    sc.onload = () => { try{ window.emailjs.init({publicKey: c.emailjsUtilizador}); ok(true); }catch(e){ falha(e); } };
+    sc.onerror = falha;
+    document.head.appendChild(sc);
+  }).catch(() => { emailjsPronto = null; return false; });
+  return emailjsPronto;
+}
+
+function enviarAvisoPorEmail(o){
+  const c = window.TECNOVA_AVISOS || {};
+  const p = prepararEmail();
+  if(!p) return;                       // não configurado: fica-se pelo painel
+  p.then(pronto => {
+    if(!pronto || !window.emailjs) return;
+    window.emailjs.send(c.emailjsServico, c.emailjsTemplate, {
+      para: c.para || 'wesley@tecnovadigital.pt',
+      nome: o.nome || '', negocio: o.negocio || '',
+      email: o.email || '', telefone: o.tel || '',
+      referencia: o.ref || o.id || '',
+      total: eur(Number(o.total)||0), sinal: eur(Number(o.sinal)||0)
+    }).catch(e => console.warn('aviso por email não saiu:', e));
+  });
+}
+
+function avisarPedidoNovo(o){
+  tocar();
+  avisarSistema(o);
+  // e um aviso dentro da própria página, para quem tem o som desligado
+  const cx = document.getElementById('avisoNovo');
+  if(cx){
+    cx.innerHTML = '<b>Pedido novo de ' + esc(o.nome || 'cliente') + '</b>' +
+      '<span>' + esc(o.negocio || '') + (o.negocio ? ' · ' : '') +
+      eur(Number(o.total)||0) + ' · sinal ' + eur(Number(o.sinal)||0) + '</span>' +
+      '<button type="button" onclick="this.parentElement.hidden=true">Fechar</button>';
+    cx.hidden = false;
   }
+  // e um email para o Wesley, se estiver configurado
+  try{ enviarAvisoPorEmail(o); }catch(e){}
+}
+
+function carregarOrcamentos(){
+  return new Promise(resolve => {
+    let resolvido = false;
+    db.collection('orcamentos').orderBy('criado','desc').onSnapshot(snap => {
+      orcCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
+
+      // Na primeira carga não se avisa de nada: seriam todos os pedidos
+      // de sempre a tocar de uma vez.
+      const ids = new Set(orcCache.map(o=>o.id));
+      if(jaVistos){
+        orcCache.forEach(o => { if(!jaVistos.has(o.id)) avisarPedidoNovo(o); });
+      }
+      jaVistos = ids;
+
+      pintarOrcamentos();
+      if(!resolvido){ resolvido = true; resolve(); }
+    }, e => {
+      console.error('pedidos:', e);
+      document.getElementById('listaOrc').innerHTML =
+        '<p class="empty">Não foi possível carregar os pedidos. Confirme as regras do Firestore.</p>';
+      if(!resolvido){ resolvido = true; resolve(); }
+    });
+  });
+}
+
+function pintarOrcamentos(){
   const novos = orcCache.filter(o=>(o.estado||'novo')==='novo').length;
   const curso = orcCache.filter(o=>['sinal','producao'].includes(o.estado)).length;
   const carteira = orcCache.filter(o=>['novo','sinal','producao'].includes(o.estado||'novo'))
@@ -572,6 +811,8 @@ async function carregarOrcamentos(){
   document.getElementById('statOrcAndamento').textContent = curso;
   document.getElementById('statOrcValor').textContent = eur(carteira);
   document.getElementById('tabNovos').textContent = novos;
+  porResponderAgora = novos;
+  pintarTitulo();
   renderOrcamentos();
 }
 
@@ -1399,7 +1640,248 @@ window.addEventListener('resize', () => {
   clearTimeout(redesenhar);
   redesenhar = setTimeout(() => {
     if(document.getElementById('paneFat').classList.contains('on') && pagCache.length) desenharFaturacao();
+    if(document.getElementById('paneVis').classList.contains('on') && evtCache.length) desenharVisitas();
   }, 200);
+});
+
+/* ==================================================================
+   VISITAS
+   ------------------------------------------------------------------
+   Lê a coleção `eventos`, que o medir.js enche a partir do site.
+   Conta PESSOAS (sessões diferentes), não visitas: quem anda para
+   trás e para a frente não pode valer por dez.
+   ================================================================== */
+
+let evtCache = [];
+let visPeriodo = { de: '', ate: '', nome: '', chave: 'semana' };
+
+const FUNIL = [
+  { tipo: 'visita',           nome: 'Entraram no site' },
+  { tipo: 'pedido_comecou',   nome: 'Começaram um pedido' },
+  { tipo: 'pedido_feito',     nome: 'Fizeram o pedido' },
+  { tipo: 'pagamento_aberto', nome: 'Chegaram ao pagamento' }
+];
+
+const NOMES_ORIGEM = {
+  direto: 'Escreveram o endereço', google: 'Google', meta: 'Instagram / Facebook',
+  bing: 'Bing', folheto: 'Folheto'
+};
+
+async function carregarEventos() {
+  try {
+    // Um limite alto mas com fim: sem ele, um dia com muito tráfego trazia
+    // tudo de uma vez e o painel ficava minutos a abrir.
+    const snap = await db.collection('eventos').orderBy('quando', 'desc').limit(20000).get();
+    evtCache = snap.docs.map(d => d.data());
+  } catch (e) {
+    evtCache = [];
+    console.error('Não foi possível ler as visitas:', e);
+    const g = document.getElementById('visFunil');
+    if (g) g.innerHTML = '<p class="empty">Não foi possível ler as visitas. Confirme as regras do Firestore.</p>';
+    return;
+  }
+  visPeriodo = Object.assign(calcularPeriodo('semana'), { chave: 'semana' });
+  desenharVisitas();
+}
+
+function escolherPeriodoVis(chave, botao) {
+  document.querySelectorAll('#visPeriodos .per').forEach(b => b.classList.toggle('on', b === botao));
+  if (chave === 'tudo') {
+    const dias = evtCache.map(e => e.dia).filter(Boolean).sort();
+    visPeriodo = { de: dias[0] || iso(new Date()), ate: dias[dias.length - 1] || iso(new Date()),
+                   nome: 'Desde sempre', chave: 'tudo' };
+  } else {
+    visPeriodo = Object.assign(calcularPeriodo(chave), { chave: chave });
+  }
+  desenharVisitas();
+}
+
+function noPeriodoVis(de, ate) {
+  return evtCache.filter(e => e.dia >= de && e.dia <= ate);
+}
+
+/* Pessoas diferentes que fizeram este passo. */
+function quantasPessoas(lista, tipo) {
+  const s = new Set();
+  lista.forEach(e => { if (e.tipo === tipo) s.add(e.sessao); });
+  return s.size;
+}
+
+function desenharVisitas() {
+  const { de, ate, nome } = visPeriodo;
+  const dias = diasEntre(de, ate);
+  const lista = noPeriodoVis(de, ate);
+
+  document.getElementById('visLegenda').textContent =
+    nome + ' · ' + (dias === 1 ? porExtenso(de) : porExtenso(de) + ' a ' + porExtenso(ate) + ' (' + dias + ' dias)');
+
+  desenharFunil(lista);
+  desenharOrigens(lista);
+  desenharPaginas(lista);
+  desenharGraficoVisitas(lista, de, ate, dias);
+}
+
+function desenharFunil(lista) {
+  const cx = document.getElementById('visFunil');
+  const n = FUNIL.map(p => quantasPessoas(lista, p.tipo));
+  if (!n[0]) {
+    cx.innerHTML = '<p class="empty">Ainda ninguém entrou no site neste período.</p>';
+    return;
+  }
+  let html = '';
+  FUNIL.forEach((p, i) => {
+    const pct = n[0] ? (n[i] / n[0] * 100) : 0;
+    // com a barra muito curta o nome não cabe lá dentro
+    const curta = pct < 26;
+    html += '<div class="fn-passo">' +
+      '<div class="fn-barra' + (curta ? ' curta' : '') + '">' +
+        '<i style="width:' + Math.max(pct, 1.5) + '%"></i>' +
+        '<span>' + p.nome + '</span></div>' +
+      '<div class="fn-num"><b>' + n[i] + '</b><span>' +
+        (i === 0 ? 'pessoas' : Math.round(pct) + '% de quem entrou') + '</span></div>' +
+    '</div>';
+    // a perda de um degrau para o outro é o que diz onde está o problema
+    if (i < FUNIL.length - 1) {
+      const perdeu = n[i] - n[i + 1];
+      if (n[i] > 0) {
+        html += '<p class="fn-queda">Daqui para o passo seguinte perdem-se <b>' + perdeu + '</b> ' +
+          (perdeu === 1 ? 'pessoa' : 'pessoas') +
+          ' (' + Math.round(n[i] ? perdeu / n[i] * 100 : 0) + '%)</p>';
+      }
+    }
+  });
+
+  const valor = lista.filter(e => e.tipo === 'pedido_feito')
+                     .reduce((a, e) => a + (Number(e.valor) || 0), 0);
+  if (valor) {
+    html += '<p class="fn-queda" style="margin-top:16px;color:var(--gold-soft)">' +
+      'Os pedidos feitos neste período somam <b style="color:var(--gold)">' + dinheiro(valor, 'EUR') + '</b> em valor pedido. ' +
+      'Recebido é outra coisa — isso está na aba Faturação.</p>';
+  }
+  cx.innerHTML = html;
+}
+
+function desenharOrigens(lista) {
+  const cx = document.getElementById('visOrigens');
+  const soma = {};
+  const vistos = {};
+  lista.forEach(e => {
+    if (e.tipo !== 'visita') return;
+    const o = e.origem || 'direto';
+    const chave = o + '|' + e.sessao;
+    if (vistos[chave]) return;          // uma pessoa conta uma vez por origem
+    vistos[chave] = 1;
+    soma[o] = (soma[o] || 0) + 1;
+  });
+  const total = Object.values(soma).reduce((a, b) => a + b, 0);
+  document.getElementById('visOrigemDica').textContent = total ? total + ' pessoas' : '';
+  if (!total) { cx.innerHTML = '<p class="empty">—</p>'; return; }
+
+  // quantos pedidos vieram de cada origem: é isto que diz que anúncio compensa
+  const pedidos = {};
+  lista.forEach(e => { if (e.tipo === 'pedido_feito') pedidos[e.origem || 'direto'] = (pedidos[e.origem || 'direto'] || 0) + 1; });
+
+  cx.innerHTML = Object.keys(soma).sort((a, b) => soma[b] - soma[a]).map(k => {
+    const pct = Math.round(soma[k] / total * 100);
+    const ped = pedidos[k] || 0;
+    return '<div class="fat-fatia">' +
+      '<div class="fat-fatia-topo"><b>' + esc(NOMES_ORIGEM[k] || k) + '</b>' +
+      '<span>' + soma[k] + ' · ' + pct + '%' +
+      (ped ? ' · <b style="color:var(--gold-soft)">' + ped + ' pedido' + (ped > 1 ? 's' : '') + '</b>' : '') +
+      '</span></div>' +
+      '<div class="fat-tubo"><i style="width:' + pct + '%"></i></div></div>';
+  }).join('');
+}
+
+function desenharPaginas(lista) {
+  const cx = document.getElementById('visPaginas');
+  const soma = {};
+  const vistos = {};
+  lista.forEach(e => {
+    if (e.tipo !== 'visita') return;
+    const chave = e.pagina + '|' + e.sessao;
+    if (vistos[chave]) return;
+    vistos[chave] = 1;
+    soma[e.pagina] = (soma[e.pagina] || 0) + 1;
+  });
+  const total = Object.values(soma).reduce((a, b) => a + b, 0);
+  if (!total) { cx.innerHTML = '<p class="empty">—</p>'; return; }
+  cx.innerHTML = Object.keys(soma).sort((a, b) => soma[b] - soma[a]).slice(0, 8).map(k => {
+    const pct = Math.round(soma[k] / total * 100);
+    return '<div class="fat-fatia">' +
+      '<div class="fat-fatia-topo"><b>' + esc(k) + '</b><span>' + soma[k] + ' · ' + pct + '%</span></div>' +
+      '<div class="fat-tubo"><i style="width:' + pct + '%"></i></div></div>';
+  }).join('');
+}
+
+/* O mesmo desenho da faturação, mas a contar pessoas em vez de euros. */
+function desenharGraficoVisitas(lista, de, ate, dias) {
+  const cx = document.getElementById('visGrafico');
+  const porDia = {};
+  const vistos = {};
+  lista.forEach(e => {
+    if (e.tipo !== 'visita') return;
+    const chave = e.dia + '|' + e.sessao;
+    if (vistos[chave]) return;
+    vistos[chave] = 1;
+    porDia[e.dia] = (porDia[e.dia] || 0) + 1;
+  });
+  const falso = Object.keys(porDia).map(d => ({ data: d, valor: porDia[d], moeda: 'EUR' }));
+  const { caixas, titulo } = agrupar(falso, de, ate, dias);
+  document.getElementById('visGrafTitulo').textContent = titulo.replace('Faturação', 'Visitas');
+
+  const max = Math.max(...caixas.map(c => c.valor), 0);
+  if (!max) { cx.innerHTML = '<p class="empty">Ainda não há visitas neste período.</p>'; return; }
+
+  const W = Math.max(260, Math.round(cx.clientWidth || 720));
+  const estreito = W < 420;
+  const L = estreito ? 34 : 40, R = 8, T = 22, B = 26;
+  const H = estreito ? 200 : 260;
+  const larguraUtil = W - L - R, alturaUtil = H - T - B;
+  const banda = larguraUtil / caixas.length;
+  const largura = Math.max(2, Math.min(24, banda - 2));
+  const teto = tetoRedondo(max);
+
+  let svg = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H +
+            '" role="img" aria-label="' + titulo + '">';
+  for (let i = 0; i <= 2; i++) {
+    const v = Math.round(teto / 2 * i);
+    const y = T + alturaUtil - (v / teto) * alturaUtil;
+    svg += '<line class="fat-grelha" x1="' + L + '" y1="' + y + '" x2="' + (W - R) + '" y2="' + y + '"/>';
+    svg += '<text class="fat-eixo" x="' + (L - 8) + '" y="' + (y + 3) + '" text-anchor="end">' + v + '</text>';
+  }
+  const salto = Math.ceil(caixas.length / (estreito ? 6 : 16));
+  const pico = caixas.reduce((a, c, i) => c.valor > caixas[a].valor ? i : a, 0);
+  let ultimoFim = -1e9;
+
+  caixas.forEach((c, i) => {
+    const x = L + banda * i + (banda - largura) / 2;
+    const alt = (c.valor / teto) * alturaUtil;
+    if (c.valor > 0) {
+      const y = T + alturaUtil - alt;
+      const r = Math.min(4, largura / 2, alt);
+      svg += '<path class="fat-barra" d="M' + x + ' ' + (T + alturaUtil) +
+             ' L' + x + ' ' + (y + r) + ' Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y +
+             ' L' + (x + largura - r) + ' ' + y + ' Q' + (x + largura) + ' ' + y + ' ' + (x + largura) + ' ' + (y + r) +
+             ' L' + (x + largura) + ' ' + (T + alturaUtil) + ' Z"><title>' +
+             c.titulo + ': ' + c.valor + (c.valor === 1 ? ' pessoa' : ' pessoas') + '</title></path>';
+      if (i === pico) svg += '<text class="fat-pico" x="' + (x + largura / 2) + '" y="' + (y - 7) + '" text-anchor="middle">' + c.valor + '</text>';
+    }
+    if (i % salto === 0 || i === caixas.length - 1) {
+      const meio = x + largura / 2;
+      const meia = c.rotulo.length * 3 + 4;
+      if (meio - meia >= ultimoFim) {
+        svg += '<text class="fat-eixo" x="' + meio + '" y="' + (H - 8) + '" text-anchor="middle">' + c.rotulo + '</text>';
+        ultimoFim = meio + meia;
+      }
+    }
+  });
+  svg += '<line class="fat-grelha" x1="' + L + '" y1="' + (T + alturaUtil) + '" x2="' + (W - R) + '" y2="' + (T + alturaUtil) + '"/></svg>';
+  cx.innerHTML = svg;
+}
+
+document.querySelectorAll('#visPeriodos .per').forEach(b => {
+  b.addEventListener('click', () => escolherPeriodoVis(b.dataset.per, b));
 });
 </script>
 </body>
