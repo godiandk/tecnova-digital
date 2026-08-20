@@ -965,7 +965,11 @@ const PRESETS = {
         extra += precoDe(TODOS[id]);
       });
       var total = p.preco + extra;
-      if (cobertos >= 4 && total < subtotal) {
+      // Era sempre 4. O ESSENCIAL só tem três coisas lá dentro, por isso
+      // nunca chegava ao mínimo: quem clicava em «Quero o Essencial — 350€»
+      // via 375€, a soma item a item. O mínimo passa a ser o menor entre
+      // quatro e o tamanho do pacote.
+      if (cobertos >= Math.min(4, p.inclui.length) && total < subtotal) {
         if (!melhor || total < melhor.total) melhor = { p: p, total: total, poupa: subtotal - total, extra: extra };
       }
     });
@@ -1242,9 +1246,49 @@ const PRESETS = {
         window.scrollTo({ top: g.offsetTop - 90, behavior: 'smooth' });
       });
     }
-    PRESETS.outro.itens.forEach(function (id) {
-      if (TODOS[id] && GRUPO_DE[id].tipo !== 'base') sel[id] = true;
-    });
+    /* ------------------------------------------------------------------
+       Com que escolhas é que isto abre
+       ------------------------------------------------------------------
+       Abria com nove itens já marcados, 765€ item a item — 459€ com a
+       campanha. Só que a página de entrada promete «a partir de 350€».
+       Quem clicava caía num preço mais alto do que o anunciado, com
+       extras que nunca escolheu: parece que somos nós a acrescentar
+       coisas às escondidas, e isso custa mais vendas do que ganha.
+       Agora abre exatamente no pacote ESSENCIAL — 3 a 5 páginas mais o
+       chat, 350€ certos, o mesmo número que está no anúncio. A partir
+       daí quem manda é o cliente: escolher o tipo de negócio marca a
+       configuração aconselhada para o ramo dele, e isso é uma escolha
+       dele, não nossa.
+       ------------------------------------------------------------------ */
+    var pacoteUrl = (new URLSearchParams(location.search).get('pacote') || '').toLowerCase();
+    var pacoteEscolhido = null;
+    for (var pi = 0; pi < PACOTES.length; pi++) {
+      if (PACOTES[pi].nome.toLowerCase() === pacoteUrl) { pacoteEscolhido = PACOTES[pi]; break; }
+    }
+
+    if (pacoteEscolhido) {
+      // veio da página dos Pacotes a dizer qual quer: fica escolhido
+      pacoteEscolhido.inclui.forEach(function (id) {
+        if (!TODOS[id]) return;
+        if (GRUPO_DE[id].tipo === 'base') base = id;
+        else sel[id] = true;
+      });
+      var avP = $('#presetAviso');
+      if (avP) {
+        avP.style.display = 'block';
+        var comCampanha = promoAtiva()
+          ? Math.round(pacoteEscolhido.preco * (1 - PROMO.desconto)) : null;
+        avP.innerHTML = '<b>' + frase('Escolheu o Pacote') + ' ' + pacoteEscolhido.nome + ' — ' +
+          eur(pacoteEscolhido.preco) + '.</b> ' +
+          (comCampanha !== null
+            ? frase('Com a campanha fica em') + ' <b>' + eur(comCampanha) + '</b>. '
+            : '') +
+          frase('Está tudo marcado. Tire ou acrescente o que quiser — o preço acompanha.');
+      }
+    } else {
+      // sem nada no endereço: abre no pacote de entrada, o preço do anúncio
+      sel.chatvivo = true;
+    }
     pintar(); calcular();
 
     // campanha

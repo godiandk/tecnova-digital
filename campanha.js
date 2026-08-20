@@ -21,6 +21,12 @@
      <span data-promo-pct>        escreve "40%"
      <span data-promo-codigo>     escreve "INOVA40"
      <span data-promo-dias>       escreve quantos dias faltam
+     <b data-promo-preco="650">   escreve "390€" (o preço com a campanha)
+
+   O último existe para a página dos Pacotes: os preços de tabela
+   estavam lá sozinhos, sem dizer se já tinham ou não o desconto.
+   Escrevendo-os aqui, mudam sozinhos com a percentagem e nunca
+   ficam a contradizer o que o pedido cobra.
    ============================================================ */
 window.TECNOVA_PROMO = {
   ativo: true,
@@ -63,6 +69,11 @@ window.TECNOVA_PROMO = {
       document.querySelectorAll('[data-promo-pct]').forEach(function (el) { el.textContent = Math.round(P.desconto * 100) + '%'; });
       document.querySelectorAll('[data-promo-codigo]').forEach(function (el) { el.textContent = P.codigo; });
       document.querySelectorAll('[data-promo-dias]').forEach(function (el) { el.textContent = diasQueFaltam(); });
+      document.querySelectorAll('[data-promo-preco]').forEach(function (el) {
+        var normal = Number(el.getAttribute('data-promo-preco'));
+        if (!isFinite(normal) || normal <= 0) return;
+        el.textContent = Math.round(normal * (1 - P.desconto)) + '\u20ac';
+      });
     } catch (e) {}
   }
 

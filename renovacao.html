@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=37">
-<link rel="stylesheet" href="assistente.css?v=37">
-<link rel="stylesheet" href="i18n.css?v=37">
+<link rel="stylesheet" href="estilo.css?v=38">
+<link rel="stylesheet" href="assistente.css?v=38">
+<link rel="stylesheet" href="i18n.css?v=38">
 <style>
 .reno-grid{display:grid;grid-template-columns:1fr 1fr;gap:50px;margin-top:50px;align-items:start}
 .reno-signs{list-style:none}
@@ -127,18 +127,20 @@
       </div>
     </div>
 
+    <!-- Uma tabela de manutenção só, em todo o site. Havia aqui dois planos
+         de 19,90€ e 39,90€ enquanto o pedido cobrava 35€, e um desconto de
+         cliente fiel de 15% enquanto o sistema aplica 20%. Três preços para
+         a mesma coisa dão a impressão de que os números não são a sério.
+         Estes são os que o pedido cobra mesmo. -->
     <div class="maint">
-      <div class="maint-card reveal">
-        <h4>Manutenção Essencial</h4>
-        <div class="m-price">19,90€<small style="font-size:.9rem;color:var(--cream-dim)">/mês</small></div>
-        <p>Alterações de preços e serviços · banners de promoções · suporte prioritário por email.</p>
+      <div class="maint-card reveal" style="grid-column:1/-1">
+        <h4>Avença mensal</h4>
+        <div class="m-price">35€<small style="font-size:.9rem;color:var(--cream-dim)">/mês</small></div>
+        <p>Mudar preços, serviços, horários e textos sempre que precisar · trocar fotos e pôr banners de promoções ·
+           atualizações de segurança e cópias de segurança · corrigir o que deixar de funcionar, sem custo nenhum ·
+           resposta prioritária pelo chat da sua conta, sem esperar dias.</p>
       </div>
-      <div class="maint-card reveal">
-        <h4>Manutenção Completa</h4>
-        <div class="m-price">39,90€<small style="font-size:.9rem;color:var(--cream-dim)">/mês</small></div>
-        <p>Tudo do Essencial · pequenas alterações ilimitadas · campanhas de cupões e fidelidade feitas por nós.</p>
-      </div>
-      <div class="maint-note reveal">✓ 1.º MÊS GRÁTIS ao fechar qualquer pacote · cancela quando quiser · ★ Cliente fiel: 15% de desconto em tudo o que acrescentar ao site</div>
+      <div class="maint-note reveal">✓ 1.º MÊS GRÁTIS ao fechar qualquer pacote · cancela quando quiser · ★ Enquanto for cliente de avença, <b>20% de desconto</b> em tudo o que acrescentar ao site</div>
     </div>
 
     <div style="text-align:center;margin-top:56px">
@@ -187,10 +189,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="campanha.js?v=37"></script>
-<script src="medir-config.js?v=37"></script>
-<script src="medir.js?v=37"></script>
-<script src="auth-nav.js?v=37"></script>
+<script src="campanha.js?v=38"></script>
+<script src="medir-config.js?v=38"></script>
+<script src="medir.js?v=38"></script>
+<script src="auth-nav.js?v=38"></script>
 
 <script>
 const io=new IntersectionObserver(es=>{
@@ -202,9 +204,9 @@ if('serviceWorker' in navigator){
 }
 </script>
 <script src="site.js"></script>
-<script src="idiomas/en.js?v=37"></script>
-<script src="idiomas/es.js?v=37"></script>
-<script src="i18n.js?v=37"></script>
+<script src="idiomas/en.js?v=38"></script>
+<script src="idiomas/es.js?v=38"></script>
+<script src="i18n.js?v=38"></script>
 <script src="assistente.js"></script>
 </body>
 </html>
