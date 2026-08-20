@@ -200,6 +200,54 @@ window.TecnovaI18N = (function () {
     observador.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
 
+  /* ------------------------------------------------------------------
+     O titulo do separador e a descricao da pagina
+     ------------------------------------------------------------------
+     Traduzia-se a pagina toda e ficava "TECNOVA Digital - Sites & Apps
+     que trabalham por si" escrito no separador do navegador, em
+     portugues, com a pagina em ingles. Fica mal e confunde quem guarda
+     nos favoritos.
+     Guardamos os originais na primeira passagem: sem isso, ao voltar
+     para portugues ja nao havia por onde voltar.
+     ATENCAO ao que isto NAO resolve: quando alguem partilha a ligacao
+     no Facebook ou no WhatsApp, quem la vai buscar o texto nao corre
+     JavaScript nenhum -- le o HTML como esta no ficheiro. Por isso a
+     pre-visualizacao continua em portugues. Para isso ser diferente
+     eram precisos enderecos proprios (/en/, /es/), que e outro
+     trabalho.
+     ------------------------------------------------------------------ */
+  var METAS = [
+    ['title',                       null],
+    ['meta[name="description"]',    'content'],
+    ['meta[property="og:title"]',   'content'],
+    ['meta[property="og:description"]', 'content'],
+    ['meta[name="twitter:title"]',  'content'],
+    ['meta[name="twitter:description"]', 'content']
+  ];
+  var originais = null;
+
+  function traduzirCabeca() {
+    if (!originais) {
+      originais = METAS.map(function (m) {
+        var el = document.querySelector(m[0]);
+        if (!el) return null;
+        return m[1] ? el.getAttribute(m[1]) : el.textContent;
+      });
+    }
+    METAS.forEach(function (m, i) {
+      var el = document.querySelector(m[0]);
+      var orig = originais[i];
+      if (!el || orig == null) return;
+      // o que nao estiver traduzido fica em portugues -- nunca se inventa
+      var novo = dic[orig] || orig;
+      if (m[1]) el.setAttribute(m[1], novo); else el.textContent = novo;
+    });
+    var loc = document.querySelector('meta[property="og:locale"]');
+    if (loc && IDIOMAS[idioma].htmlLang) {
+      loc.setAttribute('content', IDIOMAS[idioma].htmlLang.replace('-', '_'));
+    }
+  }
+
   function definir(codigo) {
     if (!IDIOMAS[codigo]) return;
     idioma = codigo;
@@ -207,6 +255,7 @@ window.TecnovaI18N = (function () {
     document.documentElement.lang = IDIOMAS[codigo].htmlLang;
     try { localStorage.setItem('tecnova-idioma', codigo); } catch (e) {}
     aplicar();
+    traduzirCabeca();
     pintarSeletor();
     document.dispatchEvent(new CustomEvent('tecnova:idioma', { detail: codigo }));
   }

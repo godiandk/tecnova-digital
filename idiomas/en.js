@@ -1436,5 +1436,41 @@ window.TECNOVA_DIC.en = {
 
 /* ---------- comandos do carrossel ---------- */
 "Parar a rotação dos destaques": "Pause the highlights",
-"Retomar a rotação dos destaques": "Resume the highlights"
-};
+"Retomar a rotação dos destaques": "Resume the highlights",
+
+/* ---------- titulo do separador e descricao de cada pagina ----------
+   Estes nao aparecem no corpo da pagina: aparecem no separador do
+   navegador e nos favoritos. Sem eles, a pagina ficava em ingles e o
+   separador em portugues. */
+"TECNOVA Digital — Sites & Apps que trabalham por si": "TECNOVA Digital — Websites & Apps that work for you",
+"Site profissional + aplicação própria + marcações pelo site + cartão de fidelidade digital. A partir de 350€. Por Wesley Vianna.": "Professional website + your own app + online booking + digital loyalty card. From €350. By Wesley Vianna.",
+"O que fazemos — TECNOVA Digital": "What we do — TECNOVA Digital",
+"Marcações online, preçário, cartão de fidelidade e aplicação própria. Veja cada funcionalidade em detalhe.": "Online booking, price list, loyalty card and your own app. See every feature in detail.",
+"Pacotes e Preços — TECNOVA Digital": "Packages & Pricing — TECNOVA Digital",
+"Pacotes claros e sem surpresas. Essencial 350€, Profissional 650€, Premium 990€.": "Clear packages, no surprises. Essential €350, Professional €650, Premium €990.",
+"Modelos por negócio — TECNOVA Digital": "Templates by business — TECNOVA Digital",
+"Modelos de sites desenhados para barbearias, clínicas de estética, restaurantes, ginásios e mais negócios locais.": "Website templates designed for barbershops, beauty clinics, restaurants, gyms and other local businesses.",
+"Já tem site? — Renovação | TECNOVA Digital": "Already have a site? — Redesign | TECNOVA Digital",
+"Redesenho completo do seu site atual, mantendo o domínio e conteúdos. Pacote Renovação a partir de 450€.": "A full redesign of your current site, keeping your domain and content. Redesign package from €450.",
+"Sobre — Wesley Vianna | TECNOVA Digital": "About — Wesley Vianna | TECNOVA Digital",
+"Conheça o fundador da TECNOVA Digital e como funciona, do primeiro contacto ao site no ar.": "Meet the founder of TECNOVA Digital and see how it works, from first contact to your site going live.",
+"Contacto — TECNOVA Digital | Wesley Vianna": "Contact — TECNOVA Digital | Wesley Vianna",
+"Fale com a TECNOVA Digital: escreva para wesley@tecnovadigital.pt ou use o chat do site. Resposta rápida, sem compromisso.": "Talk to TECNOVA Digital: write to wesley@tecnovadigital.pt or use the site chat. Quick reply, no commitment.",
+"A minha conta — TECNOVA Digital": "My account — TECNOVA Digital",
+"Entre ou crie a sua conta TECNOVA Digital para ver e usar os seus cupões de desconto.": "Log in or create your TECNOVA Digital account to see and use your discount coupons.",
+"Fazer o pedido — TECNOVA Digital": "Place your order — TECNOVA Digital",
+"Monte o site do seu negócio, veja o preço na hora e faça o pedido. 40% de desconto até 30 de setembro e 1.ª mensalidade de manutenção grátis.": "Build your business website, see the price instantly and place your order. 40% off until 30 September, plus your first month of maintenance free.",
+"Pagar o sinal — TECNOVA Digital": "Pay the deposit — TECNOVA Digital",
+"Finalize o seu projeto: pague o sinal de 50% por MB WAY ou transferência bancária, sem taxas.": "Finish your project: pay the 50% deposit by MB WAY or bank transfer, with no fees.",
+"Política de Privacidade — TECNOVA Digital": "Privacy Policy — TECNOVA Digital",
+"O que a TECNOVA Digital guarda sobre si, porquê, durante quanto tempo e o que pode exigir. Sem cookies de publicidade nem seguimento.": "What TECNOVA Digital stores about you, why, for how long, and what you can demand. No advertising cookies, no tracking.",
+"Termos e Condições — TECNOVA Digital": "Terms & Conditions — TECNOVA Digital",
+"As regras de quem encomenda um site à TECNOVA Digital: preços, pagamento 50/50, prazos, garantia de 90 dias e de quem fica o site.": "The rules for ordering a website from TECNOVA Digital: pricing, 50/50 payment, deadlines, a 90-day warranty and who owns the site.",
+"Cookies — TECNOVA Digital": "Cookies — TECNOVA Digital",
+"Este site não usa cookies de publicidade nem seguimento. Veja exatamente o que fica guardado no seu navegador e como apagar.": "This site uses no advertising cookies and no tracking. See exactly what is stored in your browser and how to clear it.",
+"Cancelamento e reembolso — TECNOVA Digital": "Cancellation & refunds — TECNOVA Digital",
+"O que acontece se mudar de ideias: antes de começar, a meio do trabalho ou depois de entregue. Prazos e devoluções da TECNOVA Digital.": "What happens if you change your mind: before we start, mid-project, or after delivery. TECNOVA Digital's deadlines and refunds.",
+"Já tem site? — Renovação": "Already have a site? — Redesign",
+"Sobre — Wesley Vianna": "About — Wesley Vianna",
+"Fazer o pedido do seu site": "Order your website"
+}
