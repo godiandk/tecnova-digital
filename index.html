@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=27">
-<link rel="stylesheet" href="assistente.css?v=27">
-<link rel="stylesheet" href="i18n.css?v=27">
+<link rel="stylesheet" href="estilo.css?v=28">
+<link rel="stylesheet" href="assistente.css?v=28">
+<link rel="stylesheet" href="i18n.css?v=28">
 <style>
 .hero{
   min-height:100vh;display:flex;align-items:center;
@@ -132,7 +132,7 @@
 .hero h1{font-size:clamp(2.6rem,6vw,4.4rem);line-height:1.06;font-weight:800;margin:22px 0 26px}
 .hero h1 em{font-style:italic;color:var(--gold);position:relative;white-space:nowrap}
 .hero h1 em::after{content:"";position:absolute;left:0;right:0;bottom:-10px;height:3px;background:linear-gradient(90deg,var(--gold),transparent)}
-/* ---------- slide de entrada: simulador ---------- */
+/* ---------- slide de entrada: pedido ---------- */
 .hs-slide.oferta{background:radial-gradient(1100px 700px at 78% 40%,rgba(217,178,110,.16),transparent 70%)}
 .of-grid{grid-template-columns:1.12fr .88fr;gap:40px}
 .of-flag{display:inline-flex;align-items:center;gap:10px;background:rgba(217,178,110,.14);border:1px solid rgba(217,178,110,.45);color:var(--gold-soft);border-radius:999px;padding:7px 18px 7px 14px;font-size:.74rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
@@ -303,7 +303,7 @@
 .why blockquote i{color:var(--gold)}
 @media(max-width:820px){.why-grid{grid-template-columns:1fr;gap:30px}}
 
-/* simulador */
+/* página do pedido */
 .sim-box{display:grid;grid-template-columns:1.35fr .65fr;gap:44px;align-items:center;background:var(--ink-2);border:1px solid rgba(217,178,110,.28);border-radius:26px;padding:44px;max-width:1120px}
 .sim-box h2{margin:14px 0 12px}
 .sim-pontos{list-style:none;margin:22px 0 28px}
@@ -422,13 +422,13 @@
           <a class="dd-all" href="modelos.html">Todos os modelos →</a>
         </div>
       </span>
-      <a class="" href="orcamento.html">Simulador</a>
+      <a class="" href="orcamento.html">Fazer o pedido</a>
       <a class="" href="renovacao.html">Já tem site?</a>
       <a class="" href="sobre.html">Sobre</a>
       <a href="conta.html" id="navAccount">Entrar / Criar conta</a>
     </nav>
     <div class="nav-right">
-      <a class="btn btn-gold" href="orcamento.html">Pedir orçamento</a>
+      <a class="btn btn-gold" href="orcamento.html">Fazer o pedido</a>
       <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -437,7 +437,7 @@
 
 <section class="hero-slider" aria-label="Destaques TECNOVA Digital">
 
-  <!-- Slide de entrada: simulador de orçamento -->
+  <!-- Slide de entrada: fazer o pedido -->
   <div class="hs-slide oferta active">
     <div class="wrap hs-grid of-grid">
       <div class="of-txt">
@@ -460,7 +460,7 @@
           </div>
         </div>
         <div class="hero-cta">
-          <a class="btn btn-gold btn-big" href="orcamento.html">Fazer o meu orçamento agora →</a>
+          <a class="btn btn-gold btn-big" href="orcamento.html">Fazer o meu pedido agora →</a>
           <a class="btn btn-line" href="modelos.html">Ver modelos reais</a>
         </div>
         <p class="of-nota">Leva 2 minutos · não precisa de deixar contacto para ver o preço</p>
@@ -578,20 +578,20 @@
 <section class="sim-teaser">
   <div class="wrap sim-box reveal">
     <div>
-      <p class="eyebrow">Novo · Simulador de orçamento</p>
+      <p class="eyebrow">Novo · Peça o seu site em 2 minutos</p>
       <h2>Não peça um preço. Faça-o.</h2>
-      <p class="lead">Escolha o que quer no site do seu negócio — marcações, preçário, cardápio, loja, cartão de fidelidade — e veja o valor a mudar a cada clique. Em dois minutos tem o orçamento completo, sem falar com ninguém.</p>
+      <p class="lead">Escolha o que quer no site do seu negócio — marcações, preçário, cardápio, loja, cartão de fidelidade — e veja o valor a mudar a cada clique. Em dois minutos faz o pedido e reserva a sua vaga, sem falar com ninguém.</p>
       <ul class="sim-pontos">
         <li>Preço à frente dos olhos, sem «depois digo-lhe alguma coisa»</li>
-        <li>Se um pacote lhe sair mais barato, o simulador avisa-o</li>
-        <li>Leva o orçamento em PDF e o preço fica garantido 15 dias</li>
+        <li>Se um pacote lhe sair mais barato, o próprio site avisa-o</li>
+        <li>Vê o preço final antes de decidir — nada aparece depois a dizer que era extra</li>
       </ul>
       <a class="btn btn-gold" href="orcamento.html">Simular o meu site agora →</a>
     </div>
     <aside class="sim-promo">
       <span class="sim-off">−40%</span>
       <b>Campanha de lançamento</b>
-      <p>40% de desconto sobre o valor total do site em todos os orçamentos fechados até <b>30 de setembro</b> — e a <b>1.ª mensalidade de manutenção grátis</b>.</p>
+      <p>40% de desconto sobre o valor total do site em todos os pedidos feitos até <b>30 de setembro</b> — e a <b>1.ª mensalidade de manutenção grátis</b>.</p>
       <span class="sim-cod">INOVA40</span>
     </aside>
   </div>
@@ -657,7 +657,7 @@
     <h2 class="reveal">Vamos pôr o seu negócio <i>a crescer?</i></h2>
     <p class="lead reveal" style="margin:0 auto 30px">Responda hoje e receba a simulação gratuita do seu site em 48 horas.</p>
     <a class="btn btn-gold reveal" style="font-size:1.05rem;padding:18px 38px" href="orcamento.html">
-      Fazer o meu orçamento agora →
+      Fazer o meu pedido agora →
     </a>
     <p class="reveal" style="margin-top:18px;color:var(--cream-dim);font-size:.9rem">
       Prefere escrever? <a href="contacto.html">Fale comigo por email</a>.
@@ -680,12 +680,12 @@
         <h4>Navegação</h4>
         <a href="servicos.html">O que fazemos</a>
         <a href="pacotes.html">Pacotes</a>
-        <a href="orcamento.html">Simulador de orçamento</a>
+        <a href="orcamento.html">Fazer o pedido</a>
         <a href="modelos.html">Modelos</a>
         <a href="renovacao.html">Já tem site?</a>
         <a href="sobre.html">Sobre</a>
         <a href="contacto.html">Contacto</a>
-        <a href="pagamento.html">Pagar um orçamento</a>
+        <a href="pagamento.html">Pagar um pedido</a>
       </div>
       <div class="footer-col">
         <h4>Contacto</h4>
@@ -705,7 +705,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="auth-nav.js?v=27"></script>
+<script src="auth-nav.js?v=28"></script>
 
 <script>
 const io=new IntersectionObserver(es=>{
@@ -717,9 +717,9 @@ if('serviceWorker' in navigator){
 }
 </script>
 <script src="site.js"></script>
-<script src="idiomas/en.js?v=27"></script>
-<script src="idiomas/es.js?v=27"></script>
-<script src="i18n.js?v=27"></script>
+<script src="idiomas/en.js?v=28"></script>
+<script src="idiomas/es.js?v=28"></script>
+<script src="i18n.js?v=28"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

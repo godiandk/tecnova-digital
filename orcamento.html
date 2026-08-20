@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simulador de Orçamento — TECNOVA Digital</title>
-<meta name="description" content="Monte o site do seu negócio e veja o preço na hora. 40% de desconto até 30 de setembro e 1.ª mensalidade de manutenção grátis.">
+<title>Fazer o pedido — TECNOVA Digital</title>
+<meta name="description" content="Monte o site do seu negócio, veja o preço na hora e faça o pedido. 40% de desconto até 30 de setembro e 1.ª mensalidade de manutenção grátis.">
 <link rel="canonical" href="https://tecnovadigital.pt/orcamento.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="TECNOVA Digital">
 <meta property="og:locale" content="pt_PT">
 <meta property="og:url" content="https://tecnovadigital.pt/orcamento.html">
-<meta property="og:title" content="Simulador de Orçamento">
+<meta property="og:title" content="Fazer o pedido do seu site">
 <meta property="og:description" content="Monte o site do seu negócio e veja o preço na hora. 40% de desconto até 30 de setembro e 1.ª mensalidade de manutenção grátis.">
 <meta property="og:image" content="https://tecnovadigital.pt/img/og-tecnova.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="TECNOVA Digital — sites que trabalham por si, a partir de 350€">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Simulador de Orçamento">
+<meta name="twitter:title" content="Fazer o pedido do seu site">
 <meta name="twitter:description" content="Monte o site do seu negócio e veja o preço na hora. 40% de desconto até 30 de setembro e 1.ª mensalidade de manutenção grátis.">
 <meta name="twitter:image" content="https://tecnovadigital.pt/img/og-tecnova.png">
 <link rel="manifest" href="manifest.json">
@@ -27,10 +27,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=27">
-<link rel="stylesheet" href="assistente.css?v=27">
-<link rel="stylesheet" href="i18n.css?v=27">
-<link rel="stylesheet" href="orcamento.css?v=27">
+<link rel="stylesheet" href="estilo.css?v=28">
+<link rel="stylesheet" href="assistente.css?v=28">
+<link rel="stylesheet" href="i18n.css?v=28">
+<link rel="stylesheet" href="orcamento.css?v=28">
 
 </head>
 <body class="pagina-orcamento">
@@ -57,7 +57,7 @@
           <a class="dd-all" href="modelos.html">Todos os modelos →</a>
         </div>
       </span>
-      <a class="on" href="orcamento.html">Simulador</a>
+      <a class="on" href="orcamento.html">Fazer o pedido</a>
       <a href="renovacao.html">Já tem site?</a>
       <a href="sobre.html">Sobre</a>
       <a href="conta.html" id="navAccount">Entrar / Criar conta</a>
@@ -71,10 +71,10 @@
 
 <section class="orc-hero">
   <div class="wrap">
-    <div class="eyebrow">Simulador de orçamento</div>
-    <h1>Monte o site do seu negócio<br>e veja o preço na hora.</h1>
+    <div class="eyebrow">Fazer o pedido</div>
+    <h1>Monte o site do seu negócio<br>e peça-o já.</h1>
     <p class="lead">Sem telefonemas, sem esperar dias por uma resposta. Escolha o que faz sentido para si —
-      o valor aparece ao lado, atualizado a cada clique. No fim, leva o orçamento consigo.</p>
+      o valor aparece ao lado, atualizado a cada clique. No fim faz o pedido e paga o sinal.</p>
     <p style="font-size:.74rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cream-dim);font-weight:700;margin-top:26px">Em que país está?</p>
     <div class="moedas" id="moedas"></div>
     <p class="cambio" id="cambio" style="display:none"></p>
@@ -158,7 +158,7 @@
 
     <aside>
       <div class="resumo" id="resumo">
-        <h3>O seu orçamento</h3>
+        <h3>O seu pedido</h3>
         <div class="res-count" id="resCount"></div>
         <ul class="res-lista" id="resLista"></ul>
         <div class="res-pack" id="resPacote"></div>
@@ -181,7 +181,7 @@
 
         <div class="res-mercado" id="resMercado"></div>
 
-        <a class="btn btn-gold" href="#final">Quero avançar com este orçamento</a>
+        <a class="btn btn-gold" href="#final">Quero fazer este pedido</a>
         <div class="res-acoes">
           <button type="button" id="btnImprimir">Guardar em PDF</button>
           <button type="button" id="btnLimpar">Recomeçar</button>
@@ -193,9 +193,9 @@
 
   <div class="final" id="final">
     <div class="eyebrow">Último passo</div>
-    <h2>Reserve o seu preço e a sua vaga</h2>
-    <p class="lead">Deixe o contacto e recebe o orçamento com uma referência própria.
-      O preço que vê fica garantido durante 15 dias, mesmo que a campanha termine.</p>
+    <h2>Faça o seu pedido</h2>
+    <p class="lead">Deixe o contacto para eu saber quem é e com quem falo.
+      A seguir paga o sinal de 50% e a sua vaga na agenda fica reservada.</p>
 
     <form id="formFinal" novalidate>
       <div class="campos">
@@ -210,15 +210,15 @@
         </div>
       </div>
       <div class="form-erro" id="formErro"></div>
-      <button class="btn btn-gold" type="submit" style="margin-top:20px">Confirmar orçamento →</button>
-      <p class="final-nota">Não há qualquer compromisso ao enviar. Só começamos quando você disser que sim.</p>
+      <button class="btn btn-gold" type="submit" style="margin-top:20px">Confirmar pedido e pagar →</button>
+      <p class="final-nota">A seguir vai para o pagamento do sinal. Só começo a trabalhar depois de o sinal entrar — e o preço fechado é o que está aqui.</p>
     </form>
   </div>
 
   <div class="sucesso" id="sucesso">
-    <div class="eyebrow">Orçamento criado</div>
-    <h2>Obrigado! Está tudo do nosso lado.</h2>
-    <p class="lead">Guarde esta referência — é por ela que o seu projeto passa a ser identificado.</p>
+    <div class="eyebrow">Pedido registado</div>
+    <h2>Falta um passo: o sinal.</h2>
+    <p class="lead">O seu pedido ficou registado com esta referência. Pague o sinal e a vaga é sua.</p>
     <div class="ok-ref" id="okRef"></div>
     <!-- só aparece se o pedido não chegar ao sistema -->
     <p class="ok-aviso" id="okAviso" style="display:none"></p>
@@ -233,25 +233,31 @@
     <ol class="passos">
       <li>Paga o sinal de 50%. É o que reserva a sua vaga na agenda.</li>
       <li>Assim que o pagamento entra, começo o site e digo-lhe a data exata de entrega.</li>
+      <li>Abre-se o seu canal direto comigo na sua conta: é por aí que pede alterações e tira dúvidas, e fica tudo escrito.</li>
       <li>Vê o site pronto no ar e pede as alterações que quiser.</li>
       <li>Só depois de aprovar tudo é que paga a outra metade.</li>
     </ol>
 
+    <!-- Um botão só. Guardar em PDF e receber por email continuam a existir,
+         mas como ligações pequenas: servem para quem quer o comprovativo,
+         não são uma alternativa a pagar. -->
     <div class="ok-btns">
       <a class="btn btn-gold btn-lg" id="okPagar" href="#">Pagar o sinal e arrancar →</a>
-      <a class="btn btn-line" id="okEmail" href="#">Receber o orçamento por email</a>
-      <button class="btn btn-line" type="button" onclick="window.print()">Guardar em PDF</button>
     </div>
+    <p class="ok-secundario">
+      <a id="okEmail" href="#">Enviar o pedido para o meu email</a>
+      <button type="button" onclick="window.print()">Guardar em PDF</button>
+    </p>
 
     <p style="color:var(--cream-dim);font-size:.86rem;margin-top:18px">
-      Prefere pensar melhor? O preço fica-lhe garantido 15 dias. Guarde a referência
-      e volte quando quiser — ou fale comigo em <a href="contacto.html">contacto</a>.
+      Alguma dúvida antes de pagar? Escreva-me e respondo depressa:
+      <a href="contacto.html">falar comigo</a>.
     </p>
   </div>
 
   <div class="garantias">
     <div class="gar"><b>Paga metade no início</b><p>50% para arrancar e 50% só na entrega, depois de ver o site no ar e aprovar tudo.</p></div>
-    <div class="gar"><b>Preço fechado</b><p>O que está no orçamento é o que paga. Nada aparece a meio a dizer «afinal isto é extra».</p></div>
+    <div class="gar"><b>Preço fechado</b><p>O que está no pedido é o que paga. Nada aparece a meio a dizer «afinal isto é extra».</p></div>
     <div class="gar"><b>O site é seu</b><p>Fica com tudo: domínio, conteúdos e ficheiros. Não fica preso a ninguém.</p></div>
     <div class="gar"><b>Fala sempre comigo</b><p>Sem call centers nem tickets. Trata diretamente com quem faz o seu site.</p></div>
   </div>
@@ -276,12 +282,12 @@
         <h4>Navegação</h4>
         <a href="servicos.html">O que fazemos</a>
         <a href="pacotes.html">Pacotes</a>
-        <a href="orcamento.html">Simulador de orçamento</a>
+        <a href="orcamento.html">Fazer o pedido</a>
         <a href="modelos.html">Modelos</a>
         <a href="renovacao.html">Já tem site?</a>
         <a href="sobre.html">Sobre</a>
         <a href="contacto.html">Contacto</a>
-        <a href="pagamento.html">Pagar um orçamento</a>
+        <a href="pagamento.html">Pagar um pedido</a>
       </div>
       <div class="footer-col">
         <h4>Contacto</h4>
@@ -301,17 +307,17 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="auth-nav.js?v=27"></script>
+<script src="auth-nav.js?v=28"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
 }
 </script>
 <script src="site.js"></script>
-<script src="orcamento.js?v=27"></script>
-<script src="idiomas/en.js?v=27"></script>
-<script src="idiomas/es.js?v=27"></script>
-<script src="i18n.js?v=27"></script>
+<script src="orcamento.js?v=28"></script>
+<script src="idiomas/en.js?v=28"></script>
+<script src="idiomas/es.js?v=28"></script>
+<script src="i18n.js?v=28"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

@@ -168,7 +168,8 @@ window.TecnovaChat = (function () {
         var n = c.naoLidasAdmin || 0;
         return '<button class="ch-item' + (c.id === aberta ? ' on' : '') + '" data-uid="' + esc(c.id) + '">' +
           '<span class="ch-av sm">' + esc((c.nome || '?').charAt(0).toUpperCase()) + '</span>' +
-          '<span class="ch-item-txt"><b>' + esc(c.nome || c.email || 'Cliente') + '</b>' +
+          '<span class="ch-item-txt"><b>' + esc(c.nome || c.email || 'Cliente') +
+          (c.plano === 'mensal' ? '<em class="ch-mensal">MENSAL</em>' : '') + '</b>' +
           '<span>' + esc((c.ultimaMsg || '').slice(0, 52)) + '</span></span>' +
           '<span class="ch-item-dir"><i>' + quando(c.ultimaData) + '</i>' +
           (n ? '<em class="ch-badge">' + n + '</em>' : '') + '</span></button>';
@@ -189,11 +190,17 @@ window.TecnovaChat = (function () {
       });
       db.collection('conversas').doc(uid).get().then(function (doc) {
         var c = doc.data() || {};
+        var mensal = c.plano === 'mensal';
         painel.innerHTML =
           '<div class="ch-topo">' +
             '<span class="ch-av">' + esc((c.nome || '?').charAt(0).toUpperCase()) + '</span>' +
-            '<div><b>' + esc(c.nome || 'Cliente') + '</b><span>' + esc(c.email || '') +
-            (c.telefone ? ' · ' + esc(c.telefone) : '') + '</span></div>' +
+            '<div class="ch-topo-txt"><b>' + esc(c.nome || 'Cliente') +
+              (mensal ? '<em class="ch-mensal">MENSAL</em>' : '') + '</b>' +
+              '<span>' + esc(c.email || '') + (c.telefone ? ' · ' + esc(c.telefone) : '') +
+              (mensal && c.planoDesde ? ' · mensal desde ' + esc(String(c.planoDesde).slice(0, 10)) : '') +
+            '</span></div>' +
+            '<button type="button" class="ch-plano" id="chPlano">' +
+              (mensal ? 'Deixou de ser mensal' : 'Marcar como mensal') + '</button>' +
           '</div>' +
           '<div class="ch-corpo" id="chACorpo"></div>' +
           '<form class="ch-envio" id="chAForm">' +
@@ -204,6 +211,25 @@ window.TecnovaChat = (function () {
         var corpo = painel.querySelector('#chACorpo');
         var form = painel.querySelector('#chAForm');
         var campo = painel.querySelector('#chATexto');
+
+        /* Quem paga a manutenção mensal fica marcado aqui. É a única coisa
+           desta conversa que o cliente não pode escrever — as regras do
+           Firestore tratam disso, senão qualquer pessoa se marcava a si
+           própria como cliente mensal. */
+        var btPlano = painel.querySelector('#chPlano');
+        if (btPlano) btPlano.addEventListener('click', function () {
+          var passaA = mensal ? null : 'mensal';
+          btPlano.disabled = true;
+          db.collection('conversas').doc(uid).set({
+            plano: passaA,
+            planoDesde: passaA ? new Date().toISOString() : null
+          }, { merge: true }).then(function () {
+            abrir(uid);   // volta a desenhar com o estado novo
+          }).catch(function () {
+            btPlano.disabled = false;
+            alert('Não foi possível guardar. Confirme as regras do Firestore.');
+          });
+        });
 
         campo.addEventListener('input', function () {
           campo.style.height = 'auto';

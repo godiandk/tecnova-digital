@@ -46,3 +46,21 @@
   .ch-lista{max-height:260px}
   .ch-bolha{max-width:88%}
 }
+
+/* ---------- cliente mensal ----------
+   O selo vai ao lado do nome, com a palavra escrita: quem não distingue
+   a cor continua a saber que aquele cliente é mensal. */
+.ch-mensal{display:inline-block;margin-left:7px;font-style:normal;vertical-align:middle;
+  background:linear-gradient(135deg,var(--gold-soft,#e8cf9e),var(--gold,#d9b26e));
+  color:var(--ink,#16100b);font-size:.6rem;font-weight:800;letter-spacing:.08em;
+  padding:2px 7px;border-radius:999px}
+.ch-topo-txt{flex:1;min-width:0}
+.ch-plano{flex:none;background:none;border:1px solid rgba(217,178,110,.35);
+  color:var(--gold-soft,#e8cf9e);border-radius:999px;padding:8px 13px;font:inherit;
+  font-size:.72rem;font-weight:700;cursor:pointer;min-height:44px;white-space:nowrap}
+.ch-plano:hover{background:rgba(217,178,110,.12)}
+.ch-plano:disabled{opacity:.5;cursor:default}
+@media(max-width:520px){
+  .ch-topo{flex-wrap:wrap}
+  .ch-plano{width:100%}
+}

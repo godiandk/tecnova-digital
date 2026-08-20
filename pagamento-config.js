@@ -12,7 +12,7 @@
       MB WAY, Multibanco e Klarna.
    3. Em Pagamentos > Links de pagamento, cria um link.
       Como o valor muda de cliente para cliente, a forma mais
-      simples com este volume é criar um link por orçamento,
+      simples com este volume é criar um link por pedido,
       já com o valor do sinal, e enviá-lo pelo chat do site ou por email.
       Nesse caso deixa `linkCartao` e `linkPrestacoes` vazios e
       manda o link à mão.
@@ -48,7 +48,7 @@ window.TECNOVA_PAGAMENTO = {
         ["Banco", "Novo Banco"],
         ["Titular", "Wesley Vianna"]
       ],
-      nota: "Indique a referência do orçamento na descrição da transferência."
+      nota: "Indique a referência do pedido na descrição da transferência."
     },
     BRL: {
       titulo: "Pix",
@@ -57,7 +57,7 @@ window.TECNOVA_PAGAMENTO = {
         ["Nome do titular", "Wesley Vianna"],
         ["Banco", "Bradesco"]
       ],
-      nota: "Depois de pagar, envie o comprovativo por email com a referência do orçamento."
+      nota: "Depois de pagar, envie o comprovativo por email com a referência do pedido."
     }
   }
 };

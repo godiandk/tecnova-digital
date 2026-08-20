@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=27">
-<link rel="stylesheet" href="assistente.css?v=27">
-<link rel="stylesheet" href="i18n.css?v=27">
+<link rel="stylesheet" href="estilo.css?v=28">
+<link rel="stylesheet" href="assistente.css?v=28">
+<link rel="stylesheet" href="i18n.css?v=28">
 <style>
 /* Uma regra de classe (0,1,0) vence o [hidden] do navegador, que não tem
    especificidade nenhuma. Sem este !important, tudo o que devia estar
@@ -113,13 +113,13 @@
           <a class="dd-all" href="modelos.html">Todos os modelos →</a>
         </div>
       </span>
-      <a class="" href="orcamento.html">Simulador</a>
+      <a class="" href="orcamento.html">Fazer o pedido</a>
       <a class="" href="renovacao.html">Já tem site?</a>
       <a class="" href="sobre.html">Sobre</a>
       <a href="conta.html" id="navAccount">Entrar / Criar conta</a>
     </nav>
     <div class="nav-right">
-      <a class="btn btn-gold" href="orcamento.html">Pedir orçamento</a>
+      <a class="btn btn-gold" href="orcamento.html">Fazer o pedido</a>
       <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -197,7 +197,7 @@
         <option value="Quero um site novo">Quero um site novo</option>
         <option value="Já tenho site e quero renovar">Já tenho site e quero renovar</option>
         <option value="Dúvida sobre preços ou pacotes">Dúvida sobre preços ou pacotes</option>
-        <option value="Dúvida sobre um orçamento que já fiz">Dúvida sobre um orçamento que já fiz</option>
+        <option value="Dúvida sobre um pedido que já fiz">Dúvida sobre um pedido que já fiz</option>
         <option value="Pagamento ou fatura">Pagamento ou fatura</option>
         <option value="Outro assunto">Outro assunto</option>
       </select>
@@ -246,12 +246,12 @@
         <h4>Navegação</h4>
         <a href="servicos.html">O que fazemos</a>
         <a href="pacotes.html">Pacotes</a>
-        <a href="orcamento.html">Simulador de orçamento</a>
+        <a href="orcamento.html">Fazer o pedido</a>
         <a href="modelos.html">Modelos</a>
         <a href="renovacao.html">Já tem site?</a>
         <a href="sobre.html">Sobre</a>
         <a href="contacto.html">Contacto</a>
-        <a href="pagamento.html">Pagar um orçamento</a>
+        <a href="pagamento.html">Pagar um pedido</a>
       </div>
       <div class="footer-col">
         <h4>Contacto</h4>
@@ -271,7 +271,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="auth-nav.js?v=27"></script>
+<script src="auth-nav.js?v=28"></script>
 
 <script>
 /* ============================================================
@@ -406,10 +406,10 @@ if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
 }
 </script>
-<script src="site.js?v=27"></script>
-<script src="idiomas/en.js?v=27"></script>
-<script src="idiomas/es.js?v=27"></script>
-<script src="i18n.js?v=27"></script>
-<script src="assistente.js?v=27"></script>
+<script src="site.js?v=28"></script>
+<script src="idiomas/en.js?v=28"></script>
+<script src="idiomas/es.js?v=28"></script>
+<script src="i18n.js?v=28"></script>
+<script src="assistente.js?v=28"></script>
 </body>
 </html>

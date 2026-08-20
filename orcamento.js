@@ -1,5 +1,5 @@
 /* ============================================================
-   TECNOVA Digital — Simulador de Orçamento
+   TECNOVA Digital — Pedido do site
    ------------------------------------------------------------
    TUDO O QUE PODE MUDAR ESTÁ AQUI EM CIMA.
    Preços em euros. Para alterar um preço, muda só o número.
@@ -35,7 +35,7 @@ const LINK_PAGAMENTO = "";
    hora de mostrar, pela taxa aqui em baixo.
 
    >>> ATUALIZA A TAXA DE CÂMBIO DE VEZ EM QUANDO <<<
-   Se ficar desatualizada, os orçamentos em reais saem errados. Muda o
+   Se ficar desatualizada, os pedidos em reais saem errados. Muda o
    número em `taxa` e a data em `taxaData`.
 
    O `ajuste` serve para praticar um preço diferente no Brasil sem mexer
@@ -71,7 +71,7 @@ const MOEDAS = {
         ['Nome do titular', 'Wesley Vianna'],
         ['Banco', 'Bradesco']
       ],
-      nota: 'O pagamento é por Pix. Depois de pagar, envie o comprovativo por email com a referência do orçamento.'
+      nota: 'O pagamento é por Pix. Depois de pagar, envie o comprovativo por email com a referência do pedido.'
     }
   },
   us: {
@@ -179,7 +179,7 @@ const REMODELACAO = {
    lado, com a fonte à vista.
 
    Os intervalos abaixo são de estudos de preços publicados sobre o mercado
-   português em 2026 (ver `fontes`). NÃO são orçamentos de concorrentes —
+   português em 2026 (ver `fontes`). NÃO são preços de concorrentes —
    e está escrito no ecrã que são valores de referência.
 
    `TAXA_HORA` é a nossa taxa efetiva: é com ela que convertemos o preço de
@@ -1012,11 +1012,13 @@ const PRESETS = {
     refrescarProposta();
   }
 
-  /* ---------- referência, texto do orçamento, gravar ---------- */
+  /* ---------- referência, texto do pedido, gravar ---------- */
   function referencia() {
     var d = new Date();
     var p = function (n) { return ('0' + n).slice(-2); };
-    return 'ORC-' + String(d.getFullYear()).slice(2) + p(d.getMonth() + 1) + p(d.getDate()) + '-' +
+    // PED- de pedido. As referências antigas ORC- continuam a funcionar em
+    // todo o lado: nada valida o prefixo, é só um texto identificador.
+    return 'PED-' + String(d.getFullYear()).slice(2) + p(d.getMonth() + 1) + p(d.getDate()) + '-' +
       Math.random().toString(36).slice(2, 6).toUpperCase();
   }
 
@@ -1213,11 +1215,11 @@ const PRESETS = {
         // Se o Firestore recusar, o pedido não chega ao painel. Não podemos
         // deixar o cliente a pensar que está tratado — mandamo-lo pelo email,
         // que não depende de nada do nosso lado estar de pé.
-        console.error('Orçamento não gravado:', e);
+        console.error('Pedido não gravado:', e);
         var av = $('#okAviso');
         if (av) {
           av.innerHTML = 'Não conseguimos guardar o pedido no nosso sistema. ' +
-            'Carregue em <b>Receber o orçamento por email</b> aqui em baixo e envie-mo — ' +
+            'Carregue em <b>Enviar o pedido para o meu email</b> aqui em baixo e envie-mo — ' +
             'a referência ' + ref + ' vai na mensagem.';
           av.style.display = 'block';
         }
@@ -1227,7 +1229,7 @@ const PRESETS = {
       $('#okTotal').textContent = eur(window.__ORC.total);
       $('#okSinal').textContent = eur(window.__ORC.sinal);
       $('#okEmail').href = 'mailto:wesley@tecnovadigital.pt' +
-        '?subject=' + encodeURIComponent('Orçamento ' + ref + ' — TECNOVA Digital') +
+        '?subject=' + encodeURIComponent('Pedido ' + ref + ' — TECNOVA Digital') +
         '&body=' + encodeURIComponent(msg);
       // A página de pagamento leva a referência e os valores no endereço,
       // para cobrar o montante certo sem depender de nada guardado.
@@ -1242,7 +1244,7 @@ const PRESETS = {
       // página de pagamento, para não haver dois sítios a dizer o mesmo e um
       // deles a ficar desatualizado.
 
-      // se o cliente estiver com sessão iniciada, o orçamento fica logo na
+      // se o cliente estiver com sessão iniciada, o pedido fica logo na
       // conversa da conta dele — passa a poder falar connosco por lá
       try {
         if (typeof auth !== 'undefined' && auth.currentUser && window.TecnovaChat) {
@@ -1250,9 +1252,10 @@ const PRESETS = {
           TecnovaChat.garantir(u.uid, { nome: dados.nome, email: dados.email || u.email, telefone: dados.tel })
             .then(function () {
               return TecnovaChat.enviar(u.uid, 'admin',
-                'Recebemos o seu orçamento ' + ref + ' — total de ' + preco(window.__ORC.total) +
-                ', com sinal de ' + preco(window.__ORC.sinal) + '. Assim que confirmarmos o pagamento, ' +
-                'começo o seu site e digo-lhe aqui a data de entrega. Qualquer dúvida, escreva por aqui.');
+                'Recebemos o seu pedido ' + ref + ' — total de ' + preco(window.__ORC.total) +
+                ', com sinal de ' + preco(window.__ORC.sinal) + '. Assim que o sinal entrar, ' +
+                'começo o seu site e digo-lhe aqui a data de entrega. Este chat é o seu canal direto ' +
+                'comigo: é por aqui que pede alterações e tira dúvidas, sempre que precisar.');
             }).catch(function () {});
         }
       } catch (e) {}

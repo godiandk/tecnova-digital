@@ -13,8 +13,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=27">
-<link rel="stylesheet" href="i18n.css?v=27">
+<link rel="stylesheet" href="estilo.css?v=28">
+<link rel="stylesheet" href="i18n.css?v=28">
 <style>
 .pg-wrap{max-width:640px;margin:0 auto;padding:0 24px 120px}
 .pg-card{background:var(--ink-2);border:1px solid rgba(217,178,110,.2);border-radius:22px;padding:30px;margin-bottom:18px}
@@ -74,6 +74,7 @@
 /* Na página de pagar não há botão flutuante nenhum a tapar os campos. */
 .app-float{display:none!important}
 
+.pg-canal{background:rgba(217,178,110,.07);border-color:rgba(217,178,110,.32)}
 .pg-vazio{text-align:center;padding:20px 0}
 .pg-vazio p{color:var(--cream-dim);margin-bottom:20px}
 
@@ -132,13 +133,13 @@
           <a class="dd-all" href="modelos.html">Todos os modelos →</a>
         </div>
       </span>
-      <a class="" href="orcamento.html">Simulador</a>
+      <a class="" href="orcamento.html">Fazer o pedido</a>
       <a class="" href="renovacao.html">Já tem site?</a>
       <a class="" href="sobre.html">Sobre</a>
       <a href="conta.html" id="navAccount">Entrar / Criar conta</a>
     </nav>
     <div class="nav-right">
-      <a class="btn btn-gold" href="orcamento.html">Pedir orçamento</a>
+      <a class="btn btn-gold" href="orcamento.html">Fazer o pedido</a>
       <button class="burger" id="burger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -163,9 +164,9 @@
 <section style="padding-top:0">
   <div class="pg-wrap">
 
-    <!-- resumo do orçamento, vindo do simulador -->
+    <!-- resumo do pedido, vindo da página do pedido -->
     <div class="pg-card" id="pgResumo" hidden>
-      <p class="eyebrow" style="margin-bottom:12px" id="pgTituloResumo">O seu orçamento</p>
+      <p class="eyebrow" style="margin-bottom:12px" id="pgTituloResumo">O seu pedido</p>
       <div class="pg-ref" id="pgRef">—</div>
       <ul class="pg-linhas" id="pgLinhas">
         <li><span>Total do site</span><b id="pgTotal">—</b></li>
@@ -176,7 +177,7 @@
 
     <!-- Quem chega sem link (de um anúncio, do rodapé, de uma mensagem minha)
          escreve aqui o que combinámos e vê logo como pagar. Antes esta página
-         era um beco sem saída para toda a gente que não viesse do simulador. -->
+         era um beco sem saída para toda a gente que não viesse da página do pedido. -->
     <div class="pg-card" id="pgSemRef">
       <p class="eyebrow" style="margin-bottom:10px">Combinou um valor comigo?</p>
       <h2 class="pg-h2">Escreva-o aqui para ver como pagar</h2>
@@ -184,7 +185,7 @@
 
       <form id="pgForm" novalidate>
         <label class="pg-campo">
-          <span>Referência do orçamento, ou o nome do seu negócio</span>
+          <span>Referência do pedido, ou o nome do seu negócio</span>
           <input id="fRef" type="text" inputmode="text" autocomplete="off"
                  placeholder="TEC-1234 ou Barbearia do Zé" maxlength="60" required>
         </label>
@@ -207,10 +208,10 @@
         <button class="btn btn-gold" type="submit" style="width:100%;justify-content:center">Ver como pagar</button>
       </form>
 
-      <p class="pg-nota">Ainda não temos valor combinado? <a href="orcamento.html">Faça o orçamento em 1 minuto</a></p>
+      <p class="pg-nota">Ainda não temos valor combinado? <a href="orcamento.html">Faça o pedido em 1 minuto</a></p>
       <p class="pg-nota">Perdeu o link que lhe enviei? Diga-me a referência e eu volto a mandá-lo:</p>
       <p class="pg-nota">
-        <a href="mailto:wesley@tecnovadigital.pt?subject=Perdi%20o%20link%20do%20meu%20or%C3%A7amento">wesley@tecnovadigital.pt</a>
+        <a href="mailto:wesley@tecnovadigital.pt?subject=Perdi%20o%20link%20do%20meu%20pedido">wesley@tecnovadigital.pt</a>
       </p>
     </div>
 
@@ -263,6 +264,13 @@
         <p><b>Só paga a segunda metade quando o site estiver no ar</b> e aprovado por si.
         Se não gostar do que vir, não avança — e não fica preso a nada.</p>
       </div>
+      <!-- O que a pessoa ganha ao pagar, além do site: um sítio onde falar
+           comigo sem ser por email perdido na caixa de entrada. -->
+      <div class="pg-seguro pg-canal">
+        <span class="ic">💬</span>
+        <p><b>Depois de pagar fica com um canal direto comigo</b>, dentro da sua conta no site.
+        É por aí que pede alterações e tira dúvidas — as mensagens ficam guardadas, não se perde nada.</p>
+      </div>
       <div class="pg-seguro" id="segLivre">
         <span class="ic">🛡️</span>
         <p><b>Confirmo o pagamento no próprio dia</b> e digo-lhe logo o passo seguinte.
@@ -295,12 +303,12 @@
         <h4>Navegação</h4>
         <a href="servicos.html">O que fazemos</a>
         <a href="pacotes.html">Pacotes</a>
-        <a href="orcamento.html">Simulador de orçamento</a>
+        <a href="orcamento.html">Fazer o pedido</a>
         <a href="modelos.html">Modelos</a>
         <a href="renovacao.html">Já tem site?</a>
         <a href="sobre.html">Sobre</a>
         <a href="contacto.html">Contacto</a>
-        <a href="pagamento.html">Pagar um orçamento</a>
+        <a href="pagamento.html">Pagar um pedido</a>
       </div>
       <div class="footer-col">
         <h4>Contacto</h4>
@@ -320,30 +328,30 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="auth-nav.js?v=27"></script>
+<script src="auth-nav.js?v=28"></script>
 
-<script src="site.js?v=27"></script>
+<script src="site.js?v=28"></script>
 <!-- Os dicionários antes do i18n, como em todas as outras páginas.
      A ordem inversa também funcionava, mas ninguém tem de descobrir isso
      ao ler o ficheiro. -->
-<script src="idiomas/en.js?v=27"></script>
-<script src="idiomas/es.js?v=27"></script>
-<script src="i18n.js?v=27"></script>
-<script src="pagamento-config.js?v=27"></script>
+<script src="idiomas/en.js?v=28"></script>
+<script src="idiomas/es.js?v=28"></script>
+<script src="i18n.js?v=28"></script>
+<script src="pagamento-config.js?v=28"></script>
 <script>
 /* ============================================================
    Página de pagamento
    ------------------------------------------------------------
    Abre de duas maneiras:
 
-   1. Com o orçamento no endereço, vindo do simulador:
+   1. Com o pedido no endereço, vindo da página do pedido:
         pagamento.html?ref=TEC-1234&total=990&sinal=495&moeda=EUR
 
    2. Sem nada. Nesse caso mostra um formulário onde o cliente
       escreve a referência e o valor que combinámos. É por aqui
       que entra quem vem de um anúncio, do rodapé ou de uma
       mensagem minha — antes esta página não servia para nada
-      a quem não passasse pelo simulador.
+      a quem não passasse pela página do pedido.
 
    Os links de pagamento vivem em `pagamento-config.js`, para se
    poderem trocar sem mexer nesta página.
@@ -419,7 +427,7 @@
     $('#pgFormas').hidden = false;
 
     $('#pgLinhas').hidden = !temTotal;
-    $('#pgTituloResumo').textContent = frase(temTotal ? 'O seu orçamento' : 'O seu pagamento');
+    $('#pgTituloResumo').textContent = frase(temTotal ? 'O seu pedido' : 'O seu pagamento');
 
     $('#pgRef').textContent = ref;
     $('#pgSinal').textContent = dinheiro(agora);
@@ -490,7 +498,7 @@
   });
 
   /* ------------------------------------------------------------------
-     Caminho 1: veio do simulador, com tudo no endereço.
+     Caminho 1: veio da página do pedido, com tudo no endereço.
      ------------------------------------------------------------------ */
   var refUrl = (q.get('ref') || '').trim();
   var sinalUrl = parseFloat(q.get('sinal'));
@@ -516,7 +524,7 @@
       erro.hidden = false;
     }
 
-    if (ref.length < 2) return falha('Escreva a referência do orçamento ou o nome do seu negócio.');
+    if (ref.length < 2) return falha('Escreva a referência do pedido ou o nome do seu negócio.');
     if (!isFinite(valor) || valor <= 0) return falha('Escreva o valor combinado, só com números. Por exemplo: 495');
     // Um zero a mais numa transferência não tem volta. Mais vale travar aqui
     // e mandar falar comigo do que deixar passar um valor absurdo.

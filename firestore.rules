@@ -89,7 +89,17 @@ service cloud.firestore {
     // Uma conversa por cliente, com o id da conta dele.
     // ----------------------------------------------------------
     match /conversas/{uid} {
-      allow read, create, update: if ehDono(uid) || ehAdmin();
+      allow read, create: if ehDono(uid) || ehAdmin();
+
+      // O `plano` diz se este cliente é mensal. Como o código do site é
+      // público, se deixássemos o cliente escrever nesse campo qualquer
+      // pessoa se podia marcar como cliente mensal a partir da consola do
+      // navegador. Ele altera tudo o resto da conversa dele menos isso.
+      allow update: if ehAdmin()
+                    || (ehDono(uid)
+                        && !request.resource.data.diff(resource.data)
+                             .affectedKeys().hasAny(['plano', 'planoDesde']));
+
       allow delete: if ehAdmin();
 
       match /mensagens/{msgId} {

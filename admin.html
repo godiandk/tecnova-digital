@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="chat.css?v=27">
+<link rel="stylesheet" href="chat.css?v=28">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -76,7 +76,7 @@ tr:last-child td{border-bottom:none}
 .pane{display:none}
 .pane.on{display:block}
 
-/* orçamentos */
+/* pedidos */
 .filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .filtro{background:transparent;border:1px solid rgba(217,178,110,.22);color:var(--cream-dim);border-radius:999px;padding:7px 15px;font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
 .filtro.on{background:rgba(217,178,110,.16);border-color:var(--gold);color:var(--gold-soft)}
@@ -209,7 +209,7 @@ td.valor{text-align:right;color:var(--cream);font-weight:700;white-space:nowrap}
   </header>
 
   <div class="tabs">
-    <button class="tab on" data-pane="paneOrc">Orçamentos <span class="n" id="tabNovos">0</span></button>
+    <button class="tab on" data-pane="paneOrc">Pedidos <span class="n" id="tabNovos">0</span></button>
     <button class="tab" data-pane="paneMsg">Mensagens <span class="n" id="tabMsgs">0</span></button>
     <button class="tab" data-pane="paneCli">Clientes &amp; Cupões</button>
     <button class="tab" data-pane="paneFat">Faturação</button>
@@ -225,9 +225,9 @@ td.valor{text-align:right;color:var(--cream);font-weight:700;white-space:nowrap}
     </div>
 
     <div class="card">
-      <h2 style="font-size:1.1rem;margin:0 0 4px">Pedidos de orçamento do simulador</h2>
+      <h2 style="font-size:1.1rem;margin:0 0 4px">Pedidos de site recebidos</h2>
       <p style="font-size:.82rem;color:var(--cream-dim);margin:0 0 16px">
-        Cada linha é um cliente que montou o site dele no simulador. Abra para ver tudo o que ele escolheu —
+        Cada linha é um cliente que montou o site dele e fez o pedido. Abra para ver tudo o que ele escolheu —
         e use <b>Copiar briefing</b> para levar o pedido completo para onde precisar.</p>
 
       <div class="filtros" id="filtrosOrc">
@@ -303,7 +303,7 @@ td.valor{text-align:right;color:var(--cream);font-weight:700;white-space:nowrap}
   <!-- Gerar link de pagamento -->
   <div class="card">
     <h2 style="font-size:1.1rem;margin:0 0 4px">Gerar link de pagamento</h2>
-    <p style="font-size:.82rem;color:var(--cream-dim);margin:0">Para quando o valor é combinado por email ou pelo chat, sem passar pelo simulador. Sai um link pronto a enviar, já com o valor certo lá dentro.</p>
+    <p style="font-size:.82rem;color:var(--cream-dim);margin:0">Para quando o valor é combinado por email ou pelo chat, sem passar pela página do pedido. Sai um link pronto a enviar, já com o valor certo lá dentro.</p>
     <div class="row2">
       <div>
         <label>Referência</label>
@@ -426,9 +426,9 @@ td.valor{text-align:right;color:var(--cream);font-weight:700;white-space:nowrap}
     <!-- registar uma entrada -->
     <div class="card">
       <h2 style="font-size:1.1rem;margin:0 0 4px">Registar um pagamento</h2>
-      <p style="font-size:.82rem;color:var(--cream-dim);margin:0">Sempre que entrar dinheiro, registe-o aqui. Se escolher um orçamento, o resto preenche-se sozinho.</p>
+      <p style="font-size:.82rem;color:var(--cream-dim);margin:0">Sempre que entrar dinheiro, registe-o aqui. Se escolher um pedido, o resto preenche-se sozinho.</p>
 
-      <label for="pagOrc">Orçamento (opcional)</label>
+      <label for="pagOrc">Pedido (opcional)</label>
       <select id="pagOrc" onchange="preencherPorOrcamento()"><option value="">— escrever à mão —</option></select>
 
       <div class="row2">
@@ -509,7 +509,7 @@ auth.onAuthStateChanged(async (user)=>{
   document.getElementById('painel').classList.remove('hidden');
   carregarClientes();
   carregarVouchers();
-  // A faturação só depois dos orçamentos: é deles que sai a lista para
+  // A faturação só depois dos pedidos: é deles que sai a lista para
   // preencher o formulário de um pagamento com um clique.
   await carregarOrcamentos();
   carregarPagamentos();
@@ -561,7 +561,7 @@ async function carregarOrcamentos(){
     orcCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
   }catch(e){
     document.getElementById('listaOrc').innerHTML =
-      '<p class="empty">Não foi possível carregar os orçamentos. Confirme as regras do Firestore.</p>';
+      '<p class="empty">Não foi possível carregar os pedidos. Confirme as regras do Firestore.</p>';
     return;
   }
   const novos = orcCache.filter(o=>(o.estado||'novo')==='novo').length;
@@ -584,7 +584,7 @@ function renderOrcamentos(){
     return [o.ref,o.nome,o.negocio,o.tel,o.email].join(' ').toLowerCase().includes(q);
   });
   const box = document.getElementById('listaOrc');
-  if(!lista.length){ box.innerHTML = '<p class="empty">Nenhum orçamento aqui por agora.</p>'; return; }
+  if(!lista.length){ box.innerHTML = '<p class="empty">Nenhum pedido aqui por agora.</p>'; return; }
 
   box.innerHTML = lista.map(o=>{
     const est = o.estado||'novo';
@@ -648,7 +648,7 @@ function renderOrcamentos(){
           </select>
           <button class="btn line" onclick="copiarBriefing('${esc(o.id)}', this)">Copiar briefing</button>
           <a class="btn line" style="text-decoration:none;display:inline-block"
-             href="mailto:${esc(o.email||'')}?subject=${encodeURIComponent('O seu orçamento '+(o.ref||'')+' — TECNOVA Digital')}&body=${encodeURIComponent('Olá '+(o.nome||'')+'!\n\nAqui é o Wesley da TECNOVA Digital. Recebi o seu orçamento '+(o.ref||'')+' e queria falar consigo sobre ele.\n\n')}">Responder por email</a>
+             href="mailto:${esc(o.email||'')}?subject=${encodeURIComponent('O seu pedido '+(o.ref||'')+' — TECNOVA Digital')}&body=${encodeURIComponent('Olá '+(o.nome||'')+'!\n\nAqui é o Wesley da TECNOVA Digital. Recebi o seu pedido '+(o.ref||'')+' e queria falar consigo sobre ele.\n\n')}">Responder por email</a>
         </div>
       </div>
     </div>`;
@@ -877,7 +877,7 @@ function gerarLinkPagamento(){
   document.getElementById('pgLinkEmail').href = 'mailto:?subject=' +
     encodeURIComponent('Pagamento do seu site — ' + ref) + '&body=' +
     encodeURIComponent('Olá!\n\nAqui fica o link para pagar ' + valor +
-      ' referente ao orçamento ' + ref + ':\n\n' + url +
+      ' referente ao pedido ' + ref + ':\n\n' + url +
       '\n\nPode pagar por MB WAY ou transferência. Qualquer dúvida, responda a este email.\n\n' +
       'Wesley Vianna\nTECNOVA Digital\nwesley@tecnovadigital.pt');
 
@@ -902,8 +902,8 @@ function copiarLinkPagamento(){
    ------------------------------------------------------------------
    Aqui não se adivinha nada. O MB WAY e as transferências não avisam
    ninguém, por isso cada entrada de dinheiro é registada à mão na
-   coleção `pagamentos`. Os orçamentos servem só para preencher o
-   formulário mais depressa — um orçamento não é dinheiro recebido.
+   coleção `pagamentos`. Os pedidos servem só para preencher o
+   formulário mais depressa — um pedido não é dinheiro recebido.
 
    As datas são strings 'AAAA-MM-DD' de propósito. Comparadas como
    texto dão o mesmo resultado que comparadas como datas, e assim não

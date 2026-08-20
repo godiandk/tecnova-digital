@@ -940,6 +940,55 @@ window.TECNOVA_DIC.en = {
 
 /* ---------- página de pagamento ---------- */
 /* --- pagar sem vir do simulador --- */
+/* --- do orçamento ao pedido de compra --- */
+"Fazer o pedido": "Place your order",
+"Pagar um pedido": "Pay for an order",
+"Fazer o meu pedido agora →": "Place my order now →",
+"Fazer o meu pedido →": "Place my order →",
+"Faça o seu pedido": "Place your order",
+"Faça o pedido em 1 minuto": "Place your order in 1 minute",
+"Quero fazer este pedido": "I want to place this order",
+"Confirmar pedido e pagar →": "Confirm order and pay →",
+"Pedido registado": "Order received",
+"O seu pedido": "Your order",
+"Monte o site do seu negócio<br>e peça-o já.":
+  "Build your business website<br>and order it now.",
+"Monte o site do seu negócio": "Build your business website",
+"e peça-o já.": "and order it now.",
+"Novo · Peça o seu site em 2 minutos": "New · Order your website in 2 minutes",
+"Sem telefonemas, sem esperar dias por uma resposta. Escolha o que faz sentido para si — o valor aparece ao lado, atualizado a cada clique. No fim faz o pedido e paga o sinal.":
+  "No phone calls, no waiting days for an answer. Pick what makes sense for you — the price updates beside you with every click. At the end you place the order and pay the deposit.",
+"Escolha o que quer no site do seu negócio — marcações, preçário, cardápio, loja, cartão de fidelidade — e veja o valor a mudar a cada clique. Em dois minutos faz o pedido e reserva a sua vaga, sem falar com ninguém.":
+  "Choose what you want on your business website — bookings, price list, menu, shop, loyalty card — and watch the price change with every click. In two minutes you place the order and book your slot, without speaking to anyone.",
+"Deixe o contacto para eu saber quem é e com quem falo. A seguir paga o sinal de 50% e a sua vaga na agenda fica reservada.":
+  "Leave your contact so I know who you are. Next you pay the 50% deposit and your slot in my schedule is booked.",
+"A seguir vai para o pagamento do sinal. Só começo a trabalhar depois de o sinal entrar — e o preço fechado é o que está aqui.":
+  "Next you go to the deposit payment. I only start work once the deposit lands — and the fixed price is the one shown here.",
+"Falta um passo: o sinal.": "One step left: the deposit.",
+"O seu pedido ficou registado com esta referência. Pague o sinal e a vaga é sua.":
+  "Your order is registered under this reference. Pay the deposit and the slot is yours.",
+"Enviar o pedido para o meu email": "Email the order to me",
+"Alguma dúvida antes de pagar? Escreva-me e respondo depressa:":
+  "Any doubts before paying? Write to me and I answer fast:",
+"falar comigo": "talk to me",
+"Abre-se o seu canal direto comigo na sua conta: é por aí que pede alterações e tira dúvidas, e fica tudo escrito.":
+  "Your direct channel with me opens inside your account: that is where you ask for changes and clear up doubts, and everything stays in writing.",
+"<b>Depois de pagar fica com um canal direto comigo</b>, dentro da sua conta no site. É por aí que pede alterações e tira dúvidas — as mensagens ficam guardadas, não se perde nada.":
+  "<b>After paying you get a direct channel with me</b>, inside your account on the site. That is where you ask for changes and clear up doubts — messages are kept, nothing gets lost.",
+"O que está no pedido é o que paga. Nada aparece a meio a dizer «afinal isto é extra».":
+  "What is in the order is what you pay. Nothing shows up halfway through saying «that one is extra».",
+"Referência do pedido, ou o nome do seu negócio": "Order reference, or your business name",
+"Indique a referência do pedido na descrição da transferência.":
+  "Put the order reference in the transfer description.",
+"Dúvida sobre um pedido que já fiz": "Question about an order I already placed",
+"Vê o preço final antes de decidir — nada aparece depois a dizer que era extra":
+  "See the final price before you decide — nothing turns up later as an extra",
+"Se um pacote lhe sair mais barato, o próprio site avisa-o":
+  "If a package works out cheaper, the site tells you",
+"Monte o seu à medida: escolhe funcionalidade a funcionalidade e vê o preço a mudar na hora. Se um pacote lhe sair mais barato, o próprio site avisa-o.":
+  "Build yours to measure: pick feature by feature and watch the price change instantly. If a package works out cheaper, the site tells you.",
+"40% de desconto sobre o valor total do site em todos os pedidos feitos até":
+  "40% off the total website price on every order placed by",
 "Confirmo o pagamento no próprio dia": "I confirm your payment the same day",
 "e digo-lhe logo o passo seguinte. Qualquer dúvida antes de pagar, escreva-me primeiro — respondo depressa.":
   "and tell you the next step right away. Any doubts before paying, write to me first — I answer fast.",

@@ -269,3 +269,12 @@
   .pr-sinal{text-align:left}
   .pr-btns .btn{flex:1 1 100%}
 }
+
+/* As saídas secundárias do ecrã final. Deixam de ser botões para não
+   competirem com o pagamento, mas mantêm 44px de altura para se conseguir
+   tocar nelas no telemóvel. */
+.ok-secundario{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center;margin-top:14px}
+.ok-secundario a,.ok-secundario button{display:inline-flex;align-items:center;min-height:44px;
+  background:none;border:none;padding:0;font:inherit;font-size:.86rem;font-weight:700;
+  color:var(--gold-soft);text-decoration:underline;cursor:pointer}
+.ok-secundario a:hover,.ok-secundario button:hover{color:var(--gold)}

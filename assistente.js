@@ -27,22 +27,22 @@
   var RESPOSTAS = [
     {
       id: 'preco',
-      chaves: ['preço', 'preco', 'quanto custa', 'custa', 'valor', 'orçamento', 'orcamento', 'caro', 'barato', 'pagar quanto', 'quanto fica', 'investimento'],
+      chaves: ['preço', 'preco', 'quanto custa', 'custa', 'valor', 'orçamento', 'orcamento', 'pedido', 'encomendar', 'comprar', 'caro', 'barato', 'pagar quanto', 'quanto fica', 'investimento'],
       resposta: 'Depende do que o site precisa de fazer — mas não é um mistério, dá para ver na hora.\n\n' +
         'Um site profissional começa nos <b>350€</b> (3 a 5 páginas, chat no site, perfeito no telemóvel). ' +
         'Com marcações online, preçário e chat de atendimento, fica em <b>650€</b>. ' +
         'Com aplicação própria, contas de cliente e cartão de fidelidade, <b>990€</b>.\n\n' +
-        'No simulador escolhe exatamente o que quer e o preço aparece à frente dos olhos, item a item.',
-      acoes: [['Abrir o simulador', 'orcamento.html'], ['Ver os pacotes', 'pacotes.html']]
+        'Na página do pedido escolhe exatamente o que quer e o preço aparece à frente dos olhos, item a item.',
+      acoes: [['Abrir a página do pedido', 'orcamento.html'], ['Ver os pacotes', 'pacotes.html']]
     },
     {
       id: 'campanha',
       chaves: ['desconto', 'promoção', 'promocao', 'campanha', 'cupão', 'cupao', 'voucher', 'código', 'codigo', 'setembro'],
       resposta: 'Está a apanhar a campanha certa. 🎉\n\n' +
         'Até <b>30 de setembro</b>: <b>40% de desconto</b> sobre o valor total do site e a <b>1.ª mensalidade de manutenção grátis</b>. ' +
-        'O código é <b>INOVA40</b> e é aplicado automaticamente no simulador.\n\n' +
-        'Ao fechar o orçamento, o preço fica-lhe garantido 15 dias — mesmo que a campanha termine entretanto.',
-      acoes: [['Simular com desconto', 'orcamento.html']]
+        'O código é <b>INOVA40</b> e é aplicado automaticamente quando faz o pedido.\n\n' +
+        'O preço que vê ao montar o pedido é o preço final: paga metade para arrancar e a outra metade só depois de aprovar o site.',
+      acoes: [['Montar o pedido com desconto', 'orcamento.html']]
     },
     {
       id: 'prazo',
@@ -59,7 +59,7 @@
         '<b>50% para começar</b> e <b>50% na entrega</b> — só paga o resto depois de ver o site no ar e aprovar tudo.\n\n' +
         'Em Portugal aceitamos MB WAY, Multibanco, transferência e cartão (Apple Pay e Google Pay incluídos). ' +
         'No Brasil, Pix. Noutros países, cartão pelo link de pagamento.',
-      acoes: [['Simular e ver o sinal', 'orcamento.html']]
+      acoes: [['Montar o pedido e ver o sinal', 'orcamento.html']]
     },
     {
       id: 'ja-tem-site',
@@ -68,7 +68,7 @@
         'A estrutura fica <b>30% mais barata</b> e o trabalho de textos e imagem <b>20% mais barato</b>, porque já existe muita coisa aproveitável.\n\n' +
         'Há só um cuidado importante: ao mudar de site é preciso fazer <b>redirecionamentos</b>, senão quem o encontrava no Google passa a bater numa página de erro. Tratamos disso.\n\n' +
         'O diagnóstico do seu site atual é gratuito e chega em 24h.',
-      acoes: [['Simular a remodelação', 'orcamento.html?projeto=remod'], ['Pedir diagnóstico grátis', emailLink('Olá Wesley! Quero o diagnóstico grátis do meu site atual.')]]
+      acoes: [['Pedir a remodelação', 'orcamento.html?projeto=remod'], ['Pedir diagnóstico grátis', emailLink('Olá Wesley! Quero o diagnóstico grátis do meu site atual.')]]
     },
     {
       id: 'nao-tem-site',
@@ -100,16 +100,16 @@
         '<b>Depois as redes.</b> Instagram com o link do site na bio, a levar ao preçário ou à marcação — não a uma conversa que tem de responder à mão.\n' +
         '<b>Só no fim, anúncios pagos.</b> E aí já sabe quanto lhe custa cada cliente, porque tem números.\n\n' +
         'Muita gente faz isto ao contrário e queima o orçamento todo na última etapa.',
-      acoes: [['Simular com SEO incluído', 'orcamento.html'], ['Escrever sobre a minha situação', emailLink('Olá Wesley! Queria falar sobre como divulgar o meu negócio.')]]
+      acoes: [['Montar o pedido com SEO incluído', 'orcamento.html'], ['Escrever sobre a minha situação', emailLink('Olá Wesley! Queria falar sobre como divulgar o meu negócio.')]]
     },
     {
       id: 'design',
       chaves: ['design', 'bonito', 'estética', 'estetica', 'aspeto', 'moderno', 'profissional', 'imagem', 'visual', 'logótipo', 'logotipo', 'logo', 'marca', 'fica bonito', 'no telemovel', 'no telemóvel', 'responsivo', 'adapta'],
       resposta: 'O aspeto conta — mas conta por uma razão concreta: em poucos segundos o visitante decide se você é de confiança.\n\n' +
         'Todos os nossos sites são feitos <b>a pensar primeiro no telemóvel</b>, porque é aí que os seus clientes estão. Nada de texto minúsculo nem botões que não se acertam com o dedo.\n\n' +
-        'Se não tiver logótipo, identidade visual ou fotos tratadas, fazemos também — está tudo no simulador com preço à frente.\n\n' +
+        'Se não tiver logótipo, identidade visual ou fotos tratadas, fazemos também — está tudo na página do pedido com preço à frente.\n\n' +
         'A melhor forma de perceber o nível é ver: temos sete sites completos de exemplo, a funcionar a sério.',
-      acoes: [['Ver os sites de exemplo', 'modelos.html'], ['Simular com logótipo', 'orcamento.html']]
+      acoes: [['Ver os sites de exemplo', 'modelos.html'], ['Montar o pedido com logótipo', 'orcamento.html']]
     },
     {
       id: 'modelos',
@@ -125,14 +125,14 @@
       resposta: 'Sim, e sem passar pelas lojas.\n\n' +
         'O cliente entra no seu site e instala um ícone no telemóvel dele com o seu logótipo. Abre em ecrã inteiro e parece uma aplicação de verdade — mas não paga taxas de loja, não espera aprovações e funciona em iPhone e Android ao mesmo tempo.\n\n' +
         'Pode ainda ter conta de cliente com login, cartão de fidelidade com selos e notificações no telemóvel.',
-      acoes: [['Ver a aplicação', 'app.html'], ['Simular com aplicação', 'orcamento.html']]
+      acoes: [['Ver a aplicação', 'app.html'], ['Montar o pedido com aplicação', 'orcamento.html']]
     },
     {
       id: 'marcacoes',
       chaves: ['marcação', 'marcacao', 'marcações', 'agenda', 'agendar', 'reserva', 'reservas', 'horário', 'horario', 'calendário', 'calendario'],
       resposta: 'O cliente escolhe o serviço, o dia e a hora no site, e o pedido cai-lhe no email já escrito e organizado. Sem telefonemas e sem confusão de agenda.\n\n' +
         'Pode ainda ter calendário com as horas que tem mesmo livres, confirmação automática e lembrete horas antes — que é o que faz mesmo baixar as faltas. E faltas são dinheiro perdido.',
-      acoes: [['Experimentar num modelo', 'modelo-barbearia.html'], ['Simular com marcações', 'orcamento.html']]
+      acoes: [['Experimentar num modelo', 'modelo-barbearia.html'], ['Montar o pedido com marcações', 'orcamento.html']]
     },
     {
       id: 'dominio',
@@ -158,7 +158,7 @@
       chaves: ['garantia', 'confiança', 'confianca', 'seguro', 'e se não gostar', 'e se nao gostar', 'devolução', 'devolucao', 'contrato'],
       resposta: 'Percebo a dúvida — é dinheiro seu. Por isso:\n\n' +
         '• <b>Paga metade no início.</b> A outra metade só depois de ver o site no ar e aprovar.\n' +
-        '• <b>Preço fechado.</b> O que está no orçamento é o que paga. Nada aparece a meio a dizer «afinal isto é extra».\n' +
+        '• <b>Preço fechado.</b> O que está no pedido é o que paga. Nada aparece a meio a dizer «afinal isto é extra».\n' +
         '• <b>O site é seu.</b> Fica com domínio, conteúdos e ficheiros.\n' +
         '• <b>Fala sempre com quem faz.</b> Sem call centers nem tickets — trata diretamente com o Wesley.',
       acoes: [['Conhecer o Wesley', 'sobre.html'], ['Escrever já', emailLink('Olá Wesley! Tenho algumas dúvidas antes de avançar.')]]
@@ -168,16 +168,16 @@
       chaves: ['loja online', 'ecommerce', 'e-commerce', 'vender online', 'carrinho', 'produtos', 'catálogo', 'catalogo', 'stock'],
       resposta: 'Sim. Desde um catálogo simples até uma loja completa com carrinho e pagamento.\n\n' +
         'A pergunta mais importante é <b>quantos produtos vai ter</b> — é aí que está o trabalho. Meter 20 produtos é uma tarde; meter 2.000 com fotos tratadas é outro projeto.\n\n' +
-        'Por isso o simulador pergunta o número de produtos e ajusta o preço do carregamento, do tratamento das fotos e da importação a partir do seu Excel.',
-      acoes: [['Simular a minha loja', 'orcamento.html'], ['Ver um catálogo', 'modelo-confeitaria-catalogo.html']]
+        'Por isso o pedido pergunta o número de produtos e ajusta o preço do carregamento, do tratamento das fotos e da importação a partir do seu Excel.',
+      acoes: [['Pedir a minha loja', 'orcamento.html'], ['Ver um catálogo', 'modelo-confeitaria-catalogo.html']]
     },
     {
       id: 'brasil',
       chaves: ['brasil', 'reais', 'real', 'brasileiro', 'r$', 'moeda', 'outro país', 'outro pais', 'estrangeiro', 'dólar', 'dolar', 'em reais', 'pagar em reais', 'moeda do meu pais', 'noutro pais'],
       resposta: 'Trabalhamos com clientes em vários países.\n\n' +
-        'No simulador escolhe a bandeira do seu país e os valores aparecem na sua moeda: <b>euros</b> (Portugal), <b>reais</b> (Brasil), <b>dólares</b>, <b>libras</b>, <b>francos suíços</b> ou <b>dólares canadianos</b>.\n\n' +
+        'Ao fazer o pedido escolhe a bandeira do seu país e os valores aparecem na sua moeda: <b>euros</b> (Portugal), <b>reais</b> (Brasil), <b>dólares</b>, <b>libras</b>, <b>francos suíços</b> ou <b>dólares canadianos</b>.\n\n' +
         'No Brasil o pagamento é por <b>Pix</b>. Nos outros países, cartão, Apple Pay ou Google Pay.',
-      acoes: [['Simular em reais', 'orcamento.html?moeda=br'], ['Abrir o simulador', 'orcamento.html']]
+      acoes: [['Montar o pedido em reais', 'orcamento.html?moeda=br'], ['Abrir a página do pedido', 'orcamento.html']]
     },
     {
       id: 'quem',

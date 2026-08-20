@@ -944,6 +944,55 @@ window.TECNOVA_DIC.es = {
 
 /* ---------- página de pagamento ---------- */
 /* --- pagar sin venir del simulador --- */
+/* --- del presupuesto al pedido de compra --- */
+"Fazer o pedido": "Hacer el pedido",
+"Pagar um pedido": "Pagar un pedido",
+"Fazer o meu pedido agora →": "Hacer mi pedido ahora →",
+"Fazer o meu pedido →": "Hacer mi pedido →",
+"Faça o seu pedido": "Haga su pedido",
+"Faça o pedido em 1 minuto": "Haga el pedido en 1 minuto",
+"Quero fazer este pedido": "Quiero hacer este pedido",
+"Confirmar pedido e pagar →": "Confirmar pedido y pagar →",
+"Pedido registado": "Pedido registrado",
+"O seu pedido": "Su pedido",
+"Monte o site do seu negócio<br>e peça-o já.":
+  "Monte la web de su negocio<br>y pídala ya.",
+"Monte o site do seu negócio": "Monte la web de su negocio",
+"e peça-o já.": "y pídala ya.",
+"Novo · Peça o seu site em 2 minutos": "Nuevo · Pida su web en 2 minutos",
+"Sem telefonemas, sem esperar dias por uma resposta. Escolha o que faz sentido para si — o valor aparece ao lado, atualizado a cada clique. No fim faz o pedido e paga o sinal.":
+  "Sin llamadas, sin esperar días por una respuesta. Elija lo que tenga sentido para usted — el precio aparece al lado, actualizado a cada clic. Al final hace el pedido y paga la señal.",
+"Escolha o que quer no site do seu negócio — marcações, preçário, cardápio, loja, cartão de fidelidade — e veja o valor a mudar a cada clique. Em dois minutos faz o pedido e reserva a sua vaga, sem falar com ninguém.":
+  "Elija lo que quiere en la web de su negocio — reservas, tarifas, carta, tienda, tarjeta de fidelidad — y vea el precio cambiar a cada clic. En dos minutos hace el pedido y reserva su plaza, sin hablar con nadie.",
+"Deixe o contacto para eu saber quem é e com quem falo. A seguir paga o sinal de 50% e a sua vaga na agenda fica reservada.":
+  "Deje su contacto para que sepa quién es. Después paga la señal del 50% y su plaza en la agenda queda reservada.",
+"A seguir vai para o pagamento do sinal. Só começo a trabalhar depois de o sinal entrar — e o preço fechado é o que está aqui.":
+  "A continuación pasa al pago de la señal. Solo empiezo a trabajar cuando la señal entra — y el precio cerrado es el que está aquí.",
+"Falta um passo: o sinal.": "Falta un paso: la señal.",
+"O seu pedido ficou registado com esta referência. Pague o sinal e a vaga é sua.":
+  "Su pedido queda registrado con esta referencia. Pague la señal y la plaza es suya.",
+"Enviar o pedido para o meu email": "Enviar el pedido a mi email",
+"Alguma dúvida antes de pagar? Escreva-me e respondo depressa:":
+  "¿Alguna duda antes de pagar? Escríbame y respondo rápido:",
+"falar comigo": "hablar conmigo",
+"Abre-se o seu canal direto comigo na sua conta: é por aí que pede alterações e tira dúvidas, e fica tudo escrito.":
+  "Se abre su canal directo conmigo dentro de su cuenta: por ahí pide cambios y resuelve dudas, y queda todo por escrito.",
+"<b>Depois de pagar fica com um canal direto comigo</b>, dentro da sua conta no site. É por aí que pede alterações e tira dúvidas — as mensagens ficam guardadas, não se perde nada.":
+  "<b>Después de pagar tiene un canal directo conmigo</b>, dentro de su cuenta en la web. Por ahí pide cambios y resuelve dudas — los mensajes quedan guardados, no se pierde nada.",
+"O que está no pedido é o que paga. Nada aparece a meio a dizer «afinal isto é extra».":
+  "Lo que está en el pedido es lo que paga. Nada aparece a mitad de camino diciendo «esto era aparte».",
+"Referência do pedido, ou o nome do seu negócio": "Referencia del pedido, o el nombre de su negocio",
+"Indique a referência do pedido na descrição da transferência.":
+  "Indique la referencia del pedido en el concepto de la transferencia.",
+"Dúvida sobre um pedido que já fiz": "Duda sobre un pedido que ya hice",
+"Vê o preço final antes de decidir — nada aparece depois a dizer que era extra":
+  "Ve el precio final antes de decidir — nada aparece después como un extra",
+"Se um pacote lhe sair mais barato, o próprio site avisa-o":
+  "Si un paquete le sale más barato, la propia web se lo avisa",
+"Monte o seu à medida: escolhe funcionalidade a funcionalidade e vê o preço a mudar na hora. Se um pacote lhe sair mais barato, o próprio site avisa-o.":
+  "Monte el suyo a medida: elige función a función y ve el precio cambiar al momento. Si un paquete le sale más barato, la propia web se lo avisa.",
+"40% de desconto sobre o valor total do site em todos os pedidos feitos até":
+  "40% de descuento sobre el precio total de la web en todos los pedidos hechos hasta",
 "Confirmo o pagamento no próprio dia": "Confirmo el pago el mismo día",
 "e digo-lhe logo o passo seguinte. Qualquer dúvida antes de pagar, escreva-me primeiro — respondo depressa.":
   "y le digo enseguida el paso siguiente. Cualquier duda antes de pagar, escríbame primero — respondo rápido.",

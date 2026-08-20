@@ -31,7 +31,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="profile.js?v=27"></script>
+<script src="profile.js?v=28"></script>
 <style>
 :root{
   --ink:#16100b;--ink-2:#211812;--ink-3:#2b2016;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
@@ -195,10 +195,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .tabbar button .tb-ic{font-size:1.25rem;line-height:1}
 .tabbar button.active{color:var(--gold)}
 </style>
-<link rel="stylesheet" href="orcamento.css?v=27">
-<link rel="stylesheet" href="app-orcamento.css?v=27">
-<link rel="stylesheet" href="assistente.css?v=27">
-<link rel="stylesheet" href="i18n.css?v=27">
+<link rel="stylesheet" href="orcamento.css?v=28">
+<link rel="stylesheet" href="app-orcamento.css?v=28">
+<link rel="stylesheet" href="assistente.css?v=28">
+<link rel="stylesheet" href="i18n.css?v=28">
 </head>
 <body class="tecnova-app">
 
@@ -224,7 +224,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 
   <p class="eyebrow" style="margin-top:22px">O que quer fazer?</p>
   <div class="qa-grid">
-    <button class="qa-card" data-goto="pedir"><span class="qa-ic">🚀</span>Pedir o meu site<small>orçamento em minutos</small></button>
+    <button class="qa-card" data-goto="pedir"><span class="qa-ic">🚀</span>Pedir o meu site<small>pedido em minutos</small></button>
     <button class="qa-card" data-goto="modelos"><span class="qa-ic">🖼️</span>Ver modelos<small>por tipo de negócio</small></button>
     <a class="qa-card" href="pacotes.html"><span class="qa-ic">💶</span>Pacotes<small>preços claros</small></a>
     <button class="qa-card" data-goto="conta"><span class="qa-ic">🎟️</span>Os meus cupões<small>a minha conta</small></button>
@@ -294,7 +294,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 
     <aside>
       <div class="resumo" id="resumo">
-        <h3>O seu orçamento</h3>
+        <h3>O seu pedido</h3>
         <div class="res-count" id="resCount"></div>
         <ul class="res-lista" id="resLista"></ul>
         <div class="res-pack" id="resPacote"></div>
@@ -317,7 +317,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 
         <div class="res-mercado" id="resMercado"></div>
 
-        <a class="btn btn-gold" href="#final">Quero avançar com este orçamento</a>
+        <a class="btn btn-gold" href="#final">Quero fazer este pedido</a>
         <div class="res-acoes">
           <button type="button" id="btnImprimir">Guardar em PDF</button>
           <button type="button" id="btnLimpar">Recomeçar</button>
@@ -330,7 +330,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   <div class="final" id="final">
     <div class="eyebrow">Último passo</div>
     <h2>Reserve o seu preço e a sua vaga</h2>
-    <p class="lead">Deixe o contacto e recebe o orçamento com uma referência própria.
+    <p class="lead">Deixe o contacto para eu saber quem é e com quem falo.
       O preço que vê fica garantido durante 15 dias, mesmo que a campanha termine.</p>
 
     <form id="formFinal" novalidate>
@@ -346,13 +346,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
         </div>
       </div>
       <div class="form-erro" id="formErro"></div>
-      <button class="btn btn-gold" type="submit" style="margin-top:20px">Confirmar orçamento →</button>
-      <p class="final-nota">Não há qualquer compromisso ao enviar. Só começamos quando você disser que sim.</p>
+      <button class="btn btn-gold" type="submit" style="margin-top:20px">Confirmar pedido e pagar →</button>
+      <p class="final-nota">A seguir vai para o pagamento do sinal. Só começo a trabalhar depois de o sinal entrar — e o preço fechado é o que está aqui.</p>
     </form>
   </div>
 
   <div class="sucesso" id="sucesso">
-    <div class="eyebrow">Orçamento criado</div>
+    <div class="eyebrow">Pedido registado</div>
     <h2>Obrigado! Está tudo do nosso lado.</h2>
     <p class="lead">Guarde esta referência — é por ela que o seu projeto passa a ser identificado.</p>
     <div class="ok-ref" id="okRef"></div>
@@ -369,25 +369,29 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
     <ol class="passos">
       <li>Paga o sinal de 50%. É o que reserva a sua vaga na agenda.</li>
       <li>Assim que o pagamento entra, começo o site e digo-lhe a data exata de entrega.</li>
+      <li>Abre-se o seu canal direto comigo na sua conta: é por aí que pede alterações e tira dúvidas, e fica tudo escrito.</li>
       <li>Vê o site pronto no ar e pede as alterações que quiser.</li>
       <li>Só depois de aprovar tudo é que paga a outra metade.</li>
     </ol>
 
+    <!-- Um botão só: nada compete com o pagamento. -->
     <div class="ok-btns">
       <a class="btn btn-gold btn-lg" id="okPagar" href="#">Pagar o sinal e arrancar →</a>
-      <a class="btn btn-line" id="okEmail" href="#">Receber o orçamento por email</a>
-      <button class="btn btn-line" type="button" onclick="window.print()">Guardar em PDF</button>
     </div>
+    <p class="ok-secundario">
+      <a id="okEmail" href="#">Enviar o pedido para o meu email</a>
+      <button type="button" onclick="window.print()">Guardar em PDF</button>
+    </p>
 
     <p style="color:var(--cream-dim);font-size:.86rem;margin-top:18px">
-      Prefere pensar melhor? O preço fica-lhe garantido 15 dias. Guarde a referência
-      e volte quando quiser — ou fale comigo em <a href="contacto.html">contacto</a>.
+      Alguma dúvida antes de pagar? Escreva-me e respondo depressa:
+      <a href="contacto.html">falar comigo</a>.
     </p>
   </div>
 
   <div class="garantias">
     <div class="gar"><b>Paga metade no início</b><p>50% para arrancar e 50% só na entrega, depois de ver o site no ar e aprovar tudo.</p></div>
-    <div class="gar"><b>Preço fechado</b><p>O que está no orçamento é o que paga. Nada aparece a meio a dizer «afinal isto é extra».</p></div>
+    <div class="gar"><b>Preço fechado</b><p>O que está no pedido é o que paga. Nada aparece a meio a dizer «afinal isto é extra».</p></div>
     <div class="gar"><b>O site é seu</b><p>Fica com tudo: domínio, conteúdos e ficheiros. Não fica preso a ninguém.</p></div>
     <div class="gar"><b>Fala sempre comigo</b><p>Sem call centers nem tickets. Trata diretamente com quem faz o seu site.</p></div>
   </div>
@@ -480,7 +484,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 <nav class="tabbar" aria-label="Navegação da app">
   <button class="active" data-tab="inicio"><span class="tb-ic">🏠</span>Início</button>
   <button data-tab="modelos"><span class="tb-ic">🖼️</span>Modelos</button>
-  <button data-tab="pedir"><span class="tb-ic">🧮</span>Orçamento</button>
+  <button data-tab="pedir"><span class="tb-ic">🧮</span>Pedido</button>
   <button data-tab="conta"><span class="tb-ic">👤</span>Conta</button>
 </nav>
 
@@ -724,7 +728,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
     var el=document.getElementById("vouchersList");
     try{
       var snap=await db.collection("vouchers").where("clienteUid","==",uid).get();
-      if(snap.empty){ el.innerHTML='<p class="empty">Ainda não tem cupões. Faça um orçamento para começar.</p>'; return; }
+      if(snap.empty){ el.innerHTML='<p class="empty">Ainda não tem cupões. Faça o seu pedido para começar.</p>'; return; }
       el.innerHTML="";
       snap.forEach(function(doc){
         var v=doc.data();
@@ -744,10 +748,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   }
 })();
 </script>
-<script src="orcamento.js?v=27"></script>
-<script src="idiomas/en.js?v=27"></script>
-<script src="idiomas/es.js?v=27"></script>
-<script src="i18n.js?v=27"></script>
+<script src="orcamento.js?v=28"></script>
+<script src="idiomas/en.js?v=28"></script>
+<script src="idiomas/es.js?v=28"></script>
+<script src="i18n.js?v=28"></script>
 <script src="assistente.js"></script>
 </body>
 </html>
