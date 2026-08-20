@@ -311,3 +311,36 @@
   background:rgba(217,178,110,.08);border:1px solid rgba(217,178,110,.28);
   color:var(--cream-dim);font-size:.88rem;line-height:1.6}
 .ok-avenca b{color:var(--gold-soft)}
+
+/* ---------- conta no pedido ---------- */
+.conta-aviso{background:rgba(217,178,110,.07);border:1px solid rgba(217,178,110,.26);
+  border-radius:12px;padding:13px 16px}
+.conta-aviso b{display:block;color:var(--gold-soft);font-size:.9rem;margin-bottom:4px}
+.conta-aviso span{display:block;color:var(--cream-dim);font-size:.84rem;line-height:1.55}
+.campo-dica{display:block;color:var(--cream-dim);font-size:.76rem;margin-top:5px}
+
+/* já tem conta: entra aqui mesmo, sem sair do pedido */
+.conta-ja{background:rgba(217,178,110,.07);border:1px solid rgba(217,178,110,.34);
+  border-radius:12px;padding:15px 16px}
+.conta-ja p{color:var(--cream);font-size:.88rem;line-height:1.55;margin-bottom:11px}
+.conta-ja-acao{display:flex;gap:9px;flex-wrap:wrap}
+.conta-ja-acao input{flex:1 1 190px;min-height:48px;background:rgba(0,0,0,.3);
+  border:1px solid rgba(217,178,110,.28);border-radius:10px;padding:0 14px;
+  color:var(--cream);font-family:inherit;font-size:16px}
+.conta-ja-acao button{flex:none;min-height:48px;padding:0 20px;border:none;border-radius:999px;
+  background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--ink);
+  font:inherit;font-weight:800;font-size:.86rem;cursor:pointer}
+.conta-ja a{display:inline-flex;align-items:center;min-height:44px;
+  color:var(--gold-soft);font-size:.82rem;margin-top:4px}
+
+/* sessão já iniciada */
+.conta-sessao{background:rgba(37,211,102,.07);border:1px solid rgba(37,211,102,.3);
+  border-radius:12px;padding:13px 16px;color:var(--cream-dim);font-size:.86rem;line-height:1.55}
+.conta-sessao b{color:var(--cream)}
+.conta-sessao button{background:none;border:none;color:var(--gold-soft);font:inherit;
+  font-size:.82rem;text-decoration:underline;cursor:pointer;padding:0;
+  min-height:44px;display:inline-flex;align-items:center}
+.ok-conta{margin-top:16px;padding:14px 18px;border-radius:14px;
+  background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.3);
+  color:var(--cream-dim);font-size:.88rem;line-height:1.6}
+.ok-conta b{color:var(--cream)}

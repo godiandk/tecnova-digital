@@ -1103,13 +1103,36 @@ const PRESETS = {
     return t;
   }
 
+  function haFirebase() {
+    /* `typeof x` só é seguro para variáveis nunca declaradas. O
+       firebase-config.js faz `const auth = firebase.auth()`; se o Firebase
+       não carregar (bloqueador de anúncios, rede de empresa, offline), essa
+       linha rebenta e o `auth` fica por inicializar — e a partir daí um
+       simples `typeof auth` LANÇA ReferenceError em vez de devolver
+       'undefined'. Sem este try, o erro subia e o formulário do pedido
+       deixava de funcionar por completo. */
+    try {
+      return typeof auth !== 'undefined' && !!auth && typeof db !== 'undefined';
+    } catch (e) { return false; }
+  }
+
+  /* Quem está com sessão iniciada. Vive aqui fora de propósito: o gravar()
+     também precisa dela para ligar o pedido à conta, e estava declarada
+     dentro do iniciar() — o gravar() não a via, rebentava, e o try/catch
+     engolia o erro sem ninguém dar por nada. */
+  var sessao = null;
+
   function gravar(ref, dados) {
     try {
-      if (typeof db === 'undefined') return Promise.resolve(false);
+      // pela mesma razão do haFirebase(): isto pode lançar, não só devolver
+      if (!haFirebase()) return Promise.resolve(false);
       var o = window.__ORC;
       var q = new URLSearchParams(location.search);
       return db.collection('orcamentos').doc(ref).set({
         ref: ref, criado: new Date().toISOString(), estado: 'novo',
+        // sem isto não se sabe de quem é o pedido nem se liga ao chat dele
+        uid: (sessao && sessao.uid) || null,
+        emailVerificado: !!(sessao && sessao.emailVerified),
         nome: dados.nome, negocio: dados.negocio, tel: dados.tel, email: dados.email, notas: dados.notas,
         pais: M().pais, moeda: M().codigo, taxaCambio: M().taxa * M().ajuste,
         totalEur: o.total, sinalEur: o.sinal,
@@ -1248,6 +1271,163 @@ const PRESETS = {
     $('#btnImprimir').addEventListener('click', function () { window.print(); });
 
     // finalizar
+  /* ==================================================================
+     CONTA — obrigatória para fazer o pedido
+     ------------------------------------------------------------------
+     Sem conta não há canal privado, não há forma de o cliente
+     acompanhar o site nem de saber quem é cliente com avença. Por isso
+     a conta cria-se aqui, no mesmo passo, e não numa página à parte.
+
+     Três caminhos:
+       1. já tem sessão iniciada  -> confirma-se quem é e segue
+       2. email ainda não usado   -> cria-se a conta e envia-se o email
+                                     de ativação
+       3. email já registado      -> entra aqui mesmo, sem perder o pedido
+     ================================================================== */
+
+  function pintarSessao() {
+    var cx = $('#contaSessao');
+    if (!cx) return;
+    var campos = ['#fPass', '#fPass2'];
+    var aviso = $('#contaAviso');
+    if (sessao) {
+      cx.innerHTML = frase('Sessão iniciada como') + ' <b>' + escapaHtml(sessao.email) + '</b>. ' +
+        frase('O pedido fica ligado a esta conta.') +
+        ' <button type="button" id="btnSair">' + frase('Não sou eu — sair') + '</button>';
+      cx.hidden = false;
+      if (aviso) aviso.hidden = true;
+      // Com sessão iniciada não se pedem palavras-passe nenhumas.
+      campos.forEach(function (sel) {
+        var c = $(sel); if (!c) return;
+        c.required = false;
+        c.closest('.campo').hidden = true;
+      });
+      var em = $('#fEmail');
+      if (em && !em.value) em.value = sessao.email;
+      var bs = $('#btnSair');
+      if (bs) bs.addEventListener('click', function () { auth.signOut(); });
+      esconderJaTem();
+    } else {
+      cx.hidden = true;
+      if (aviso) aviso.hidden = false;
+      campos.forEach(function (sel) {
+        var c = $(sel); if (!c) return;
+        c.required = true;
+        c.closest('.campo').hidden = false;
+      });
+    }
+  }
+
+  function escapaHtml(t) {
+    return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function mostrarJaTem(email) {
+    var cx = $('#contaJa'); if (!cx) return;
+    $('#contaJaTxt').textContent =
+      frase('Já existe uma conta com') + ' ' + email + '. ' +
+      frase('Escreva a palavra-passe para entrar e o pedido fica ligado a ela.');
+    cx.hidden = false;
+    ['#fPass', '#fPass2'].forEach(function (sel) {
+      var c = $(sel); if (!c) return;
+      c.required = false;
+      c.closest('.campo').hidden = true;
+    });
+    var aviso = $('#contaAviso'); if (aviso) aviso.hidden = true;
+    var campo = $('#fPassEntrar'); if (campo) campo.focus();
+  }
+
+  function esconderJaTem() {
+    var cx = $('#contaJa'); if (cx) cx.hidden = true;
+  }
+
+  if (haFirebase()) {
+    auth.onAuthStateChanged(function (u) {
+      sessao = u || null;
+      pintarSessao();
+    });
+    var btEntrar = $('#btnEntrar');
+    if (btEntrar) btEntrar.addEventListener('click', function () {
+      var email = $('#fEmail').value.trim();
+      var pass = $('#fPassEntrar').value;
+      if (!pass) { erroForm(frase('Escreva a palavra-passe da sua conta.')); return; }
+      btEntrar.disabled = true;
+      auth.signInWithEmailAndPassword(email, pass).then(function () {
+        esconderJaTem();
+        limparErro();
+        // volta a submeter, agora com sessão
+        $('#formFinal').requestSubmit
+          ? $('#formFinal').requestSubmit()
+          : $('#formFinal').dispatchEvent(new Event('submit', { cancelable: true }));
+      }).catch(function (err) {
+        erroForm(traduzErroConta(err));
+      }).then(function () { btEntrar.disabled = false; });
+    });
+  } else {
+    // Sem Firebase carregado não se finge que há conta.
+    pintarSessao();
+  }
+
+  function erroForm(t) {
+    var e = $('#formErro');
+    e.textContent = t;
+    e.style.display = 'block';
+    e.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function limparErro() { $('#formErro').style.display = 'none'; }
+
+  function traduzErroConta(err) {
+    var c = (err && err.code) || '';
+    if (c === 'auth/wrong-password' || c === 'auth/invalid-credential')
+      return frase('Palavra-passe errada. Tente outra vez ou recupere-a em «Esqueci-me da palavra-passe».');
+    if (c === 'auth/invalid-email') return frase('Esse email não parece válido.');
+    if (c === 'auth/weak-password') return frase('A palavra-passe tem de ter pelo menos 6 caracteres.');
+    if (c === 'auth/too-many-requests') return frase('Demasiadas tentativas. Espere um minuto e tente de novo.');
+    if (c === 'auth/network-request-failed') return frase('Sem ligação. Verifique a internet e tente outra vez.');
+    return frase('Não foi possível tratar da conta. Tente outra vez daqui a pouco.');
+  }
+
+  /* Cria a conta (ou usa a que já está aberta) e devolve o utilizador.
+     Rejeita com { jaExiste: email } quando o email já está registado, para
+     quem chama poder mostrar o campo de entrar em vez de um erro seco. */
+  function garantirConta(dados) {
+    if (!haFirebase()) return Promise.reject(new Error('sem-firebase'));
+    if (sessao) return Promise.resolve(sessao);
+
+    return auth.createUserWithEmailAndPassword(dados.email, dados.pass)
+      .then(function (cred) {
+        var u = cred.user;
+        return u.updateProfile({ displayName: dados.nome })
+          .catch(function () {})
+          .then(function () {
+            // O link de ativação. Se falhar, não se trava o pedido por causa
+            // disto — o cliente pode pedi-lo outra vez na página da conta.
+            return u.sendEmailVerification({
+              url: location.origin + '/conta.html'
+            }).catch(function (e) { console.warn('email de ativação não saiu:', e); });
+          })
+          .then(function () {
+            return db.collection('clientes').doc(u.uid).set({
+              nome: dados.nome,
+              email: dados.email,
+              telefone: dados.tel,
+              empresa: dados.negocio,
+              criadoEm: new Date().toISOString(),
+              origem: 'pedido'
+            }, { merge: true }).catch(function (e) { console.warn('ficha do cliente:', e); });
+          })
+          .then(function () { sessao = u; return u; });
+      })
+      .catch(function (err) {
+        if (err && err.code === 'auth/email-already-in-use') {
+          var e2 = new Error('ja-existe'); e2.jaExiste = dados.email; throw e2;
+        }
+        throw err;
+      });
+  }
+
     $('#formFinal').addEventListener('submit', function (e) {
       e.preventDefault();
       var dados = {
@@ -1255,14 +1435,46 @@ const PRESETS = {
         negocio: $('#fNegocio').value.trim(),
         tel: $('#fTel').value.trim(),
         email: $('#fEmail').value.trim(),
-        notas: $('#fNotas').value.trim()
+        notas: $('#fNotas').value.trim(),
+        pass: ($('#fPass') || {}).value || ''
       };
-      if (!dados.nome || !dados.tel) {
-        $('#formErro').textContent = 'Precisamos do seu nome e de um contacto para lhe responder.';
-        $('#formErro').style.display = 'block';
-        return;
+
+      if (!dados.nome || !dados.tel) return erroForm(frase('Precisamos do seu nome e de um contacto para lhe responder.'));
+      if (!dados.negocio) return erroForm(frase('Escreva o nome do seu negócio — é o nome que vai no site.'));
+      if (!dados.email) return erroForm(frase('Precisamos do seu email: é com ele que se cria a sua conta.'));
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(dados.email)) return erroForm(frase('Esse email não parece válido.'));
+
+      // Só se pedem palavras-passe a quem ainda não tem sessão iniciada
+      // nem está a entrar numa conta que já existe.
+      if (!sessao && $('#contaJa').hidden) {
+        var p2 = ($('#fPass2') || {}).value || '';
+        if (dados.pass.length < 6) return erroForm(frase('A palavra-passe tem de ter pelo menos 6 caracteres.'));
+        if (dados.pass !== p2) return erroForm(frase('As duas palavras-passe não são iguais.'));
       }
-      $('#formErro').style.display = 'none';
+      limparErro();
+
+      var botao = $('#formFinal').querySelector('button[type=submit]');
+      var textoBotao = botao ? botao.textContent : '';
+      if (botao) { botao.disabled = true; botao.textContent = frase('A criar a sua conta…'); }
+
+      garantirConta(dados).then(function () {
+        if (botao) { botao.disabled = false; botao.textContent = textoBotao; }
+        concluirPedido(dados);
+      }).catch(function (err) {
+        if (botao) { botao.disabled = false; botao.textContent = textoBotao; }
+        if (err && err.jaExiste) { mostrarJaTem(err.jaExiste); return; }
+        if (err && err.message === 'sem-firebase') {
+          // Sem contas a funcionar, mais vale deixar o pedido passar do que
+          // perder o cliente. Fica registado e eu trato da conta à mão.
+          console.warn('contas indisponíveis; pedido segue sem conta');
+          concluirPedido(dados);
+          return;
+        }
+        erroForm(traduzErroConta(err));
+      });
+    });
+
+    function concluirPedido(dados) {
       var ref = referencia();
       var msg = texto(ref, dados);
       gravar(ref, dados).catch(function (e) {
@@ -1280,6 +1492,21 @@ const PRESETS = {
       });
 
       $('#okRef').textContent = ref;
+
+      /* O email de ativação já saiu. Se a pessoa não souber disso, não o vai
+         procurar — e o email fica na caixa dela sem nunca ser aberto. */
+      var cxConta = $('#okConta');
+      if (cxConta) {
+        if (sessao && !sessao.emailVerified) {
+          cxConta.innerHTML = frase('Enviámos um email para') + ' <b>' + escapaHtml(dados.email) + '</b> ' +
+            frase('com o link para ativar a sua conta.') + ' ' +
+            frase('Se não estiver na caixa de entrada, veja no spam.');
+          cxConta.hidden = false;
+        } else if (sessao) {
+          cxConta.innerHTML = frase('O pedido ficou ligado à sua conta') + ' <b>' + escapaHtml(sessao.email) + '</b>.';
+          cxConta.hidden = false;
+        } else cxConta.hidden = true;
+      }
 
       /* Quem escolheu a avença tem de saber a data exata da primeira
          cobrança. Dizer "a partir do 2.º mês" é vago; uma data não é. */
@@ -1337,7 +1564,7 @@ const PRESETS = {
       $('#final').style.display = 'none';
       $('#sucesso').style.display = 'block';
       window.scrollTo({ top: $('#sucesso').offsetTop - 90, behavior: 'smooth' });
-    });
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);

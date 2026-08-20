@@ -9,7 +9,12 @@
   width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;
   display:grid;place-items:center;
   background:linear-gradient(140deg,var(--as-gold-soft),var(--as-gold));
-  color:var(--as-ink);box-shadow:0 12px 34px rgba(217,178,110,.4);
+  color:var(--as-ink);
+  /* Anel da cor do fundo da página. O botão flutua por cima do que estiver
+     a passar por baixo e, sem isto, as linhas divisórias do rodapé encostam
+     ao círculo e parecem ligadas a ele. O anel garante a mesma folga em
+     todo o lado, seja o que for que passe por baixo. */
+  box-shadow:0 0 0 7px var(--as-ink), 0 12px 34px rgba(217,178,110,.4);
   transition:transform .22s;
 }
 .as-botao:hover{transform:scale(1.06)}

@@ -945,6 +945,47 @@ window.TECNOVA_DIC.es = {
 /* ---------- página de pagamento ---------- */
 /* --- pagar sin venir del simulador --- */
 /* --- del presupuesto al pedido de compra --- */
+/* --- cuenta obligatoria en el pedido --- */
+"Nome do negócio *": "Nombre del negocio *",
+"Email *": "Email *",
+"Palavra-passe *": "Contraseña *",
+"Repita a palavra-passe *": "Repita la contraseña *",
+"Pelo menos 6 caracteres.": "Al menos 6 caracteres.",
+"Vai ficar com uma conta": "Va a tener una cuenta",
+"É por aí que fala comigo, acompanha o seu site e pede alterações. Envio-lhe um email para a ativar.":
+  "Por ahí habla conmigo, sigue su web y pide cambios. Le envío un email para activarla.",
+"A sua palavra-passe": "Su contraseña",
+"Entrar e continuar": "Entrar y continuar",
+"Esqueci-me da palavra-passe": "Olvidé mi contraseña",
+"Sessão iniciada como": "Sesión iniciada como",
+"O pedido fica ligado a esta conta.": "El pedido queda vinculado a esta cuenta.",
+"Não sou eu — sair": "No soy yo — salir",
+"Já existe uma conta com": "Ya existe una cuenta con",
+"Escreva a palavra-passe para entrar e o pedido fica ligado a ela.":
+  "Escriba la contraseña para entrar y el pedido queda vinculado a ella.",
+"Escreva a palavra-passe da sua conta.": "Escriba la contraseña de su cuenta.",
+"A criar a sua conta…": "Creando su cuenta…",
+"Escreva o nome do seu negócio — é o nome que vai no site.":
+  "Escriba el nombre de su negocio — es el nombre que va en la web.",
+"Precisamos do seu email: é com ele que se cria a sua conta.":
+  "Necesitamos su email: es con el que se crea su cuenta.",
+"Esse email não parece válido.": "Ese email no parece válido.",
+"A palavra-passe tem de ter pelo menos 6 caracteres.": "La contraseña debe tener al menos 6 caracteres.",
+"As duas palavras-passe não são iguais.": "Las dos contraseñas no coinciden.",
+"Precisamos do seu nome e de um contacto para lhe responder.":
+  "Necesitamos su nombre y un contacto para poder responderle.",
+"Palavra-passe errada. Tente outra vez ou recupere-a em «Esqueci-me da palavra-passe».":
+  "Contraseña incorrecta. Inténtelo de nuevo o recupérela en «Olvidé mi contraseña».",
+"Demasiadas tentativas. Espere um minuto e tente de novo.":
+  "Demasiados intentos. Espere un minuto e inténtelo de nuevo.",
+"Sem ligação. Verifique a internet e tente outra vez.":
+  "Sin conexión. Compruebe su internet e inténtelo de nuevo.",
+"Não foi possível tratar da conta. Tente outra vez daqui a pouco.":
+  "No se pudo procesar la cuenta. Inténtelo de nuevo en un momento.",
+"Enviámos um email para": "Hemos enviado un email a",
+"com o link para ativar a sua conta.": "con el enlace para activar su cuenta.",
+"Se não estiver na caixa de entrada, veja no spam.": "Si no está en la bandeja de entrada, mire en spam.",
+"O pedido ficou ligado à sua conta": "El pedido quedó vinculado a su cuenta",
 /* --- cuota mensual --- */
 "Avença mensal": "Cuota mensual",
 "🛠️ Avença mensal": "🛠️ Cuota mensual",
@@ -985,6 +1026,8 @@ window.TECNOVA_DIC.es = {
 "só é cobrada a partir de": "solo se cobra a partir del",
 "Pode cancelar quando quiser, sem multa.": "Puede cancelar cuando quiera, sin penalización.",
 "Fazer o pedido": "Hacer el pedido",
+"Pausar": "Pausar",
+"Retomar": "Reanudar",
 "Pagar um pedido": "Pagar un pedido",
 "Fazer o meu pedido agora →": "Hacer mi pedido ahora →",
 "Fazer o meu pedido →": "Hacer mi pedido →",

@@ -54,6 +54,8 @@
       idx = (i + slides.length) % slides.length;
       slides.forEach(function (s, n) { s.classList.toggle("active", n === idx); });
       dots.forEach(function (d, n) { d.classList.toggle("active", n === idx); });
+      // cada destaque novo recomeça a contagem à vista
+      rearmarBarra();
     }
     function next() { go(idx + 1); }
 
@@ -64,22 +66,72 @@
     var pausado = false;
     var btnPausa = document.getElementById("hsPausa");
 
+    var barra = document.getElementById("hsBarra");
+    var txtPausa = document.getElementById("hsPausaTxt");
+
+    /* A barra enche-se de um destaque para o outro. Antes não havia forma de
+       saber se aquilo andava sozinho: ficava-se à espera sem perceber se
+       estava parado ou se ainda faltava tempo. */
+    function rearmarBarra() {
+      if (!barra) return;
+      var enchida = barra.firstElementChild;
+      barra.classList.remove("anda", "parada");
+      barra.style.setProperty("--hs-tempo", DELAY + "ms");
+      if (pausado) {
+        // congela onde está, em vez de saltar para zero
+        var largura = enchida ? enchida.getBoundingClientRect().width : 0;
+        var total = barra.getBoundingClientRect().width || 1;
+        barra.style.setProperty("--hs-onde", (largura / total * 100) + "%");
+        barra.classList.add("parada");
+        return;
+      }
+      // tirar e voltar a pôr a animação obriga-a a recomeçar do zero
+      void barra.offsetWidth;
+      barra.classList.add("anda");
+    }
+
     function restart() {
       clearInterval(timer);
-      if (pausado) return;
+      if (pausado) { rearmarBarra(); return; }
       timer = setInterval(next, DELAY);
+      rearmarBarra();
     }
 
     function pintarPausa() {
       if (!btnPausa) return;
       var ip = btnPausa.querySelector(".ic-pausa");
       var it = btnPausa.querySelector(".ic-play");
-      if (ip) ip.hidden = pausado;
-      if (it) it.hidden = !pausado;
+      /* `elemento.hidden = true` só funciona em HTML: a propriedade vive no
+         HTMLElement e um <svg> é um SVGElement, que não a tem. Escrevia-se
+         a propriedade, não acontecia nada, e o ícone ficava sempre o mesmo
+         — era por isso que ninguém percebia se estava parado ou a andar.
+         Com o atributo funciona em todo o lado. */
+      function esconder(el, sim) {
+        if (!el) return;
+        if (sim) el.setAttribute("hidden", "");
+        else el.removeAttribute("hidden");
+      }
+      esconder(ip, pausado);
+      esconder(it, !pausado);
       btnPausa.setAttribute("aria-pressed", pausado ? "true" : "false");
-      btnPausa.setAttribute("aria-label",
-        pausado ? "Retomar a rotação dos destaques" : "Parar a rotação dos destaques");
+      // A palavra diz o que o botão FAZ, não em que estado está: é a
+      // pergunta que a pessoa faz ao olhar para ele.
+      var palavra = pausado ? "Retomar" : "Pausar";
+      if (txtPausa) txtPausa.textContent = frase(palavra);
+      btnPausa.setAttribute("aria-label", pausado
+        ? "Retomar a rotação automática dos destaques"
+        : "Parar a rotação automática dos destaques");
     }
+
+    /* O tradutor do site não mexe em elementos com id, e este muda por JS. */
+    function frase(pt) {
+      try {
+        var l = window.TecnovaI18N && window.TecnovaI18N.atual();
+        var d = l && window.TECNOVA_DIC && window.TECNOVA_DIC[l];
+        return (d && d[pt]) || pt;
+      } catch (e) { return pt; }
+    }
+    window.addEventListener("tecnova:idioma", pintarPausa);
 
     if (btnPausa) {
       btnPausa.addEventListener("mousedown", function (e) { e.preventDefault(); });
@@ -110,7 +162,18 @@
       nxt.addEventListener("mousedown", function (e) { e.preventDefault(); });
       nxt.addEventListener("click", function () { go(idx + 1); restart(); });
     }
-    slider.addEventListener("mouseenter", function () { clearInterval(timer); });
+    // Com o rato em cima o carrossel espera — e a barra tem de esperar
+    // também, senão enchia até ao fim sem nada acontecer.
+    slider.addEventListener("mouseenter", function () {
+      clearInterval(timer);
+      if (!pausado && barra) {
+        var e2 = barra.firstElementChild;
+        var lg = e2 ? e2.getBoundingClientRect().width : 0;
+        var tt = barra.getBoundingClientRect().width || 1;
+        barra.style.setProperty("--hs-onde", (lg / tt * 100) + "%");
+        barra.classList.remove("anda"); barra.classList.add("parada");
+      }
+    });
     slider.addEventListener("mouseleave", restart);
 
     var touchX = null;

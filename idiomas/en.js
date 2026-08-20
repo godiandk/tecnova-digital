@@ -941,6 +941,49 @@ window.TECNOVA_DIC.en = {
 /* ---------- página de pagamento ---------- */
 /* --- pagar sem vir do simulador --- */
 /* --- do orçamento ao pedido de compra --- */
+/* --- conta obrigatória no pedido --- */
+"Nome do negócio *": "Business name *",
+"Email *": "Email *",
+"Palavra-passe *": "Password *",
+"Repita a palavra-passe *": "Repeat the password *",
+"Pelo menos 6 caracteres.": "At least 6 characters.",
+"Vai ficar com uma conta": "You will get an account",
+"É por aí que fala comigo, acompanha o seu site e pede alterações. Envio-lhe um email para a ativar.":
+  "That is where you talk to me, follow your site and ask for changes. I send you an email to activate it.",
+"A sua palavra-passe": "Your password",
+"Entrar e continuar": "Log in and continue",
+"Esqueci-me da palavra-passe": "I forgot my password",
+"Sessão iniciada como": "Logged in as",
+"O pedido fica ligado a esta conta.": "The order will be linked to this account.",
+"Não sou eu — sair": "Not me — log out",
+"Já existe uma conta com": "There is already an account for",
+"Escreva a palavra-passe para entrar e o pedido fica ligado a ela.":
+  "Enter the password to log in and the order will be linked to it.",
+"Escreva a palavra-passe da sua conta.": "Enter your account password.",
+"A criar a sua conta…": "Creating your account…",
+"Escreva o nome do seu negócio — é o nome que vai no site.":
+  "Enter your business name — it is the name that goes on the site.",
+"Precisamos do seu email: é com ele que se cria a sua conta.":
+  "We need your email: it is what your account is created with.",
+"Esse email não parece válido.": "That email does not look valid.",
+"A palavra-passe tem de ter pelo menos 6 caracteres.": "The password must be at least 6 characters.",
+"As duas palavras-passe não são iguais.": "The two passwords do not match.",
+"Precisamos do seu nome e de um contacto para lhe responder.":
+  "We need your name and a contact so I can get back to you.",
+"Palavra-passe errada. Tente outra vez ou recupere-a em «Esqueci-me da palavra-passe».":
+  "Wrong password. Try again or recover it with «I forgot my password».",
+"Demasiadas tentativas. Espere um minuto e tente de novo.":
+  "Too many attempts. Wait a minute and try again.",
+"Sem ligação. Verifique a internet e tente outra vez.":
+  "No connection. Check your internet and try again.",
+"Não foi possível tratar da conta. Tente outra vez daqui a pouco.":
+  "Could not handle the account. Please try again shortly.",
+"Enviámos um email para": "We sent an email to",
+"com o link para ativar a sua conta.": "with the link to activate your account.",
+"Se não estiver na caixa de entrada, veja no spam.": "If it is not in your inbox, check the spam folder.",
+"O pedido ficou ligado à sua conta": "The order is linked to your account",
+"Abre-se o seu canal direto comigo na sua conta: é por aí que pede alterações e tira dúvidas, e fica tudo escrito.":
+  "Your direct channel with me opens inside your account: that is where you ask for changes and clear up doubts, and everything stays in writing.",
 /* --- avença mensal --- */
 "Avença mensal": "Monthly care plan",
 "🛠️ Avença mensal": "🛠️ Monthly care plan",
@@ -981,6 +1024,8 @@ window.TECNOVA_DIC.en = {
 "só é cobrada a partir de": "is only charged from",
 "Pode cancelar quando quiser, sem multa.": "You can cancel whenever you like, with no penalty.",
 "Fazer o pedido": "Place your order",
+"Pausar": "Pause",
+"Retomar": "Resume",
 "Pagar um pedido": "Pay for an order",
 "Fazer o meu pedido agora →": "Place my order now →",
 "Fazer o meu pedido →": "Place my order →",

@@ -27,10 +27,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=29">
-<link rel="stylesheet" href="assistente.css?v=29">
-<link rel="stylesheet" href="i18n.css?v=29">
-<link rel="stylesheet" href="orcamento.css?v=29">
+<link rel="stylesheet" href="estilo.css?v=30">
+<link rel="stylesheet" href="assistente.css?v=30">
+<link rel="stylesheet" href="i18n.css?v=30">
+<link rel="stylesheet" href="orcamento.css?v=30">
 
 </head>
 <body class="pagina-orcamento">
@@ -200,9 +200,34 @@
     <form id="formFinal" novalidate>
       <div class="campos">
         <div class="campo"><label for="fNome">O seu nome *</label><input id="fNome" type="text" autocomplete="name" required></div>
-        <div class="campo"><label for="fNegocio">Nome do negócio</label><input id="fNegocio" type="text" autocomplete="organization"></div>
+        <div class="campo"><label for="fNegocio">Nome do negócio *</label><input id="fNegocio" type="text" autocomplete="organization" required></div>
         <div class="campo"><label for="fTel">Telemóvel *</label><input id="fTel" type="tel" autocomplete="tel" required></div>
-        <div class="campo"><label for="fEmail">Email</label><input id="fEmail" type="email" autocomplete="email"></div>
+        <div class="campo"><label for="fEmail">Email *</label><input id="fEmail" type="email" autocomplete="email" required></div>
+
+        <!-- A conta não é um extra: é por ela que o cliente fala comigo, vê o
+             pedido e recebe as alterações. Sem conta não há canal nenhum. -->
+        <div class="campo full conta-aviso" id="contaAviso">
+          <b>Vai ficar com uma conta</b>
+          <span>É por aí que fala comigo, acompanha o seu site e pede alterações. Envio-lhe um email para a ativar.</span>
+        </div>
+        <div class="campo"><label for="fPass">Palavra-passe *</label>
+          <input id="fPass" type="password" autocomplete="new-password" minlength="6" required>
+          <span class="campo-dica">Pelo menos 6 caracteres.</span></div>
+        <div class="campo"><label for="fPass2">Repita a palavra-passe *</label>
+          <input id="fPass2" type="password" autocomplete="new-password" minlength="6" required></div>
+
+        <!-- Quem já tem conta não cria outra: entra e o pedido fica ligado a ela. -->
+        <div class="campo full conta-ja" id="contaJa" hidden>
+          <p id="contaJaTxt"></p>
+          <div class="conta-ja-acao">
+            <input id="fPassEntrar" type="password" autocomplete="current-password" placeholder="A sua palavra-passe">
+            <button type="button" id="btnEntrar">Entrar e continuar</button>
+          </div>
+          <a href="conta.html" id="contaEsqueci">Esqueci-me da palavra-passe</a>
+        </div>
+
+        <!-- Já com sessão iniciada: nada de passwords, só confirmar quem é. -->
+        <div class="campo full conta-sessao" id="contaSessao" hidden></div>
         <div class="campo full">
           <label for="fNotas">O que mais quer no site que não viu aqui?</label>
           <textarea id="fNotas" placeholder="Escreva à vontade, mesmo que não saiba o nome técnico. Por exemplo: «queria que os clientes pudessem ver a encomenda a ser preparada», «tenho 800 produtos numa folha de Excel», «queria ligar isto ao meu programa de faturação», «já tenho logótipo e fotos», «preciso disto pronto até ao fim do mês»."></textarea>
@@ -238,6 +263,8 @@
       <li>Só depois de aprovar tudo é que paga a outra metade.</li>
     </ol>
     <!-- só aparece a quem escolheu a avença: diz quando é a primeira cobrança -->
+    <!-- o email de ativação: a pessoa tem de saber que foi enviado -->
+    <p class="ok-conta" id="okConta" hidden></p>
     <p class="ok-avenca" id="okAvenca" hidden></p>
 
     <!-- Um botão só. Guardar em PDF e receber por email continuam a existir,
@@ -309,17 +336,17 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="auth-nav.js?v=29"></script>
+<script src="auth-nav.js?v=30"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
 }
 </script>
 <script src="site.js"></script>
-<script src="orcamento.js?v=29"></script>
-<script src="idiomas/en.js?v=29"></script>
-<script src="idiomas/es.js?v=29"></script>
-<script src="i18n.js?v=29"></script>
+<script src="orcamento.js?v=30"></script>
+<script src="idiomas/en.js?v=30"></script>
+<script src="idiomas/es.js?v=30"></script>
+<script src="i18n.js?v=30"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

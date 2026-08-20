@@ -180,7 +180,9 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
   position:fixed;left:22px;bottom:22px;z-index:60;display:flex;align-items:center;gap:8px;
   background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--ink);
   border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:.78rem;letter-spacing:.04em;
-  padding:12px 17px;border-radius:999px;box-shadow:0 12px 30px rgba(217,178,110,.4);transition:transform .2s;
+  padding:12px 17px;border-radius:999px;
+  /* mesmo anel do assistente: nada encosta ao botão */
+  box-shadow:0 0 0 6px var(--ink), 0 12px 30px rgba(217,178,110,.4);transition:transform .2s;
 }
 .app-float:hover{transform:scale(1.06)}
 .app-float .af-ic{font-size:1.1rem;line-height:1}

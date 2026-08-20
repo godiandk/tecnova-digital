@@ -43,14 +43,29 @@ service cloud.firestore {
     // — nem sequer quem os criou.
     // ----------------------------------------------------------
     match /orcamentos/{ref} {
+      // O pedido passou a exigir conta, mas a criação continua a aceitar
+      // quem não tem sessão: se o Firebase estiver em baixo, mais vale
+      // guardar o pedido do que perder o cliente. Quem tem sessão só pode
+      // gravar o pedido em nome de si próprio.
       allow create: if request.resource.data.keys().hasAll(['ref', 'nome', 'tel'])
                     && request.resource.data.nome is string
                     && request.resource.data.nome.size() > 1
                     && request.resource.data.nome.size() < 200
                     && request.resource.data.tel is string
                     && request.resource.data.tel.size() < 60
-                    && request.resource.data.estado == 'novo';
-      allow read, update, delete: if ehAdmin();
+                    && request.resource.data.estado == 'novo'
+                    && (request.auth == null
+                        || !('uid' in request.resource.data)
+                        || request.resource.data.uid == null
+                        || request.resource.data.uid == request.auth.uid);
+
+      // O dono do pedido pode vê-lo na conta dele. Alterar e apagar,
+      // só o administrador.
+      allow get: if ehAdmin()
+                 || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow list: if ehAdmin()
+                  || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow update, delete: if ehAdmin();
     }
 
     // ----------------------------------------------------------
