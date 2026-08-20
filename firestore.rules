@@ -126,6 +126,44 @@ service cloud.firestore {
     }
 
     // ----------------------------------------------------------
+    // contactos/{id} — o formulário da página de Contacto
+    // Quem escreve é um visitante sem conta: é esse o objectivo da
+    // página, por isso a criação tem de ser aberta. Mas é aberta com
+    // a coleira curta — só estes campos, com estes tamanhos — e mais
+    // ninguém a não ser o administrador lê, altera ou apaga o que lá
+    // está. Uma mensagem de um cliente não pode ser lida pelo
+    // seguinte.
+    // ----------------------------------------------------------
+    match /contactos/{id} {
+      allow create: if request.resource.data.keys().hasOnly(
+                        ['nome','negocio','email','tel','assunto','mensagem','estado','quando'])
+                    && request.resource.data.keys().hasAll(
+                        ['nome','email','mensagem','estado','quando'])
+                    && request.resource.data.nome is string
+                    && request.resource.data.nome.size() > 1
+                    && request.resource.data.nome.size() < 121
+                    && request.resource.data.email is string
+                    && request.resource.data.email.size() > 4
+                    && request.resource.data.email.size() < 161
+                    && request.resource.data.mensagem is string
+                    && request.resource.data.mensagem.size() > 1
+                    && request.resource.data.mensagem.size() < 4001
+                    && request.resource.data.estado == 'novo'
+                    && request.resource.data.quando is string
+                    && request.resource.data.quando.size() < 30
+                    && (!('negocio' in request.resource.data)
+                        || (request.resource.data.negocio is string
+                            && request.resource.data.negocio.size() < 121))
+                    && (!('tel' in request.resource.data)
+                        || (request.resource.data.tel is string
+                            && request.resource.data.tel.size() < 41))
+                    && (!('assunto' in request.resource.data)
+                        || (request.resource.data.assunto is string
+                            && request.resource.data.assunto.size() < 81));
+      allow read, update, delete: if ehAdmin();
+    }
+
+    // ----------------------------------------------------------
     // pagamentos/{id} — o dinheiro que entrou mesmo
     // Nada disto vem do site: é o administrador que regista cada
     // entrada. Não há aqui nenhum caso em que um cliente precise de

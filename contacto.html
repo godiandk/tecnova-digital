@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=38">
-<link rel="stylesheet" href="assistente.css?v=38">
-<link rel="stylesheet" href="i18n.css?v=38">
+<link rel="stylesheet" href="estilo.css?v=39">
+<link rel="stylesheet" href="assistente.css?v=39">
+<link rel="stylesheet" href="i18n.css?v=39">
 <style>
 /* Uma regra de classe (0,1,0) vence o [hidden] do navegador, que não tem
    especificidade nenhuma. Sem este !important, tudo o que devia estar
@@ -68,6 +68,12 @@
   font-size:16px;
 }
 .ct-form textarea{min-height:130px;resize:vertical;line-height:1.6}
+/* Diz que chegou mesmo. Sem isto, quem carrega no botão fica sem saber
+   se a mensagem saiu — e volta a carregar, ou desiste. */
+.ct-feito{margin-top:18px;padding:16px 18px;border-radius:14px;
+  border:1px solid rgba(217,178,110,.45);background:rgba(217,178,110,.10)}
+.ct-feito p{margin:0;font-size:.9rem;line-height:1.62}
+.ct-feito a{color:var(--gold-soft)}
 .ct-form input:focus,.ct-form select:focus,.ct-form textarea:focus{
   outline:none;border-color:var(--gold)}
 .ct-dupla{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
@@ -208,13 +214,19 @@
       <p class="ct-erro" id="ctErro" hidden></p>
 
       <button class="btn btn-gold" type="submit" id="ctEnviar"
-              style="width:100%;justify-content:center;margin-top:20px">Enviar email</button>
+              style="width:100%;justify-content:center;margin-top:20px">Enviar mensagem</button>
+
+      <div class="ct-feito" id="ctFeito" hidden>
+        <p><b>✓ Mensagem enviada.</b> Chegou-me agora mesmo e respondo normalmente
+        no próprio dia. Se quiser adiantar caminho, pode desde já
+        <a href="orcamento.html">ver o preço do seu site</a> — leva 2 minutos e não
+        precisa de esperar pela minha resposta.</p>
+      </div>
 
       <div class="ct-aviso" id="ctFalhou" hidden>
-        <p>Se não se abriu nada, o seu telemóvel ou computador não tem aplicação
-        de email configurada. Não faz mal: <b>já copiámos a mensagem toda</b>.
-        Abra o Gmail ou o site do seu email, cole no corpo da mensagem e envie
-        para <b>wesley@tecnovadigital.pt</b>.</p>
+        <p>Não consegui enviar daqui — deve ser a ligação. <b>Já copiámos a mensagem
+        toda</b>: abra o Gmail ou o site do seu email, cole no corpo e envie para
+        <b>wesley@tecnovadigital.pt</b>. Ou tente outra vez daqui a pouco.</p>
       </div>
     </form>
 
@@ -271,10 +283,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="campanha.js?v=38"></script>
-<script src="medir-config.js?v=38"></script>
-<script src="medir.js?v=38"></script>
-<script src="auth-nav.js?v=38"></script>
+<script src="campanha.js?v=39"></script>
+<script src="medir-config.js?v=39"></script>
+<script src="medir.js?v=39"></script>
+<script src="auth-nav.js?v=39"></script>
 
 <script>
 /* ============================================================
@@ -368,21 +380,27 @@
     return linhas.join('\n');
   }
 
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (!validar()) return;
+  /* ------------------------------------------------------------------
+     Enviar a mensagem
+     ------------------------------------------------------------------
+     Isto abria só o programa de email do visitante. Num computador de
+     trabalho sem Outlook configurado — que são muitos — não acontecia
+     rigorosamente nada, e o contacto perdia-se sem ninguém saber.
+     Agora a mensagem é gravada aqui, cai no painel e o visitante vê
+     uma confirmação. O email fica como rede de segurança, para quando
+     não houver ligação ou o Firebase não responder.
+     ------------------------------------------------------------------ */
+  function haBase() {
+    try { return typeof db !== 'undefined' && !!db; } catch (e) { return false; }
+  }
 
-    var assunto = $('#ctAssunto').value + ' — ' + $('#ctNome').value.trim();
-    var texto   = corpo();
-
+  function porEmail(assunto, texto) {
     // Copiamos primeiro. Se a aplicação de email não abrir, a mensagem já
     // está na área de transferência e não se perdeu nada do que escreveu.
     copiar(texto, null, '');
-
     // Abrimos com um link a sério em vez de `location.href`. O Safari do
     // iPhone é esquisito com endereços mailto atribuídos por JavaScript, mas
-    // nunca recusa o toque numa ligação — e é disto que ele veio, do toque
-    // do visitante no botão.
+    // nunca recusa o toque numa ligação.
     var ligacao = document.createElement('a');
     ligacao.href = 'mailto:' + EMAIL +
       '?subject=' + encodeURIComponent(assunto) +
@@ -391,11 +409,53 @@
     document.body.appendChild(ligacao);
     ligacao.click();
     document.body.removeChild(ligacao);
-
-    // Quem não tem aplicação de email associada não vê nada acontecer.
-    // Passado um instante, dizemos-lhe o que fazer em vez de o deixar a
-    // olhar para um botão que aparentemente não fez nada.
     setTimeout(function () { aviso.hidden = false; }, 1200);
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!validar()) return;
+
+    var assunto = $('#ctAssunto').value + ' — ' + $('#ctNome').value.trim();
+    var texto   = corpo();
+    var botao   = $('#ctEnviar');
+    var feito   = $('#ctFeito');
+    aviso.hidden = true; feito.hidden = true;
+
+    if (!haBase()) { porEmail(assunto, texto); return; }
+
+    var textoAntes = botao.textContent;
+    botao.disabled = true;
+    botao.textContent = 'A enviar…';
+
+    // Só o que precisamos para responder. Nada de navegação nem de
+    // rastreio: isto é uma mensagem, não é um perfil.
+    var registo = {
+      nome:     $('#ctNome').value.trim().slice(0, 120),
+      negocio:  $('#ctNegocio').value.trim().slice(0, 120),
+      email:    $('#ctEmail').value.trim().slice(0, 160),
+      tel:      $('#ctTel').value.trim().slice(0, 40),
+      assunto:  $('#ctAssunto').value.slice(0, 80),
+      mensagem: $('#ctMensagem').value.trim().slice(0, 4000),
+      estado:   'novo',
+      quando:   new Date().toISOString()
+    };
+
+    db.collection('contactos').add(registo).then(function () {
+      botao.textContent = textoAntes;
+      botao.disabled = false;
+      feito.hidden = false;
+      form.reset();
+      feito.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      try {
+        window.TecnovaMedir && window.TecnovaMedir.conversao('contacto_enviado');
+      } catch (e2) {}
+    }).catch(function () {
+      // não deu: em vez de dizer só "falhou", abrimos o caminho antigo
+      botao.textContent = textoAntes;
+      botao.disabled = false;
+      porEmail(assunto, texto);
+    });
   });
 })();
 </script>
@@ -409,10 +469,10 @@ if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
 }
 </script>
-<script src="site.js?v=38"></script>
-<script src="idiomas/en.js?v=38"></script>
-<script src="idiomas/es.js?v=38"></script>
-<script src="i18n.js?v=38"></script>
-<script src="assistente.js?v=38"></script>
+<script src="site.js?v=39"></script>
+<script src="idiomas/en.js?v=39"></script>
+<script src="idiomas/es.js?v=39"></script>
+<script src="i18n.js?v=39"></script>
+<script src="assistente.js?v=39"></script>
 </body>
 </html>
