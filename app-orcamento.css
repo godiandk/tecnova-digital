@@ -11,7 +11,7 @@
 #scr-pedir .step0,
 #scr-pedir .final,
 #scr-pedir .sucesso{padding:20px 18px;border-radius:18px}
-#scr-pedir .campos{grid-template-columns:1fr}
+#scr-pedir .campos{grid-template-columns:minmax(0,1fr)}
 #scr-pedir .garantias{grid-template-columns:1fr 1fr;gap:12px;margin-top:26px}
 #scr-pedir .gar{padding:16px}
 #scr-pedir .gar b{font-size:.88rem}
