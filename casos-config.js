@@ -21,23 +21,40 @@
    ============================================================ */
 window.TECNOVA_CASOS = [
   {
-    ativo: false,                    // ← mude para true quando o site estiver no ar
+    ativo: true,
     nome: 'Inova Beauty',
-    ramo: 'Clínica de estética',
-    url: '',                         // ← https://…
-    imagem: '',                      // ← ficheiro em img/casos/
-    resumo: 'Site completo com marcações pelo próprio site, preçário sempre ' +
-            'atualizado e cartão de fidelidade digital.',
-    // Só factos verificáveis. Deixe fora o que não puder provar.
+    ramo: 'Sobrancelhas, pestanas e micropigmentação',
+
+    // ENDEREÇO TEMPORÁRIO. É o do GitHub Pages, enquanto o domínio
+    // próprio não está apontado. Quando estiver, troca-se só esta
+    // linha — o endereço antigo continua a funcionar na mesma, por
+    // isso não há pressa nem risco de partir o link.
+    url: 'https://godiandk.github.io/godiandk/',
+
+    imagem: 'inova-beauty.jpg',
+    resumo: 'Site completo, em três idiomas, com marcação online, preçário, ' +
+            'conta de cliente e painel próprio para a dona gerir tudo sem ' +
+            'depender de ninguém.',
+
+    // Confirmado no site publicado, um por um. Nada aqui é suposição.
     feitos: [
-      'Marcações pelo próprio site',
-      'Preçário que a dona atualiza sozinha',
-      'Cartão de fidelidade digital',
-      'Aplicação instalável no telemóvel'
+      'Marcação online: escolhe serviço, dia e hora e confirma',
+      'Seis serviços com página própria e preçário sempre à vista',
+      'Conta de cliente com cupão de 10% na semana do aniversário',
+      'Painel próprio para a dona gerir marcações e conteúdos',
+      'Abre como aplicação no telemóvel, sem lojas de aplicações',
+      'Português, inglês e espanhol'
     ],
-    prazo: '',                       // ex.: 'Entregue em 6 dias'
-    // Depoimento verdadeiro, escrito pela pessoa, com autorização dela.
-    // Se não houver, deixe vazio: a secção mostra o resto na mesma.
+
+    // Deixei o prazo vazio de propósito: não sei em quantos dias foi
+    // entregue e não vou pôr um número que não posso provar. Escreva
+    // aqui o verdadeiro — por exemplo 'Entregue em 8 dias'.
+    prazo: '',
+
+    // Um depoimento verdadeiro vale mais do que tudo o que está acima.
+    // Peça-o à dona, com autorização para o publicar, e escreva-o aqui
+    // pelas palavras dela. Enquanto estiver vazio, o cartão mostra o
+    // resto na mesma — não fica lá nenhum buraco.
     depoimento: '',
     quemDisse: ''
   }
