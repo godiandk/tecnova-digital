@@ -85,7 +85,7 @@ nav.links a:hover{color:var(--gold)}
 nav.links a.on{color:var(--gold-soft)}
 nav.links a.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--gold)}
 .nav .btn{padding:11px 22px;font-size:.85rem}
-.nav-right{display:flex;align-items:center;gap:16px;flex:none}
+.nav-right{display:flex;align-items:center;gap:16px;flex:none;min-width:0}
 
 /* conta logada no menu: avatar + nome no lugar de "Entrar / Criar conta" */
 nav.links a.nav-account{display:flex;align-items:center;gap:9px;color:var(--gold-soft)!important}
@@ -95,7 +95,7 @@ nav.links a.nav-account{display:flex;align-items:center;gap:9px;color:var(--gold
   background:linear-gradient(160deg,var(--gold-soft),var(--gold));color:var(--ink);
 }
 .nav-avatar img{width:100%;height:100%;object-fit:cover;display:block}
-.burger{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;background:none;border:none;cursor:pointer;padding:6px;min-width:44px;min-height:44px}
+.burger{flex:none;display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;background:none;border:none;cursor:pointer;padding:6px;min-width:44px;min-height:44px}
 .burger span{width:22px;height:2px;background:var(--gold-soft)}
 @media(max-width:1120px){
   /* Painel do menu. Fechado desce-se e apaga-se em vez de sair pela direita:
@@ -246,3 +246,17 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
 .coupon-apply input:focus{outline:none;border-color:var(--gold)}
 .coupon-apply .btn{margin-top:0;padding:12px 22px;white-space:nowrap}
 @media(max-width:520px){.coupon-apply{flex-direction:column}.coupon-apply .btn{width:100%;justify-content:center}}
+
+/* ============================================================
+   Ecrãs muito estreitos (320 px)
+   ------------------------------------------------------------
+   Logótipo 159 + canto direito 127 + 24 de margem de cada lado
+   dá 334 num ecrã de 320: o botão do menu saía 14 px para fora.
+   A margem do cabeçalho encolhe só aqui, e volta a caber.
+   ============================================================ */
+@media(max-width:360px){
+  header .wrap{padding-left:14px;padding-right:14px}
+  .nav-right{gap:10px}
+  .logo-name{letter-spacing:.2em;font-size:.8rem}
+  .logo-name small{letter-spacing:.3em}
+}

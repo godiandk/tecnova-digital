@@ -49,3 +49,20 @@ body:has(.demo-bar) .lang:not(.no-header).aberto .lang-menu{transform:none}
   .lang.no-header .lang-menu{right:-8px}
 }
 @media print{.lang{display:none!important}}
+
+/* ============================================================
+   TELEMÓVEIS ESTREITOS
+   ------------------------------------------------------------
+   A pastilha do idioma dizia "🇵🇹 Português" por extenso. Num
+   ecrã de 320 ou 360 px isso empurrava o botão do menu para
+   FORA do ecrã — e não havia forma nenhuma de abrir o menu.
+   Metade dos Android baratos tem 360 px de largura.
+
+   Abaixo dos 430 px fica só a bandeira e o código: continua a
+   perceber-se qual é o idioma, e o menu volta a caber.
+   ============================================================ */
+@media(max-width:430px){
+  .lang.no-header .la-nome{display:none}
+  .lang.no-header .lang-atual{padding:9px 11px;min-height:44px;gap:5px}
+  .lang.no-header .lang-atual::after{content:attr(data-curto);font-size:.72rem;font-weight:800;letter-spacing:.06em}
+}

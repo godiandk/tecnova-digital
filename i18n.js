@@ -222,6 +222,9 @@ window.TecnovaI18N = (function () {
       atual.innerHTML = '<i class="la-bandeira"></i><span class="la-nome"></span>';
       atual.querySelector('.la-bandeira').textContent = IDIOMAS[idioma].bandeira;
       atual.querySelector('.la-nome').textContent = IDIOMAS[idioma].nome;
+      // Em ecrãs estreitos o nome por extenso não cabe e empurrava o menu
+      // para fora. Aí mostra-se só isto, por CSS.
+      atual.setAttribute('data-curto', IDIOMAS[idioma].curto);
       // A etiqueta do próprio seletor também é lida por quem não vê o ecrã,
       // e não fazia sentido ficar em português depois de trocar de idioma.
       var rotulo = { pt: 'Idioma', en: 'Language', es: 'Idioma' }[idioma] || 'Idioma';
