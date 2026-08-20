@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Folheto para imprimir — TECNOVA Digital</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   FOLHETO PARA IMPRIMIR EM CASA
+   ------------------------------------------------------------
+   Uma folha A4 com QUATRO folhetos A6 iguais (105 x 148,5 mm).
+   Imprime-se e corta-se ao meio nos dois sentidos: dois cortes
+   a direito e ficam quatro.
+
+   FUNDO BRANCO DE PROPÓSITO. O site é escuro, mas uma folha A4
+   toda preta numa impressora de casa bebe um tinteiro por cada
+   poucas folhas, borra o papel e sai acinzentada. Branco com
+   dourado e preto sai bem em papel normal e custa cêntimos.
+
+   ZONA SEGURA: nada de importante entra nos 8 mm de fora de cada
+   folheto. As impressoras domésticas não imprimem até à borda e
+   cortam sempre uns milímetros.
+   ============================================================ */
+
+@page { size: A4 portrait; margin: 0; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:'Manrope',-apple-system,'Segoe UI',sans-serif;
+  background:#e9e5df;         /* só se vê no ecrã, não se imprime */
+  color:#16100b;
+  display:flex;justify-content:center;
+  padding:24px;
+}
+
+.folha{
+  width:210mm;height:297mm;
+  background:#fff;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:1fr 1fr;
+  position:relative;
+  box-shadow:0 10px 40px rgba(0,0,0,.22);   /* só no ecrã */
+}
+
+/* marcas de corte: cruzes finas ao meio da folha */
+.corte{position:absolute;background:#b9b0a2}
+.corte.v{left:50%;width:.2mm;top:0;bottom:0;transform:translateX(-50%)}
+.corte.h{top:50%;height:.2mm;left:0;right:0;transform:translateY(-50%)}
+
+/* ---------------- um folheto ---------------- */
+.f{
+  padding:9mm 8mm 7mm;
+  display:flex;flex-direction:column;
+  border:.2mm dashed transparent;
+  position:relative;
+  overflow:hidden;
+}
+
+/* faixa dourada em cima, o único bloco de cor grande */
+.f::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:4mm;
+  background:linear-gradient(90deg,#c9a227,#e8cf9e 55%,#c9a227);
+}
+/* um triângulo muito claro no canto: dá profundidade sem gastar tinta */
+.f::after{
+  content:'';position:absolute;right:-14mm;bottom:-14mm;
+  width:44mm;height:44mm;border-radius:50%;
+  background:radial-gradient(circle,rgba(201,162,39,.13),rgba(201,162,39,0) 70%);
+  pointer-events:none;
+}
+.f > *{position:relative;z-index:1}
+
+.topo{display:flex;align-items:center;gap:2.4mm;margin-bottom:5mm}
+.selo{
+  width:9mm;height:10mm;flex:none;
+  background:linear-gradient(160deg,#e8cf9e,#c9a227);
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+  display:grid;place-items:center;
+  font-family:'Playfair Display',serif;font-weight:800;font-size:5mm;color:#16100b;
+}
+.marca b{display:block;font-size:3.4mm;letter-spacing:.22em;font-weight:800;line-height:1.1}
+.marca span{display:block;font-size:1.9mm;letter-spacing:.42em;color:#6f6455;font-weight:700}
+
+h1{
+  font-family:'Playfair Display',serif;
+  font-size:8.2mm;line-height:1.1;font-weight:800;
+  margin-bottom:2.8mm;letter-spacing:-.02em;
+}
+h1 i{font-style:italic;color:#a8801d}
+
+.sub{font-size:2.85mm;line-height:1.5;color:#4a4136;margin-bottom:4mm}
+
+/* a oferta: o que faz a pessoa parar */
+.oferta{
+  background:#16100b;color:#fff;
+  border-radius:2mm;padding:3.2mm 3.6mm;margin-bottom:3.6mm;
+  display:flex;align-items:center;gap:3mm;
+}
+.oferta .pct{
+  font-family:'Playfair Display',serif;font-size:9mm;font-weight:900;
+  color:#e8cf9e;line-height:.9;flex:none;
+}
+.oferta .txt{font-size:2.5mm;line-height:1.45}
+.oferta .txt b{color:#e8cf9e;font-size:2.9mm;letter-spacing:.08em;display:block}
+.oferta .txt span{color:#cfc6b8}
+
+.lista{list-style:none;margin-bottom:2mm}
+.lista li{
+  position:relative;padding-left:4.6mm;margin-bottom:1.9mm;
+  font-size:2.75mm;line-height:1.4;color:#2e2820;
+}
+.lista li::before{
+  content:'';position:absolute;left:0;top:1mm;
+  width:2.6mm;height:2.6mm;border-radius:50%;
+  background:#c9a227;
+}
+.lista li b{font-weight:800}
+
+.preco{
+  margin-top:auto;
+  border-top:.3mm solid #ded6c8;border-bottom:.3mm solid #ded6c8;
+  padding:2.6mm 0;margin-bottom:3.4mm;
+  display:flex;align-items:baseline;gap:2mm;flex-wrap:wrap;
+}
+.preco .de{font-size:2.5mm;color:#7d7365;text-decoration:line-through}
+.preco .por{font-family:'Playfair Display',serif;font-size:6mm;font-weight:800;color:#16100b}
+.preco .nota{font-size:2.3mm;color:#6f6455;flex:1 1 100%;line-height:1.35}
+
+/* rodapé: QR + morada do site */
+.pe{display:flex;align-items:center;gap:3.2mm}
+.qr{width:17mm;height:17mm;flex:none}
+.qr .qrline{stroke-width:1}
+.pe-txt{min-width:0}
+.pe-txt .site{
+  display:block;
+  font-family:'Playfair Display',serif;font-size:4.4mm;font-weight:800;
+  line-height:1.1;word-break:break-all;
+}
+.pe-txt .mail{display:block;font-size:2.4mm;color:#4a4136;word-break:break-all;line-height:1.4;margin-top:1mm}
+.pe-txt .apontar{display:block;font-size:2.2mm;color:#8a7f6e;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-top:1.4mm}
+
+/* ---------------- só no ecrã ---------------- */
+.ajuda{
+  max-width:210mm;margin:0 auto 20px;font-size:.92rem;line-height:1.65;color:#3a332a;
+  background:#fff;border-radius:12px;padding:20px 24px;border:1px solid #d6cec1;
+}
+.ajuda h2{font-family:'Playfair Display',serif;font-size:1.25rem;margin-bottom:10px}
+.ajuda ol{margin:10px 0 0 20px}
+.ajuda li{margin-bottom:7px}
+.ajuda b{color:#16100b}
+.ajuda .btn{
+  display:inline-block;margin-top:14px;background:#16100b;color:#fff;
+  border:none;border-radius:999px;padding:12px 24px;font:inherit;font-weight:800;
+  cursor:pointer;font-size:.9rem;
+}
+.envolve{display:flex;flex-direction:column;align-items:center;gap:20px}
+
+@media print{
+  body{background:#fff;padding:0;display:block}
+  .ajuda{display:none}
+  .folha{box-shadow:none;margin:0}
+  .envolve{display:block}
+}
+</style>
+</head>
+<body>
+
+<div class="envolve">
+
+<div class="ajuda">
+  <h2>Como imprimir isto</h2>
+  <ol>
+    <li>Carregue em <b>Imprimir</b> aqui em baixo (ou Ctrl+P / Cmd+P).</li>
+    <li>Papel <b>A4</b>, orientação <b>vertical</b>, margens a <b>zero</b> ou «sem margens».</li>
+    <li>Escala: <b>100%</b> ou «tamanho real». Não deixe em «ajustar à página» — encolhe tudo.</li>
+    <li>Ligue <b>«imprimir cores e imagens de fundo»</b>, senão a faixa dourada e a caixa preta não saem.</li>
+    <li>Corte ao meio nos dois sentidos, pelas linhas cinzentas. Saem <b>4 folhetos</b> de 10,5 × 14,8 cm.</li>
+  </ol>
+  <p style="margin-top:12px;color:#6f6455">Uma folha A4 dá 4 folhetos. Cem folhas dão 400 folhetos.
+  Se puder, use papel um pouco mais grosso (120 g) — fica com mais corpo na mão e não transparece.</p>
+  <button class="btn" onclick="window.print()">Imprimir a folha</button>
+</div>
+
+<div class="folha">
+  <div class="corte v"></div>
+  <div class="corte h"></div>
+    <div class="f">
+    <div class="topo">
+      <span class="selo">T</span>
+      <span class="marca"><b>TECNOVA</b><span>DIGITAL</span></span>
+    </div>
+
+    <h1>O seu negócio<br>merece um site <i>a sério</i>.</h1>
+    <p class="sub">Sites profissionais para negócios locais, com marcações,
+    preçário e cartão de fidelidade. Prontos em 5 a 15 dias.</p>
+
+    <div class="oferta">
+      <span class="pct">40%</span>
+      <span class="txt"><b>CÓDIGO INOVA40</b>
+      <span>de desconto até 30 de setembro<br>+ 1.º mês de manutenção grátis</span></span>
+    </div>
+
+    <ul class="lista">
+      <li><b>Marcações pelo site</b>, sem andar a responder mensagens</li>
+      <li><b>Preçário e fotos</b> sempre certos, no telemóvel do cliente</li>
+      <li><b>Metade agora</b>, o resto só depois de ver e aprovar</li>
+      <li><b>Sem mensalidades obrigatórias</b> — o site fica seu</li>
+    </ul>
+
+    <div class="preco">
+      <span class="de">350&euro;</span>
+      <span class="por">210&euro;</span>
+      <span class="nota">Pacote Essencial com o código. Página única desde 114&euro;.</span>
+    </div>
+
+    <div class="pe">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" class="qr" shape-rendering="crispEdges"><path class="qrline" stroke="#16100b" d="M2 2.5h7m1 0h1m1 0h7m1 0h7m-25 1h1m5 0h1m1 0h2m1 0h1m6 0h1m5 0h1m-25 1h1m1 0h3m1 0h1m2 0h1m2 0h1m2 0h2m1 0h1m1 0h3m1 0h1m-25 1h1m1 0h3m1 0h1m4 0h2m1 0h1m3 0h1m1 0h3m1 0h1m-25 1h1m1 0h3m1 0h1m2 0h3m1 0h1m2 0h1m1 0h1m1 0h3m1 0h1m-25 1h1m5 0h1m2 0h6m3 0h1m5 0h1m-25 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-16 1h2m1 0h2m-13 1h1m4 0h3m2 0h2m1 0h4m5 0h2m-25 1h1m2 0h3m2 0h3m1 0h1m1 0h2m3 0h2m1 0h1m-21 1h2m2 0h7m2 0h1m1 0h3m2 0h3m-23 1h2m3 0h1m1 0h1m4 0h4m2 0h2m1 0h2m-23 1h2m2 0h1m1 0h1m1 0h5m1 0h1m1 0h2m1 0h1m2 0h1m-25 1h2m1 0h1m7 0h5m3 0h1m1 0h2m-23 1h1m1 0h1m1 0h1m1 0h1m2 0h2m2 0h1m1 0h1m5 0h4m-25 1h1m1 0h3m2 0h2m5 0h1m2 0h6m1 0h1m-25 1h1m1 0h1m3 0h1m4 0h2m3 0h9m-17 1h1m1 0h1m1 0h1m1 0h1m1 0h1m3 0h4m-24 1h7m1 0h2m2 0h2m2 0h1m1 0h1m1 0h1m3 0h1m-25 1h1m5 0h1m2 0h1m1 0h1m3 0h2m3 0h2m1 0h2m-25 1h1m1 0h3m1 0h1m2 0h1m4 0h7m1 0h1m1 0h1m-25 1h1m1 0h3m1 0h1m2 0h2m2 0h1m1 0h4m2 0h4m-25 1h1m1 0h3m1 0h1m3 0h2m3 0h1m1 0h1m1 0h1m1 0h2m1 0h1m-25 1h1m5 0h1m1 0h2m1 0h2m1 0h1m1 0h4m1 0h1m2 0h1m-25 1h7m3 0h1m2 0h1m2 0h6m2 0h1"/></svg>
+
+      <span class="pe-txt">
+        <span class="site">tecnovadigital.pt</span>
+        <span class="mail">wesley@tecnovadigital.pt</span>
+        <span class="apontar">Aponte a câmara ao código</span>
+      </span>
+    </div>
+  </div>
+  <div class="f">
+    <div class="topo">
+      <span class="selo">T</span>
+      <span class="marca"><b>TECNOVA</b><span>DIGITAL</span></span>
+    </div>
+
+    <h1>O seu negócio<br>merece um site <i>a sério</i>.</h1>
+    <p class="sub">Sites profissionais para negócios locais, com marcações,
+    preçário e cartão de fidelidade. Prontos em 5 a 15 dias.</p>
+
+    <div class="oferta">
+      <span class="pct">40%</span>
+      <span class="txt"><b>CÓDIGO INOVA40</b>
+      <span>de desconto até 30 de setembro<br>+ 1.º mês de manutenção grátis</span></span>
+    </div>
+
+    <ul class="lista">
+      <li><b>Marcações pelo site</b>, sem andar a responder mensagens</li>
+      <li><b>Preçário e fotos</b> sempre certos, no telemóvel do cliente</li>
+      <li><b>Metade agora</b>, o resto só depois de ver e aprovar</li>
+      <li><b>Sem mensalidades obrigatórias</b> — o site fica seu</li>
+    </ul>
+
+    <div class="preco">
+      <span class="de">350&euro;</span>
+      <span class="por">210&euro;</span>
+      <span class="nota">Pacote Essencial com o código. Página única desde 114&euro;.</span>
+    </div>
+
+    <div class="pe">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" class="qr" shape-rendering="crispEdges"><path class="qrline" stroke="#16100b" d="M2 2.5h7m1 0h1m1 0h7m1 0h7m-25 1h1m5 0h1m1 0h2m1 0h1m6 0h1m5 0h1m-25 1h1m1 0h3m1 0h1m2 0h1m2 0h1m2 0h2m1 0h1m1 0h3m1 0h1m-25 1h1m1 0h3m1 0h1m4 0h2m1 0h1m3 0h1m1 0h3m1 0h1m-25 1h1m1 0h3m1 0h1m2 0h3m1 0h1m2 0h1m1 0h1m1 0h3m1 0h1m-25 1h1m5 0h1m2 0h6m3 0h1m5 0h1m-25 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-16 1h2m1 0h2m-13 1h1m4 0h3m2 0h2m1 0h4m5 0h2m-25 1h1m2 0h3m2 0h3m1 0h1m1 0h2m3 0h2m1 0h1m-21 1h2m2 0h7m2 0h1m1 0h3m2 0h3m-23 1h2m3 0h1m1 0h1m4 0h4m2 0h2m1 0h2m-23 1h2m2 0h1m1 0h1m1 0h5m1 0h1m1 0h2m1 0h1m2 0h1m-25 1h2m1 0h1m7 0h5m3 0h1m1 0h2m-23 1h1m1 0h1m1 0h1m1 0h1m2 0h2m2 0h1m1 0h1m5 0h4m-25 1h1m1 0h3m2 0h2m5 0h1m2 0h6m1 0h1m-25 1h1m1 0h1m3 0h1m4 0h2m3 0h9m-17 1h1m1 0h1m1 0h1m1 0h1m1 0h1m3 0h4m-24 1h7m1 0h2m2 0h2m2 0h1m1 0h1m1 0h1m3 0h1m-25 1h1m5 0h1m2 0h1m1 0h1m3 0h2m3 0h2m1 0h2m-25 1h1m1 0h3m1 0h1m2 0h1m4 0h7m1 0h1m1 0h1m-25 1h1m1 0h3m1 0h1m2 0h2m2 0h1m1 0h4m2 0h4m-25 1h1m1 0h3m1 0h1m3 0h2m3 0h1m1 0h1m1 0h1m1 0h2m1 0h1m-25 1h1m5 0h1m1 0h2m1 0h2m1 0h1m1 0h4m1 0h1m2 0h1m-25 1h7m3 0h1m2 0h1m2 0h6m2 0h1"/></svg>
+
+      <span class="pe-txt">
+        <span class="site">tecnovadigital.pt</span>
+        <span class="mail">wesley@tecnovadigital.pt</span>
+        <span class="apontar">Aponte a câmara ao código</span>
+      </span>
+    </div>
+  </div>
+  <div class="f">
+    <div class="topo">
+      <span class="selo">T</span>
+      <span class="marca"><b>TECNOVA</b><span>DIGITAL</span></span>
+    </div>
+
+    <h1>O seu negócio<br>merece um site <i>a sério</i>.</h1>
+    <p class="sub">Sites profissionais para negócios locais, com marcações,
+    preçário e cartão de fidelidade. Prontos em 5 a 15 dias.</p>
+
+    <div class="oferta">
+      <span class="pct">40%</span>
+      <span class="txt"><b>CÓDIGO INOVA40</b>
+      <span>de desconto até 30 de setembro<br>+ 1.º mês de manutenção grátis</span></span>
+    </div>
+
+    <ul class="lista">
+      <li><b>Marcações pelo site</b>, sem andar a responder mensagens</li>
+      <li><b>Preçário e fotos</b> sempre certos, no telemóvel do cliente</li>
+      <li><b>Metade agora</b>, o resto só depois de ver e aprovar</li>
+      <li><b>Sem mensalidades obrigatórias</b> — o site fica seu</li>
+    </ul>
+
+    <div class="preco">
+      <span class="de">350&euro;</span>
+      <span class="por">210&euro;</span>
+      <span class="nota">Pacote Essencial com o código. Página única desde 114&euro;.</span>
+    </div>
+
+    <div class="pe">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" class="qr" shape-rendering="crispEdges"><path class="qrline" stroke="#16100b" d="M2 2.5h7m1 0h1m1 0h7m1 0h7m-25 1h1m5 0h1m1 0h2m1 0h1m6 0h1m5 0h1m-25 1h1m1 0h3m1 0h1m2 0h1m2 0h1m2 0h2m1 0h1m1 0h3m1 0h1m-25 1h1m1 0h3m1 0h1m4 0h2m1 0h1m3 0h1m1 0h3m1 0h1m-25 1h1m1 0h3m1 0h1m2 0h3m1 0h1m2 0h1m1 0h1m1 0h3m1 0h1m-25 1h1m5 0h1m2 0h6m3 0h1m5 0h1m-25 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-16 1h2m1 0h2m-13 1h1m4 0h3m2 0h2m1 0h4m5 0h2m-25 1h1m2 0h3m2 0h3m1 0h1m1 0h2m3 0h2m1 0h1m-21 1h2m2 0h7m2 0h1m1 0h3m2 0h3m-23 1h2m3 0h1m1 0h1m4 0h4m2 0h2m1 0h2m-23 1h2m2 0h1m1 0h1m1 0h5m1 0h1m1 0h2m1 0h1m2 0h1m-25 1h2m1 0h1m7 0h5m3 0h1m1 0h2m-23 1h1m1 0h1m1 0h1m1 0h1m2 0h2m2 0h1m1 0h1m5 0h4m-25 1h1m1 0h3m2 0h2m5 0h1m2 0h6m1 0h1m-25 1h1m1 0h1m3 0h1m4 0h2m3 0h9m-17 1h1m1 0h1m1 0h1m1 0h1m1 0h1m3 0h4m-24 1h7m1 0h2m2 0h2m2 0h1m1 0h1m1 0h1m3 0h1m-25 1h1m5 0h1m2 0h1m1 0h1m3 0h2m3 0h2m1 0h2m-25 1h1m1 0h3m1 0h1m2 0h1m4 0h7m1 0h1m1 0h1m-25 1h1m1 0h3m1 0h1m2 0h2m2 0h1m1 0h4m2 0h4m-25 1h1m1 0h3m1 0h1m3 0h2m3 0h1m1 0h1m1 0h1m1 0h2m1 0h1m-25 1h1m5 0h1m1 0h2m1 0h2m1 0h1m1 0h4m1 0h1m2 0h1m-25 1h7m3 0h1m2 0h1m2 0h6m2 0h1"/></svg>
+
+      <span class="pe-txt">
+        <span class="site">tecnovadigital.pt</span>
+        <span class="mail">wesley@tecnovadigital.pt</span>
+        <span class="apontar">Aponte a câmara ao código</span>
+      </span>
+    </div>
+  </div>
+  <div class="f">
+    <div class="topo">
+      <span class="selo">T</span>
+      <span class="marca"><b>TECNOVA</b><span>DIGITAL</span></span>
+    </div>
+
+    <h1>O seu negócio<br>merece um site <i>a sério</i>.</h1>
+    <p class="sub">Sites profissionais para negócios locais, com marcações,
+    preçário e cartão de fidelidade. Prontos em 5 a 15 dias.</p>
+
+    <div class="oferta">
+      <span class="pct">40%</span>
+      <span class="txt"><b>CÓDIGO INOVA40</b>
+      <span>de desconto até 30 de setembro<br>+ 1.º mês de manutenção grátis</span></span>
+    </div>
+
+    <ul class="lista">
+      <li><b>Marcações pelo site</b>, sem andar a responder mensagens</li>
+      <li><b>Preçário e fotos</b> sempre certos, no telemóvel do cliente</li>
+      <li><b>Metade agora</b>, o resto só depois de ver e aprovar</li>
+      <li><b>Sem mensalidades obrigatórias</b> — o site fica seu</li>
+    </ul>
+
+    <div class="preco">
+      <span class="de">350&euro;</span>
+      <span class="por">210&euro;</span>
+      <span class="nota">Pacote Essencial com o código. Página única desde 114&euro;.</span>
+    </div>
+
+    <div class="pe">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" class="qr" shape-rendering="crispEdges"><path class="qrline" stroke="#16100b" d="M2 2.5h7m1 0h1m1 0h7m1 0h7m-25 1h1m5 0h1m1 0h2m1 0h1m6 0h1m5 0h1m-25 1h1m1 0h3m1 0h1m2 0h1m2 0h1m2 0h2m1 0h1m1 0h3m1 0h1m-25 1h1m1 0h3m1 0h1m4 0h2m1 0h1m3 0h1m1 0h3m1 0h1m-25 1h1m1 0h3m1 0h1m2 0h3m1 0h1m2 0h1m1 0h1m1 0h3m1 0h1m-25 1h1m5 0h1m2 0h6m3 0h1m5 0h1m-25 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-16 1h2m1 0h2m-13 1h1m4 0h3m2 0h2m1 0h4m5 0h2m-25 1h1m2 0h3m2 0h3m1 0h1m1 0h2m3 0h2m1 0h1m-21 1h2m2 0h7m2 0h1m1 0h3m2 0h3m-23 1h2m3 0h1m1 0h1m4 0h4m2 0h2m1 0h2m-23 1h2m2 0h1m1 0h1m1 0h5m1 0h1m1 0h2m1 0h1m2 0h1m-25 1h2m1 0h1m7 0h5m3 0h1m1 0h2m-23 1h1m1 0h1m1 0h1m1 0h1m2 0h2m2 0h1m1 0h1m5 0h4m-25 1h1m1 0h3m2 0h2m5 0h1m2 0h6m1 0h1m-25 1h1m1 0h1m3 0h1m4 0h2m3 0h9m-17 1h1m1 0h1m1 0h1m1 0h1m1 0h1m3 0h4m-24 1h7m1 0h2m2 0h2m2 0h1m1 0h1m1 0h1m3 0h1m-25 1h1m5 0h1m2 0h1m1 0h1m3 0h2m3 0h2m1 0h2m-25 1h1m1 0h3m1 0h1m2 0h1m4 0h7m1 0h1m1 0h1m-25 1h1m1 0h3m1 0h1m2 0h2m2 0h1m1 0h4m2 0h4m-25 1h1m1 0h3m1 0h1m3 0h2m3 0h1m1 0h1m1 0h1m1 0h2m1 0h1m-25 1h1m5 0h1m1 0h2m1 0h2m1 0h1m1 0h4m1 0h1m2 0h1m-25 1h7m3 0h1m2 0h1m2 0h6m2 0h1"/></svg>
+
+      <span class="pe-txt">
+        <span class="site">tecnovadigital.pt</span>
+        <span class="mail">wesley@tecnovadigital.pt</span>
+        <span class="apontar">Aponte a câmara ao código</span>
+      </span>
+    </div>
+  </div>
+
+</div>
+
+</div>
+</body>
+</html>
