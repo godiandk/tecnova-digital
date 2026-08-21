@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=49">
-<link rel="stylesheet" href="assistente.css?v=49">
-<link rel="stylesheet" href="i18n.css?v=49">
+<link rel="stylesheet" href="estilo.css?v=50">
+<link rel="stylesheet" href="assistente.css?v=50">
+<link rel="stylesheet" href="i18n.css?v=50">
 <style>
 .hero{
   min-height:100vh;display:flex;align-items:center;
@@ -69,61 +69,61 @@
    telemóvel de 320px e numa televisão de 2560px, porque a
    altura vem do conteúdo e não de uma conta com o ecrã.
    ============================================================ */
+/* ============================================================
+   O PALCO DOS CARTAZES
+   ------------------------------------------------------------
+   Cada destaque e agora um cartaz inteiro, feito a medida. A
+   regra que manda em tudo o resto: NUNCA CORTAR O CARTAZ.
+   Medi o palco em dez ecras e a proporcao vai de 0,54 num
+   telemovel de 320px a 4,80 numa televisao 4K -- 8,9 vezes de
+   diferenca. Com `cover`, do portatil de 1366px para cima
+   cortava-se o titulo, e no 2K tambem o logotipo.
+   Por isso `contain`: a imagem cabe sempre inteira e o que
+   sobra a volta e escuro, da mesma cor dos cantos do cartaz.
+   A junta nao se ve -- medida em 0,24 sobre 255.
+   ============================================================ */
 .hero-slider{position:relative;overflow:hidden;padding:0;
   display:grid;
-  min-height:min(78svh,700px);
-  background:
-    radial-gradient(900px 500px at 80% -10%,rgba(217,178,110,.12),transparent 60%),
-    radial-gradient(700px 500px at -10% 100%,rgba(217,178,110,.07),transparent 60%),
-    var(--ink);}
-/* Os cinco empilhados no mesmo sítio, cada um a preencher o palco todo.
-   O palco tem a altura do destaque mais alto, por isso os mais curtos
-   sobram — e essa sobra tem de ir para algum lado. Encostada em baixo
-   ficava um buraco enorme por baixo dos botões; repartida ao meio, o
-   texto descaía. As três filas repartem-na a 1 para 2: um terço por
-   cima, uma vez e meia por baixo. É a proporção com que o olho lê
-   um cartaz, e é a mesma dos 320px à televisão.
-   `minmax(0,…)` é o que deixa as filas encolherem a zero quando o
-   destaque é o mais alto de todos — sem isso não cabia.
-   `overflow-y:auto` é a válvula de segurança: se um dia o texto crescer
-   de mais, rola em vez de ser cortado.
-   Aqui esteve `overscroll-behavior:contain` e foi um erro meu: com o
-   rato em cima do carrossel, a página deixava de subir e de descer. A
-   roda entra primeiro no resumo — que tem texto escondido pelo corte de
-   linhas — e, quando chega aqui e não há para onde rolar, o `contain`
-   travava a passagem em vez de a deixar seguir para a página. */
+  /* a altura segue a forma do cartaz, sem nunca passar do ecra */
+  height:min(calc(100vw / 1.5), 88svh);
+  background:#0c0804}
+@media(max-width:767px){
+  /* no telemovel manda o cartaz vertical: 1024x1536 */
+  .hero-slider{height:min(calc(100vw * 1.5), 88svh)}
+}
+
 .hs-slide{grid-area:1/1;opacity:0;visibility:hidden;
-  /* Sem a espera no `visibility`, o slide que saía desaparecia de repente e
-     ficava um vazio de quase um segundo até o seguinte aparecer. */
   transition:opacity .6s ease, visibility 0s linear .6s;
-  pointer-events:none;
-  display:grid;grid-template-rows:minmax(0,2fr) auto minmax(0,3fr);
-  overflow-y:auto;
-  padding:100px 0 78px}
-.hs-slide>.hs-grid{grid-row:2}
+  pointer-events:none;position:relative}
 .hs-slide.active{opacity:1;visibility:visible;pointer-events:auto;z-index:2;
   transition:opacity .6s ease, visibility 0s}
-@media(prefers-reduced-motion:reduce){
-  .hs-slide{transition:none}
+@media(prefers-reduced-motion:reduce){ .hs-slide{transition:none} }
+
+.hs-cartaz{position:absolute;inset:0;display:block}
+.hs-cartaz img{width:100%;height:100%;object-fit:contain;object-position:center;
+  display:block}
+
+/* O titulo esta desenhado dentro do cartaz. Aqui fica o mesmo texto para
+   o Google e para os leitores de ecra: sai do fluxo sem `display:none`,
+   que os esconderia tambem deles. */
+.hs-titulo-oculto{position:absolute;width:1px;height:1px;overflow:hidden;
+  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;margin:0}
+
+/* Os botoes tem de ser botoes a serio: uma fotografia de um botao nao se
+   carrega, nao muda de lingua e nao se le. Assentam na faixa escura que
+   ficou reservada em baixo do cartaz. */
+.hs-accoes{position:absolute;left:0;right:0;bottom:12%;
+  display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+  padding:0 20px;z-index:3}
+@media(max-width:767px){
+  .hs-accoes{bottom:9%;gap:10px;flex-wrap:nowrap;padding:0 16px}
+  .hs-accoes .btn{flex:1 1 0;min-width:0;justify-content:center;
+    padding:12px 10px;font-size:.82rem;line-height:1.2;text-align:center}
 }
-.hs-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:60px;align-items:center;width:100%}
-/* Os destaques sem imagem tinham o texto encostado à esquerda e metade
-   do ecrã vazia ao lado — parecia que faltava lá alguma coisa. Centrados,
-   passam a ler-se como uma frase de abertura, de propósito. */
-.hs-grid.solo{grid-template-columns:1fr;max-width:760px;margin-inline:auto;
-  justify-items:center;text-align:center}
-.hs-grid.solo .eyebrow{justify-content:center}
-.hs-grid.solo .hero-cta{justify-content:center}
-.hs-grid.solo .hero-proof{justify-content:center;margin-inline:auto}
-.hs-grid.solo .lead{max-width:56ch;text-wrap:pretty}
-/* reparte as linhas do título em pedaços do mesmo tamanho, em vez de
-   deixar uma palavra sozinha na última */
-.hs-grid.solo h2{text-wrap:balance}
-/* a barrinha do sobretítulo passa a ter uma de cada lado, para o bloco
-   centrado ficar simétrico em vez de puxado para um lado */
-.hs-grid.solo .eyebrow::after{content:"";width:34px;height:1px;background:var(--gold)}
-.hs-slide h1,.hs-slide h2{font-size:clamp(2.6rem,6vw,4.4rem);line-height:1.06;font-weight:800;margin:22px 0 26px;max-width:15em}
-.hs-slide h1 em,.hs-slide h2 em{font-style:italic;color:var(--gold);white-space:nowrap}
+@media(max-width:360px){
+  .hs-accoes .btn{font-size:.74rem;padding:10px 7px}
+}
+
 .hs-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:46px;height:46px;border-radius:50%;border:1px solid rgba(217,178,110,.5);background:rgba(22,16,11,.5);color:var(--gold-soft);font-size:1.5rem;cursor:pointer;display:grid;place-items:center;transition:all .2s;line-height:1}
 .hs-arrow:hover{background:var(--gold);color:var(--ink)}
 .hs-arrow{display:none}
@@ -594,140 +594,124 @@
 <section class="hero-slider" aria-label="Destaques TECNOVA Digital">
 
   <!-- Slide de entrada: fazer o pedido -->
-  <div class="hs-slide oferta active">
-    <div class="wrap hs-grid of-grid">
-      <div class="of-txt">
-        <p class="of-flag" data-promo>
-          <span class="of-pulse" aria-hidden="true"></span>
-          <span class="of-flag-txt">
-            <span class="ff-topo">Campanha de lançamento</span>
-            <span class="ff-fundo">termina a <b data-promo-fim>30 de setembro</b></span>
-          </span>
-          <span class="of-pulse" aria-hidden="true"></span>
-        </p>
-        <h1>Monte o seu site e veja o preço <em>na hora.</em></h1>
-        <p class="lead">Site profissional, aplicação no telemóvel, carrossel de destaques, marcações, preçário, loja online — escolha o que quer e o valor aparece à frente dos olhos. Sem telefonemas, sem esperar dias, sem «depois digo-lhe alguma coisa».</p>
-        <div class="of-chips">
-          <span>🖥️ Site profissional</span>
-          <span>📱 Aplicação própria</span>
-          <span>🎞️ Carrossel de destaques</span>
-          <span>📅 Marcações</span>
-          <span>💶 Preçário</span>
-          <span>🏅 Cartão de fidelidade</span>
-        </div>
-        <div class="of-oferta" data-promo>
-          <div class="of-off"><b>−<span data-promo-pct>40%</span></b><span>em todo o site</span></div>
-          <div>
-            <b>+ 1.ª mensalidade de manutenção grátis</b>
-            <span>Código <i data-promo-codigo>INOVA40</i> · válido até <span data-promo-fim>30 de setembro</span></span>
-          </div>
-        </div>
-        <div class="hero-cta">
-          <a class="btn btn-gold btn-big" href="orcamento.html">Fazer o meu pedido agora →</a>
-          <a class="btn btn-line" href="modelos.html">Ver modelos reais</a>
-        </div>
-        <p class="of-nota">Leva 2 minutos · não precisa de deixar contacto para ver o preço</p>
-      </div>
-      <div class="of-foto">
-        <img src="img/wesley-vianna.jpg" width="720" height="1080" alt="Wesley Vianna, fundador da TECNOVA Digital" fetchpriority="high">
-        <span class="of-selo" data-promo><b>−<span data-promo-pct>40%</span></b><i>até 30 set</i></span>
-      </div>
+  <!-- Este destaque tem "-40%" e "ate 30 de setembro" DESENHADOS dentro
+       do cartaz. O campanha.js consegue esconder texto em HTML, mas nao
+       consegue apagar letras de uma imagem: a 1 de outubro o cartaz
+       continuaria a prometer um desconto que o pedido ja nao faz.
+       Por isso o destaque inteiro sai de cena quando a campanha acabar,
+       e o carrossel passa a rodar os outros quatro. -->
+  <div class="hs-slide oferta active" data-promo-slide>
+    <picture class="hs-cartaz">
+      <source media="(max-width:767px)"
+              srcset="img/carrossel/1-alta-480.webp 480w,
+                      img/carrossel/1-alta-768.webp 768w,
+                      img/carrossel/1-alta-1024.webp 1024w"
+              sizes="100vw">
+      <img src="img/carrossel/1-larga-1366.webp"
+           srcset="img/carrossel/1-larga-960.webp 960w,
+                   img/carrossel/1-larga-1366.webp 1366w,
+                   img/carrossel/1-larga-1536.webp 1536w"
+           sizes="100vw" width="1536" height="1024" alt="Campanha de lançamento até 30 de setembro. Escolha o que quer e o preço aparece à frente dos olhos, com 40% de desconto em todo o site." fetchpriority="high">
+    </picture>
+    <!-- O titulo esta dentro do cartaz, que o Google nao le. Fica aqui,
+         invisivel para quem ve e legivel para o Google e para quem usa
+         leitor de ecra. -->
+    <h1 class="hs-titulo-oculto">Monte o seu site e veja o preço na hora.</h1>
+    <div class="hs-accoes">
+        <a class="btn btn-gold btn-big" href="orcamento.html">Fazer o meu pedido agora →</a>
+        <a class="btn btn-line" href="modelos.html">Ver modelos reais</a>
     </div>
   </div>
 
-  <!-- Slide 1 -->
   <div class="hs-slide">
-    <div class="wrap hs-grid">
-      <div>
-        <p class="eyebrow">Sites &amp; Apps que trabalham por si</p>
-        <h1>O seu negócio merece um site <em>à altura.</em></h1>
-        <p class="lead">Site profissional + aplicação própria + marcações pelo próprio site + cartão de fidelidade digital que faz os seus clientes voltarem.</p>
-        <p class="hero-price">Tudo pronto, no ar e a trabalhar por si — a partir de 350€.</p>
-        <div class="hero-cta">
-          <a class="btn btn-gold" href="contacto.html">Falar comigo</a>
-          <a class="btn btn-line" href="pacotes.html">Ver pacotes e preços</a>
-        </div>
-        <div class="hero-proof">
-          <div class="proof"><b>5 dias</b><span>entrega mais rápida</span></div>
-          <div class="proof"><b>50/50</b><span>só paga o resto com o site no ar</span></div>
-          <div class="proof"><b>24h</b><span>o seu site nunca fecha</span></div>
-        </div>
-      </div>
-      <div class="phone">
-        <div class="phone-screen">
-          <div class="ps-hero">
-            <div class="hexline"><span class="hex"></span><span>O SEU NEGÓCIO</span></div>
-            <h4>Marcações online, <i>sem complicações.</i></h4>
-            <span class="ps-btn">✆ Marcar pelo site</span>
-          </div>
-          <div class="ps-row"><span class="ps-ic">📅</span><div><b>Marcar em 1 minuto</b><span>o pedido cai direto no seu email</span></div></div>
-          <div class="ps-row"><span class="ps-ic">💶</span><div><b>Preçário sempre atualizado</b><span>menos chamadas a perguntar «quanto custa?»</span></div></div>
-          <div class="ps-stamps">
-            <span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span>
-            <span class="stamp">5</span><span class="stamp">6</span><span class="stamp">7</span><span class="stamp">🎁</span>
-          </div>
-        </div>
-      </div>
+    <picture class="hs-cartaz">
+      <source media="(max-width:767px)"
+              srcset="img/carrossel/2-alta-480.webp 480w,
+                      img/carrossel/2-alta-768.webp 768w,
+                      img/carrossel/2-alta-1024.webp 1024w"
+              sizes="100vw">
+      <img src="img/carrossel/2-larga-1366.webp"
+           srcset="img/carrossel/2-larga-960.webp 960w,
+                   img/carrossel/2-larga-1366.webp 1366w,
+                   img/carrossel/2-larga-1536.webp 1536w"
+           sizes="100vw" width="1536" height="1024" alt="Site profissional, aplicação própria, marcações pelo próprio site e cartão de fidelidade digital. Entrega em 5 dias, metade só se paga com o site no ar." loading="lazy">
+    </picture>
+    <!-- O titulo esta dentro do cartaz, que o Google nao le. Fica aqui,
+         invisivel para quem ve e legivel para o Google e para quem usa
+         leitor de ecra. -->
+    <h2 class="hs-titulo-oculto">O seu negócio merece um site à altura.</h2>
+    <div class="hs-accoes">
+        <a class="btn btn-gold" href="contacto.html">Falar comigo</a>
+        <a class="btn btn-line" href="pacotes.html">Ver pacotes e preços</a>
     </div>
   </div>
 
-  <!-- Slide 2 -->
   <div class="hs-slide">
-    <div class="wrap hs-grid solo">
-      <div>
-        <p class="eyebrow">Pacotes e preços</p>
-        <h2>Um site profissional a partir de <em>350€.</em></h2>
-        <p class="lead">Três pacotes claros — Essencial, Profissional e Premium — sem surpresas. Só paga a segunda metade quando o site estiver no ar e aprovado por si.</p>
-        <div class="hero-cta">
-          <a class="btn btn-gold" href="pacotes.html">Ver pacotes e preços</a>
-          <a class="btn btn-line" href="renovacao.html">Já tem site? Renove</a>
-        </div>
-        <div class="hero-proof">
-          <div class="proof"><b>350€</b><span>Essencial · site completo</span></div>
-          <div class="proof"><b>650€</b><span>Profissional · com marcações</span></div>
-          <div class="proof"><b>990€</b><span>Premium · com fidelidade</span></div>
-        </div>
-      </div>
+    <picture class="hs-cartaz">
+      <source media="(max-width:767px)"
+              srcset="img/carrossel/3-alta-480.webp 480w,
+                      img/carrossel/3-alta-768.webp 768w,
+                      img/carrossel/3-alta-1024.webp 1024w"
+              sizes="100vw">
+      <img src="img/carrossel/3-larga-1366.webp"
+           srcset="img/carrossel/3-larga-960.webp 960w,
+                   img/carrossel/3-larga-1366.webp 1366w,
+                   img/carrossel/3-larga-1536.webp 1536w"
+           sizes="100vw" width="1536" height="1024" alt="Três pacotes claros — Essencial 350€, Profissional 650€ e Premium 990€. Metade no início, metade só quando o site estiver no ar e aprovado por si." loading="lazy">
+    </picture>
+    <!-- O titulo esta dentro do cartaz, que o Google nao le. Fica aqui,
+         invisivel para quem ve e legivel para o Google e para quem usa
+         leitor de ecra. -->
+    <h2 class="hs-titulo-oculto">Um site profissional a partir de 350€.</h2>
+    <div class="hs-accoes">
+        <a class="btn btn-gold" href="pacotes.html">Ver pacotes e preços</a>
+        <a class="btn btn-line" href="renovacao.html">Já tem site? Renove</a>
     </div>
   </div>
 
-  <!-- Slide 3 -->
   <div class="hs-slide">
-    <div class="wrap hs-grid solo">
-      <div>
-        <p class="eyebrow">Prova visual</p>
-        <h2>Veja um modelo pronto para o <em>seu tipo de negócio.</em></h2>
-        <p class="lead">Barbearias, clínicas de estética, restaurantes, ginásios, oficinas e salões — modelos reais que pode explorar antes de decidir.</p>
-        <div class="hero-cta">
-          <a class="btn btn-gold" href="modelos.html">Ver os modelos</a>
-          <a class="btn btn-line" href="servicos.html">O que fazemos</a>
-        </div>
-        <div class="hero-proof">
-          <div class="proof"><b>7</b><span>modelos prontos a ver</span></div>
-          <div class="proof"><b>6</b><span>tipos de negócio</span></div>
-          <div class="proof"><b>0€</b><span>ver custa nada</span></div>
-        </div>
-      </div>
+    <picture class="hs-cartaz">
+      <source media="(max-width:767px)"
+              srcset="img/carrossel/4-alta-480.webp 480w,
+                      img/carrossel/4-alta-768.webp 768w,
+                      img/carrossel/4-alta-1024.webp 1024w"
+              sizes="100vw">
+      <img src="img/carrossel/4-larga-1366.webp"
+           srcset="img/carrossel/4-larga-960.webp 960w,
+                   img/carrossel/4-larga-1366.webp 1366w,
+                   img/carrossel/4-larga-1536.webp 1536w"
+           sizes="100vw" width="1536" height="1024" alt="Sete modelos completos para barbearias, clínicas de estética, restaurantes, ginásios, oficinas, salões e confeitarias. Ver não custa nada." loading="lazy">
+    </picture>
+    <!-- O titulo esta dentro do cartaz, que o Google nao le. Fica aqui,
+         invisivel para quem ve e legivel para o Google e para quem usa
+         leitor de ecra. -->
+    <h2 class="hs-titulo-oculto">Veja um modelo pronto para o seu tipo de negócio.</h2>
+    <div class="hs-accoes">
+        <a class="btn btn-gold" href="modelos.html">Ver os modelos</a>
+        <a class="btn btn-line" href="servicos.html">O que fazemos</a>
     </div>
   </div>
 
-  <!-- Slide 4 -->
   <div class="hs-slide">
-    <div class="wrap hs-grid solo">
-      <div>
-        <p class="eyebrow">Aplicação própria</p>
-        <h2>Um site que abre como <em>aplicação</em>, sem loja nenhuma.</h2>
-        <p class="lead">Conta de cliente, cartão de fidelidade digital e instalação direta no telemóvel — sem App Store, sem Play Store, sem fricção.</p>
-        <div class="hero-cta">
-          <a class="btn btn-gold" href="conta.html">Criar a minha conta</a>
-          <a class="btn btn-line" href="servicos.html">Ver funcionalidades</a>
-        </div>
-        <div class="hero-proof">
-          <div class="proof"><b>10s</b><span>a instalar no telemóvel</span></div>
-          <div class="proof"><b>0</b><span>lojas de aplicações</span></div>
-          <div class="proof"><b>1</b><span>toque para abrir</span></div>
-        </div>
-      </div>
+    <picture class="hs-cartaz">
+      <source media="(max-width:767px)"
+              srcset="img/carrossel/5-alta-480.webp 480w,
+                      img/carrossel/5-alta-768.webp 768w,
+                      img/carrossel/5-alta-1024.webp 1024w"
+              sizes="100vw">
+      <img src="img/carrossel/5-larga-1366.webp"
+           srcset="img/carrossel/5-larga-960.webp 960w,
+                   img/carrossel/5-larga-1366.webp 1366w,
+                   img/carrossel/5-larga-1536.webp 1536w"
+           sizes="100vw" width="1536" height="1024" alt="Instala-se no telemóvel em segundos, com conta de cliente e cartão de fidelidade digital. Sem App Store, sem Play Store." loading="lazy">
+    </picture>
+    <!-- O titulo esta dentro do cartaz, que o Google nao le. Fica aqui,
+         invisivel para quem ve e legivel para o Google e para quem usa
+         leitor de ecra. -->
+    <h2 class="hs-titulo-oculto">Um site que abre como aplicação, sem loja nenhuma.</h2>
+    <div class="hs-accoes">
+        <a class="btn btn-gold" href="conta.html">Criar a minha conta</a>
+        <a class="btn btn-line" href="servicos.html">Ver funcionalidades</a>
     </div>
   </div>
 
@@ -911,10 +895,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="campanha.js?v=49"></script>
-<script src="medir-config.js?v=49"></script>
-<script src="medir.js?v=49"></script>
-<script src="auth-nav.js?v=49"></script>
+<script src="campanha.js?v=50"></script>
+<script src="medir-config.js?v=50"></script>
+<script src="medir.js?v=50"></script>
+<script src="auth-nav.js?v=50"></script>
 
 <script>
 const io=new IntersectionObserver(es=>{
@@ -926,9 +910,9 @@ if('serviceWorker' in navigator){
 }
 </script>
 <script src="site.js"></script>
-<script src="idiomas/en.js?v=49"></script>
-<script src="idiomas/es.js?v=49"></script>
-<script src="i18n.js?v=49"></script>
+<script src="idiomas/en.js?v=50"></script>
+<script src="idiomas/es.js?v=50"></script>
+<script src="i18n.js?v=50"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

@@ -63,6 +63,7 @@ window.TECNOVA_PROMO = {
     var viva = ativa();
     try {
       document.querySelectorAll('[data-promo]').forEach(function (el) { el.hidden = !viva; });
+
       document.querySelectorAll('[data-promo-fora]').forEach(function (el) { el.hidden = viva; });
       if (!viva) return;    // com a campanha acabada não vale a pena escrever datas
       document.querySelectorAll('[data-promo-fim]').forEach(function (el) { el.textContent = porExtenso(); });
@@ -76,6 +77,25 @@ window.TECNOVA_PROMO = {
       });
     } catch (e) {}
   }
+
+  /* Tirar o destaque da campanha tem de acontecer JA, nao no
+     DOMContentLoaded: o carrossel do site.js conta os destaques para fazer
+     as bolinhas, e se esperassemos ficavam cinco bolinhas para quatro
+     destaques. Como este ficheiro vem no HTML antes do site.js, e o
+     carrossel esta escrito acima dos dois, os destaques ja ca estao. */
+  (function tirarDestaqueDaCampanha() {
+    try {
+      if (ativa()) return;
+      var fora = document.querySelectorAll('[data-promo-slide]');
+      if (!fora.length) return;
+      fora.forEach(function (el) {
+        var irmao = el.parentNode &&
+                    el.parentNode.querySelector('.hs-slide:not([data-promo-slide])');
+        if (irmao) irmao.classList.add('active');
+        el.remove();
+      });
+    } catch (e) {}
+  })();
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pintar);
   else pintar();
