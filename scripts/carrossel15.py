@@ -1,14 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-Constroi as variantes WebP do carrossel a partir dos quinze cartazes PNG.
+Constroi as variantes WebP do carrossel a partir dos quinze cartazes de
+cada lingua.
 
 Uso:
-    python3 scripts/carrossel15.py <pasta-com-os-PNG>
+    python3 scripts/carrossel15.py <lingua> <pasta-com-os-PNG>
 
-A pasta tem de trazer o manifest.json ao lado dos ficheiros. Antes de
-converter seja o que for, o guiao confere cada master contra o manifesto:
-largura, altura e SHA-256. Se um ficheiro nao bater certo, para ali e diz
-qual e -- vale mais parar do que publicar um cartaz trocado.
+    python3 scripts/carrossel15.py pt /caminho/TECNOVA_carrossel_PT
+    python3 scripts/carrossel15.py en /caminho/TECNOVA_carrossel_EN
+    python3 scripts/carrossel15.py es /caminho/TECNOVA_carrossel_ES
+
+A pasta tem de trazer o manifest.json ou o SHA256SUMS.txt ao lado dos
+ficheiros. Antes de converter seja o que for, o guiao confere cada master:
+largura, altura e -- quando ha por onde -- a assinatura SHA-256. Se um
+ficheiro nao bater certo, para ali e diz qual e; vale mais parar do que
+publicar um cartaz trocado ou de outra lingua.
+
+Sai daqui:
+  img/carrossel/<lingua>/<n>-<classe>-<largura>.webp   o que o site serve
+  img/carrossel/originais/<lingua>/<n>-<classe>.webp   copia de arquivo
 """
 
 import hashlib
@@ -19,7 +29,13 @@ import sys
 from PIL import Image
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DESTINO = os.path.join(RAIZ, 'img', 'carrossel')
+LINGUAS = ('pt', 'en', 'es')
+
+FORMAS = {
+    'telemovel':  (1440, 2400),
+    'tablet':     (1800, 1440),
+    'computador': (3840, 1920),
+}
 
 # As larguras que cada classe precisa de servir.
 #
@@ -44,6 +60,13 @@ TECTO_QUALIDADE = 86
 # se a qualidade cair a 74 para caber nos 120 KB, e ai que a letra
 # comeca a esfarelar. Nesses vale mais o ficheiro pesar o dobro.
 
+# A copia de arquivo. Os PNG originais pesam 5 MB cada e quarenta e cinco
+# deles seriam 156 MB no repositorio, que toda a gente descarrega e o
+# GitHub Pages volta a publicar a cada mudanca. A q95 sao 0,4 MB e nao ha
+# forma de distinguir os dois a olho, nem depois de reduzir. Os PNG a
+# serio ficam nos ZIP que o cliente guarda.
+QUALIDADE_ARQUIVO = 95
+
 
 def digestao(caminho):
     h = hashlib.sha256()
@@ -53,32 +76,51 @@ def digestao(caminho):
     return h.hexdigest()
 
 
-def conferir(pasta, manifesto):
-    """Devolve a lista de masters ja validados, ou levanta erro."""
+def assinaturas(pasta):
+    """Le o manifest.json ou o SHA256SUMS.txt, o que la estiver."""
+    m = os.path.join(pasta, 'manifest.json')
+    if os.path.exists(m):
+        with open(m) as f:
+            return dict((x['name'], x['sha256']) for x in json.load(f)['files'])
+    s = os.path.join(pasta, 'SHA256SUMS.txt')
+    if os.path.exists(s):
+        fora = {}
+        for linha in open(s):
+            partes = linha.split()
+            if len(partes) == 2:
+                fora[partes[1].lstrip('*')] = partes[0]
+        return fora
+    return {}
+
+
+def conferir(pasta):
+    somas = assinaturas(pasta)
+    if not somas:
+        print('  (sem manifesto nem SHA256SUMS: so se conferem as dimensoes)')
     bons = []
-    for ficha in manifesto['files']:
-        caminho = os.path.join(pasta, ficha['name'])
-        if not os.path.exists(caminho):
-            raise SystemExit('FALTA o ficheiro %s' % ficha['name'])
+    for n in range(1, 6):
+        for classe in ('telemovel', 'tablet', 'computador'):
+            nome = '%d-%s.png' % (n, classe)
+            caminho = os.path.join(pasta, nome)
+            if not os.path.exists(caminho):
+                raise SystemExit('FALTA o ficheiro %s' % nome)
 
-        with Image.open(caminho) as im:
-            largura, altura = im.size
-        if (largura, altura) != (ficha['width'], ficha['height']):
-            raise SystemExit(
-                '%s vem com %dx%d e o manifesto pede %dx%d'
-                % (ficha['name'], largura, altura, ficha['width'], ficha['height']))
+            with Image.open(caminho) as im:
+                tamanho = im.size
+            if tamanho != FORMAS[classe]:
+                raise SystemExit('%s vem com %dx%d e devia ser %dx%d'
+                                 % ((nome,) + tamanho + FORMAS[classe]))
 
-        bytes_reais = os.path.getsize(caminho)
-        soma = digestao(caminho)
-        marca = 'ok'
-        if soma != ficha['sha256']:
-            marca = 'ATENCAO: assinatura diferente do manifesto'
-        elif bytes_reais != ficha['bytes']:
-            marca = 'ATENCAO: tamanho diferente do manifesto'
+            marca = 'ok'
+            if nome in somas and digestao(caminho) != somas[nome]:
+                raise SystemExit('%s nao bate certo com a assinatura' % nome)
+            if nome not in somas:
+                marca = 'dimensao ok, sem assinatura para conferir'
 
-        print('  %-20s %5dx%-5d %8.2f MB  %s'
-              % (ficha['name'], largura, altura, bytes_reais / 1048576.0, marca))
-        bons.append((ficha, caminho))
+            print('  %-20s %5dx%-5d %8.2f MB  %s'
+                  % (nome, tamanho[0], tamanho[1],
+                     os.path.getsize(caminho) / 1048576.0, marca))
+            bons.append((n, classe, caminho))
     return bons
 
 
@@ -87,17 +129,25 @@ def gravar(imagem, destino, qualidade):
     return os.path.getsize(destino)
 
 
-def construir(ficha, caminho):
-    numero = ficha['slide']
-    classe = ficha['format']
+def construir(lingua, n, classe, caminho):
+    destino = os.path.join(RAIZ, 'img', 'carrossel', lingua)
+    arquivo = os.path.join(RAIZ, 'img', 'carrossel', 'originais', lingua)
+    for pasta in (destino, arquivo):
+        if not os.path.isdir(pasta):
+            os.makedirs(pasta)
+
+    largura_mestre, altura_mestre = FORMAS[classe]
     with Image.open(caminho) as original:
         original = original.convert('RGB')
+        gravar(original, os.path.join(arquivo, '%d-%s.webp' % (n, classe)),
+               QUALIDADE_ARQUIVO)
+
         for largura in LARGURAS[classe]:
-            if largura > ficha['width']:
+            if largura > largura_mestre:
                 continue
-            altura = int(round(largura * ficha['height'] / float(ficha['width'])))
+            altura = int(round(largura * altura_mestre / float(largura_mestre)))
             pequena = original.resize((largura, altura), Image.LANCZOS)
-            saida = os.path.join(DESTINO, '%d-%s-%d.webp' % (numero, classe, largura))
+            saida = os.path.join(destino, '%d-%s-%d.webp' % (n, classe, largura))
 
             piso = 82 if largura >= 2560 else 74
             qualidade = TECTO_QUALIDADE
@@ -113,24 +163,20 @@ def construir(ficha, caminho):
 
 
 def main():
-    if len(sys.argv) < 2:
-        raise SystemExit('Diga-me a pasta com os PNG e o manifest.json.')
-    pasta = sys.argv[1]
-    with open(os.path.join(pasta, 'manifest.json'), 'r') as f:
-        manifesto = json.load(f)
+    if len(sys.argv) < 3 or sys.argv[1] not in LINGUAS:
+        raise SystemExit('Uso: carrossel15.py <%s> <pasta-com-os-PNG>'
+                         % '|'.join(LINGUAS))
+    lingua, pasta = sys.argv[1], sys.argv[2]
 
-    print('A conferir os quinze cartazes contra o manifesto:')
-    bons = conferir(pasta, manifesto)
-
-    if not os.path.isdir(DESTINO):
-        os.makedirs(DESTINO)
+    print('A conferir os quinze cartazes em %s:' % lingua.upper())
+    bons = conferir(pasta)
 
     print('\nA fazer as variantes WebP:')
-    for ficha, caminho in bons:
-        print('  %s' % ficha['name'])
-        construir(ficha, caminho)
+    for n, classe, caminho in bons:
+        print('  %d-%s.png' % (n, classe))
+        construir(lingua, n, classe, caminho)
 
-    print('\nFeito. %d cartazes tratados.' % len(bons))
+    print('\nFeito. %d cartazes em %s.' % (len(bons), lingua.upper()))
 
 
 if __name__ == '__main__':

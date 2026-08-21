@@ -335,18 +335,27 @@ window.TecnovaI18N = (function () {
   function iniciar() {
     montarSeletor();
     observar();
-    var escolhido = null;
-    try {
-      var url = new URLSearchParams(location.search).get('lang');
-      if (url && IDIOMAS[url]) escolhido = url;
-      else {
-        var guardado = localStorage.getItem('tecnova-idioma');
-        if (guardado && IDIOMAS[guardado]) escolhido = guardado;
+    /* A pagina inicial ja resolveu isto no cabecalho, antes de o
+       carrossel ir buscar os cartazes -- que trazem o texto desenhado
+       por dentro e sao tres jogos, um por lingua. Se aqui se escolhesse
+       outra vez, e por outro caminho, as duas respostas podiam nao
+       bater certo e o visitante via um cartaz numa lingua e o resto do
+       site noutra. Ha uma escolha so, e e aquela. */
+    var escolhido = window.TECNOVA_LING;
+    if (!escolhido || !IDIOMAS[escolhido]) {
+      escolhido = null;
+      try {
+        var url = new URLSearchParams(location.search).get('lang');
+        if (url && IDIOMAS[url]) escolhido = url;
+        else {
+          var guardado = localStorage.getItem('tecnova-idioma');
+          if (guardado && IDIOMAS[guardado]) escolhido = guardado;
+        }
+      } catch (e) {}
+      if (!escolhido) {
+        var nav = (navigator.language || 'pt').slice(0, 2).toLowerCase();
+        if (IDIOMAS[nav] && nav !== 'pt') escolhido = nav;
       }
-    } catch (e) {}
-    if (!escolhido) {
-      var nav = (navigator.language || 'pt').slice(0, 2).toLowerCase();
-      if (IDIOMAS[nav] && nav !== 'pt') escolhido = nav;
     }
     definir(escolhido || 'pt');
   }

@@ -63,13 +63,14 @@ Valem para as quinze.
    os comandos do carrossel** (as bolinhas e o «Pausar»), que são HTML
    porque têm de ser clicáveis e mudar de língua. **Não desenhe botões.**
 
-   O que os quinze cartazes trazem, medido nos PNG:
+   O que os cartazes trazem, medido nos PNG dos três idiomas
+   (português, inglês e espanhol — quarenta e cinco ao todo):
 
    | Formato | Faixa que reservam | Pior caso |
    |---|---|---|
-   | Telemóvel | 19,1% a 24,7% | destaque 5 |
-   | Tablet | 28,6% a 31,2% | destaque 5 |
-   | Computador | 21,8% a 24,7% | destaque 3 |
+   | Telemóvel | 19,0% a 21,7% | destaque 5 |
+   | Tablet | 28,5% a 30,6% | destaque 5 |
+   | Computador | 21,0% a 24,2% | destaque 3, em inglês |
 
    Chega para o que o site põe lá em cima. Ver a secção do fim.
 
@@ -131,18 +132,22 @@ O que a mobília pede agora, contra o que o cartaz reserva:
 
 | Ecrã | Palco | Mobília | Cartaz reserva |
 |---|---|---|---|
-| Telemóvel 360 | 360×600 | 17,0% | 19,1% |
-| iPhone 390 | 390×650 | 16,0% | 19,1% |
-| iPhone 430 | 430×717 | 14,5% | 19,1% |
-| Tablet 768 | 768×614 | 19,7% | 28,6% |
-| iPad 834 | 834×667 | 18,1% | 28,6% |
-| Portátil 1024 | 1024×512 | 15,7% | 21,8% |
-| MacBook 1440 | 1440×720 | 11,2% | 21,8% |
-| Monitor 1920 | 1920×960 | 8,4% | 21,8% |
-| Telemóvel deitado 844 | 844×422 | 12,3% | 21,8% |
-| iPhone SE deitado 568 | 568×284 | 18,3% | 21,8% |
+| Telemóvel 360 | 360×600 | 17,0% | 19,0% |
+| iPhone 390 | 390×650 | 16,0% | 19,0% |
+| iPhone 430 | 430×717 | 14,5% | 19,0% |
+| Tablet 768 | 768×614 | 19,7% | 28,5% |
+| iPad 834 | 834×667 | 18,1% | 28,5% |
+| Portátil 1024 | 1024×512 | 15,7% | 21,0% |
+| MacBook 1440 | 1440×720 | 11,2% | 21,0% |
+| Monitor 1920 | 1920×960 | 8,4% | 21,0% |
+| Telemóvel deitado 844 | 844×422 | 12,3% | 21,0% |
+| iPhone SE deitado 568 | 568×284 | 18,3% | 21,0% |
 
-Verificado em 17 tamanhos de ecrã × 3 línguas × 5 destaques.
+Verificado em 17 tamanhos de ecrã × 3 línguas × 5 destaques — 255
+casos, cada um contra a faixa do cartaz daquela língua.
+
+Os cartazes existem nos três idiomas e trocam com o seletor de língua.
+Como isso está ligado, ver `cartazes-por-idioma.md`.
 
 ## O QUE CORREU MAL DESTA VEZ, PARA NÃO SE REPETIR
 

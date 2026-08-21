@@ -36,6 +36,23 @@
     var dotsWrap = slider.querySelector(".hs-dots");
     var idx = 0, timer = null, DELAY = 5500;
 
+    /* Os cartazes tem o texto desenhado por dentro, por isso nenhum
+       dicionario os traduz: ha tres jogos de quinze, um por lingua, e o
+       que muda quando o visitante troca de idioma e o caminho do
+       ficheiro. Vale para os que ja estao a vista e para os que ainda
+       esperam em data-src. */
+    var CAMINHO_LING = /img\/carrossel\/(pt|en|es)\//g;
+    document.addEventListener("tecnova:idioma", function (e) {
+      var l = e.detail;
+      if (l !== "pt" && l !== "en" && l !== "es") return;
+      slider.querySelectorAll(".hs-cartaz source, .hs-cartaz img").forEach(function (el) {
+        ["srcset", "src", "data-srcset", "data-src"].forEach(function (a) {
+          var v = el.getAttribute(a);
+          if (v) el.setAttribute(a, v.replace(CAMINHO_LING, "img/carrossel/" + l + "/"));
+        });
+      });
+    });
+
     /* Cada destaque tem tres cartazes e o mais pesado passa dos 200 KB.
        So o primeiro vem no arranque; os outros guardam os enderecos em
        data-src/data-srcset e so os passam a valer quando lhes chega a
