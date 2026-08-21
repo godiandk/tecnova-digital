@@ -1,143 +1,175 @@
-# Briefing para gerar as imagens do carrossel — TECNOVA Digital
+# Briefing para gerar as 5 imagens do carrossel — TECNOVA Digital
 
-> **Como usar:** abra o ChatGPT e cole tudo desde «CONTEXTO» até ao fim.
-> Depois peça uma imagem de cada vez, usando o pedido que está em cada
-> secção. Peça 3 variações de cada e escolha segundo a lista de
-> verificação do fim.
+> **Como usar:** abra o ChatGPT e cole tudo desde «CONTEXTO» até ao fim
+> das «REGRAS», de uma vez. Depois peça uma imagem de cada vez, colando
+> o pedido dessa imagem. Peça 3 variações de cada.
 
 ---
 
-## CONTEXTO (cole isto primeiro, de uma vez)
+## CONTEXTO (cole isto primeiro)
 
-Estou a preparar imagens de fundo para o carrossel do topo de um site.
+Preciso de **5 imagens de fundo** para o carrossel do topo de um site.
+São 5 imagens da **mesma família**: passam umas a seguir às outras, de
+6 em 6 segundos, e têm de parecer feitas no mesmo dia pela mesma
+pessoa. Se uma destoar, nota-se logo.
 
 **O site:** tecnovadigital.pt — TECNOVA Digital, de Wesley Vianna.
 Vende sites profissionais a negócios locais em Portugal: barbearias,
 clínicas de estética, restaurantes, ginásios, oficinas, salões e
-confeitarias. Preços a partir de 350€.
+confeitarias. A partir de 350€.
 
-**Quem vê estas imagens:** o dono de um negócio pequeno, entre os 30 e
-os 55 anos, quase sempre no telemóvel, muitas vezes com internet fraca.
-Não é uma pessoa da área da tecnologia. Tem de sentir «isto é sério e
-caro, mas é para mim» — e não «isto é para empresas grandes».
+**Quem vê:** o dono de um negócio pequeno, dos 30 aos 55 anos, quase
+sempre no telemóvel e muitas vezes com internet fraca. Não é da área
+da tecnologia. Tem de sentir «isto é sério e é caro, mas é para mim» —
+e nunca «isto é para empresas grandes».
 
-**Identidade visual:**
+**Vá ver o site antes de desenhar seja o que for:**
+https://tecnovadigital.pt
+
+Repare no carrossel do topo — é lá que estas imagens vão entrar, por
+trás do texto que já lá está. Veja também
+https://tecnovadigital.pt/modelos.html para perceber o ambiente.
+Se não conseguir abrir as páginas, siga o resto deste documento na
+mesma: está tudo descrito.
+
+**Ficheiros que vão em anexo:**
+- O **logótipo** da TECNOVA Digital
+- Uma **imagem de personagem** da marca
+
+Servem para perceber a linguagem visual — a paleta, o tipo de luz, os
+materiais, o ar da coisa. **NÃO são para desenhar dentro das imagens.**
+Não meta o logótipo em nenhuma delas, nem a personagem, nem pessoa
+nenhuma: estas cinco são fundos vazios onde o site escreve por cima.
+O logótipo já está no site, em HTML, e apareceria duas vezes.
+
+**Identidade visual (igual nas cinco):**
 - Fundo: preto castanhado profundo `#16100b`
 - Dourado principal: `#d9b26e`
 - Dourado claro: `#e8cf9e`
-- Creme do texto: `#f6efe2`
-- Ambiente escuro, luz quente dourada vinda de um lado
-- Elegante e sóbrio. Nada de cores berrantes, nada de azul
-  tecnológico, nada de brilhos exagerados nem efeitos de néon
+- Uma só fonte de luz, quente e dourada, vinda de um lado
+- Elegante e sóbrio. Nada de azul tecnológico, nada de néon, nada de
+  cores berrantes, nada de brilhos exagerados
 
 ---
 
 ## REGRAS QUE NÃO SE QUEBRAM
 
-Valem para todas as imagens. Se alguma falhar, a imagem não serve.
+Se uma imagem falhar qualquer destas, não serve. Peça outra.
 
 1. **SEM texto.** Nenhuma letra, número, palavra ou logótipo dentro da
-   imagem. O texto do site vai por cima, escrito em HTML — é assim que
-   se traduz para inglês e espanhol e que o Google o consegue ler.
+   imagem. O texto do site entra por cima, escrito em HTML — é assim
+   que se traduz para inglês e espanhol e que o Google o consegue ler.
 
-2. **O CENTRO tem de ficar calmo e escuro.**
-   O texto do site aparece **centrado**, numa coluna de cerca de 760px
-   no meio da imagem. Essa faixa central tem de ser escura e sem
-   pormenores. O que tiver interesse fica **nas laterais** ou em cima.
+2. **A ZONA LIVRE muda de imagem para imagem.** Vem indicada em cada
+   pedido, e é a regra mais importante de todas: é onde vai assentar o
+   título do site. Tem de ficar escura, lisa, sem pormenores.
 
-3. **Formato 16:9, 1600×900 pixéis.**
+3. **1600×900 pixéis, horizontal (16:9).**
 
 4. **Tem de aguentar cortes.** A mesma imagem aparece num telemóvel de
-   320px e numa televisão. As laterais e o fundo podem ser cortados.
-   Nada de importante encostado às margens.
+   320px e numa televisão. As laterais e o fundo são cortados. Nada de
+   importante encostado às margens.
 
-5. **Sem caras.** Objetos, ambientes e luz. Sem pessoas reconhecíveis.
+5. **Sem caras nem pessoas reconhecíveis.** Objetos, ambientes e luz.
 
-6. **Escura desde o início.** Não é uma imagem para se ver sozinha: é
-   um fundo. Se ficar clara ou cheia, o texto por cima deixa de se ler.
+6. **Escura de origem.** Não é uma imagem para se ver sozinha: é um
+   fundo. Se ficar clara ou cheia, o texto por cima deixa de se ler.
 
-7. **As três têm de parecer da mesma família.** Mesma luz, mesma
-   paleta, mesmo ambiente — vão passar umas a seguir às outras.
+7. **As cinco da mesma família.** Mesma luz, mesma paleta, mesma
+   distância, mesmo ambiente.
 
 ---
 
-## IMAGEM 1 — «Um site profissional a partir de 350€»
+# OS CINCO PEDIDOS
 
-*(Destaque dos pacotes e preços.)*
-**Ideia:** trabalho bem feito, valor, coisa acabada.
+## 1 — «Monte o seu site e veja o preço na hora»
+**ZONA LIVRE: metade ESQUERDA.** *(O título e a fotografia do Wesley
+ficam à esquerda; o lado direito é dele.)*
 
 > Fotografia de produto cinematográfica, 1600x900, horizontal.
-> Um portátil moderno, aberto, pousado numa secretária de madeira
-> escura, visto ligeiramente de lado. O ecrã brilha com uma luz
-> dourada suave, sem nada legível. Uma luz quente dourada entra pela
-> direita e desenha o contorno do portátil. Fundo preto castanhado
-> muito escuro, a esbater-se para os lados.
-> A ZONA CENTRAL DA IMAGEM tem de ficar escura e vazia. O portátil
-> fica DESLOCADO PARA A DIREITA. O lado esquerdo é sombra quase pura.
-> Sem texto, sem letras, sem logótipos. Sem pessoas.
-> Cores: preto #16100b, dourado #d9b26e. Elegante, sóbrio, caro.
-
----
-
-## IMAGEM 2 — «Um site que abre como aplicação»
-
-*(Destaque da aplicação no telemóvel.)*
-**Ideia:** o negócio dele no bolso do cliente.
-
-> Fotografia de produto cinematográfica, 1600x900, horizontal.
-> Um telemóvel moderno na vertical, a flutuar sobre uma superfície
-> escura e polida, com um reflexo dourado por baixo. O ecrã está aceso
-> com um brilho dourado difuso, sem nada legível. Luz quente a entrar
-> pela esquerda.
-> A ZONA CENTRAL tem de ficar escura e vazia. O telemóvel fica
-> DESLOCADO PARA A ESQUERDA, e à direita fica sombra.
-> Sem texto, sem letras, sem logótipos. Sem pessoas, sem mãos.
-> Cores: preto #16100b, dourado #d9b26e. Elegante, sóbrio, caro.
-
----
-
-## IMAGEM 3 — fundo geral (reserva)
-
-**Ideia:** um fundo abstrato para usar onde for preciso.
-
-> Textura de fundo abstrata e cinematográfica, 1600x900, horizontal.
-> Uma onda de luz dourada muito ténue a atravessar um fundo preto
-> castanhado, como um reflexo suave sobre vidro escuro. Sem objetos
-> reconhecíveis.
-> A ZONA CENTRAL tem de ser quase preta. A luz fica nos CANTOS,
-> em cima à direita e em baixo à esquerda.
+> Uma secretária de madeira escura vista de cima em ângulo, com um
+> caderno fechado e uma caneta dourada pousados no CANTO DIREITO. Uma
+> luz quente dourada entra pela direita e atravessa a superfície em
+> diagonal. Fundo preto castanhado muito escuro.
+> A METADE ESQUERDA DA IMAGEM tem de ser sombra quase pura, lisa,
+> sem nada. Todo o motivo fica à DIREITA.
 > Sem texto, sem letras, sem logótipos, sem pessoas.
-> Cores: preto #16100b, dourado #d9b26e. Muito escura e discreta.
+> Cores: preto #16100b, dourado #d9b26e. Elegante, sóbrio, caro.
+
+## 2 — «O seu negócio merece um site à altura»
+**ZONA LIVRE: metade ESQUERDA.** *(Igual à anterior: texto à esquerda,
+maqueta de telemóvel à direita.)*
+
+> Fotografia de produto cinematográfica, 1600x900, horizontal.
+> Um interior de escritório muito escuro e desfocado, com luzes
+> douradas quentes suspensas ao fundo, à direita, como candeeiros
+> distantes fora de foco. Profundidade, ar de fim de tarde.
+> A METADE ESQUERDA tem de ser escura e lisa, sem pontos de luz.
+> Todo o interesse fica à DIREITA.
+> Sem texto, sem letras, sem logótipos, sem pessoas.
+> Cores: preto #16100b, dourado #d9b26e. Elegante, sóbrio, caro.
+
+## 3 — «Um site profissional a partir de 350€»
+**ZONA LIVRE: a FAIXA DO MEIO.** *(Aqui o título é centrado.)*
+
+> Fotografia de produto cinematográfica, 1600x900, horizontal.
+> Um portátil moderno aberto no CANTO ESQUERDO e uma chávena de café
+> no CANTO DIREITO, ambos sobre madeira escura, vistos de lado e
+> cortados pelas margens. O ecrã do portátil brilha com luz dourada
+> difusa, sem nada legível.
+> A FAIXA VERTICAL DO MEIO — cerca de metade da largura — tem de ser
+> sombra lisa e quase preta, completamente vazia. Os objetos ficam
+> encostados aos LADOS.
+> Sem texto, sem letras, sem logótipos, sem pessoas.
+> Cores: preto #16100b, dourado #d9b26e. Elegante, sóbrio, caro.
+
+## 4 — «Veja um modelo pronto para o seu tipo de negócio»
+**ZONA LIVRE: a FAIXA DO MEIO.**
+
+> Fotografia de produto cinematográfica, 1600x900, horizontal.
+> Duas montras de lojas pequenas ao anoitecer, muito desfocadas, uma
+> no CANTO ESQUERDO e outra no CANTO DIREITO, com luz dourada quente
+> a sair de dentro. Fundo preto castanhado.
+> A FAIXA VERTICAL DO MEIO tem de ser escura, lisa e vazia.
+> Sem texto, sem letras, sem logótipos, sem nomes de lojas, sem caras.
+> Cores: preto #16100b, dourado #d9b26e. Elegante, sóbrio, caro.
+
+## 5 — «Um site que abre como aplicação»
+**ZONA LIVRE: a FAIXA DO MEIO.**
+
+> Fotografia de produto cinematográfica, 1600x900, horizontal.
+> Dois telemóveis modernos na vertical, um no CANTO ESQUERDO e outro
+> no CANTO DIREITO, sobre uma superfície escura polida, com reflexo
+> dourado por baixo. Ecrãs acesos com um brilho dourado difuso, sem
+> nada legível.
+> A FAIXA VERTICAL DO MEIO tem de ser sombra lisa e quase preta.
+> Sem texto, sem letras, sem logótipos, sem pessoas, sem mãos.
+> Cores: preto #16100b, dourado #d9b26e. Elegante, sóbrio, caro.
 
 ---
 
-## O QUE NÃO É PRECISO PEDIR
+## ANTES DE ME ENVIAR — o teste do dedo
 
-O destaque dos **modelos** («veja um modelo pronto para o seu tipo de
-negócio») não leva imagem de IA. Aí entram fotografias dos modelos a
-sério, que já estão feitas em `img/og/`. Um site verdadeiro em que se
-carrega nos botões convence mais do que qualquer desenho.
+Para cada imagem, tape com o dedo a zona livre que estava indicada
+(metade esquerda nas 1 e 2, faixa do meio nas 3, 4 e 5).
 
----
+**Se perdeu alguma coisa importante, essa imagem não serve.** É a
+verificação mais rápida que há e apanha quase todos os casos.
 
-## ANTES DE ME ENVIAR — verifique isto
-
-- [ ] Não tem nenhuma letra, número ou logótipo
-- [ ] Tapando a faixa do meio com o dedo, não se perde nada importante
-- [ ] É escura o suficiente para se escrever por cima em branco
-- [ ] As três parecem da mesma família
-- [ ] Não há caras
-- [ ] É horizontal, larga, não quadrada
+E depois, com as cinco lado a lado: parecem da mesma família? Se
+alguma destoar na luz ou na cor, peça outra só dessa.
 
 ## Como me enviar
 
-Os ficheiros no tamanho maior que o ChatGPT der — **não encolha nem
-comprima nada**. Eu trato disso: converto para WebP, ponho cada uma
-abaixo de 150 KB, meto-as por trás do texto e volto a medir o
-carrossel nos sete tamanhos de ecrã.
+No tamanho maior que o ChatGPT der, **sem encolher nem comprimir**.
+
+Eu trato do resto: converto para WebP, ponho cada uma abaixo de 120 KB,
+monto-as por trás do texto — só a primeira carrega logo, as outras
+esperam pela vez delas — e volto a medir o carrossel nos sete tamanhos
+de ecrã.
 
 **Porque é que o peso importa:** a página está hoje em 1436 KB, dos
-quais 1075 KB são imagens. Se estas entrarem sem cuidado, a página vai
-a 3 ou 4 MB — e num 4G fraco isso é a diferença entre a pessoa esperar
-e ir-se embora. O seu cliente é exatamente quem está na rua com o
+quais 1075 KB são imagens. Cinco imagens sem cuidado punham-na em 3 ou
+4 MB — e num 4G fraco isso é a diferença entre a pessoa esperar e
+ir-se embora. O seu cliente é exatamente quem está na rua com o
 telemóvel na mão.
