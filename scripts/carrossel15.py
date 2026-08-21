@@ -37,8 +37,12 @@ LARGURAS = {
 # de descer abaixo do piso para la chegar, fica pelo piso e o ficheiro sai
 # maior. Texto legivel manda mais do que o numero.
 ALVO_BYTES = 120 * 1024
-PISO_QUALIDADE = 74
 TECTO_QUALIDADE = 86
+
+# O piso sobe nas larguras grandes. Um cartaz de 3840 so vai parar a
+# ecras 2K e 4K, onde o texto aparece ao tamanho a que foi desenhado --
+# se a qualidade cair a 74 para caber nos 120 KB, e ai que a letra
+# comeca a esfarelar. Nesses vale mais o ficheiro pesar o dobro.
 
 
 def digestao(caminho):
@@ -95,9 +99,10 @@ def construir(ficha, caminho):
             pequena = original.resize((largura, altura), Image.LANCZOS)
             saida = os.path.join(DESTINO, '%d-%s-%d.webp' % (numero, classe, largura))
 
+            piso = 82 if largura >= 2560 else 74
             qualidade = TECTO_QUALIDADE
             peso = gravar(pequena, saida, qualidade)
-            while peso > ALVO_BYTES and qualidade > PISO_QUALIDADE:
+            while peso > ALVO_BYTES and qualidade > piso:
                 qualidade -= 2
                 peso = gravar(pequena, saida, qualidade)
 

@@ -58,22 +58,20 @@ Valem para as quinze.
    logótipo, rosto — a menos de 6% de qualquer bordo. É o que garante
    que aquele desvio de 3% no telemóvel pequeno nunca toca no texto.
 
-2. **Faixa livre em baixo — e o tamanho MUDA com o formato:**
+2. **Faixa livre em baixo.** Escura e vazia, sem nada desenhado — nem
+   logótipo, nem figura, nem letra. É onde entram os botões do site **e
+   os comandos do carrossel** (as bolinhas e o «Pausar»), que são HTML
+   porque têm de ser clicáveis e mudar de língua. **Não desenhe botões.**
 
-   | Formato | Faixa livre em baixo |
-   |---|---|
-   | Telemóvel 1440×2400 | **30% da altura** (720px em baixo, vazios) |
-   | Tablet 1800×1440 | **24% da altura** (346px) |
-   | Computador 3840×1920 | **20% da altura** (384px) |
+   O que os quinze cartazes trazem, medido nos PNG:
 
-   Escura e vazia, sem nada desenhado — nem logótipo, nem figura, nem
-   letra. É onde entram os botões do site **e os comandos do carrossel**
-   (as bolinhas e o «Pausar»), que são HTML porque têm de ser clicáveis e
-   mudar de língua. **Não desenhe botões.**
+   | Formato | Faixa que reservam | Pior caso |
+   |---|---|---|
+   | Telemóvel | 19,1% a 24,7% | destaque 5 |
+   | Tablet | 28,6% a 31,2% | destaque 5 |
+   | Computador | 21,8% a 24,7% | destaque 3 |
 
-   Da primeira vez pedi 18% em todos, e foi pouco: no telemóvel os
-   botões ficaram a assentar em cima do logótipo. Medi o que os botões e
-   os comandos ocupam mesmo — 140px — e é isto que dá em cada formato.
+   Chega para o que o site põe lá em cima. Ver a secção do fim.
 
 3. **Sem cortar e sem esticar.** Cada formato é composto de raiz para a
    sua forma. A do telemóvel não é a do computador cortada, nem ao
@@ -105,19 +103,46 @@ versão de computador — numa imagem estreita, texto pequeno não se lê.
 
 ---
 
-## O QUE EU MUDO DO MEU LADO
+## O QUE FICOU FEITO, E MEDIDO
 
-Assim que as imagens chegarem:
+1. O palco tem agora a proporção fixa de cada classe — 3/5 no telemóvel,
+   5/4 no tablet, 2/1 no computador. Medido: 0,60, 1,25 e 2,00 exactos.
+2. A imagem passou a `cover`. Como a forma do palco é a mesma do cartaz,
+   `cover` não corta nada — e acabaram as barras escuras dos lados.
+3. Cada cartaz tem variantes WebP: cinco larguras no telemóvel, quatro no
+   tablet, cinco no computador. Quase todas abaixo dos 120 KB; só as de
+   2560 e 3840 passam, de propósito, porque é aí que a letra aparece ao
+   tamanho a que foi desenhada e não vale a pena esfarelá-la.
+4. Só o primeiro destaque vem no arranque. Os outros quatro guardam os
+   endereços em `data-srcset` e só os passam a valer quando lhes chega a
+   vez.
 
-1. O palco passa a ter a proporção fixa de cada classe (0,60 / 1,25 /
-   2,00), em vez da conta que faz hoje.
-2. A imagem passa a `cover` — enche o palco todo — em vez de `contain`,
-   que era o que deixava as barras escuras ao lado.
-3. Faço as variantes WebP em vários tamanhos, cada uma abaixo de 120 KB.
-4. Volto a medir nos doze ecrãs do quadro acima e mostro-lhe o
-   resultado antes de dar por acabado.
+### A mobília teve de encolher
 
----
+A faixa desenhada não chegava para os botões e os comandos como estavam:
+no telemóvel assentavam em cima do logótipo, e num portátil de 1024px o
+palco só tem 512px de altura — os comandos empilhados pediam 28,6% dele.
+
+O que mudou: o intervalo entre os botões e os comandos passou de 44px
+para 24px; num palco largo os comandos saem de baixo dos botões e vão
+para o canto direito da faixa; e a 360px deixam de partir em duas filas.
+
+O que a mobília pede agora, contra o que o cartaz reserva:
+
+| Ecrã | Palco | Mobília | Cartaz reserva |
+|---|---|---|---|
+| Telemóvel 360 | 360×600 | 17,0% | 19,1% |
+| iPhone 390 | 390×650 | 16,0% | 19,1% |
+| iPhone 430 | 430×717 | 14,5% | 19,1% |
+| Tablet 768 | 768×614 | 19,7% | 28,6% |
+| iPad 834 | 834×667 | 18,1% | 28,6% |
+| Portátil 1024 | 1024×512 | 15,7% | 21,8% |
+| MacBook 1440 | 1440×720 | 11,2% | 21,8% |
+| Monitor 1920 | 1920×960 | 8,4% | 21,8% |
+| Telemóvel deitado 844 | 844×422 | 12,3% | 21,8% |
+| iPhone SE deitado 568 | 568×284 | 18,3% | 21,8% |
+
+Verificado em 17 tamanhos de ecrã × 3 línguas × 5 destaques.
 
 ## O QUE CORREU MAL DESTA VEZ, PARA NÃO SE REPETIR
 

@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=53">
-<link rel="stylesheet" href="assistente.css?v=53">
-<link rel="stylesheet" href="i18n.css?v=53">
+<link rel="stylesheet" href="estilo.css?v=54">
+<link rel="stylesheet" href="assistente.css?v=54">
+<link rel="stylesheet" href="i18n.css?v=54">
 <style>
 .hero{
   min-height:100vh;display:flex;align-items:center;
@@ -72,24 +72,26 @@
 /* ============================================================
    O PALCO DOS CARTAZES
    ------------------------------------------------------------
-   Cada destaque e agora um cartaz inteiro, feito a medida. A
-   regra que manda em tudo o resto: NUNCA CORTAR O CARTAZ.
-   Medi o palco em dez ecras e a proporcao vai de 0,54 num
-   telemovel de 320px a 4,80 numa televisao 4K -- 8,9 vezes de
-   diferenca. Com `cover`, do portatil de 1366px para cima
-   cortava-se o titulo, e no 2K tambem o logotipo.
-   Por isso `contain`: a imagem cabe sempre inteira e o que
-   sobra a volta e escuro, da mesma cor dos cantos do cartaz.
-   A junta nao se ve -- medida em 0,24 sobre 255.
+   Cada destaque sao tres cartazes, compostos de raiz para tres
+   formas: 1440x2400 no telemovel, 1800x1440 no tablet e
+   3840x1920 no computador. O palco toma exactamente a forma do
+   cartaz que esta a mostrar, por isso a imagem enche-o de ponta
+   a ponta com `cover` sem cortar nada de jeito.
+   Foi assim que se acabaram as barras escuras dos lados: dantes
+   havia dois cartazes para dez formas de palco, e com `contain`
+   o que sobrava a volta ficava vazio.
+   O caso deitado e baixo -- telemovel virado ao lado, portatil
+   de ecra curto -- leva a forma larga, senao o palco ficava
+   quatro vezes mais alto do que a janela.
    ============================================================ */
 .hero-slider{position:relative;overflow:hidden;padding:0;
   display:grid;
-  /* a altura segue a forma do cartaz, sem nunca passar do ecra */
-  height:min(calc(100vw / 1.5), 88svh);
+  aspect-ratio:3 / 5;
   background:#0c0804}
-@media(max-width:767px){
-  /* no telemovel manda o cartaz vertical: 1024x1536 */
-  .hero-slider{height:min(calc(100vw * 1.5), 88svh)}
+@media(min-width:768px){ .hero-slider{aspect-ratio:5 / 4} }
+@media(min-width:1024px){ .hero-slider{aspect-ratio:2 / 1} }
+@media(orientation:landscape) and (max-height:620px){
+  .hero-slider{aspect-ratio:2 / 1}
 }
 
 .hs-slide{grid-area:1/1;opacity:0;visibility:hidden;
@@ -100,7 +102,7 @@
 @media(prefers-reduced-motion:reduce){ .hs-slide{transition:none} }
 
 .hs-cartaz{position:absolute;inset:0;display:block}
-.hs-cartaz img{width:100%;height:100%;object-fit:contain;object-position:center;
+.hs-cartaz img{width:100%;height:100%;object-fit:cover;object-position:center;
   display:block}
 
 /* O titulo esta desenhado dentro do cartaz. Aqui fica o mesmo texto para
@@ -112,25 +114,78 @@
 /* Os botoes tem de ser botoes a serio: uma fotografia de um botao nao se
    carrega, nao muda de lingua e nao se le. Assentam na faixa escura que
    ficou reservada em baixo do cartaz. */
-/* Os botoes tem de ficar SEMPRE acima dos comandos, com folga.
-   Estavam em percentagem do palco enquanto os comandos estao em pixeis
-   fixos: num palco curto a percentagem encolhia e os botoes caiam-lhes
-   em cima -- a 320px sobrepunham-se 60px, a 390px quatro.
-   Agora medem-se a partir dos comandos. O site.js poe a altura deles em
-   --cmd-h, porque abaixo dos 380px passam a duas filas e ficam com o
-   dobro. O 40px e so a rede de seguranca se o JavaScript nao correr. */
+/* A MOBILIA CABE NA FAIXA QUE O CARTAZ RESERVOU
+   ------------------------------------------------------------
+   Cada cartaz deixa uma faixa escura e vazia em baixo. Medi a que
+   os quinze trazem mesmo: 19,1% no telemovel mais apertado, 28,6%
+   no tablet e 21,8% no computador. Os botoes e os comandos tem de
+   caber la dentro, senao assentam em cima do logotipo -- foi o que
+   aconteceu e da para ver nas fotografias do telemovel.
+   Os botoes medem-se a partir dos comandos (--cmd-h, posto pelo
+   site.js); o 40px e so a rede se o JavaScript nao correr. */
 .hs-accoes{position:absolute;left:0;right:0;
-  bottom:calc(18px + var(--cmd-h, 40px) + 26px);
-  display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+  bottom:calc(12px + var(--cmd-h, 40px) + 12px);
+  display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
   padding:0 20px;z-index:3}
 @media(max-width:767px){
-  .hs-accoes{bottom:calc(18px + var(--cmd-h, 40px) + 26px);
-    gap:10px;flex-wrap:nowrap;padding:0 16px}
+  .hs-accoes{gap:10px;flex-wrap:nowrap;padding:0 14px}
   .hs-accoes .btn{flex:1 1 0;min-width:0;justify-content:center;
-    padding:12px 10px;font-size:.82rem;line-height:1.2;text-align:center}
+    padding:11px 10px;font-size:.82rem;line-height:1.2;text-align:center}
 }
+/* A 320px o texto dos botoes parte em duas linhas em ingles e espanhol,
+   e a mobilia chegava aos 21,8% -- mais do que os 20,6% que o cartaz 3
+   reserva. Letra e folgas mais curtas devolvem 16px. */
 @media(max-width:360px){
-  .hs-accoes .btn{font-size:.74rem;padding:10px 7px}
+  .hs-accoes{bottom:calc(8px + var(--cmd-h, 40px) + 8px);gap:8px}
+  .hs-accoes .btn{font-size:.70rem;padding:9px 6px}
+}
+/* No computador o palco e baixo: a 1024px tem 512px de altura e a
+   faixa vale 111px. Empilhados, os botoes e os comandos pediam 126px
+   e voltavam a subir para cima da arte. Lado a lado cabem em 82px --
+   e ate assenta melhor no cartaz, que ja tem o texto a esquerda e a
+   figura a direita. */
+@media(min-width:1024px), (orientation:landscape) and (max-height:620px){
+  .hs-accoes{left:6%;right:auto;bottom:20px;
+    justify-content:flex-start;flex-wrap:nowrap;padding:0}
+  .hs-accoes .btn{flex:0 0 auto}
+}
+/* Telemovel virado ao lado: o palco fica com 334px de altura num iPhone
+   SE e a faixa do cartaz largo so tem 21,8%. Lado a lado ainda pedia
+   24,6%, por isso aqui a mobilia encosta-se ao fundo e os botoes ficam
+   com a altura normal em vez da grande. */
+@media(orientation:landscape) and (max-height:620px){
+  .hs-accoes{bottom:12px}
+  .hs-accoes .btn{padding:10px 16px;font-size:.82rem}
+}
+/* Num iPhone SE deitado sobram 667px de largura para os dois botoes MAIS
+   os comandos na mesma linha. Com a letra normal os botoes chegavam aos
+   440px e iam bater nos comandos, que comecam aos 377px. */
+@media(orientation:landscape) and (max-height:430px){
+  .hs-accoes .btn{padding:8px 12px;font-size:.72rem}
+  .hs-comandos{gap:2px;padding:2px 6px}
+  .hs-pausa{margin-left:4px;padding:0 10px 0 8px;font-size:.66rem}
+}
+/* Um iPhone 5 deitado tem 568px e nem assim cabe tudo: faltavam 18px.
+   A palavra do botao sai de vista mas fica no DOM -- com `clip`, nao com
+   `display:none` -- por isso quem usa leitor de ecra continua a ouvir
+   "Pausar" e nao um botao sem nome. */
+/* Deitado, os 6% de cada lado custam 80px que fazem falta: os botoes em
+   ingles e espanhol chegavam aos comandos. Encostados aos bordos sobram
+   56px, e abaixo dos 700px a palavra do botao de pausa sai de vista --
+   com `clip`, nao com `display:none`, para o leitor de ecra continuar a
+   ouvir "Pausar" em vez de um botao sem nome. */
+@media(orientation:landscape) and (max-width:900px){
+  .hs-accoes{left:12px}
+}
+@media(orientation:landscape) and (max-width:700px){
+  .hs-pausa-txt{position:absolute;width:1px;height:1px;overflow:hidden;
+    clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+}
+/* Num iPhone 5 deitado sao 568px de largura para dois botoes E os
+   comandos na mesma linha, e em ingles nao ha maneira. Fica o botao
+   principal; o outro destino continua no menu e mais abaixo na pagina. */
+@media(orientation:landscape) and (max-width:640px){
+  .hs-accoes .btn:nth-child(2){display:none}
 }
 
 .hs-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:46px;height:46px;border-radius:50%;border:1px solid rgba(217,178,110,.5);background:rgba(22,16,11,.5);color:var(--gold-soft);font-size:1.5rem;cursor:pointer;display:grid;place-items:center;transition:all .2s;line-height:1}
@@ -138,7 +193,7 @@
 .hs-arrow{display:none}
 .hs-arrow.prev{left:24px}.hs-arrow.next{right:24px}
 @media(min-width:1180px){.hs-arrow{display:grid}}
-.hs-comandos{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+.hs-comandos{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
   display:flex;align-items:center;gap:4px;z-index:10;
   /* um vidro escuro por trás: separa os comandos do fundo do slide e dá-lhes
      ar próprio, em vez de ficarem a boiar sobre o texto */
@@ -201,18 +256,34 @@
 @media(max-width:400px){
   .hs-comandos{left:14px;transform:none}
 }
-/* A bolha do chat fica a 16px da direita e mede 54px, por isso começa a
-   380−16−54 = 310px. Até aos 380px de largura o grupo numa fila só ainda
-   lá chega; daí para baixo passa a duas. */
+/* A bolha do chat fica a 16px da direita e mede 54px, por isso comeca a
+   360−16−54 = 290px. Isto punha o grupo em duas filas, e duas filas
+   valem 165px de altura -- 27,5% do palco, quando o cartaz so reserva
+   19,1%. Fica numa fila so e encolhe: 268px, que acabam a 282px e
+   passam por baixo da bolha sem lhe tocar. Ninguem perde a palavra nem
+   os 34px de area de toque das bolinhas. */
 @media(max-width:380px){
-  .hs-comandos{flex-wrap:wrap;max-width:200px;align-items:flex-start;
-    row-gap:5px;border-radius:22px;padding:5px 8px}
-  .hs-pausa{margin-left:0}
+  .hs-comandos{padding:3px 6px}
+  .hs-pausa{margin-left:4px;padding:0 9px 0 8px;font-size:.64rem;gap:5px}
+}
+/* No computador os comandos saem de baixo dos botoes e vao para o canto
+   direito da faixa: e o que deixa os dois caberem nos 82px que o cartaz
+   reserva num portatil de 1024px. */
+@media(min-width:1024px), (orientation:landscape) and (max-height:620px){
+  .hs-comandos{left:auto;right:6%;transform:none;bottom:20px}
+}
+@media(orientation:landscape) and (max-height:620px){
+  .hs-comandos{bottom:12px}
+}
+@media(orientation:landscape) and (max-width:900px){
+  .hs-comandos{right:12px}
+}
+@media(orientation:landscape) and (max-width:700px){
+  .hs-pausa{margin-left:2px;padding:0 10px;gap:0}
 }
 @media(max-width:900px){
   .hs-grid.solo{max-width:none}
   .hs-arrow{display:none}
-  .hero-slider{min-height:min(72svh,600px)}
   .hs-slide{padding:88px 0 92px}
 }
 .hero h1{font-size:clamp(2.6rem,6vw,4.4rem);line-height:1.06;font-weight:800;margin:22px 0 26px}
@@ -471,16 +542,34 @@
        e o carrossel passa a rodar os outros quatro. -->
   <div class="hs-slide oferta active" data-promo-slide>
     <picture class="hs-cartaz">
-      <source media="(max-width:767px)"
-              srcset="img/carrossel/1-alta-480.webp 480w,
-                      img/carrossel/1-alta-768.webp 768w,
-                      img/carrossel/1-alta-1024.webp 1024w"
+      <source media="(orientation:landscape) and (max-height:620px)"
+              srcset="img/carrossel/1-computador-1280.webp 1280w,
+                      img/carrossel/1-computador-1600.webp 1600w,
+                      img/carrossel/1-computador-1920.webp 1920w,
+                      img/carrossel/1-computador-2560.webp 2560w,
+                      img/carrossel/1-computador-3840.webp 3840w"
               sizes="100vw">
-      <img src="img/carrossel/1-larga-1366.webp"
-           srcset="img/carrossel/1-larga-960.webp 960w,
-                   img/carrossel/1-larga-1366.webp 1366w,
-                   img/carrossel/1-larga-1536.webp 1536w"
-           sizes="100vw" width="1536" height="1024" alt="Campanha de lançamento até 30 de setembro. Escolha o que quer e o preço aparece à frente dos olhos, com 40% de desconto em todo o site." fetchpriority="high">
+      <source media="(max-width:767px)"
+              srcset="img/carrossel/1-telemovel-480.webp 480w,
+                      img/carrossel/1-telemovel-720.webp 720w,
+                      img/carrossel/1-telemovel-960.webp 960w,
+                      img/carrossel/1-telemovel-1200.webp 1200w,
+                      img/carrossel/1-telemovel-1440.webp 1440w"
+              sizes="100vw">
+      <source media="(max-width:1023px)"
+              srcset="img/carrossel/1-tablet-768.webp 768w,
+                      img/carrossel/1-tablet-1024.webp 1024w,
+                      img/carrossel/1-tablet-1400.webp 1400w,
+                      img/carrossel/1-tablet-1800.webp 1800w"
+              sizes="100vw">
+      <img src="img/carrossel/1-computador-1920.webp"
+           srcset="img/carrossel/1-computador-1280.webp 1280w,
+                   img/carrossel/1-computador-1600.webp 1600w,
+                   img/carrossel/1-computador-1920.webp 1920w,
+                   img/carrossel/1-computador-2560.webp 2560w,
+                   img/carrossel/1-computador-3840.webp 3840w"
+           sizes="100vw" width="3840" height="1920"
+           alt="" aria-hidden="true" decoding="async" fetchpriority="high">
     </picture>
     <!-- O titulo esta dentro do cartaz, que o Google nao le. Fica aqui,
          invisivel para quem ve e legivel para o Google e para quem usa
@@ -494,16 +583,34 @@
 
   <div class="hs-slide">
     <picture class="hs-cartaz">
-      <source media="(max-width:767px)"
-              srcset="img/carrossel/2-alta-480.webp 480w,
-                      img/carrossel/2-alta-768.webp 768w,
-                      img/carrossel/2-alta-1024.webp 1024w"
+      <source media="(orientation:landscape) and (max-height:620px)"
+              data-srcset="img/carrossel/2-computador-1280.webp 1280w,
+                           img/carrossel/2-computador-1600.webp 1600w,
+                           img/carrossel/2-computador-1920.webp 1920w,
+                           img/carrossel/2-computador-2560.webp 2560w,
+                           img/carrossel/2-computador-3840.webp 3840w"
               sizes="100vw">
-      <img src="img/carrossel/2-larga-1366.webp"
-           srcset="img/carrossel/2-larga-960.webp 960w,
-                   img/carrossel/2-larga-1366.webp 1366w,
-                   img/carrossel/2-larga-1536.webp 1536w"
-           sizes="100vw" width="1536" height="1024" alt="Site profissional, aplicação própria, marcações pelo próprio site e cartão de fidelidade digital. Entrega em 5 dias, metade só se paga com o site no ar." loading="lazy">
+      <source media="(max-width:767px)"
+              data-srcset="img/carrossel/2-telemovel-480.webp 480w,
+                           img/carrossel/2-telemovel-720.webp 720w,
+                           img/carrossel/2-telemovel-960.webp 960w,
+                           img/carrossel/2-telemovel-1200.webp 1200w,
+                           img/carrossel/2-telemovel-1440.webp 1440w"
+              sizes="100vw">
+      <source media="(max-width:1023px)"
+              data-srcset="img/carrossel/2-tablet-768.webp 768w,
+                           img/carrossel/2-tablet-1024.webp 1024w,
+                           img/carrossel/2-tablet-1400.webp 1400w,
+                           img/carrossel/2-tablet-1800.webp 1800w"
+              sizes="100vw">
+      <img data-src="img/carrossel/2-computador-1920.webp"
+           data-srcset="img/carrossel/2-computador-1280.webp 1280w,
+                        img/carrossel/2-computador-1600.webp 1600w,
+                        img/carrossel/2-computador-1920.webp 1920w,
+                        img/carrossel/2-computador-2560.webp 2560w,
+                        img/carrossel/2-computador-3840.webp 3840w"
+           sizes="100vw" width="3840" height="1920"
+           alt="" aria-hidden="true" decoding="async">
     </picture>
     <!-- O titulo esta dentro do cartaz, que o Google nao le. Fica aqui,
          invisivel para quem ve e legivel para o Google e para quem usa
@@ -517,16 +624,34 @@
 
   <div class="hs-slide">
     <picture class="hs-cartaz">
-      <source media="(max-width:767px)"
-              srcset="img/carrossel/3-alta-480.webp 480w,
-                      img/carrossel/3-alta-768.webp 768w,
-                      img/carrossel/3-alta-1024.webp 1024w"
+      <source media="(orientation:landscape) and (max-height:620px)"
+              data-srcset="img/carrossel/3-computador-1280.webp 1280w,
+                           img/carrossel/3-computador-1600.webp 1600w,
+                           img/carrossel/3-computador-1920.webp 1920w,
+                           img/carrossel/3-computador-2560.webp 2560w,
+                           img/carrossel/3-computador-3840.webp 3840w"
               sizes="100vw">
-      <img src="img/carrossel/3-larga-1366.webp"
-           srcset="img/carrossel/3-larga-960.webp 960w,
-                   img/carrossel/3-larga-1366.webp 1366w,
-                   img/carrossel/3-larga-1536.webp 1536w"
-           sizes="100vw" width="1536" height="1024" alt="Três pacotes claros — Essencial 350€, Profissional 650€ e Premium 990€. Metade no início, metade só quando o site estiver no ar e aprovado por si." loading="lazy">
+      <source media="(max-width:767px)"
+              data-srcset="img/carrossel/3-telemovel-480.webp 480w,
+                           img/carrossel/3-telemovel-720.webp 720w,
+                           img/carrossel/3-telemovel-960.webp 960w,
+                           img/carrossel/3-telemovel-1200.webp 1200w,
+                           img/carrossel/3-telemovel-1440.webp 1440w"
+              sizes="100vw">
+      <source media="(max-width:1023px)"
+              data-srcset="img/carrossel/3-tablet-768.webp 768w,
+                           img/carrossel/3-tablet-1024.webp 1024w,
+                           img/carrossel/3-tablet-1400.webp 1400w,
+                           img/carrossel/3-tablet-1800.webp 1800w"
+              sizes="100vw">
+      <img data-src="img/carrossel/3-computador-1920.webp"
+           data-srcset="img/carrossel/3-computador-1280.webp 1280w,
+                        img/carrossel/3-computador-1600.webp 1600w,
+                        img/carrossel/3-computador-1920.webp 1920w,
+                        img/carrossel/3-computador-2560.webp 2560w,
+                        img/carrossel/3-computador-3840.webp 3840w"
+           sizes="100vw" width="3840" height="1920"
+           alt="" aria-hidden="true" decoding="async">
     </picture>
     <!-- O titulo esta dentro do cartaz, que o Google nao le. Fica aqui,
          invisivel para quem ve e legivel para o Google e para quem usa
@@ -540,16 +665,34 @@
 
   <div class="hs-slide">
     <picture class="hs-cartaz">
-      <source media="(max-width:767px)"
-              srcset="img/carrossel/4-alta-480.webp 480w,
-                      img/carrossel/4-alta-768.webp 768w,
-                      img/carrossel/4-alta-1024.webp 1024w"
+      <source media="(orientation:landscape) and (max-height:620px)"
+              data-srcset="img/carrossel/4-computador-1280.webp 1280w,
+                           img/carrossel/4-computador-1600.webp 1600w,
+                           img/carrossel/4-computador-1920.webp 1920w,
+                           img/carrossel/4-computador-2560.webp 2560w,
+                           img/carrossel/4-computador-3840.webp 3840w"
               sizes="100vw">
-      <img src="img/carrossel/4-larga-1366.webp"
-           srcset="img/carrossel/4-larga-960.webp 960w,
-                   img/carrossel/4-larga-1366.webp 1366w,
-                   img/carrossel/4-larga-1536.webp 1536w"
-           sizes="100vw" width="1536" height="1024" alt="Sete modelos completos para barbearias, clínicas de estética, restaurantes, ginásios, oficinas, salões e confeitarias. Ver não custa nada." loading="lazy">
+      <source media="(max-width:767px)"
+              data-srcset="img/carrossel/4-telemovel-480.webp 480w,
+                           img/carrossel/4-telemovel-720.webp 720w,
+                           img/carrossel/4-telemovel-960.webp 960w,
+                           img/carrossel/4-telemovel-1200.webp 1200w,
+                           img/carrossel/4-telemovel-1440.webp 1440w"
+              sizes="100vw">
+      <source media="(max-width:1023px)"
+              data-srcset="img/carrossel/4-tablet-768.webp 768w,
+                           img/carrossel/4-tablet-1024.webp 1024w,
+                           img/carrossel/4-tablet-1400.webp 1400w,
+                           img/carrossel/4-tablet-1800.webp 1800w"
+              sizes="100vw">
+      <img data-src="img/carrossel/4-computador-1920.webp"
+           data-srcset="img/carrossel/4-computador-1280.webp 1280w,
+                        img/carrossel/4-computador-1600.webp 1600w,
+                        img/carrossel/4-computador-1920.webp 1920w,
+                        img/carrossel/4-computador-2560.webp 2560w,
+                        img/carrossel/4-computador-3840.webp 3840w"
+           sizes="100vw" width="3840" height="1920"
+           alt="" aria-hidden="true" decoding="async">
     </picture>
     <!-- O titulo esta dentro do cartaz, que o Google nao le. Fica aqui,
          invisivel para quem ve e legivel para o Google e para quem usa
@@ -563,16 +706,34 @@
 
   <div class="hs-slide">
     <picture class="hs-cartaz">
-      <source media="(max-width:767px)"
-              srcset="img/carrossel/5-alta-480.webp 480w,
-                      img/carrossel/5-alta-768.webp 768w,
-                      img/carrossel/5-alta-1024.webp 1024w"
+      <source media="(orientation:landscape) and (max-height:620px)"
+              data-srcset="img/carrossel/5-computador-1280.webp 1280w,
+                           img/carrossel/5-computador-1600.webp 1600w,
+                           img/carrossel/5-computador-1920.webp 1920w,
+                           img/carrossel/5-computador-2560.webp 2560w,
+                           img/carrossel/5-computador-3840.webp 3840w"
               sizes="100vw">
-      <img src="img/carrossel/5-larga-1366.webp"
-           srcset="img/carrossel/5-larga-960.webp 960w,
-                   img/carrossel/5-larga-1366.webp 1366w,
-                   img/carrossel/5-larga-1536.webp 1536w"
-           sizes="100vw" width="1536" height="1024" alt="Instala-se no telemóvel em segundos, com conta de cliente e cartão de fidelidade digital. Sem App Store, sem Play Store." loading="lazy">
+      <source media="(max-width:767px)"
+              data-srcset="img/carrossel/5-telemovel-480.webp 480w,
+                           img/carrossel/5-telemovel-720.webp 720w,
+                           img/carrossel/5-telemovel-960.webp 960w,
+                           img/carrossel/5-telemovel-1200.webp 1200w,
+                           img/carrossel/5-telemovel-1440.webp 1440w"
+              sizes="100vw">
+      <source media="(max-width:1023px)"
+              data-srcset="img/carrossel/5-tablet-768.webp 768w,
+                           img/carrossel/5-tablet-1024.webp 1024w,
+                           img/carrossel/5-tablet-1400.webp 1400w,
+                           img/carrossel/5-tablet-1800.webp 1800w"
+              sizes="100vw">
+      <img data-src="img/carrossel/5-computador-1920.webp"
+           data-srcset="img/carrossel/5-computador-1280.webp 1280w,
+                        img/carrossel/5-computador-1600.webp 1600w,
+                        img/carrossel/5-computador-1920.webp 1920w,
+                        img/carrossel/5-computador-2560.webp 2560w,
+                        img/carrossel/5-computador-3840.webp 3840w"
+           sizes="100vw" width="3840" height="1920"
+           alt="" aria-hidden="true" decoding="async">
     </picture>
     <!-- O titulo esta dentro do cartaz, que o Google nao le. Fica aqui,
          invisivel para quem ve e legivel para o Google e para quem usa
@@ -764,10 +925,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="campanha.js?v=53"></script>
-<script src="medir-config.js?v=53"></script>
-<script src="medir.js?v=53"></script>
-<script src="auth-nav.js?v=53"></script>
+<script src="campanha.js?v=54"></script>
+<script src="medir-config.js?v=54"></script>
+<script src="medir.js?v=54"></script>
+<script src="auth-nav.js?v=54"></script>
 
 <script>
 const io=new IntersectionObserver(es=>{
@@ -779,9 +940,9 @@ if('serviceWorker' in navigator){
 }
 </script>
 <script src="site.js"></script>
-<script src="idiomas/en.js?v=53"></script>
-<script src="idiomas/es.js?v=53"></script>
-<script src="i18n.js?v=53"></script>
+<script src="idiomas/en.js?v=54"></script>
+<script src="idiomas/es.js?v=54"></script>
+<script src="i18n.js?v=54"></script>
 <script src="assistente.js"></script>
 </body>
 </html>

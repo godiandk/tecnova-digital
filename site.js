@@ -36,6 +36,26 @@
     var dotsWrap = slider.querySelector(".hs-dots");
     var idx = 0, timer = null, DELAY = 5500;
 
+    /* Cada destaque tem tres cartazes e o mais pesado passa dos 200 KB.
+       So o primeiro vem no arranque; os outros guardam os enderecos em
+       data-src/data-srcset e so os passam a valer quando lhes chega a
+       vez. Sem isto, abrir a pagina puxava cinco cartazes de uma vez
+       para mostrar um. */
+    function acordar(slide) {
+      if (!slide || slide.dataset.acordado) return;
+      slide.dataset.acordado = "1";
+      slide.querySelectorAll("source[data-srcset], img[data-src]").forEach(function (el) {
+        if (el.dataset.srcset) { el.srcset = el.dataset.srcset; delete el.dataset.srcset; }
+        if (el.dataset.src) { el.src = el.dataset.src; delete el.dataset.src; }
+      });
+    }
+    acordar(slides[0]);
+    /* rede de seguranca: com a pagina ja carregada, o resto vem sozinho,
+       para que uma passagem de destaque nunca apanhe um cartaz por vir */
+    window.addEventListener("load", function () {
+      setTimeout(function () { slides.forEach(acordar); }, 1200);
+    });
+
     if (dotsWrap) {
       slides.forEach(function (_, i) {
         var d = document.createElement("button");
@@ -52,6 +72,8 @@
 
     function go(i) {
       idx = (i + slides.length) % slides.length;
+      acordar(slides[idx]);
+      acordar(slides[(idx + 1) % slides.length]);
       slides.forEach(function (s, n) { s.classList.toggle("active", n === idx); });
       dots.forEach(function (d, n) { d.classList.toggle("active", n === idx); });
       // cada destaque novo recomeça a contagem à vista
