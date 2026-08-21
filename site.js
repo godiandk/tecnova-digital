@@ -302,14 +302,19 @@
   floatBtn.addEventListener("click", openModal);
 
   /* ------------------------------------------------------------------
-     O botao APP e os comandos do carrossel ficam os dois no canto de
-     baixo a esquerda. Na entrada, no telemovel, sobrepunham-se -- e a
-     solucao que ca estava era esconder o botao, o que tirava a
-     aplicacao da vista de quem tem telemovel: exactamente ao
-     contrario do que interessa.
-     Agora, enquanto os comandos estao no ecra, o botao sobe; mal se
-     rola para baixo, volta ao lugar. Como os comandos vao dentro do
-     palco e nao sao fixos, desaparecem sozinhos ao rolar.
+     O BOTAO APP E A FAIXA DO CARROSSEL
+     ------------------------------------------------------------------
+     O botao esta preso ao fundo da JANELA e a faixa do carrossel anda
+     com a PAGINA. Ha sempre uma altura de rolar em que os dois se
+     cruzam -- nao ha posicao fixa que evite isso.
+     Tentou-se faze-lo subir por cima da faixa. Funcionava, no sentido
+     de que deixavam de se sobrepor, mas o botao andava para cima e
+     para baixo enquanto se rolava, colado a faixa como um iman, e
+     ficava a boiar a meio do cartaz. Era pior do que o problema.
+     Fica quieto, e apaga-se enquanto passa por ela. Sao dois estados,
+     nao um movimento continuo: some-se, e volta assim que a faixa sai
+     do caminho. No resto da pagina -- que e quase toda -- esta sempre
+     la.
      ------------------------------------------------------------------ */
   /* A altura dos comandos vai para o CSS. Abaixo dos 380px eles passam a
      duas filas e ficam com o dobro da altura; sem isto, os botoes do
@@ -332,16 +337,11 @@
     if (!palco || !comandos || !window.IntersectionObserver) return;
 
     var aVista = false;
-    var subido = false;
+    var fora = false;
 
-    /* Nao chega subir o botao um valor fixo. O botao mede-se pelo fundo
-       da JANELA e a faixa do carrossel pelo fundo do PALCO, e a
-       distancia entre os dois muda com a altura do ecra -- num iPhone de
-       844px sao 104px de diferenca.
-       E nao chega olhar so para os comandos: a faixa tem DUAS filas, os
-       botoes do destaque por cima e os comandos por baixo. Subir o botao
-       APP so acima dos comandos punha-o em cima dos botoes, que foi o
-       que se viu. Mede-se a faixa inteira. */
+    /* A faixa sao DUAS filas: os botoes do destaque por cima e os
+       comandos por baixo. Olhar so para os comandos era o que punha o
+       botao APP em cima dos outros botoes. */
     function faixa() {
       var c = comandos.getBoundingClientRect();
       var accoes = palco.querySelector(".hs-slide.active .hs-accoes");
@@ -353,50 +353,22 @@
       };
     }
 
-    /* O lugar natural do botao nao se pode medir com getBoundingClientRect
-       depois de lhe mexer no `bottom`: como o `bottom` tem transicao, o que
-       se le a meio da animacao e um valor pelo caminho, nao o de chegada.
-       Media-se mal, o botao subia sem precisar e chegava a sair pela cima
-       da janela. Mede-se uma vez, com ele quieto, e guarda-se. */
-    var natBottom = 0, altura = 0, largura = 0, esquerda = 0;
-    function medirNatural() {
-      var antes = floatBtn.style.bottom;
-      floatBtn.style.transition = "none";
-      floatBtn.style.bottom = "";
-      var r = floatBtn.getBoundingClientRect();
-      natBottom = window.innerHeight - r.bottom;
-      altura = r.height; largura = r.width; esquerda = r.left;
-      floatBtn.style.bottom = antes;
-      // forcar o navegador a assentar antes de devolver a transicao
-      void floatBtn.offsetWidth;
-      floatBtn.style.transition = "";
+    function decidir() {
+      if (!aVista) return false;
+      var b = floatBtn.getBoundingClientRect();
+      var f = faixa();
+      /* Uma vez apagado, so volta com 24px de folga a mais. Sem essa
+         margem, a rolar devagar acendia e apagava no mesmo pixel. */
+      var m = fora ? 24 : 0;
+      return !(b.right < f.left - m || b.left > f.right + m ||
+               b.bottom < f.top - m || b.top > f.bottom + m);
     }
 
     function colocar() {
-      if (!aVista) { subido = false; floatBtn.style.bottom = ""; return; }
-
-      var f = faixa();
-      var fundo = window.innerHeight - natBottom;
-      var natural = { top: fundo - altura, bottom: fundo,
-                      left: esquerda, right: esquerda + largura };
-
-      /* Uma folga de 8px a mais para descer do que para subir: sem ela,
-         ao rolar devagar o botao ficava a subir e a descer no mesmo
-         pixel, e parecia um iman a puxa-lo. */
-      var margem = subido ? 8 : 0;
-      var choca = !(natural.right < f.left - margem || natural.left > f.right + margem ||
-                    natural.bottom < f.top - margem || natural.top > f.bottom + margem);
-
-      if (!choca) { subido = false; floatBtn.style.bottom = ""; return; }
-
-      /* Nunca acima do cabecalho, aconteca o que acontecer: mais vale o
-         botao ficar onde esta do que ir parar fora do ecra. */
-      var subir = window.innerHeight - f.top + 12;
-      var tecto = window.innerHeight - altura - 92;
-      if (subir > tecto) { subido = false; floatBtn.style.bottom = ""; return; }
-
-      subido = true;
-      floatBtn.style.bottom = Math.round(subir) + "px";
+      var novo = decidir();
+      if (novo === fora) return;
+      fora = novo;
+      floatBtn.classList.toggle("app-float-fora", fora);
     }
 
     var obs = new IntersectionObserver(function (entradas) {
@@ -405,10 +377,8 @@
     }, { threshold: 0 });
     obs.observe(comandos);
 
-    // enquanto a faixa esta a vista, acompanhar o rolar e o rodar
-    window.addEventListener("scroll", function () { if (aVista) colocar(); }, { passive: true });
-    medirNatural();
-    window.addEventListener("resize", function () { medirNatural(); colocar(); });
+    window.addEventListener("scroll", function () { if (aVista || fora) colocar(); }, { passive: true });
+    window.addEventListener("resize", colocar);
     // ao mudar de destaque os botoes mudam de altura
     palco.addEventListener("transitionend", function (e) {
       if (e.target.classList && e.target.classList.contains("hs-slide")) colocar();

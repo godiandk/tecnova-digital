@@ -226,11 +226,12 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
   padding:12px 17px;border-radius:999px;
   /* mesmo anel do assistente: nada encosta ao botão */
   box-shadow:0 0 0 6px var(--ink), 0 12px 30px rgba(217,178,110,.4);
-  /* o `bottom` muda quando o botao tem de sair de cima da faixa do
-     carrossel: a passar devagar parece que desliza, aos saltos
-     parecia um iman a puxa-lo */
-  transition:transform .2s, bottom .22s ease;
+  transition:transform .2s, opacity .22s ease;
 }
+/* Enquanto a faixa do carrossel lhe passa por cima, o botao apaga-se em
+   vez de fugir dela. Fica no mesmo sitio: quem estava a olhar para ele
+   volta a encontra-lo onde estava. */
+.app-float.app-float-fora{opacity:0;pointer-events:none}
 .app-float:hover{transform:scale(1.06)}
 .app-float .af-ic{font-size:1.1rem;line-height:1}
 .app-modal{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.72)}
