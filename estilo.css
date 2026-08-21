@@ -133,10 +133,20 @@ main{padding-top:74px}
 /* ---------- footer ---------- */
 footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
 /* Passou a haver uma quarta coluna, a das paginas legais. Com
-   `auto-fit` e um minimo, as colunas reagrupam-se sozinhas em vez de
-   espremerem: quatro no computador, duas no tablet, uma no telemovel. */
-.footer-grid{display:grid;grid-template-columns:1.5fr repeat(auto-fit,minmax(150px,1fr));
+   As colunas sao escritas uma a uma, de proposito.
+   Aqui esteve `1.5fr repeat(auto-fit,minmax(150px,1fr))` e nao funciona:
+   a especificacao do CSS Grid nao deixa juntar `auto-fit` com tracks
+   flexiveis na mesma lista. O navegador deita fora a declaracao inteira
+   e a grelha cai para UMA coluna -- o rodape ficou com 897px de altura
+   em todas as paginas, num ecra de 1920px. Nao dava erro nenhum: so
+   parecia mal. */
+.footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;
   gap:36px 40px;margin-bottom:34px}
+@media(max-width:1000px){
+  /* no tablet: a marca em cima, as tres colunas por baixo */
+  .footer-grid{grid-template-columns:repeat(3,1fr)}
+  .footer-grid > :first-child{grid-column:1 / -1;margin-bottom:8px}
+}
 /* o que falta o Wesley preencher, marcado para nao passar despercebido */
 .rodape-falta{border-bottom:1px dashed var(--gold);color:var(--gold-soft)}
 .footer-grid .logo{margin-bottom:12px}
@@ -148,7 +158,10 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
 .footer-col a:hover{color:var(--gold)}
 .footer-bottom{text-align:center;color:var(--cream-dim);font-size:.8rem;border-top:1px solid rgba(217,178,110,.1);padding-top:24px}
 .footer-bottom a{color:var(--gold);text-decoration:none;display:inline-flex;align-items:center;min-height:38px}
-@media(max-width:640px){.footer-grid{grid-template-columns:1fr;gap:26px}}
+@media(max-width:640px){
+  .footer-grid{grid-template-columns:1fr;gap:26px}
+  .footer-grid > :first-child{grid-column:auto}
+}
 
 /* (o botão flutuante de WhatsApp foi retirado do site) */
 /* O assistente ocupa o canto inferior direito. */
