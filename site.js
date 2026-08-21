@@ -261,6 +261,55 @@
   function closeModal() { modal.hidden = true; }
 
   floatBtn.addEventListener("click", openModal);
+
+  /* ------------------------------------------------------------------
+     O botao APP e os comandos do carrossel ficam os dois no canto de
+     baixo a esquerda. Na entrada, no telemovel, sobrepunham-se -- e a
+     solucao que ca estava era esconder o botao, o que tirava a
+     aplicacao da vista de quem tem telemovel: exactamente ao
+     contrario do que interessa.
+     Agora, enquanto os comandos estao no ecra, o botao sobe; mal se
+     rola para baixo, volta ao lugar. Como os comandos vao dentro do
+     palco e nao sao fixos, desaparecem sozinhos ao rolar.
+     ------------------------------------------------------------------ */
+  (function () {
+    var comandos = document.querySelector(".hs-comandos");
+    if (!comandos || !window.IntersectionObserver) return;
+
+    var aVista = false;
+
+    /* Nao chega subir o botao um valor fixo. O botao mede-se pelo fundo
+       da JANELA e os comandos pelo fundo do PALCO, e a distancia entre
+       os dois muda com a altura do ecra -- num iPhone de 844px sao 104px
+       de diferenca, e o botao aterrava mesmo em cima deles. Por isso
+       mede-se onde os comandos estao e poe-se o botao 14px acima. */
+    function colocar() {
+      floatBtn.style.bottom = "";           // volta ao lugar natural
+      if (!aVista) return;
+
+      var c = comandos.getBoundingClientRect();
+      var b = floatBtn.getBoundingClientRect();   // ja no lugar natural
+
+      // So mexer se houver mesmo choque. Num tablet alto os comandos
+      // ficam muito acima do botao e nao ha nada a resolver -- subi-lo
+      // na mesma punha-o a meio do ecra, sem razao nenhuma.
+      var choca = !(b.right < c.left || b.left > c.right ||
+                    b.bottom < c.top  || b.top > c.bottom);
+      if (!choca) return;
+
+      floatBtn.style.bottom = Math.round(window.innerHeight - c.top + 14) + "px";
+    }
+
+    var obs = new IntersectionObserver(function (entradas) {
+      aVista = entradas[0].isIntersecting;
+      colocar();
+    }, { threshold: 0 });
+    obs.observe(comandos);
+
+    // enquanto os comandos estao a vista, acompanhar o rolar e o rodar
+    window.addEventListener("scroll", function () { if (aVista) colocar(); }, { passive: true });
+    window.addEventListener("resize", colocar);
+  })();
   document.querySelectorAll(".js-open-app").forEach(function (el) {
     el.addEventListener("click", function (e) { e.preventDefault(); openModal(); });
   });
