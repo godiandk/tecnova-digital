@@ -58,9 +58,22 @@ Valem para as quinze.
    logótipo, rosto — a menos de 6% de qualquer bordo. É o que garante
    que aquele desvio de 3% no telemóvel pequeno nunca toca no texto.
 
-2. **Faixa livre em baixo, 18% da altura.** Escura e vazia, sem nada
-   desenhado. É onde entram os botões a sério do site, que têm de ser
-   clicáveis e mudar de língua. **Não desenhe botões.**
+2. **Faixa livre em baixo — e o tamanho MUDA com o formato:**
+
+   | Formato | Faixa livre em baixo |
+   |---|---|
+   | Telemóvel 1440×2400 | **30% da altura** (720px em baixo, vazios) |
+   | Tablet 1800×1440 | **24% da altura** (346px) |
+   | Computador 3840×1920 | **20% da altura** (384px) |
+
+   Escura e vazia, sem nada desenhado — nem logótipo, nem figura, nem
+   letra. É onde entram os botões do site **e os comandos do carrossel**
+   (as bolinhas e o «Pausar»), que são HTML porque têm de ser clicáveis e
+   mudar de língua. **Não desenhe botões.**
+
+   Da primeira vez pedi 18% em todos, e foi pouco: no telemóvel os
+   botões ficaram a assentar em cima do logótipo. Medi o que os botões e
+   os comandos ocupam mesmo — 140px — e é isto que dá em cada formato.
 
 3. **Sem cortar e sem esticar.** Cada formato é composto de raiz para a
    sua forma. A do telemóvel não é a do computador cortada, nem ao

@@ -272,6 +272,21 @@
      rola para baixo, volta ao lugar. Como os comandos vao dentro do
      palco e nao sao fixos, desaparecem sozinhos ao rolar.
      ------------------------------------------------------------------ */
+  /* A altura dos comandos vai para o CSS. Abaixo dos 380px eles passam a
+     duas filas e ficam com o dobro da altura; sem isto, os botoes do
+     destaque continuavam a assentar em cima deles. */
+  (function () {
+    var palco = document.querySelector(".hero-slider");
+    var cmds = document.querySelector(".hs-comandos");
+    if (!palco || !cmds) return;
+    function medir() {
+      palco.style.setProperty("--cmd-h", Math.round(cmds.getBoundingClientRect().height) + "px");
+    }
+    medir();
+    window.addEventListener("resize", medir);
+    if (window.ResizeObserver) new ResizeObserver(medir).observe(cmds);
+  })();
+
   (function () {
     var comandos = document.querySelector(".hs-comandos");
     if (!comandos || !window.IntersectionObserver) return;

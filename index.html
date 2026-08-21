@@ -27,9 +27,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=51">
-<link rel="stylesheet" href="assistente.css?v=51">
-<link rel="stylesheet" href="i18n.css?v=51">
+<link rel="stylesheet" href="estilo.css?v=52">
+<link rel="stylesheet" href="assistente.css?v=52">
+<link rel="stylesheet" href="i18n.css?v=52">
 <style>
 .hero{
   min-height:100vh;display:flex;align-items:center;
@@ -112,11 +112,20 @@
 /* Os botoes tem de ser botoes a serio: uma fotografia de um botao nao se
    carrega, nao muda de lingua e nao se le. Assentam na faixa escura que
    ficou reservada em baixo do cartaz. */
-.hs-accoes{position:absolute;left:0;right:0;bottom:12%;
+/* Os botoes tem de ficar SEMPRE acima dos comandos, com folga.
+   Estavam em percentagem do palco enquanto os comandos estao em pixeis
+   fixos: num palco curto a percentagem encolhia e os botoes caiam-lhes
+   em cima -- a 320px sobrepunham-se 60px, a 390px quatro.
+   Agora medem-se a partir dos comandos. O site.js poe a altura deles em
+   --cmd-h, porque abaixo dos 380px passam a duas filas e ficam com o
+   dobro. O 40px e so a rede de seguranca se o JavaScript nao correr. */
+.hs-accoes{position:absolute;left:0;right:0;
+  bottom:calc(18px + var(--cmd-h, 40px) + 26px);
   display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
   padding:0 20px;z-index:3}
 @media(max-width:767px){
-  .hs-accoes{bottom:9%;gap:10px;flex-wrap:nowrap;padding:0 16px}
+  .hs-accoes{bottom:calc(18px + var(--cmd-h, 40px) + 26px);
+    gap:10px;flex-wrap:nowrap;padding:0 16px}
   .hs-accoes .btn{flex:1 1 0;min-width:0;justify-content:center;
     padding:12px 10px;font-size:.82rem;line-height:1.2;text-align:center}
 }
@@ -755,10 +764,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="campanha.js?v=51"></script>
-<script src="medir-config.js?v=51"></script>
-<script src="medir.js?v=51"></script>
-<script src="auth-nav.js?v=51"></script>
+<script src="campanha.js?v=52"></script>
+<script src="medir-config.js?v=52"></script>
+<script src="medir.js?v=52"></script>
+<script src="auth-nav.js?v=52"></script>
 
 <script>
 const io=new IntersectionObserver(es=>{
@@ -770,9 +779,9 @@ if('serviceWorker' in navigator){
 }
 </script>
 <script src="site.js"></script>
-<script src="idiomas/en.js?v=51"></script>
-<script src="idiomas/es.js?v=51"></script>
-<script src="i18n.js?v=51"></script>
+<script src="idiomas/en.js?v=52"></script>
+<script src="idiomas/es.js?v=52"></script>
+<script src="i18n.js?v=52"></script>
 <script src="assistente.js"></script>
 </body>
 </html>
