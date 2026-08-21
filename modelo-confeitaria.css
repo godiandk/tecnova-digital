@@ -208,3 +208,6 @@ nav.links a{min-height:38px;display:inline-flex;align-items:center}
 .logo span,.logo .tagline,.logo .logo-ic + div span{font-size:.73rem}
 .tag,.pack-tag,.pack .tag,.combo .tag,.kit .tag,.price-row .tag,
 .plan .tag,.dish .tag,.cake .tag,.prow .tag,.svc-card .tag,.treat-card .tag{font-size:.73rem}
+
+/* marca os numeros inventados das demonstracoes */
+.exemplo{font-style:normal;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;opacity:.6;border:1px solid currentColor;border-radius:999px;padding:2px 7px;white-space:nowrap}
