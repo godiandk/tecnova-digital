@@ -1,0 +1,112 @@
+/* ============================================================
+   Vida Financeira — estilo do painel (app.html)
+   ============================================================ */
+.app-main{padding:96px 0 120px;min-height:100vh}
+
+/* ---------- barra do mês ---------- */
+.mes-bar{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-bottom:26px;
+}
+.mes-bar button{
+  width:42px;height:42px;border-radius:50%;flex:none;
+  border:1px solid rgba(217,178,110,.3);background:transparent;color:var(--gold-soft);
+  font-size:1.3rem;line-height:1;cursor:pointer;display:grid;place-items:center;transition:all .2s;
+}
+.mes-bar button:hover{background:rgba(217,178,110,.12);border-color:var(--gold)}
+.mes-bar b{
+  font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;
+  min-width:11ch;text-align:center;text-transform:capitalize;
+}
+
+/* ---------- cartões de resumo ---------- */
+.resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+.card{
+  background:var(--ink-2);border:1px solid rgba(217,178,110,.18);
+  border-radius:var(--radius);padding:20px 22px;
+}
+.card .rot{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--cream-dim);font-weight:700}
+.card .val{font-family:'Playfair Display',serif;font-size:clamp(1.4rem,3.4vw,2rem);font-weight:700;margin-top:6px;line-height:1.2}
+.card.saldo{border-color:rgba(217,178,110,.4);background:linear-gradient(140deg,rgba(217,178,110,.12),rgba(217,178,110,.02))}
+.card.saldo .val{color:var(--gold-soft)}
+.card.saldo .val.neg{color:var(--down)}
+.card.entrada .val{color:var(--up)}
+.card.saida .val{color:var(--down)}
+@media(max-width:760px){
+  .resumo{grid-template-columns:1fr 1fr}
+  .card.saldo{grid-column:1 / -1}
+}
+
+/* ---------- colunas: formulário + lista ---------- */
+.painel{display:grid;grid-template-columns:360px 1fr;gap:22px;align-items:start}
+@media(max-width:900px){.painel{grid-template-columns:1fr}}
+
+.bloco{background:var(--ink-2);border:1px solid rgba(217,178,110,.18);border-radius:var(--radius);padding:24px}
+.bloco h3{font-size:1.15rem;margin-bottom:16px;color:var(--gold-soft)}
+
+/* selector entrada / saída */
+.tipo-sel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.tipo-sel button{
+  padding:12px;border-radius:12px;border:1px solid rgba(217,178,110,.22);
+  background:var(--ink);color:var(--cream-dim);font-family:inherit;font-weight:700;
+  font-size:.88rem;cursor:pointer;transition:all .2s;
+}
+.tipo-sel button[aria-pressed="true"][data-tipo="entrada"]{border-color:var(--up);background:rgba(62,207,142,.14);color:var(--up)}
+.tipo-sel button[aria-pressed="true"][data-tipo="saida"]{border-color:var(--down);background:rgba(224,113,92,.14);color:var(--down)}
+
+.bloco .btn{width:100%;justify-content:center;margin-top:6px}
+
+/* ---------- lista de movimentos ---------- */
+.lista-topo{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.lista-topo h3{margin:0}
+.filtro{display:flex;gap:6px;flex-wrap:wrap}
+.filtro button{
+  border:1px solid rgba(217,178,110,.22);background:transparent;color:var(--cream-dim);
+  border-radius:999px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:inherit;
+}
+.filtro button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold-soft);background:rgba(217,178,110,.1)}
+
+ul.movs{list-style:none}
+ul.movs li{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 4px;border-bottom:1px solid rgba(217,178,110,.1);
+}
+ul.movs li:last-child{border-bottom:none}
+.mv-ic{
+  width:42px;height:42px;border-radius:12px;flex:none;display:grid;place-items:center;
+  font-size:1.2rem;background:rgba(217,178,110,.1);border:1px solid rgba(217,178,110,.18);
+}
+.mv-txt{flex:1;min-width:0}
+.mv-txt b{display:block;font-size:.95rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mv-txt span{font-size:.78rem;color:var(--cream-dim)}
+.mv-val{font-weight:800;font-size:1rem;white-space:nowrap;flex:none}
+.mv-val.entrada{color:var(--up)}
+.mv-val.saida{color:var(--down)}
+.mv-del{
+  background:none;border:none;color:var(--cream-dim);cursor:pointer;font-size:1.1rem;
+  padding:8px;min-width:38px;min-height:38px;flex:none;border-radius:8px;line-height:1;
+}
+.mv-del:hover{color:var(--down);background:rgba(224,113,92,.1)}
+
+.vazio{text-align:center;padding:44px 20px;color:var(--cream-dim)}
+.vazio .em{font-size:2.4rem;display:block;margin-bottom:10px}
+
+/* ---------- por categoria ---------- */
+.cat-lista{list-style:none;margin-top:6px}
+.cat-lista li{margin-bottom:14px}
+.cat-linha{display:flex;justify-content:space-between;font-size:.86rem;margin-bottom:6px;gap:10px}
+.cat-linha b{font-weight:700}
+.cat-linha span{color:var(--cream-dim);white-space:nowrap}
+.barra{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.barra i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--gold),var(--gold-soft));transition:width .5s ease}
+
+/* ---------- rodapé do painel ---------- */
+.painel-nota{margin-top:26px;font-size:.82rem;color:var(--cream-dim);text-align:center}
+.acoes-dados{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.mini-btn{
+  background:rgba(217,178,110,.1);border:1px solid rgba(217,178,110,.3);color:var(--gold-soft);
+  border-radius:999px;padding:9px 16px;font-size:.76rem;font-weight:700;cursor:pointer;
+  font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+}
+.mini-btn:hover{background:rgba(217,178,110,.18)}
+.mini-btn.danger{border-color:rgba(224,113,92,.4);color:#f0a292}
