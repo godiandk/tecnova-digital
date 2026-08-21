@@ -178,6 +178,7 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
 .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
 .reveal.in{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){
+  .app-float{transition:none}
   .reveal{opacity:1;transform:none;transition:none}
   html{scroll-behavior:auto}
 }
@@ -224,7 +225,11 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
   border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:.78rem;letter-spacing:.04em;
   padding:12px 17px;border-radius:999px;
   /* mesmo anel do assistente: nada encosta ao botão */
-  box-shadow:0 0 0 6px var(--ink), 0 12px 30px rgba(217,178,110,.4);transition:transform .2s;
+  box-shadow:0 0 0 6px var(--ink), 0 12px 30px rgba(217,178,110,.4);
+  /* o `bottom` muda quando o botao tem de sair de cima da faixa do
+     carrossel: a passar devagar parece que desliza, aos saltos
+     parecia um iman a puxa-lo */
+  transition:transform .2s, bottom .22s ease;
 }
 .app-float:hover{transform:scale(1.06)}
 .app-float .af-ic{font-size:1.1rem;line-height:1}

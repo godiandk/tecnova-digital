@@ -310,31 +310,76 @@
   })();
 
   (function () {
+    var palco = document.querySelector(".hero-slider");
     var comandos = document.querySelector(".hs-comandos");
-    if (!comandos || !window.IntersectionObserver) return;
+    if (!palco || !comandos || !window.IntersectionObserver) return;
 
     var aVista = false;
+    var subido = false;
 
     /* Nao chega subir o botao um valor fixo. O botao mede-se pelo fundo
-       da JANELA e os comandos pelo fundo do PALCO, e a distancia entre
-       os dois muda com a altura do ecra -- num iPhone de 844px sao 104px
-       de diferenca, e o botao aterrava mesmo em cima deles. Por isso
-       mede-se onde os comandos estao e poe-se o botao 14px acima. */
-    function colocar() {
-      floatBtn.style.bottom = "";           // volta ao lugar natural
-      if (!aVista) return;
-
+       da JANELA e a faixa do carrossel pelo fundo do PALCO, e a
+       distancia entre os dois muda com a altura do ecra -- num iPhone de
+       844px sao 104px de diferenca.
+       E nao chega olhar so para os comandos: a faixa tem DUAS filas, os
+       botoes do destaque por cima e os comandos por baixo. Subir o botao
+       APP so acima dos comandos punha-o em cima dos botoes, que foi o
+       que se viu. Mede-se a faixa inteira. */
+    function faixa() {
       var c = comandos.getBoundingClientRect();
-      var b = floatBtn.getBoundingClientRect();   // ja no lugar natural
+      var accoes = palco.querySelector(".hs-slide.active .hs-accoes");
+      if (!accoes) return c;
+      var a = accoes.getBoundingClientRect();
+      return {
+        top: Math.min(a.top, c.top), bottom: Math.max(a.bottom, c.bottom),
+        left: Math.min(a.left, c.left), right: Math.max(a.right, c.right)
+      };
+    }
 
-      // So mexer se houver mesmo choque. Num tablet alto os comandos
-      // ficam muito acima do botao e nao ha nada a resolver -- subi-lo
-      // na mesma punha-o a meio do ecra, sem razao nenhuma.
-      var choca = !(b.right < c.left || b.left > c.right ||
-                    b.bottom < c.top  || b.top > c.bottom);
-      if (!choca) return;
+    /* O lugar natural do botao nao se pode medir com getBoundingClientRect
+       depois de lhe mexer no `bottom`: como o `bottom` tem transicao, o que
+       se le a meio da animacao e um valor pelo caminho, nao o de chegada.
+       Media-se mal, o botao subia sem precisar e chegava a sair pela cima
+       da janela. Mede-se uma vez, com ele quieto, e guarda-se. */
+    var natBottom = 0, altura = 0, largura = 0, esquerda = 0;
+    function medirNatural() {
+      var antes = floatBtn.style.bottom;
+      floatBtn.style.transition = "none";
+      floatBtn.style.bottom = "";
+      var r = floatBtn.getBoundingClientRect();
+      natBottom = window.innerHeight - r.bottom;
+      altura = r.height; largura = r.width; esquerda = r.left;
+      floatBtn.style.bottom = antes;
+      // forcar o navegador a assentar antes de devolver a transicao
+      void floatBtn.offsetWidth;
+      floatBtn.style.transition = "";
+    }
 
-      floatBtn.style.bottom = Math.round(window.innerHeight - c.top + 14) + "px";
+    function colocar() {
+      if (!aVista) { subido = false; floatBtn.style.bottom = ""; return; }
+
+      var f = faixa();
+      var fundo = window.innerHeight - natBottom;
+      var natural = { top: fundo - altura, bottom: fundo,
+                      left: esquerda, right: esquerda + largura };
+
+      /* Uma folga de 8px a mais para descer do que para subir: sem ela,
+         ao rolar devagar o botao ficava a subir e a descer no mesmo
+         pixel, e parecia um iman a puxa-lo. */
+      var margem = subido ? 8 : 0;
+      var choca = !(natural.right < f.left - margem || natural.left > f.right + margem ||
+                    natural.bottom < f.top - margem || natural.top > f.bottom + margem);
+
+      if (!choca) { subido = false; floatBtn.style.bottom = ""; return; }
+
+      /* Nunca acima do cabecalho, aconteca o que acontecer: mais vale o
+         botao ficar onde esta do que ir parar fora do ecra. */
+      var subir = window.innerHeight - f.top + 12;
+      var tecto = window.innerHeight - altura - 92;
+      if (subir > tecto) { subido = false; floatBtn.style.bottom = ""; return; }
+
+      subido = true;
+      floatBtn.style.bottom = Math.round(subir) + "px";
     }
 
     var obs = new IntersectionObserver(function (entradas) {
@@ -343,9 +388,14 @@
     }, { threshold: 0 });
     obs.observe(comandos);
 
-    // enquanto os comandos estao a vista, acompanhar o rolar e o rodar
+    // enquanto a faixa esta a vista, acompanhar o rolar e o rodar
     window.addEventListener("scroll", function () { if (aVista) colocar(); }, { passive: true });
-    window.addEventListener("resize", colocar);
+    medirNatural();
+    window.addEventListener("resize", function () { medirNatural(); colocar(); });
+    // ao mudar de destaque os botoes mudam de altura
+    palco.addEventListener("transitionend", function (e) {
+      if (e.target.classList && e.target.classList.contains("hs-slide")) colocar();
+    });
   })();
   document.querySelectorAll(".js-open-app").forEach(function (el) {
     el.addEventListener("click", function (e) { e.preventDefault(); openModal(); });
