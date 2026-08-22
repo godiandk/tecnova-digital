@@ -9,7 +9,10 @@
   var requestedDuration = Number(root.getAttribute('data-duration')) || 5000;
   var fadeDuration = Number(root.getAttribute('data-fade')) || 480;
   var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var duration = reducedMotion ? Math.min(requestedDuration, 1200) : requestedDuration;
+  // Com "reduzir movimento" ligado a abertura nao gira, e a 1200ms
+  // aparecia e desaparecia num piscar de olhos -- parecia avariada.
+  // 2600ms chega para se ver o monograma sem prender ninguem.
+  var duration = reducedMotion ? Math.min(requestedDuration, 2600) : requestedDuration;
   var sessionKey = 'tecnova:splash:v1';
   var start = performance.now();
   var closed = false;

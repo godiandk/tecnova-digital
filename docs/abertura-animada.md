@@ -3,7 +3,7 @@
 ## O QUE É
 
 Um ecrã inteiro, cor da marca, com o monograma TECNOVA ao centro e um
-traço dourado a girar à volta. Dura 5 segundos, incluindo a saída, e
+traço dourado a girar à volta. Dura 7 segundos, incluindo a saída, e
 depois desaparece. A página por baixo não recarrega nem muda de
 endereço — o ecrã é só uma camada por cima.
 
@@ -64,20 +64,42 @@ logótipo ficou no centro.
 ## SE ALGUMA COISA FALHAR
 
 - **O JavaScript do splash não carrega:** há um temporizador no `<head>`
-  que tira o ecrã aos 8,5 segundos. Medido: liberta aos 8,5s.
+  que tira o ecrã aos 10,5 segundos — 3,5s depois do fim normal, para não
+  ser ele a mandar embora uma abertura que estava a correr bem. Medido:
+  liberta aos 10,5s.
 - **JavaScript desligado:** o ecrã fica com `display:none` (só aparece
   com a classe `tecnova-js`, que o próprio JavaScript põe). O site abre
   normalmente.
-- **«Reduzir movimento» ligado:** a rotação pára e a abertura dura 1,2s
-  em vez de 5. Medido: 1,4s.
+- **«Reduzir movimento» ligado:** nada gira — e não deve mesmo girar. O
+  que se vê é o cartaz parado, com o anel e o ponto a acender e a apagar.
+  Acender não é movimento: é a única coisa que esta norma deixa fazer.
+  Dura 2,6s em vez de 7. Medido: 2,8s.
+
+  **Isto é a explicação para «apareceu e sumiu sem fazer a animação».**
+  No iPhone: Definições → Acessibilidade → Movimento → Reduzir movimento.
+  Com essa opção ligada, o site respeita-a — de propósito.
 
 ## AJUSTES
 
 Tudo no atributo do `<div id="tecnova-splash">`:
 
-- `data-duration="5000"` — a duração total, em milésimos de segundo;
-- `data-fade="480"` — quanto tempo demora a desaparecer;
+- `data-duration="7000"` — a duração total, em milésimos de segundo;
+- `data-fade="600"` — quanto tempo demora a desaparecer;
 - `data-mode` — `session`, `always` ou `never` (para desligar).
+
+## O QUE FOI PRECISO ANIMAR MAIS
+
+O traço que gira tinha 2px e um quarto de volta de rasto. Medindo a
+diferença entre dois fotogramas seguidos num ecrã de 390×844 davam 264
+pontos: mexia-se, mas quase não se via. Ficou com 4px, meia volta de
+rasto e o dobro do brilho; o ponto passou de 7px para 12px com halo a
+sério; o monograma cresce de 0,86 para 1 no primeiro segundo; e há um
+terceiro anel, por fora e mais lento, para dar profundidade.
+
+A mesma medição depois: **566 e 608 pontos**, mais do dobro.
+
+A órbita também abrandou — dava uma volta em 1,85s e agora leva 3,4s.
+São duas voltas completas nos sete segundos, com tempo para as ver.
 
 ## O QUE FICOU POR DECIDIR
 

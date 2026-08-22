@@ -106,7 +106,7 @@ html.tecnova-js #tecnova-splash {
   border-radius: 50%;
   background: rgba(201, 171, 124, 0.08);
   filter: blur(30px);
-  animation: tecnova-breathe 2.2s ease-in-out infinite;
+  animation: tecnova-breathe 3.4s ease-in-out infinite;
 }
 
 .tecnova-splash__orbit {
@@ -117,33 +117,57 @@ html.tecnova-js #tecnova-splash {
   will-change: transform;
 }
 
+/* O traco tinha 2px e um quarto de volta. Media-se a diferenca entre
+   dois quadros seguidos e davam 264 pontos num ecra de 390x844 -- ou
+   seja, mexia-se, mas quase nao se via. Passa a 4px, com meia volta de
+   rasto e o dobro do brilho. */
 .tecnova-splash__orbit::before {
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: -2px;
   border-radius: inherit;
   background: conic-gradient(
-    from 18deg,
-    transparent 0deg 196deg,
-    rgba(176, 141, 87, 0.22) 224deg,
-    var(--tecnova-gold-deep) 256deg,
-    var(--tecnova-gold-light) 282deg,
-    rgba(201, 171, 124, 0.3) 306deg,
-    transparent 336deg 360deg
+    from 0deg,
+    transparent 0deg 150deg,
+    rgba(176, 141, 87, 0.20) 190deg,
+    rgba(176, 141, 87, 0.55) 240deg,
+    var(--tecnova-gold-deep) 285deg,
+    var(--tecnova-gold-light) 330deg,
+    var(--tecnova-gold-light) 352deg,
+    transparent 360deg
   );
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
-  filter: drop-shadow(0 0 8px rgba(201, 171, 124, 0.68));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  filter: drop-shadow(0 0 10px rgba(201, 171, 124, 0.85))
+          drop-shadow(0 0 22px rgba(176, 141, 87, 0.45));
 }
 
 .tecnova-splash__orbit--primary {
-  animation: tecnova-orbit 1.85s linear infinite;
+  animation: tecnova-orbit 3.4s linear infinite;
 }
 
 .tecnova-splash__orbit--secondary {
   inset: 17%;
   border-color: rgba(201, 171, 124, 0.1);
-  animation: tecnova-orbit-reverse 3.1s linear infinite;
+  animation: tecnova-orbit-reverse 5.8s linear infinite;
+}
+
+/* Um terceiro anel, por fora e mais lento, so para dar profundidade: sem
+   ele os dois de dentro pareciam um relogio. */
+.tecnova-splash__stage::after {
+  content: "";
+  position: absolute;
+  inset: -4%;
+  border-radius: 50%;
+  border: 1px solid rgba(201, 171, 124, 0.08);
+  background: conic-gradient(from 0deg,
+    transparent 0deg 250deg,
+    rgba(201, 171, 124, 0.28) 320deg,
+    transparent 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+  animation: tecnova-orbit 9.5s linear infinite;
+  pointer-events: none;
 }
 
 .tecnova-splash__orbit--secondary::before {
@@ -154,16 +178,18 @@ html.tecnova-js #tecnova-splash {
 .tecnova-splash__dot {
   position: absolute;
   top: 50%;
-  right: -4px;
-  width: 7px;
-  height: 7px;
-  margin-top: -3.5px;
+  right: -6px;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
   border-radius: 50%;
-  background: var(--tecnova-gold-light);
+  background: #fff6e2;
   box-shadow:
-    0 0 7px var(--tecnova-gold-light),
-    0 0 18px rgba(201, 171, 124, 0.78),
-    0 0 34px rgba(176, 141, 87, 0.42);
+    0 0 10px var(--tecnova-gold-light),
+    0 0 26px rgba(201, 171, 124, 0.9),
+    0 0 52px rgba(176, 141, 87, 0.6),
+    0 0 90px rgba(176, 141, 87, 0.3);
+  animation: tecnova-dot-pulse 1.7s ease-in-out infinite;
 }
 
 .tecnova-splash__tile {
@@ -180,7 +206,15 @@ html.tecnova-js #tecnova-splash {
     0 0 0 7px rgba(201, 171, 124, 0.025),
     0 18px 50px rgba(0, 0, 0, 0.34),
     inset 0 0 24px rgba(201, 171, 124, 0.055);
-  animation: tecnova-tile-breathe 2.2s ease-in-out infinite;
+  animation: tecnova-tile-breathe 3.4s ease-in-out infinite;
+}
+
+/* O monograma entrava ja feito. Crescer de 0,86 para 1 no primeiro
+   segundo e o que faz a pessoa olhar para ele. */
+#tecnova-splash.is-running .tecnova-splash__tile {
+  animation:
+    tecnova-entrada 900ms cubic-bezier(.16, 1, .3, 1) both,
+    tecnova-tile-breathe 3.4s ease-in-out 900ms infinite;
 }
 
 .tecnova-splash__logo {
@@ -268,6 +302,16 @@ html.tecnova-js #tecnova-splash {
   50% { transform: scale(1.015); }
 }
 
+@keyframes tecnova-entrada {
+  from { opacity: 0; transform: scale(0.86); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes tecnova-dot-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.28); }
+}
+
 @keyframes tecnova-progress {
   to { transform: scaleX(1); }
 }
@@ -285,17 +329,38 @@ html.tecnova-js #tecnova-splash {
   .tecnova-splash__progress { margin-top: 0; }
 }
 
+/* Com "reduzir movimento" ligado no telemovel, nada gira -- e nao deve
+   mesmo girar. O que se ve e o cartaz parado, e ate ha pouco desaparecia
+   em 1,2s: dava a impressao de que a abertura tinha falhado. Fica 2,6s,
+   com o halo a acender e a apagar. Acender nao e movimento: e a unica
+   coisa que esta norma deixa fazer, e chega para nao parecer avariado. */
 @media (prefers-reduced-motion: reduce) {
   .tecnova-splash__orbit,
-  .tecnova-splash__ambient,
   .tecnova-splash__tile,
+  .tecnova-splash__dot,
+  .tecnova-splash__stage::after,
+  #tecnova-splash.is-running .tecnova-splash__tile,
   #tecnova-splash.is-running .tecnova-splash__progress::after {
     animation: none !important;
+  }
+
+  /* O halo sozinho e demasiado fraco -- 8% de dourado com 30px de
+     desfoque nao se ve a mudar. Quem acende e apaga sao o anel e o
+     ponto, que sao a parte acesa do desenho. */
+  .tecnova-splash__ambient,
+  .tecnova-splash__orbit--primary::before,
+  .tecnova-splash__dot {
+    animation: tecnova-brilho 1.6s ease-in-out infinite !important;
   }
 
   .tecnova-splash__progress::after {
     transform: scaleX(1);
     opacity: 0.72;
   }
+}
+
+@keyframes tecnova-brilho {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
 }
 

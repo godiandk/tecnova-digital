@@ -77,8 +77,11 @@ const appLaunch = scenario({ mode: 'always', seen: true, lang: 'en' });
 assert.equal(appLaunch.removed, false);
 assert.equal(appLaunch.status.textContent, 'Loading TECNOVA Digital');
 
+// Com "reduzir movimento" a abertura encurta. Era para 1200ms (720 depois
+// de descontar a saida) e aparecia e desaparecia num piscar de olhos --
+// parecia avariada. Passou a 2600ms, ou seja 2120 de espera.
 const reducedMotion = scenario({ reduced: true, lang: 'es' });
-assert.ok(reducedMotion.timers.some((timer) => timer.delay === 720));
+assert.ok(reducedMotion.timers.some((timer) => timer.delay === 2120));
 assert.equal(reducedMotion.status.textContent, 'Cargando TECNOVA Digital');
 
 console.log('4 cenários do splash: OK');
