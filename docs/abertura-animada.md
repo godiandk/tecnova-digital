@@ -70,14 +70,24 @@ logótipo ficou no centro.
 - **JavaScript desligado:** o ecrã fica com `display:none` (só aparece
   com a classe `tecnova-js`, que o próprio JavaScript põe). O site abre
   normalmente.
-- **«Reduzir movimento» ligado:** nada gira — e não deve mesmo girar. O
-  que se vê é o cartaz parado, com o anel e o ponto a acender e a apagar.
-  Acender não é movimento: é a única coisa que esta norma deixa fazer.
-  Dura 2,6s em vez de 7. Medido: 2,8s.
+- **«Reduzir movimento» ligado:** continua a girar e a barra continua a
+  encher. Sai o que cresce ou encolhe — a entrada do monograma, o
+  respirar do halo e do quadrado, a pulsação do ponto — e o anel de fora.
 
-  **Isto é a explicação para «apareceu e sumiu sem fazer a animação».**
-  No iPhone: Definições → Acessibilidade → Movimento → Reduzir movimento.
-  Com essa opção ligada, o site respeita-a — de propósito.
+  **Isto foi corrigido depois de o cliente o apanhar duas vezes.** Antes,
+  esta opção desligava tudo: o ponto ficava nos 0 graus do princípio ao
+  fim e a barra aparecia a 100% desde o primeiro quadro. Uma barra de
+  carregamento que já está cheia não diz nada, e uma animação de espera
+  que não espera parece avaria, não parece cuidado.
+
+  A norma existe para o que faz mal a quem se sente enjoado: coisas que
+  crescem, que saltam, que atravessam o ecrã, que piscam. Um ponto de
+  12px a andar devagar dentro de um círculo de 230px e uma barra de 1px
+  a encher da esquerda para a direita não são nada disso — e a barra é a
+  única coisa ali que informa. Fica.
+
+  Medido, com a opção ligada: barra a 10%, 21%, 32%… 87%, e a órbita a
+  avançar 78°, 154°, 228°, 302°. Igual à normal.
 
 ## AJUSTES
 

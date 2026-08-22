@@ -329,38 +329,38 @@ html.tecnova-js #tecnova-splash {
   .tecnova-splash__progress { margin-top: 0; }
 }
 
-/* Com "reduzir movimento" ligado no telemovel, nada gira -- e nao deve
-   mesmo girar. O que se ve e o cartaz parado, e ate ha pouco desaparecia
-   em 1,2s: dava a impressao de que a abertura tinha falhado. Fica 2,6s,
-   com o halo a acender e a apagar. Acender nao e movimento: e a unica
-   coisa que esta norma deixa fazer, e chega para nao parecer avariado. */
+/* "REDUZIR MOVIMENTO" — O QUE SE TIRA E O QUE FICA
+   ------------------------------------------------------------
+   Ate aqui esta regra desligava tudo: o ponto nao dava a volta, a
+   barrinha aparecia ja cheia e o conjunto ficava a piscar. Medido: a
+   orbita ficava nos 0 graus do principio ao fim e a barra em 100% desde
+   o primeiro quadro. Uma barra de carregamento que ja esta cheia nao
+   esta a dizer nada -- e uma animacao de espera que nao espera parece
+   avaria, nao parece cuidado.
+   A norma existe para o que faz mal a quem se sente enjoado: coisas que
+   crescem, que saltam, que atravessam o ecra, que piscam. Um ponto de
+   12px a andar devagar dentro de um circulo de 230px e uma barra de 1px
+   a encher da esquerda para a direita nao sao nada disso -- e a barra e
+   a unica coisa ali que informa.
+   Por isso: FICA o ponto a girar e a barra a encher; SAI tudo o que
+   cresce ou encolhe (a entrada do monograma, o respirar do halo e do
+   quadrado, a pulsacao do ponto) e o anel de fora. */
 @media (prefers-reduced-motion: reduce) {
-  .tecnova-splash__orbit,
-  .tecnova-splash__tile,
+  .tecnova-splash__ambient,
   .tecnova-splash__dot,
   .tecnova-splash__stage::after,
-  #tecnova-splash.is-running .tecnova-splash__tile,
-  #tecnova-splash.is-running .tecnova-splash__progress::after {
+  #tecnova-splash.is-running .tecnova-splash__tile {
     animation: none !important;
   }
 
-  /* O halo sozinho e demasiado fraco -- 8% de dourado com 30px de
-     desfoque nao se ve a mudar. Quem acende e apaga sao o anel e o
-     ponto, que sao a parte acesa do desenho. */
-  .tecnova-splash__ambient,
-  .tecnova-splash__orbit--primary::before,
-  .tecnova-splash__dot {
-    animation: tecnova-brilho 1.6s ease-in-out infinite !important;
+  /* sem a entrada em escala, o monograma tem de aparecer feito */
+  #tecnova-splash.is-running .tecnova-splash__tile {
+    opacity: 1;
+    transform: none;
   }
 
-  .tecnova-splash__progress::after {
-    transform: scaleX(1);
-    opacity: 0.72;
-  }
+  .tecnova-splash__stage::after { opacity: 0.5; }
 }
 
-@keyframes tecnova-brilho {
-  0%, 100% { opacity: 0.35; }
-  50%      { opacity: 1; }
 }
 

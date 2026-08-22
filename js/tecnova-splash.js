@@ -9,10 +9,13 @@
   var requestedDuration = Number(root.getAttribute('data-duration')) || 5000;
   var fadeDuration = Number(root.getAttribute('data-fade')) || 480;
   var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // Com "reduzir movimento" ligado a abertura nao gira, e a 1200ms
-  // aparecia e desaparecia num piscar de olhos -- parecia avariada.
-  // 2600ms chega para se ver o monograma sem prender ninguem.
-  var duration = reducedMotion ? Math.min(requestedDuration, 2600) : requestedDuration;
+  /* A duracao era cortada quando o telemovel pedia menos movimento --
+     primeiro para 1200ms, depois para 2600. Fazia sentido enquanto a
+     abertura ficava parada: se nao ha nada para ver, mais vale sair
+     depressa. Mas agora, com esse ajuste, o ponto continua a dar a volta
+     e a barra continua a encher, e cortar o tempo era mostrar uma barra
+     de carregamento que nunca chega aos 100%. Dura o mesmo. */
+  var duration = requestedDuration;
   var sessionKey = 'tecnova:splash:v1';
   var start = performance.now();
   var closed = false;
