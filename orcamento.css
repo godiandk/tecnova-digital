@@ -208,9 +208,10 @@
    =========================================================== */
 @media(max-width:860px){
   .pagina-orcamento .bar-fixa{z-index:95}
-  /* o botão da app tapava o total e o "Ver resumo";
-     nesta página é dispensável — o assistente já leva ao contacto */
-  .pagina-orcamento .app-float,
+  /* O botao da app tapava aqui o total e o "Ver resumo" -- mais um sitio
+     onde um botao flutuante no fundo do ecra chocava com o que
+     interessava. Foi por isso que o botao da app se mudou para o
+     cabecalho; ja nao ha nada a esconder nesta pagina. */
   .pagina-orcamento .wa-float{display:none!important}
   /* --bar-h é a altura real da barra do total, medida em orcamento.js.
      Em ecrãs muito estreitos a barra cresce (o texto quebra), por isso um

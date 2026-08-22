@@ -178,7 +178,7 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
 .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
 .reveal.in{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){
-  .app-float{transition:none}
+  .btn-app{transition:none}
   .reveal{opacity:1;transform:none;transition:none}
   html{scroll-behavior:auto}
 }
@@ -218,22 +218,27 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
   .nav-drop-menu a{padding:12px 0 12px 28px;text-align:left}
 }
 
-/* ---------- Botão flutuante "APP" + modal de instalação ---------- */
-.app-float{
-  position:fixed;left:22px;bottom:22px;z-index:60;display:flex;align-items:center;gap:8px;
+/* ---------- Botão "APP" no cabeçalho + modal de instalação ----------
+   Andou a flutuar no canto de baixo à esquerda e chocava com a faixa do
+   carrossel. Não havia afinação que resolvesse: um ponto fixo na janela
+   e uma faixa que anda com a página cruzam-se sempre. Aqui está à vista
+   mal a página abre, em todas as páginas, e não tapa nada. */
+.btn-app{display:inline-flex;align-items:center;gap:6px;flex:none;
   background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--ink);
-  border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:.78rem;letter-spacing:.04em;
-  padding:12px 17px;border-radius:999px;
-  /* mesmo anel do assistente: nada encosta ao botão */
-  box-shadow:0 0 0 6px var(--ink), 0 12px 30px rgba(217,178,110,.4);
-  transition:transform .2s, opacity .22s ease;
+  border:none;cursor:pointer;font-family:inherit;font-weight:800;
+  font-size:.72rem;letter-spacing:.08em;line-height:1;
+  padding:9px 13px;border-radius:999px;
+  box-shadow:0 6px 18px rgba(217,178,110,.28);transition:transform .2s}
+.btn-app:hover{transform:scale(1.06)}
+.btn-app .ba-ic{font-size:1rem;line-height:1}
+/* Nos ecrãs estreitos o cabeçalho já leva o logótipo, a língua e o menu.
+   Fica o ícone e o nome sai de vista — com `clip`, não com
+   `display:none`, para o leitor de ecrã continuar a ouvir o botão. */
+@media(max-width:420px){
+  .btn-app{padding:8px 9px}
+  .btn-app .ba-txt{position:absolute;width:1px;height:1px;overflow:hidden;
+    clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 }
-/* Enquanto a faixa do carrossel lhe passa por cima, o botao apaga-se em
-   vez de fugir dela. Fica no mesmo sitio: quem estava a olhar para ele
-   volta a encontra-lo onde estava. */
-.app-float.app-float-fora{opacity:0;pointer-events:none}
-.app-float:hover{transform:scale(1.06)}
-.app-float .af-ic{font-size:1.1rem;line-height:1}
 .app-modal{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.72)}
 .app-modal[hidden]{display:none}
 .app-modal-box{background:var(--ink-2);border:1px solid rgba(217,178,110,.25);border-radius:22px;max-width:430px;width:100%;padding:34px 28px;text-align:center;position:relative;box-shadow:0 30px 80px rgba(0,0,0,.6)}
@@ -297,7 +302,19 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
    ============================================================ */
 @media(max-width:360px){
   header .wrap{padding-left:14px;padding-right:14px}
-  .nav-right{gap:10px}
-  .logo-name{letter-spacing:.2em;font-size:.8rem}
-  .logo-name small{letter-spacing:.3em}
+  /* Com o botao da app tambem aqui, os 10px de intervalo eram 12px a
+     mais do que o ecra tinha. */
+  .nav-right{gap:8px}
+  nav.links{gap:12px}
+  .logo{gap:9px}
+  .logo-name{letter-spacing:.14em;font-size:.78rem}
+  .logo-name small{letter-spacing:.24em}
+}
+
+/* No computador, "Fazer o pedido" aparecia duas vezes no cabecalho: uma
+   vez na lista de links e outra no botao dourado, para o mesmo sitio.
+   Sai da lista -- e sao 100px que o botao da app passa a ter. No
+   telemovel o botao dourado nao existe, por isso o link fica. */
+@media(min-width:1280px){
+  nav.links > a.nav-pedido{display:none}
 }

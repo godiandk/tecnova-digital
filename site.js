@@ -246,13 +246,32 @@
     return "desktop";
   }
 
-  // Injeta o botão flutuante "APP" e o modal em todas as páginas
+  /* ------------------------------------------------------------------
+     ONDE VIVE O BOTAO APP
+     ------------------------------------------------------------------
+     Andou a flutuar no canto de baixo a esquerda e nunca deu certo, por
+     uma razao geometrica e nao por falta de afinacao: o botao esta preso
+     ao fundo da JANELA e a faixa do carrossel anda com a PAGINA. A faixa
+     varre o ecra de baixo para cima, do sitio onde comeca ate ao topo,
+     por isso passa por cima de QUALQUER ponto fixo que esteja abaixo
+     dela. Nao ha altura onde o por que escape -- subi-lo so muda a altura
+     de rolar em que os dois se encontram.
+     Medido num iPhone de 390x700: a faixa do carrossel ocupa dos 607 aos
+     712, e a janela acaba aos 700. Nao sobra canto nenhum. E a bolha do
+     chat tambem lhe passa por cima, dos 0 aos 80px de rolar -- so nao se
+     nota porque e redonda e calha em cima do canto de um botao.
+     Fica no cabecalho. Esta a vista mal a pagina abre, sem ser preciso
+     rolar nada, em todas as paginas, e nunca tapa coisa nenhuma.
+     ------------------------------------------------------------------ */
   var floatBtn = document.createElement("button");
   floatBtn.type = "button";
-  floatBtn.className = "app-float";
-  floatBtn.setAttribute("aria-label", "Instalar a app TECNOVA");
-  floatBtn.innerHTML = '<span class="af-ic">📲</span> APP';
-  document.body.appendChild(floatBtn);
+  floatBtn.className = "btn-app";
+  floatBtn.setAttribute("aria-label", "Instalar a aplicação TECNOVA");
+  floatBtn.innerHTML = '<span class="ba-ic" aria-hidden="true">📲</span><span class="ba-txt">APP</span>';
+  var caixaTopo = document.querySelector(".nav-right");
+  var burger = caixaTopo && caixaTopo.querySelector(".burger");
+  if (caixaTopo) caixaTopo.insertBefore(floatBtn, burger);
+  else document.body.appendChild(floatBtn);
 
   var modal = document.createElement("div");
   modal.className = "app-modal";
@@ -301,21 +320,6 @@
 
   floatBtn.addEventListener("click", openModal);
 
-  /* ------------------------------------------------------------------
-     O BOTAO APP E A FAIXA DO CARROSSEL
-     ------------------------------------------------------------------
-     O botao esta preso ao fundo da JANELA e a faixa do carrossel anda
-     com a PAGINA. Ha sempre uma altura de rolar em que os dois se
-     cruzam -- nao ha posicao fixa que evite isso.
-     Tentou-se faze-lo subir por cima da faixa. Funcionava, no sentido
-     de que deixavam de se sobrepor, mas o botao andava para cima e
-     para baixo enquanto se rolava, colado a faixa como um iman, e
-     ficava a boiar a meio do cartaz. Era pior do que o problema.
-     Fica quieto, e apaga-se enquanto passa por ela. Sao dois estados,
-     nao um movimento continuo: some-se, e volta assim que a faixa sai
-     do caminho. No resto da pagina -- que e quase toda -- esta sempre
-     la.
-     ------------------------------------------------------------------ */
   /* A altura dos comandos vai para o CSS. Abaixo dos 380px eles passam a
      duas filas e ficam com o dobro da altura; sem isto, os botoes do
      destaque continuavam a assentar em cima deles. */
@@ -331,59 +335,6 @@
     if (window.ResizeObserver) new ResizeObserver(medir).observe(cmds);
   })();
 
-  (function () {
-    var palco = document.querySelector(".hero-slider");
-    var comandos = document.querySelector(".hs-comandos");
-    if (!palco || !comandos || !window.IntersectionObserver) return;
-
-    var aVista = false;
-    var fora = false;
-
-    /* A faixa sao DUAS filas: os botoes do destaque por cima e os
-       comandos por baixo. Olhar so para os comandos era o que punha o
-       botao APP em cima dos outros botoes. */
-    function faixa() {
-      var c = comandos.getBoundingClientRect();
-      var accoes = palco.querySelector(".hs-slide.active .hs-accoes");
-      if (!accoes) return c;
-      var a = accoes.getBoundingClientRect();
-      return {
-        top: Math.min(a.top, c.top), bottom: Math.max(a.bottom, c.bottom),
-        left: Math.min(a.left, c.left), right: Math.max(a.right, c.right)
-      };
-    }
-
-    function decidir() {
-      if (!aVista) return false;
-      var b = floatBtn.getBoundingClientRect();
-      var f = faixa();
-      /* Uma vez apagado, so volta com 24px de folga a mais. Sem essa
-         margem, a rolar devagar acendia e apagava no mesmo pixel. */
-      var m = fora ? 24 : 0;
-      return !(b.right < f.left - m || b.left > f.right + m ||
-               b.bottom < f.top - m || b.top > f.bottom + m);
-    }
-
-    function colocar() {
-      var novo = decidir();
-      if (novo === fora) return;
-      fora = novo;
-      floatBtn.classList.toggle("app-float-fora", fora);
-    }
-
-    var obs = new IntersectionObserver(function (entradas) {
-      aVista = entradas[0].isIntersecting;
-      colocar();
-    }, { threshold: 0 });
-    obs.observe(comandos);
-
-    window.addEventListener("scroll", function () { if (aVista || fora) colocar(); }, { passive: true });
-    window.addEventListener("resize", colocar);
-    // ao mudar de destaque os botoes mudam de altura
-    palco.addEventListener("transitionend", function (e) {
-      if (e.target.classList && e.target.classList.contains("hs-slide")) colocar();
-    });
-  })();
   document.querySelectorAll(".js-open-app").forEach(function (el) {
     el.addEventListener("click", function (e) { e.preventDefault(); openModal(); });
   });
