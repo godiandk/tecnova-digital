@@ -4,7 +4,7 @@
 //    usando o cache apenas como reserva quando não há internet.
 //  - Restantes ficheiros (CSS/JS/imagens): stale-while-revalidate —
 //    abrem rápido a partir do cache e atualizam-se em segundo plano.
-const CACHE_NAME = 'tecnova-v59';
+const CACHE_NAME = 'tecnova-v60';
 const ASSETS = [
   './index.html',
   './servicos.html',
@@ -14,6 +14,16 @@ const ASSETS = [
   './modelos.html',
   './casos-config.js',
   './casos.js',
+  // Abertura animada. Os ecras estaticos do iOS ficam de fora de
+  // proposito: sao catorze e o Safari so vai buscar o que bate certo com
+  // o aparelho -- pre-carregar os catorze eram 130 KB desperdicados.
+  './css/tecnova-splash.css',
+  './js/tecnova-splash.js',
+  './img/splash/tecnova-mark.webp',
+  './img/splash/icon-192.png',
+  './img/splash/icon-512.png',
+  './img/splash/icon-maskable-512.png',
+  './img/splash/apple-touch-icon.png',
   './img/carrossel/pt/1-telemovel-480.webp',
   './img/carrossel/pt/1-tablet-768.webp',
   './img/carrossel/pt/1-computador-1280.webp',

@@ -1,0 +1,301 @@
+:root {
+  --tecnova-ink: #191411;
+  --tecnova-gold: #c9ab7c;
+  --tecnova-gold-deep: #b08d57;
+  --tecnova-gold-light: #ead5aa;
+  --tecnova-duration: 5000ms;
+  --tecnova-fade: 480ms;
+}
+
+html.tecnova-splash-lock,
+html.tecnova-splash-lock body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+#tecnova-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: none;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding:
+    max(24px, env(safe-area-inset-top))
+    max(24px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom))
+    max(24px, env(safe-area-inset-left));
+  overflow: hidden;
+  isolation: isolate;
+  background-color: var(--tecnova-ink);
+  background-image:
+    radial-gradient(circle at 50% 48%, rgba(201, 171, 124, 0.09), transparent 32%),
+    radial-gradient(circle at 50% 50%, #211812 0, var(--tecnova-ink) 58%, #120e0b 100%);
+  color: var(--tecnova-gold-light);
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--tecnova-fade) ease, visibility 0s linear var(--tecnova-fade);
+  contain: strict;
+}
+
+html.tecnova-js #tecnova-splash {
+  display: grid;
+}
+
+#tecnova-splash[hidden] {
+  display: none !important;
+}
+
+#tecnova-splash.is-leaving {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.tecnova-splash__noise {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.16;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.13'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+}
+
+/* O bloco tinha `width: min(92vw, 420px)` e o ecra ja tem 24px de
+   margem de cada lado: num telemovel de 320px pedia 294px numa area de
+   272 e, ao transbordar, a grelha empurrava-o 11px para a direita. Com
+   `100%` mede-se o que ha depois da margem e fica centrado a serio. */
+.tecnova-splash__content {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  width: min(100%, 420px);
+  text-align: center;
+  transform: translateZ(0);
+}
+
+/* O nome e a barra saem do fluxo e passam a pendurar por baixo do palco.
+   Sem isto, o conjunto ficava centrado e o LOGOTIPO ficava 40px acima do
+   centro -- e o ecra estatico que o iPhone mostra antes disto tem o
+   logotipo no centro exacto. Ao passar de um para o outro via-se o salto,
+   que era precisamente o que nao podia acontecer. */
+.tecnova-splash__legenda {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.tecnova-splash__stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(230px, 58vw, 340px);
+  aspect-ratio: 1;
+}
+
+.tecnova-splash__ambient {
+  position: absolute;
+  inset: 15%;
+  border-radius: 50%;
+  background: rgba(201, 171, 124, 0.08);
+  filter: blur(30px);
+  animation: tecnova-breathe 2.2s ease-in-out infinite;
+}
+
+.tecnova-splash__orbit {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  border: 1px solid rgba(201, 171, 124, 0.16);
+  will-change: transform;
+}
+
+.tecnova-splash__orbit::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 18deg,
+    transparent 0deg 196deg,
+    rgba(176, 141, 87, 0.22) 224deg,
+    var(--tecnova-gold-deep) 256deg,
+    var(--tecnova-gold-light) 282deg,
+    rgba(201, 171, 124, 0.3) 306deg,
+    transparent 336deg 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+  filter: drop-shadow(0 0 8px rgba(201, 171, 124, 0.68));
+}
+
+.tecnova-splash__orbit--primary {
+  animation: tecnova-orbit 1.85s linear infinite;
+}
+
+.tecnova-splash__orbit--secondary {
+  inset: 17%;
+  border-color: rgba(201, 171, 124, 0.1);
+  animation: tecnova-orbit-reverse 3.1s linear infinite;
+}
+
+.tecnova-splash__orbit--secondary::before {
+  opacity: 0.48;
+  filter: none;
+}
+
+.tecnova-splash__dot {
+  position: absolute;
+  top: 50%;
+  right: -4px;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 50%;
+  background: var(--tecnova-gold-light);
+  box-shadow:
+    0 0 7px var(--tecnova-gold-light),
+    0 0 18px rgba(201, 171, 124, 0.78),
+    0 0 34px rgba(176, 141, 87, 0.42);
+}
+
+.tecnova-splash__tile {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 48%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(201, 171, 124, 0.32);
+  border-radius: 30%;
+  background: rgba(25, 20, 17, 0.88);
+  box-shadow:
+    0 0 0 7px rgba(201, 171, 124, 0.025),
+    0 18px 50px rgba(0, 0, 0, 0.34),
+    inset 0 0 24px rgba(201, 171, 124, 0.055);
+  animation: tecnova-tile-breathe 2.2s ease-in-out infinite;
+}
+
+.tecnova-splash__logo {
+  display: block;
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(201, 171, 124, 0.22));
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.tecnova-splash__wordmark {
+  margin: -2px 0 0;
+  color: var(--tecnova-gold-light);
+  font-family: Manrope, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: clamp(0.82rem, 2.6vw, 0.98rem);
+  font-weight: 700;
+  line-height: 1.55;
+  letter-spacing: 0.38em;
+  text-indent: 0.38em;
+  text-transform: uppercase;
+}
+
+.tecnova-splash__wordmark span {
+  display: block;
+  color: var(--tecnova-gold);
+  font-size: 0.65em;
+  font-weight: 600;
+  letter-spacing: 0.68em;
+  text-indent: 0.68em;
+  opacity: 0.88;
+}
+
+.tecnova-splash__progress {
+  position: relative;
+  width: min(150px, 42vw);
+  height: 1px;
+  margin-top: 3px;
+  overflow: hidden;
+  background: rgba(201, 171, 124, 0.17);
+}
+
+.tecnova-splash__progress::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--tecnova-gold);
+  box-shadow: 0 0 8px rgba(201, 171, 124, 0.7);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+#tecnova-splash.is-running .tecnova-splash__progress::after {
+  animation: tecnova-progress calc(var(--tecnova-duration) - var(--tecnova-fade)) linear forwards;
+}
+
+.tecnova-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+@keyframes tecnova-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes tecnova-orbit-reverse {
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes tecnova-breathe {
+  0%, 100% { opacity: 0.62; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes tecnova-tile-breathe {
+  0%, 100% { transform: scale(0.985); }
+  50% { transform: scale(1.015); }
+}
+
+@keyframes tecnova-progress {
+  to { transform: scaleX(1); }
+}
+
+@media (max-width: 360px) {
+  .tecnova-splash__legenda { gap: 11px; margin-top: 18px; }
+  .tecnova-splash__stage { width: 222px; }
+  .tecnova-splash__tile { border-radius: 28%; }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .tecnova-splash__legenda { gap: 8px; margin-top: 14px; }
+  .tecnova-splash__stage { width: min(56vh, 255px); }
+  .tecnova-splash__wordmark { font-size: 0.72rem; }
+  .tecnova-splash__progress { margin-top: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tecnova-splash__orbit,
+  .tecnova-splash__ambient,
+  .tecnova-splash__tile,
+  #tecnova-splash.is-running .tecnova-splash__progress::after {
+    animation: none !important;
+  }
+
+  .tecnova-splash__progress::after {
+    transform: scaleX(1);
+    opacity: 0.72;
+  }
+}
+
