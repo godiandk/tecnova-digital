@@ -178,7 +178,7 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
 .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
 .reveal.in{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){
-  .btn-app{transition:none}
+  .app-float{transition:none}
   .reveal{opacity:1;transform:none;transition:none}
   html{scroll-behavior:auto}
 }
@@ -218,25 +218,29 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
   .nav-drop-menu a{padding:12px 0 12px 28px;text-align:left}
 }
 
-/* ---------- Botão "APP" no cabeçalho + modal de instalação ----------
-   Andou a flutuar no canto de baixo à esquerda e chocava com a faixa do
-   carrossel. Não havia afinação que resolvesse: um ponto fixo na janela
-   e uma faixa que anda com a página cruzam-se sempre. Aqui está à vista
-   mal a página abre, em todas as páginas, e não tapa nada. */
-.btn-app{display:inline-flex;align-items:center;gap:6px;flex:none;
+/* ---------- Botão flutuante "APP" + modal de instalação ----------
+   Vive no canto de baixo à esquerda, espelhado com a bolha do chat que
+   está no canto oposto: mesmo tamanho, mesma distância aos bordos. Não
+   se mexe e não se apaga — quem se afasta é o carrossel. */
+.app-float{
+  position:fixed;left:22px;bottom:22px;z-index:60;
+  display:inline-flex;align-items:center;gap:8px;
   background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:var(--ink);
-  border:none;cursor:pointer;font-family:inherit;font-weight:800;
-  font-size:.72rem;letter-spacing:.08em;line-height:1;
-  padding:9px 13px;border-radius:999px;
-  box-shadow:0 6px 18px rgba(217,178,110,.28);transition:transform .2s}
-.btn-app:hover{transform:scale(1.06)}
-.btn-app .ba-ic{font-size:1rem;line-height:1}
-/* Nos ecrãs estreitos o cabeçalho já leva o logótipo, a língua e o menu.
-   Fica o ícone e o nome sai de vista — com `clip`, não com
-   `display:none`, para o leitor de ecrã continuar a ouvir o botão. */
-@media(max-width:420px){
-  .btn-app{padding:8px 9px}
-  .btn-app .ba-txt{position:absolute;width:1px;height:1px;overflow:hidden;
+  border:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:.78rem;
+  letter-spacing:.04em;padding:12px 17px;border-radius:999px;
+  /* mesmo anel do assistente: nada encosta ao botão */
+  box-shadow:0 0 0 6px var(--ink), 0 12px 30px rgba(217,178,110,.4);
+  transition:transform .2s;
+}
+.app-float:hover{transform:scale(1.06)}
+.app-float .af-ic{font-size:1.1rem;line-height:1}
+/* No telemóvel fica redondo e do tamanho da bolha do chat: 54px, a 16px
+   do canto, igual a ela. É esse quadrado que o carrossel deixa livre. */
+@media(max-width:900px){
+  .app-float{left:16px;bottom:16px;width:54px;height:54px;padding:0;
+    justify-content:center;gap:0;box-shadow:0 0 0 5px var(--ink), 0 10px 26px rgba(217,178,110,.4)}
+  .app-float .af-ic{font-size:1.35rem}
+  .app-float .af-txt{position:absolute;width:1px;height:1px;overflow:hidden;
     clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 }
 .app-modal{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.72)}

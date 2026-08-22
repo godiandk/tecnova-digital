@@ -247,31 +247,21 @@
   }
 
   /* ------------------------------------------------------------------
-     ONDE VIVE O BOTAO APP
+     O BOTAO APP, A FLUTUAR NO CANTO
      ------------------------------------------------------------------
-     Andou a flutuar no canto de baixo a esquerda e nunca deu certo, por
-     uma razao geometrica e nao por falta de afinacao: o botao esta preso
-     ao fundo da JANELA e a faixa do carrossel anda com a PAGINA. A faixa
-     varre o ecra de baixo para cima, do sitio onde comeca ate ao topo,
-     por isso passa por cima de QUALQUER ponto fixo que esteja abaixo
-     dela. Nao ha altura onde o por que escape -- subi-lo so muda a altura
-     de rolar em que os dois se encontram.
-     Medido num iPhone de 390x700: a faixa do carrossel ocupa dos 607 aos
-     712, e a janela acaba aos 700. Nao sobra canto nenhum. E a bolha do
-     chat tambem lhe passa por cima, dos 0 aos 80px de rolar -- so nao se
-     nota porque e redonda e calha em cima do canto de um botao.
-     Fica no cabecalho. Esta a vista mal a pagina abre, sem ser preciso
-     rolar nada, em todas as paginas, e nunca tapa coisa nenhuma.
+     Fica no canto de baixo a esquerda, do mesmo tamanho e feitio da
+     bolha do chat que vive no canto oposto. Nao se mexe e nao se apaga.
+     O que se afastou dele foi o carrossel: a linha dos botoes sobe
+     acima dos dois cantos e os comandos ficam entre eles. Assim os
+     dois cantos sao dos botoes flutuantes e o meio e do carrossel, sem
+     ninguem a passar por cima de ninguem.
      ------------------------------------------------------------------ */
   var floatBtn = document.createElement("button");
   floatBtn.type = "button";
-  floatBtn.className = "btn-app";
+  floatBtn.className = "app-float";
   floatBtn.setAttribute("aria-label", "Instalar a aplicação TECNOVA");
-  floatBtn.innerHTML = '<span class="ba-ic" aria-hidden="true">📲</span><span class="ba-txt">APP</span>';
-  var caixaTopo = document.querySelector(".nav-right");
-  var burger = caixaTopo && caixaTopo.querySelector(".burger");
-  if (caixaTopo) caixaTopo.insertBefore(floatBtn, burger);
-  else document.body.appendChild(floatBtn);
+  floatBtn.innerHTML = '<span class="af-ic" aria-hidden="true">📲</span><span class="af-txt">APP</span>';
+  document.body.appendChild(floatBtn);
 
   var modal = document.createElement("div");
   modal.className = "app-modal";

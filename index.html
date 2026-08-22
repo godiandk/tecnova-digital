@@ -47,9 +47,9 @@ window.TECNOVA_LING = (function () {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=58">
-<link rel="stylesheet" href="assistente.css?v=58">
-<link rel="stylesheet" href="i18n.css?v=58">
+<link rel="stylesheet" href="estilo.css?v=59">
+<link rel="stylesheet" href="assistente.css?v=59">
+<link rel="stylesheet" href="i18n.css?v=59">
 <style>
 .hero{
   min-height:100vh;display:flex;align-items:center;
@@ -162,16 +162,36 @@ window.TECNOVA_LING = (function () {
   bottom:calc(12px + var(--cmd-h, 40px) + 12px);
   display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
   padding:0 20px;z-index:3}
-/* A bolha do chat vive no canto de baixo a direita e mede 54px. O
-   segundo botao do destaque ia ate ao fim da linha e a bolha assentava-
-   lhe em cima do texto -- lia-se "Ver modelos re". A linha dos botoes
-   passa a deixar esse canto livre, tal como os comandos ja se encostam a
-   esquerda pela mesma razao. */
-@media(max-width:1023px){
-  .hs-accoes{padding-right:78px}
+
+/* OS DOIS CANTOS SAO DOS BOTOES FLUTUANTES
+   ------------------------------------------------------------
+   O botao APP vive no canto de baixo a esquerda e a bolha do chat no
+   canto oposto. Nenhum dos dois se mexe nem se apaga -- quem se afasta
+   e o carrossel, que e quem tem por onde.
+   --canto e o quadrado que cada um ocupa contado a partir do fundo do
+   palco: o tamanho da bolha mais a distancia dela ao bordo. A linha dos
+   botoes sobe acima disso; os comandos ficam ao fundo mas entre os
+   dois, que e onde nao ha ninguem. */
+@media(max-width:900px){
+  .hero-slider{--canto:70px}
+  .hs-accoes{bottom:calc(var(--canto) + 8px)}
+  .hs-comandos{bottom:8px;
+    left:calc(var(--canto) + 8px);right:calc(var(--canto) + 8px);
+    margin-inline:auto;width:fit-content;max-width:100%;transform:none}
+}
+/* Num telemovel pequeno a faixa do cartaz nao chega para os 70px dos
+   cantos mais a linha dos botoes. As duas bolhas encolhem para 46px --
+   continuam acima dos 44px que a Apple recomenda -- e o canto passa a
+   valer 58. */
+@media(max-width:400px){
+  .hero-slider{--canto:54px}
+  .app-float, .as-botao{width:44px !important;height:44px !important;
+    left:auto;bottom:10px !important}
+  .app-float{left:10px !important}
+  .as-botao{right:10px !important}
 }
 @media(max-width:767px){
-  .hs-accoes{gap:10px;flex-wrap:nowrap;padding:0 78px 0 14px}
+  .hs-accoes{gap:10px;flex-wrap:nowrap;padding:0 14px}
   .hs-accoes .btn{flex:1 1 0;min-width:0;justify-content:center;
     padding:11px 10px;font-size:.82rem;line-height:1.2;text-align:center}
 }
@@ -179,11 +199,8 @@ window.TECNOVA_LING = (function () {
    e a mobilia chegava aos 21,8% -- mais do que os 20,6% que o cartaz 3
    reserva. Letra e folgas mais curtas devolvem 16px. */
 @media(max-width:360px){
-  .hs-accoes{bottom:calc(8px + var(--cmd-h, 40px) + 8px);gap:8px}
-  .hs-accoes .btn{font-size:.70rem;padding:7px 6px}
-  /* Os oito pixeis que a mobilia precisava vao buscar-se ao fundo, nao a
-     folga entre as duas filas: encostadas uma a outra ficava confuso. */
-  .hs-comandos{bottom:8px}
+  .hs-accoes{gap:8px}
+  .hs-accoes .btn{font-size:.68rem;padding:6px 6px}
 }
 /* No computador o palco e baixo: a 1024px tem 512px de altura e a
    faixa vale 111px. Empilhados, os botoes e os comandos pediam 126px
@@ -288,14 +305,22 @@ window.TECNOVA_LING = (function () {
   .hs-pausa{margin-left:6px;padding:0 11px 0 9px;font-size:.7rem}
 
 }
-/* Num ecrã de 320px nem assim o grupo escapa à bolha do chat: as cinco
-   bolinhas valem 170px (34px cada, que é o mínimo para um polegar) e o
-   botão de pausa mais 91px — 283px em 320. Encostado à esquerda, ainda
-   ia parar por baixo da bolha e o «PAUSAR» deixava de se poder carregar.
-   Passa a duas filas: as bolinhas em cima, o botão por baixo. Ninguém
-   perde área de toque nem a palavra, e o grupo nunca passa dos 200px. */
+/* Os comandos vivem agora entre os dois cantos, e o que sobra entre eles
+   e' o que ha. Num telemovel de 430px sao 274px, num de 390px sao 258 e
+   num de 320px sao 188. O grupo encolhe por etapas para caber sempre:
+   primeiro as bolinhas, depois a palavra do botao de pausa -- que sai de
+   vista com `clip`, nao com `display:none`, para o leitor de ecra
+   continuar a anuncia-la. */
+@media(max-width:430px){
+  .hs-dots button{width:30px}
+}
 @media(max-width:400px){
-  .hs-comandos{left:14px;transform:none}
+  .hs-pausa-txt{position:absolute;width:1px;height:1px;overflow:hidden;
+    clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+  .hs-pausa{margin-left:4px;padding:0 10px;gap:0}
+}
+@media(max-width:340px){
+  .hs-dots button{width:28px}
 }
 /* A bolha do chat fica a 16px da direita e mede 54px, por isso comeca a
    360−16−54 = 290px. Isto punha o grupo em duas filas, e duas filas
@@ -304,13 +329,7 @@ window.TECNOVA_LING = (function () {
    passam por baixo da bolha sem lhe tocar. Ninguem perde a palavra nem
    os 34px de area de toque das bolinhas. */
 @media(max-width:380px){
-  .hs-comandos{left:12px;padding:3px 4px}
-  .hs-pausa{margin-left:4px;padding:0 8px 0 7px;font-size:.64rem;gap:5px}
-  /* Os pontos passam de 34px para 32px de area de toque. Sao 10px que o
-     grupo devolve, e e o que o afasta da bolha do chat -- que fica a
-     290px num ecra de 360. Continua bem acima dos 24px que a norma
-     pede. */
-  .hs-dots button{width:32px}
+  .hs-comandos{padding:3px 4px}
 }
 /* No computador os comandos saem de baixo dos botoes e vao para o canto
    direito da faixa: e o que deixa os dois caberem nos 82px que o cartaz
@@ -990,11 +1009,11 @@ window.TECNOVA_LING = (function () {
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js?v=58"></script>
-<script src="campanha.js?v=58"></script>
-<script src="medir-config.js?v=58"></script>
-<script src="medir.js?v=58"></script>
-<script src="auth-nav.js?v=58"></script>
+<script src="firebase-config.js?v=59"></script>
+<script src="campanha.js?v=59"></script>
+<script src="medir-config.js?v=59"></script>
+<script src="medir.js?v=59"></script>
+<script src="auth-nav.js?v=59"></script>
 
 <script>
 const io=new IntersectionObserver(es=>{
@@ -1005,10 +1024,10 @@ if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
 }
 </script>
-<script src="site.js?v=58"></script>
-<script src="idiomas/en.js?v=58"></script>
-<script src="idiomas/es.js?v=58"></script>
-<script src="i18n.js?v=58"></script>
-<script src="assistente.js?v=58"></script>
+<script src="site.js?v=59"></script>
+<script src="idiomas/en.js?v=59"></script>
+<script src="idiomas/es.js?v=59"></script>
+<script src="i18n.js?v=59"></script>
+<script src="assistente.js?v=59"></script>
 </body>
 </html>
