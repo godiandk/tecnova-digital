@@ -7,13 +7,13 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="chat.css?v=64">
+<link rel="stylesheet" href="chat.css?v=65">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js?v=64"></script>
-<script src="avisos-config.js?v=64"></script>
-<script src="chat.js?v=64"></script>
+<script src="firebase-config.js?v=65"></script>
+<script src="avisos-config.js?v=65"></script>
+<script src="chat.js?v=65"></script>
 <style>
 :root{
   --ink:#16100b;--ink-2:#211812;--ink-3:#2b2016;--gold:#d9b26e;--gold-soft:#e8cf9e;--gold-dim:#8a7350;
@@ -32,7 +32,10 @@ h1,h2,.serif{font-family:'Playfair Display',serif}
 .wrap{max-width:960px;margin:0 auto;padding:26px}
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 28px;flex-wrap:wrap;gap:14px}
 .brand{display:flex;align-items:center;gap:12px}
-.logo-mark{width:36px;height:40px;display:grid;place-items:center;background:linear-gradient(160deg,var(--gold-soft),var(--gold));clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);color:var(--ink);font-family:'Playfair Display',serif;font-weight:800}
+/* Esta pagina tem CSS propria: sem isto o hexagono dourado cheio ficava
+   ca e o monograma, que tambem e dourado, desaparecia por cima dele. */
+.logo-mark{width:40px;height:40px;flex:none;display:grid;place-items:center}
+.logo-mark img{width:100%;height:100%;object-fit:contain;display:block}
 .logo-name{letter-spacing:.28em;font-weight:800;color:var(--gold-soft);font-size:.85rem}
 .logo-name small{display:block;letter-spacing:.4em;font-size:.5rem;color:var(--cream-dim)}
 .tag{background:rgba(217,178,110,.14);color:var(--gold);font-size:.7rem;font-weight:800;padding:5px 12px;border-radius:999px;letter-spacing:.1em}
