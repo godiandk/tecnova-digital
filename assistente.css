@@ -40,9 +40,10 @@
 .as-topo>div{flex:1;min-width:0}
 .as-topo b{display:block;color:var(--as-cream);font-size:.94rem;font-weight:800}
 .as-topo>div>span{display:block;color:var(--as-dim);font-size:.73rem}
-#asWrap .as-av{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
-  background:linear-gradient(140deg,var(--as-gold-soft),var(--as-gold));color:var(--as-ink);
-  font-family:'Playfair Display',serif;font-weight:800;font-size:1.05rem;line-height:1}
+/* Era um circulo dourado cheio com um "T". Passa a ser o monograma, o
+   mesmo do cabecalho, dos cartazes e da abertura. */
+#asWrap .as-av{flex:none;width:38px;height:38px;display:grid;place-items:center}
+#asWrap .as-av img{width:100%;height:100%;object-fit:contain;display:block}
 .as-fechar{flex:none;background:none;border:none;color:var(--as-dim);font-size:1.5rem;
   line-height:1;cursor:pointer;padding:0 4px}
 .as-fechar:hover{color:var(--as-gold)}

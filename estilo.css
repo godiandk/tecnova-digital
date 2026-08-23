@@ -78,12 +78,14 @@ header{
 header .wrap{max-width:1280px}
 .nav{display:flex;align-items:center;justify-content:space-between;height:74px;gap:14px}
 .logo{display:flex;align-items:center;gap:12px;text-decoration:none;flex:none}
+/* Era um hexagono dourado cheio com um "T" desenhado por dentro com a
+   letra do tipo Playfair. O monograma a serio -- o mesmo que esta nos
+   cartazes do carrossel e na abertura -- e outro desenho: um S e um T
+   entrelacados dentro de um hexagono aberto. Passa a ser esse. */
 .logo-mark{
-  width:40px;height:44px;display:grid;place-items:center;
-  background:linear-gradient(160deg,var(--gold-soft),var(--gold));
-  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
-  color:var(--ink);font-family:'Playfair Display',serif;font-weight:800;font-size:1.2rem;
+  width:42px;height:42px;flex:none;display:grid;place-items:center;
 }
+.logo-mark img{width:100%;height:100%;object-fit:contain;display:block}
 .logo-name{letter-spacing:.32em;font-weight:800;color:var(--gold-soft);font-size:.95rem}
 .logo-name small{display:block;letter-spacing:.5em;font-size:.55rem;color:var(--cream-dim);font-weight:600}
 /* O menu tem 8 entradas: com 26px de intervalo não cabia na linha e o
@@ -247,7 +249,8 @@ footer{border-top:1px solid rgba(217,178,110,.14);padding:44px 0 28px}
 .app-modal[hidden]{display:none}
 .app-modal-box{background:var(--ink-2);border:1px solid rgba(217,178,110,.25);border-radius:22px;max-width:430px;width:100%;padding:34px 28px;text-align:center;position:relative;box-shadow:0 30px 80px rgba(0,0,0,.6)}
 .app-modal-close{position:absolute;top:12px;right:16px;background:none;border:none;color:var(--cream-dim);font-size:1.8rem;cursor:pointer;line-height:1}
-.app-modal-logo{width:66px;height:72px;margin:0 auto 16px;display:grid;place-items:center;background:linear-gradient(160deg,var(--gold-soft),var(--gold));clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);color:var(--ink);font-family:'Playfair Display',serif;font-weight:800;font-size:1.9rem}
+.app-modal-logo{width:74px;height:74px;margin:0 auto 16px;display:grid;place-items:center}
+.app-modal-logo img{width:100%;height:100%;object-fit:contain;display:block}
 .app-modal-box h3{font-size:1.3rem;margin-bottom:8px}
 .app-modal-box>p{color:var(--cream-dim);font-size:.9rem;margin-bottom:22px}
 .app-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px}

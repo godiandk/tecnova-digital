@@ -251,7 +251,7 @@
         '<span class="as-ping"></span></button>' +
       '<div class="as-caixa" id="asCaixa" role="dialog" aria-label="Assistente TECNOVA">' +
         '<div class="as-topo">' +
-          '<span class="as-av">T</span>' +
+          '<span class="as-av"><img src="img/splash/tecnova-mark.webp" alt="" width="512" height="512"></span>' +
           '<div><b>Assistente TECNOVA</b><span>Responde na hora · 24 horas por dia</span></div>' +
           '<button class="as-fechar" id="asFechar" aria-label="Fechar">×</button>' +
         '</div>' +

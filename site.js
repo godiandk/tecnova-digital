@@ -269,7 +269,7 @@
   modal.innerHTML =
     '<div class="app-modal-box">' +
       '<button class="app-modal-close" aria-label="Fechar">×</button>' +
-      '<div class="app-modal-logo">T</div>' +
+      '<div class="app-modal-logo"><img src="img/splash/tecnova-mark.webp" alt="" width="512" height="512"></div>' +
       '<h3>App TECNOVA</h3>' +
       '<p>Aceda à app agora mesmo — sem instalar nada — ou coloque o ícone no seu ecrã.</p>' +
       '<a class="app-open-btn" href="app.html">▶ Abrir app agora</a>' +
