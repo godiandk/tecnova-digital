@@ -7,6 +7,8 @@ import { RouletteModule } from './modules/games/roulette/roulette.module';
 import { BlackjackModule } from './modules/games/blackjack/blackjack.module';
 import { BaccaratModule } from './modules/games/baccarat/baccarat.module';
 import { BancaFrancesaModule } from './modules/games/banca-francesa/banca-francesa.module';
+import { RolesModule } from './modules/roles/roles.module';
+import { CouponsModule } from './modules/coupons/coupons.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { BancaFrancesaModule } from './modules/games/banca-francesa/banca-france
     BlackjackModule,
     BaccaratModule,
     BancaFrancesaModule,
+    RolesModule,
+    CouponsModule,
   ],
 })
 export class AppModule {}

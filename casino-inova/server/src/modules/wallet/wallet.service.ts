@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 
-export type LedgerEntryType = 'compra' | 'aposta' | 'premio' | 'presente' | 'ajuste';
+export type LedgerEntryType = 'compra' | 'aposta' | 'premio' | 'presente' | 'ajuste' | 'cupom' | 'suporte';
 
 export interface LedgerEntry {
   id: string;

@@ -35,6 +35,41 @@ API sobe em `http://localhost:3000`.
 | `POST /games/bacara/apostar` `{ userId, betType, amount }` | Roda a mão inteira numa chamada só (bacará não tem decisão do jogador) e credita se houver prêmio. `betType` é `jogador`, `banca` ou `empate`. Empate com aposta em jogador/banca devolve a ficha (nem ganha nem perde). |
 | `GET /games/banca-francesa/config` | Aposta mín/máx, quantos números dá pra apostar na mesma rodada, multiplicador por quantidade de dados que bateram e o RTP (199/216 ≈ 92,13%, o mesmo do "Chuck-a-Luck" internacional). |
 | `POST /games/banca-francesa/apostar` `{ userId, bets: [{ number, amount }] }` | Rola 3 dados pra toda a mesa numa tacada só e resolve cada número apostado contra o mesmo resultado — pode apostar em vários números na mesma rodada. |
+| `GET /admin/papeis/permissoes` | A matriz de permissões inteira — o que cada papel pode fazer. |
+| `GET /admin/usuarios?actingUserId=` | Lista todo mundo com o papel atual — exige `gerenciar_papeis`. |
+| `POST /admin/papeis/atribuir` `{ actingUserId, targetUserId, role }` | Promove/rebaixa entre `jogador` e `moderador` — exige `gerenciar_papeis`. Nunca promove a `admin` por aqui (ver seção de papéis abaixo). |
+| `POST /admin/suporte/conceder-fichas` `{ actingUserId, targetUserId, chips, reason? }` | Credita fichas de suporte na carteira de alguém — exige `conceder_fichas_suporte`. Moderador tem teto de 5.000 fichas por ação, admin não tem teto. |
+| `POST /admin/cupons` `{ actingUserId, code, chips, maxRedemptions }` | Cria um cupom — exige `gerenciar_cupons` (só admin, por padrão). |
+| `GET /admin/cupons?actingUserId=` | Lista cupons com quantos resgates cada um já teve — exige `gerenciar_cupons`. |
+| `POST /admin/cupons/:code/desativar` `{ actingUserId }` | Desativa um cupom sem apagar o histórico de quem já resgatou. |
+| `POST /cupons/resgatar` `{ userId, code }` | Qualquer jogador resgata um cupom ativo — uma vez por pessoa, até o limite de resgates do cupom. Sem permissão nenhuma exigida, é uma ação de jogador normal. |
+
+### Papéis e permissões
+
+Não são só dois blocos fixos de poder — cada ação administrativa é uma permissão isolada (`server/src/modules/roles/roles.constants.ts`), e um papel é só um conjunto dessas permissões. Isso deixa fácil criar um terceiro papel no futuro (ex: "moderador sênior") sem tocar em nenhuma rota.
+
+| Permissão | Jogador | Moderador | Admin |
+|---|:---:|:---:|:---:|
+| `silenciar_usuario` — silenciar em chat |  | ✓ | ✓ |
+| `ver_denuncias` — ver denúncias reportadas |  | ✓ | ✓ |
+| `ver_carteira_usuario` — ver saldo/histórico de alguém (investigar um caso de suporte) |  | ✓ | ✓ |
+| `conceder_fichas_suporte` — dar fichas de compensação (moderador até 5.000/ação, admin sem teto) |  | ✓ | ✓ |
+| `banir_usuario` — banir permanentemente |  |  | ✓ |
+| `gerenciar_cupons` — criar/listar/desativar cupom |  |  | ✓ |
+| `gerenciar_papeis` — promover/rebaixar entre jogador e moderador |  |  | ✓ |
+| `ajustar_economia` — mexer em RTP, preço de pacote, curva de nível |  |  | ✓ |
+| `ver_analytics` — dashboards |  | ✓ | ✓ |
+
+`u1` (o "usuário logado" nesta v1) já nasce `admin`. `u2` nasce `jogador`, só pra ter alguém pra promover:
+
+```
+curl -X POST http://localhost:3000/admin/papeis/atribuir -H "Content-Type: application/json" -d '{"actingUserId":"u1","targetUserId":"u2","role":"moderador"}'
+curl "http://localhost:3000/admin/usuarios?actingUserId=u1"
+```
+
+Promover alguém a `admin` **não existe como rota** — de propósito, pra um moderador nunca conseguir se auto-promover nem promover outra pessoa a admin mesmo que a conta dele seja comprometida. Isso se faz direto na base de dados.
+
+**Sobre o painel de admin:** as rotas acima são a base de um backoffice, mas o backoffice em si não deveria virar uma tela dentro do app do jogador — é assim que apps de cassino social de verdade fazem (Zynga, Playtika etc.): o app que vai pra loja não carrega nenhum código de gestão de usuário dentro do binário público, porque isso é superfície de ataque de graça pra quem decompilar o app. O caminho normal é uma ferramenta interna separada (um painel web, por exemplo) que só fala com essas rotas `/admin/*` — ainda não construída aqui.
 
 Blackjack é sequencial — `apostar` sempre primeiro, depois qualquer número de `pedir-carta`, terminando em `parar` (ou automaticamente, se estourar ou sair um natural). Só existe uma mão em andamento por usuário por vez.
 
@@ -56,6 +91,8 @@ curl -X POST http://localhost:3000/games/blackjack/pedir-carta -H "Content-Type:
 curl -X POST http://localhost:3000/games/blackjack/parar -H "Content-Type: application/json" -d '{"userId":"u1"}'
 curl -X POST http://localhost:3000/games/bacara/apostar -H "Content-Type: application/json" -d '{"userId":"u1","betType":"banca","amount":100}'
 curl -X POST http://localhost:3000/games/banca-francesa/apostar -H "Content-Type: application/json" -d '{"userId":"u1","bets":[{"number":4,"amount":100}]}'
+curl -X POST http://localhost:3000/admin/cupons -H "Content-Type: application/json" -d '{"actingUserId":"u1","code":"BEMVINDO500","chips":500,"maxRedemptions":1000}'
+curl -X POST http://localhost:3000/cupons/resgatar -H "Content-Type: application/json" -d '{"userId":"u1","code":"bemvindo500"}'
 ```
 
 Para conferir que o RTP configurado em `slots.config.ts` é realmente o que o motor entrega (fórmula exata batendo com simulação de 500 mil giros):
