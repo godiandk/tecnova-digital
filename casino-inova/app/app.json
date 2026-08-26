@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Casino Inova",
+    "slug": "casino-inova",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B0F0D",
+    "icon": "./assets/images/branding/app-icon.png",
+    "scheme": "casinoinova",
+    "splash": {
+      "image": "./assets/images/backgrounds/splash.png",
+      "backgroundColor": "#0B0F0D",
+      "resizeMode": "cover"
+    },
+    "ios": {
+      "bundleIdentifier": "com.casinoinova.app",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.casinoinova.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/branding/app-icon-adaptive.png",
+        "backgroundColor": "#0B0F0D"
+      }
+    }
+  }
+}
