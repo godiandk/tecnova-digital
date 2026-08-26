@@ -41,7 +41,7 @@ interface TrucoMatch {
 }
 
 /**
- * Contra bot, não multiplayer de verdade ainda — truco/dominó/pôquer multiplayer
+ * Contra bot, não multiplayer de verdade ainda — truco/dominó/poker multiplayer
  * precisam de sala + WebSocket (Colyseus é a escolha do plano de produto), que ainda
  * não existe neste esqueleto. Isso já entrega as regras de verdade (manilha, força de
  * carta, desempate de mão, pedir truco) jogáveis sozinho, e é a base que o motor

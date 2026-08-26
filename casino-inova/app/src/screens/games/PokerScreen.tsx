@@ -107,7 +107,7 @@ export function PokerScreen({ navigation }: Props) {
 
         <View style={styles.titleRow}>
           <DealerBadge source={DEALER_IMAGES.poker} />
-          <Text style={styles.title}>Pôquer</Text>
+          <Text style={styles.title}>Poker</Text>
         </View>
 
         {!config && !configError && <ActivityIndicator color={colors.goldBright} style={styles.loading} />}
@@ -203,7 +203,7 @@ export function PokerScreen({ navigation }: Props) {
         )}
       </SafeAreaView>
 
-      <TutorialModal visible={tutorialVisible} gameName="Pôquer" tutorial={tutorial} onClose={() => setTutorialVisible(false)} />
+      <TutorialModal visible={tutorialVisible} gameName="Poker" tutorial={tutorial} onClose={() => setTutorialVisible(false)} />
     </GameBackdrop>
   );
 }

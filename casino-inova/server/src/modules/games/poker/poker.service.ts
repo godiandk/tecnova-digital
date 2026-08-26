@@ -53,7 +53,7 @@ export class PokerService {
   newHand(userId: string, buyIn: number) {
     const existing = this.hands.get(userId);
     if (existing && !existing.finished) {
-      throw new BadRequestException('Você já tem uma mão de pôquer em andamento.');
+      throw new BadRequestException('Você já tem uma mão de poker em andamento.');
     }
     if (!Number.isFinite(buyIn) || buyIn < MIN_BUY_IN || buyIn > MAX_BUY_IN) {
       throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
@@ -243,7 +243,7 @@ export class PokerService {
   private requireHand(userId: string): PokerHand {
     const match = this.hands.get(userId);
     if (!match || match.finished) {
-      throw new BadRequestException('Nenhuma mão de pôquer em andamento — comece uma nova.');
+      throw new BadRequestException('Nenhuma mão de poker em andamento — comece uma nova.');
     }
     return match;
   }

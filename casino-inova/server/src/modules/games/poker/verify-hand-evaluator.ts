@@ -38,4 +38,4 @@ const handA = bestHandOf([card(10, 'paus'), card(10, 'copas'), card(7, 'espadas'
 const handB = bestHandOf([card(10, 'ouros'), card(10, 'espadas'), card(7, 'copas'), card(4, 'paus'), card(2, 'ouros'), card(9, 'espadas'), card(3, 'paus')]);
 assert.strictEqual(compareHandValues(handA, handB), 0, 'mãos com as mesmas cartas por valor deveriam empatar');
 
-console.log('Todas as verificações do avaliador de mão de pôquer passaram.');
+console.log('Todas as verificações do avaliador de mão de poker passaram.');

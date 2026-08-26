@@ -16,7 +16,7 @@ export function LobbyScreen() {
   const phase1Games = games.filter((game) => game.phase === 1);
   const laterGames = games.filter((game) => game.phase > 1);
 
-  // Os 8 jogos têm motor de verdade agora. Truco, dominó e pôquer são contra bot —
+  // Os 8 jogos têm motor de verdade agora. Truco, dominó e poker são contra bot —
   // multiplayer de verdade com outro jogador ainda depende de sala + WebSocket.
   const openGame = (gameId: string) => {
     if (gameId === 'slots') {

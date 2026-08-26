@@ -8,7 +8,7 @@ Depois de baixar e descompactar, os arquivos vão exatamente para dentro de `cas
 
 ## Texto para colar no ChatGPT
 
-Você vai atuar como diretor de arte de um estúdio AAA de jogos mobile e vai gerar, um por um, **todo o pacote de assets visuais** de um cassino social chamado **Casino Inova**. É um app de cassino social para celular — sem dinheiro real em jogo, só entretenimento — com caça-níqueis, roleta, blackjack, bacará, banca francesa, truco, dominó e pôquer. Preciso que cada imagem pareça ter saído do mesmo jogo, então siga o guia de estilo abaixo em **todas** as gerações, sem exceção, e mantenha os mesmos personagens reconhecíveis sempre que eles reaparecerem.
+Você vai atuar como diretor de arte de um estúdio AAA de jogos mobile e vai gerar, um por um, **todo o pacote de assets visuais** de um cassino social chamado **Casino Inova**. É um app de cassino social para celular — sem dinheiro real em jogo, só entretenimento — com caça-níqueis, roleta, blackjack, bacará, banca francesa, truco, dominó e poker. Preciso que cada imagem pareça ter saído do mesmo jogo, então siga o guia de estilo abaixo em **todas** as gerações, sem exceção, e mantenha os mesmos personagens reconhecíveis sempre que eles reaparecerem.
 
 ### PARTE 0 — Regras gerais para todas as imagens
 
@@ -79,7 +79,7 @@ Crupiê de roleta, colete em veludo vinho profundo (não preto — pra diferenci
 Crupiê de bacará, traje mais formal que os anteriores — smoking preto completo com lapela de cetim, gravata borboleta preta, sensação de "sala VIP", postura mais contida e cerimoniosa, mãos cruzadas à frente.
 
 **16. `dealer-poker.png`**
-Dealer de sala de pôquer, visual mais casual-profissional: polo preta ajustada com o emblema Casino Inova bordado no peito (em vez de colete formal), um cordão de identificação simples no pescoço, mangas curtas, postura mais relaxada e atenta, como quem está observando várias mãos ao mesmo tempo.
+Dealer de sala de poker, visual mais casual-profissional: polo preta ajustada com o emblema Casino Inova bordado no peito (em vez de colete formal), um cordão de identificação simples no pescoço, mangas curtas, postura mais relaxada e atenta, como quem está observando várias mãos ao mesmo tempo.
 
 **17. `banca-francesa-banqueiro.png`**
 O **banqueiro** da mesa de banca francesa — o funcionário que recebe e paga as apostas. Colete xadrez preto e dourado (padrão bem marcado, tipo tabuleiro pequeno), camisa branca, gravata borboleta dourada, luvas brancas, um cinto/bolsa de couro preto na cintura com compartimentos pra fichas (referência real de "banco" que anda com o caixa). Postura atenta, uma mão estendida como quem paga uma aposta, a outra seneurando um maço de fichas.
@@ -119,7 +119,7 @@ Mesa de truco brasileira, mais rústica e calorosa que as outras: tampo de madei
 Mesa de dominó, tampo também em madeira escura como a de truco (para reforçar a mesma "sala brasileira"), mas com uma superfície de feltro fino verde-escuro embutida só na área central onde as peças são jogadas, quatro lugares marcados.
 
 **28. `mesa-poker.png`**
-Mesa oval de pôquer, feltro verde-esmeralda com uma trilha dourada contornando toda a borda (racetrack), estofado preto acolchoado na beirada, um pequeno recorte redondo dourado de cada lado para as fichas do jogador, área central mais escura para o pote.
+Mesa oval de poker, feltro verde-esmeralda com uma trilha dourada contornando toda a borda (racetrack), estofado preto acolchoado na beirada, um pequeno recorte redondo dourado de cada lado para as fichas do jogador, área central mais escura para o pote.
 
 **29. `caca-niquel-gabinete-fortuna.png`** — retrato 1284x2778.
 Um gabinete físico de caça-níquel de luxo, tema "Fortuna" — moldura dourada esculpida ao redor da tela, topper iluminado no alto com o emblema Casino Inova, botões grandes de couro vermelho e dourado na base, luzes correndo pela moldura como num caça-níquel de cassino de verdade. A tela do gabinete pode ficar com um brilho azul-esverdeado neutro (sem símbolos definidos — eles vêm do item 33).

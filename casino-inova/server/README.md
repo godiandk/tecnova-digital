@@ -60,9 +60,16 @@ Termina quando alguém fica sem peças (bate) ou quando os dois passam seguido (
 | `POST /games/poker/nova-mao` `{ userId, buyIn }` | Debita o buy-in (vira seu stack da mão), posta as cegas, distribui 2 cartas pra cada lado. Você é sempre o botão — age primeiro no pré-flop. |
 | `POST /games/poker/agir` `{ userId, action }` | `action` é `desistir`, `passar`, `pagar` ou `aumentar` — só as legais pro momento (a resposta sempre traz `legalActions`). O bot age sozinho na sequência, inclusive levando o jogo até a rua seguinte quando a rodada de apostas fecha. |
 
-Pôquer aqui é **heads-up limit hold'em** (você contra o bot, 1 mão de cada vez, aposta de tamanho fixo por rua ao invés de qualquer valor) — é uma variante de pôquer real e nomeada, não uma invenção; simplifica a interface sem descaracterizar o jogo. Sem side pots (heads-up só tem 2 jogadores). `npm run verify:poker-hands` confere o avaliador de mão (quem vence flush vs. full house, sequência do bebê A-2-3-4-5, empates) contra casos conhecidos.
+Poker aqui é **heads-up limit hold'em** (você contra o bot, 1 mão de cada vez, aposta de tamanho fixo por rua ao invés de qualquer valor) — é uma variante de poker real e nomeada, não uma invenção; simplifica a interface sem descaracterizar o jogo. Sem side pots (heads-up só tem 2 jogadores). `npm run verify:poker-hands` confere o avaliador de mão (quem vence flush vs. full house, sequência do bebê A-2-3-4-5, empates) contra casos conhecidos.
 
-Truco, dominó e pôquer são **contra bot, não multiplayer de verdade ainda** — jogar com outros jogadores de verdade exige sala + WebSocket (o plano de produto aponta Colyseus), que não existe neste esqueleto. As regras de cada jogo são reais; o "adversário" por enquanto é sempre a máquina.
+| `GET /amigos?userId=` | Lista de amigos (pedidos aceitos) de alguém. |
+| `GET /amigos/pendentes?userId=` | Pedidos pendentes recebidos e enviados. |
+| `POST /amigos/pedir` `{ userId, targetUserId }` | Manda pedido de amizade. |
+| `POST /amigos/:requestId/responder` `{ userId, accept }` | Aceita ou recusa um pedido recebido — `accept:false` remove o pedido. |
+
+Amigos é pré-requisito pro convite de sala por "+" que ainda vem (ver seção de salas multiplayer no README da raiz do projeto) — sem saber quem é amigo de quem, não dá pra mostrar "convidar amigo" em lugar nenhum.
+
+Truco, dominó e poker são **contra bot, não multiplayer de verdade ainda** — jogar com outros jogadores de verdade exige sala + WebSocket (o plano de produto aponta Colyseus), que não existe neste esqueleto. As regras de cada jogo são reais; o "adversário" por enquanto é sempre a máquina.
 
 ### Papéis e permissões
 

@@ -1,7 +1,7 @@
 /**
  * Texas Hold'em heads-up (1 contra 1, você contra o bot), formato "limit" — cada
  * aposta/aumento tem um tamanho fixo por rua, em vez de qualquer valor (no-limit).
- * É uma simplificação real e nomeada (limit hold'em é uma variante de pôquer de
+ * É uma simplificação real e nomeada (limit hold'em é uma variante de poker de
  * verdade, não uma invenção) que evita precisar de um campo de "quanto apostar" na
  * interface. Sem side pots — heads-up só tem 2 jogadores, então "all-in" apenas
  * força o resto da mão a correr sem mais apostas.

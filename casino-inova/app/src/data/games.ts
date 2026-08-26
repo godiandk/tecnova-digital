@@ -25,7 +25,7 @@ export const games: Game[] = [
   { id: 'banca-francesa', name: 'Banca Francesa', format: 'mesa-multiplayer', phase: 2, minLevel: 8, tableImageKey: 'mesa-banca-francesa', accent: 'gold' },
   { id: 'truco', name: 'Truco', format: 'mesa-multiplayer', phase: 3, minLevel: 10, tableImageKey: 'mesa-truco', accent: 'sapphire' },
   { id: 'domino', name: 'Dominó', format: 'mesa-multiplayer', phase: 3, minLevel: 10, tableImageKey: 'mesa-domino', accent: 'sapphire' },
-  { id: 'poker', name: 'Pôquer', format: 'mesa-multiplayer', phase: 4, minLevel: 15, tableImageKey: 'mesa-poker', accent: 'felt' },
+  { id: 'poker', name: 'Poker', format: 'mesa-multiplayer', phase: 4, minLevel: 15, tableImageKey: 'mesa-poker', accent: 'felt' },
 ];
 
 export function getGameById(id: string): Game | undefined {
