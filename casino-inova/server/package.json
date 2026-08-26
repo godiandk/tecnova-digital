@@ -7,7 +7,8 @@
     "start:dev": "ts-node-dev --respawn src/main.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
-    "verify:rtp": "ts-node src/modules/games/slots/verify-rtp.ts"
+    "verify:rtp": "ts-node src/modules/games/slots/verify-rtp.ts",
+    "verify:blackjack": "ts-node src/modules/games/blackjack/verify-strategy.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

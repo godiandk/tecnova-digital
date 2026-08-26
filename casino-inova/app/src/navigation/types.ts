@@ -11,4 +11,5 @@ export type RootStackParamList = {
   GameTable: { gameId: string };
   Slots: undefined;
   Roulette: undefined;
+  Blackjack: undefined;
 };
