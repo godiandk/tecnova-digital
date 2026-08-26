@@ -10,7 +10,8 @@
     "verify:rtp": "ts-node src/modules/games/slots/verify-rtp.ts",
     "verify:blackjack": "ts-node src/modules/games/blackjack/verify-strategy.ts",
     "verify:bacara": "ts-node src/modules/games/baccarat/verify-rtp.ts",
-    "verify:banca-francesa": "ts-node src/modules/games/banca-francesa/verify-rtp.ts"
+    "verify:banca-francesa": "ts-node src/modules/games/banca-francesa/verify-rtp.ts",
+    "verify:poker-hands": "ts-node src/modules/games/poker/verify-hand-evaluator.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

@@ -5,7 +5,6 @@ import {
   botShouldCallTruco,
   botTrucoDecision,
   chooseBotCard,
-  Card,
   compareCards,
   manilhaRankFor,
   resolveHand,
@@ -14,6 +13,7 @@ import {
 } from './truco.engine';
 import {
   BASE_HAND_VALUE,
+  Card,
   MATCH_WIN_TOTAL_MULTIPLIER,
   MAX_BUY_IN,
   MIN_BUY_IN,

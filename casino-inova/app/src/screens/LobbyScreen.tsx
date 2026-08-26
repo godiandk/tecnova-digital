@@ -16,8 +16,8 @@ export function LobbyScreen() {
   const phase1Games = games.filter((game) => game.phase === 1);
   const laterGames = games.filter((game) => game.phase > 1);
 
-  // Fases 1 e 2 inteiras, mais truco e dominó (Fase 3, contra bot — sem multiplayer
-  // real ainda) já têm motor de verdade. Só falta pôquer, ainda na mesa genérica.
+  // Os 8 jogos têm motor de verdade agora. Truco, dominó e pôquer são contra bot —
+  // multiplayer de verdade com outro jogador ainda depende de sala + WebSocket.
   const openGame = (gameId: string) => {
     if (gameId === 'slots') {
       navigation.navigate('Slots');
@@ -33,6 +33,8 @@ export function LobbyScreen() {
       navigation.navigate('Truco');
     } else if (gameId === 'domino') {
       navigation.navigate('Domino');
+    } else if (gameId === 'poker') {
+      navigation.navigate('Poker');
     } else {
       navigation.navigate('GameTable', { gameId });
     }

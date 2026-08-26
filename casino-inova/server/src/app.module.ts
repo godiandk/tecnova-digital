@@ -11,6 +11,7 @@ import { RolesModule } from './modules/roles/roles.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { TrucoModule } from './modules/games/truco/truco.module';
 import { DominoModule } from './modules/games/domino/domino.module';
+import { PokerModule } from './modules/games/poker/poker.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { DominoModule } from './modules/games/domino/domino.module';
     CouponsModule,
     TrucoModule,
     DominoModule,
+    PokerModule,
   ],
 })
 export class AppModule {}

@@ -56,7 +56,13 @@ API sobe em `http://localhost:3000`.
 
 Termina quando alguém fica sem peças (bate) ou quando os dois passam seguido (travou) — nesse caso quem tiver menos pontos na mão vence; empate devolve o buy-in.
 
-Truco e dominó são **contra bot, não multiplayer de verdade ainda** — jogar com outros jogadores de verdade exige sala + WebSocket (o plano de produto aponta Colyseus), que não existe neste esqueleto. As regras de cada jogo são reais; o "adversário" por enquanto é sempre a máquina.
+| `GET /games/poker/config` | Buy-in mín/máx, cegas (10/20) e os dois tamanhos de aposta fixos (20 pré-flop/flop, 40 turn/river). |
+| `POST /games/poker/nova-mao` `{ userId, buyIn }` | Debita o buy-in (vira seu stack da mão), posta as cegas, distribui 2 cartas pra cada lado. Você é sempre o botão — age primeiro no pré-flop. |
+| `POST /games/poker/agir` `{ userId, action }` | `action` é `desistir`, `passar`, `pagar` ou `aumentar` — só as legais pro momento (a resposta sempre traz `legalActions`). O bot age sozinho na sequência, inclusive levando o jogo até a rua seguinte quando a rodada de apostas fecha. |
+
+Pôquer aqui é **heads-up limit hold'em** (você contra o bot, 1 mão de cada vez, aposta de tamanho fixo por rua ao invés de qualquer valor) — é uma variante de pôquer real e nomeada, não uma invenção; simplifica a interface sem descaracterizar o jogo. Sem side pots (heads-up só tem 2 jogadores). `npm run verify:poker-hands` confere o avaliador de mão (quem vence flush vs. full house, sequência do bebê A-2-3-4-5, empates) contra casos conhecidos.
+
+Truco, dominó e pôquer são **contra bot, não multiplayer de verdade ainda** — jogar com outros jogadores de verdade exige sala + WebSocket (o plano de produto aponta Colyseus), que não existe neste esqueleto. As regras de cada jogo são reais; o "adversário" por enquanto é sempre a máquina.
 
 ### Papéis e permissões
 
@@ -109,6 +115,7 @@ curl -X POST http://localhost:3000/admin/cupons -H "Content-Type: application/js
 curl -X POST http://localhost:3000/cupons/resgatar -H "Content-Type: application/json" -d '{"userId":"u1","code":"bemvindo500"}'
 curl -X POST http://localhost:3000/games/truco/nova-partida -H "Content-Type: application/json" -d '{"userId":"u1","buyIn":200}'
 curl -X POST http://localhost:3000/games/domino/nova-partida -H "Content-Type: application/json" -d '{"userId":"u1","buyIn":200}'
+curl -X POST http://localhost:3000/games/poker/nova-mao -H "Content-Type: application/json" -d '{"userId":"u1","buyIn":1000}'
 ```
 
 Para conferir que o RTP configurado em `slots.config.ts` é realmente o que o motor entrega (fórmula exata batendo com simulação de 500 mil giros):
