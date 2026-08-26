@@ -6,15 +6,16 @@ Este é um **projeto novo e separado** do site institucional da tecnova-digital 
 
 ## O que já existe nesta pasta
 
-- `app/` — esqueleto do app mobile (Expo + React Native + TypeScript), com o sistema de design (cores, tipografia), navegação entre as 5 áreas principais (Lobby, Torneios, Loja, Amigos, Perfil) e uma tela de mesa genérica para os 8 jogos, todos usando dados mockados.
+- `app/` — esqueleto do app mobile (Expo + React Native + TypeScript), com o sistema de design (cores, tipografia), navegação entre as 5 áreas principais (Lobby, Torneios, Loja, Amigos, Perfil), uma tela de mesa genérica para os 8 jogos e um tutorial "como jogar" por jogo (`src/data/tutorials.ts` + `TutorialModal`) escrito em linguagem simples para quem nunca jogou — abre sozinho na primeira visita de cada mesa e fica sempre disponível pelo botão de ajuda. Tudo usando dados mockados.
+- `server/` — esqueleto do backend (NestJS + TypeScript) com os módulos de usuário, carteira de fichas (ledger append-only) e loja — funcional em memória, endpoint por endpoint testável com `curl`. Ver `server/README.md` para o que falta pra virar a Fase 0 de verdade (banco real, autenticação, validação de recibo).
 - `docs/briefing-imagens-casino-inova.md` — o texto completo pra gerar (via ChatGPT ou outra ferramenta de imagem) todo o pacote de assets visuais: logo, telas de fundo, personagens de dealer por jogo, mesas, cartas, fichas, dados, ícones etc.
 
 ## O que ainda falta (por design — não é esquecimento)
 
-Nada de lógica de jogo, backend ou multiplayer real foi implementado ainda. Antes disso, na ordem:
+Nenhum motor de jogo real (regras, RNG, multiplayer) foi implementado ainda. Antes disso, na ordem:
 
 1. Planilha de economia (RTP por jogo, curva de nível, preço dos pacotes de fichas) — documento de negócio, não código.
-2. Backend da Fase 0: conta (login Google/Facebook/Apple/e-mail), carteira de fichas (ledger), loja com validação de recibo via RevenueCat.
+2. Fechar a Fase 0 de verdade no backend: banco PostgreSQL, autenticação (Firebase Auth), validação de recibo via RevenueCat — ver a lista detalhada em `server/README.md`.
 3. Motor de jogos server-authoritative, começando pelos jogos mais simples (slots, roleta, blackjack) antes dos multiplayer (truco, dominó, pôquer).
 
 ## Rodando o app

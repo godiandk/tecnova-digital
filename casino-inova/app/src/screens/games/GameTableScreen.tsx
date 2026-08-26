@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,6 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { RootStackParamList } from '../../navigation/types';
 import { getGameById } from '../../data/games';
+import { getTutorialByGameId } from '../../data/tutorials';
+import { TutorialModal } from '../../components/TutorialModal';
 import { colors, fontFamily, fontSize, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GameTable'>;
@@ -25,6 +28,12 @@ const ACCENT_GRADIENTS = {
  */
 export function GameTableScreen({ route, navigation }: Props) {
   const game = getGameById(route.params.gameId);
+  const tutorial = game ? getTutorialByGameId(game.id) : undefined;
+
+  // Abre sozinho na primeira visita da sessão. Quando existir conta de usuário
+  // persistida, isso troca para "já visto por este jogador" vindo do backend, em vez
+  // de reabrir toda vez que a tela é montada.
+  const [tutorialVisible, setTutorialVisible] = useState(true);
 
   if (!game) {
     return null;
@@ -33,9 +42,14 @@ export function GameTableScreen({ route, navigation }: Props) {
   return (
     <LinearGradient colors={ACCENT_GRADIENTS[game.accent]} style={styles.container}>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton} hitSlop={12}>
-          <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-        </Pressable>
+        <View style={styles.topBar}>
+          <Pressable onPress={() => navigation.goBack()} style={styles.iconButton} hitSlop={12}>
+            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+          </Pressable>
+          <Pressable onPress={() => setTutorialVisible(true)} style={styles.iconButton} hitSlop={12}>
+            <Ionicons name="help-circle" size={24} color={colors.goldBright} />
+          </Pressable>
+        </View>
 
         <View style={styles.center}>
           <Text style={styles.gameName}>{game.name}</Text>
@@ -48,6 +62,13 @@ export function GameTableScreen({ route, navigation }: Props) {
           </View>
         </View>
       </SafeAreaView>
+
+      <TutorialModal
+        visible={tutorialVisible}
+        gameName={game.name}
+        tutorial={tutorial}
+        onClose={() => setTutorialVisible(false)}
+      />
     </LinearGradient>
   );
 }
@@ -55,14 +76,14 @@ export function GameTableScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safe: { flex: 1, paddingHorizontal: spacing.xl },
-  backButton: {
+  topBar: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm },
+  iconButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.sm,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
   gameName: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xxl, color: colors.textPrimary },
