@@ -12,4 +12,5 @@ export type RootStackParamList = {
   Slots: undefined;
   Roulette: undefined;
   Blackjack: undefined;
+  Baccarat: undefined;
 };

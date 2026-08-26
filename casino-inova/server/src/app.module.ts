@@ -5,8 +5,9 @@ import { StoreModule } from './modules/store/store.module';
 import { SlotsModule } from './modules/games/slots/slots.module';
 import { RouletteModule } from './modules/games/roulette/roulette.module';
 import { BlackjackModule } from './modules/games/blackjack/blackjack.module';
+import { BaccaratModule } from './modules/games/baccarat/baccarat.module';
 
 @Module({
-  imports: [UsersModule, WalletModule, StoreModule, SlotsModule, RouletteModule, BlackjackModule],
+  imports: [UsersModule, WalletModule, StoreModule, SlotsModule, RouletteModule, BlackjackModule, BaccaratModule],
 })
 export class AppModule {}

@@ -15,8 +15,8 @@ export function LobbyScreen() {
   const phase1Games = games.filter((game) => game.phase === 1);
   const laterGames = games.filter((game) => game.phase > 1);
 
-  // Slots, roleta e blackjack já têm motor de verdade — fecha a Fase 1 inteira. Os
-  // outros 5 continuam na tela de mesa genérica até terem o próprio motor no servidor.
+  // Slots, roleta, blackjack (Fase 1) e agora bacará (Fase 2) já têm motor de
+  // verdade. Os outros 4 continuam na tela de mesa genérica até terem o próprio motor.
   const openGame = (gameId: string) => {
     if (gameId === 'slots') {
       navigation.navigate('Slots');
@@ -24,6 +24,8 @@ export function LobbyScreen() {
       navigation.navigate('Roulette');
     } else if (gameId === 'blackjack') {
       navigation.navigate('Blackjack');
+    } else if (gameId === 'bacara') {
+      navigation.navigate('Baccarat');
     } else {
       navigation.navigate('GameTable', { gameId });
     }

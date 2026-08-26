@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
     "verify:rtp": "ts-node src/modules/games/slots/verify-rtp.ts",
-    "verify:blackjack": "ts-node src/modules/games/blackjack/verify-strategy.ts"
+    "verify:blackjack": "ts-node src/modules/games/blackjack/verify-strategy.ts",
+    "verify:bacara": "ts-node src/modules/games/baccarat/verify-rtp.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

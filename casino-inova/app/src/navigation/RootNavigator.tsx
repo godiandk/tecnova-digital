@@ -13,6 +13,7 @@ import { GameTableScreen } from '../screens/games/GameTableScreen';
 import { SlotsScreen } from '../screens/games/SlotsScreen';
 import { RouletteScreen } from '../screens/games/RouletteScreen';
 import { BlackjackScreen } from '../screens/games/BlackjackScreen';
+import { BaccaratScreen } from '../screens/games/BaccaratScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -69,6 +70,7 @@ export function RootNavigator() {
       <Stack.Screen name="Slots" component={SlotsScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Roulette" component={RouletteScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Blackjack" component={BlackjackScreen} options={{ animation: 'fade' }} />
+      <Stack.Screen name="Baccarat" component={BaccaratScreen} options={{ animation: 'fade' }} />
     </Stack.Navigator>
   );
 }
