@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -8,17 +8,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { getGameById } from '../../data/games';
 import { getTutorialByGameId } from '../../data/tutorials';
+import { TABLE_IMAGES } from '../../data/tableImages';
 import { TutorialModal } from '../../components/TutorialModal';
 import { colors, fontFamily, fontSize, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GameTable'>;
-
-const ACCENT_GRADIENTS = {
-  gold: [colors.goldDeep, colors.background],
-  felt: [colors.felt, colors.background],
-  ruby: ['#8C2434', colors.background],
-  sapphire: ['#20488C', colors.background],
-} as const;
 
 /**
  * Tela de mesa genérica, reaproveitada pelos 8 jogos via `route.params.gameId` — a mesa
@@ -40,7 +34,8 @@ export function GameTableScreen({ route, navigation }: Props) {
   }
 
   return (
-    <LinearGradient colors={ACCENT_GRADIENTS[game.accent]} style={styles.container}>
+    <ImageBackground source={TABLE_IMAGES[game.id]} style={styles.container} resizeMode="cover">
+      <LinearGradient colors={['rgba(11,15,13,0.25)', colors.background]} locations={[0, 0.8]} style={styles.overlay} />
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable onPress={() => navigation.goBack()} style={styles.iconButton} hitSlop={12}>
@@ -54,11 +49,10 @@ export function GameTableScreen({ route, navigation }: Props) {
         <View style={styles.center}>
           <Text style={styles.gameName}>{game.name}</Text>
           <Text style={styles.gameFormat}>
-            {game.format === 'vs-casa' ? 'Jogador contra a casa' : 'Mesa multiplayer'} · imagem de referência:{' '}
-            {game.tableImageKey}.png
+            {game.format === 'vs-casa' ? 'Jogador contra a casa' : 'Mesa multiplayer'}
           </Text>
           <View style={styles.constructionPill}>
-            <Text style={styles.constructionLabel}>Mesa em construção — Fase {game.phase} do roadmap</Text>
+            <Text style={styles.constructionLabel}>Regras do jogo em construção — Fase {game.phase} do roadmap</Text>
           </View>
         </View>
       </SafeAreaView>
@@ -69,12 +63,13 @@ export function GameTableScreen({ route, navigation }: Props) {
         tutorial={tutorial}
         onClose={() => setTutorialVisible(false)}
       />
-    </LinearGradient>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  overlay: StyleSheet.absoluteFillObject,
   safe: { flex: 1, paddingHorizontal: spacing.xl },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm },
   iconButton: {

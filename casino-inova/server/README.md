@@ -33,6 +33,8 @@ API sobe em `http://localhost:3000`.
 | `POST /games/blackjack/parar` `{ userId }` | Jogador para, dealer compra até 17, resultado é decidido e o prêmio (se houver) é creditado. |
 | `GET /games/bacara/config` | Aposta mín/máx. |
 | `POST /games/bacara/apostar` `{ userId, betType, amount }` | Roda a mão inteira numa chamada só (bacará não tem decisão do jogador) e credita se houver prêmio. `betType` é `jogador`, `banca` ou `empate`. Empate com aposta em jogador/banca devolve a ficha (nem ganha nem perde). |
+| `GET /games/banca-francesa/config` | Aposta mín/máx, quantos números dá pra apostar na mesma rodada, multiplicador por quantidade de dados que bateram e o RTP (199/216 ≈ 92,13%, o mesmo do "Chuck-a-Luck" internacional). |
+| `POST /games/banca-francesa/apostar` `{ userId, bets: [{ number, amount }] }` | Rola 3 dados pra toda a mesa numa tacada só e resolve cada número apostado contra o mesmo resultado — pode apostar em vários números na mesma rodada. |
 
 Blackjack é sequencial — `apostar` sempre primeiro, depois qualquer número de `pedir-carta`, terminando em `parar` (ou automaticamente, se estourar ou sair um natural). Só existe uma mão em andamento por usuário por vez.
 
@@ -53,6 +55,7 @@ curl -X POST http://localhost:3000/games/blackjack/apostar -H "Content-Type: app
 curl -X POST http://localhost:3000/games/blackjack/pedir-carta -H "Content-Type: application/json" -d '{"userId":"u1"}'
 curl -X POST http://localhost:3000/games/blackjack/parar -H "Content-Type: application/json" -d '{"userId":"u1"}'
 curl -X POST http://localhost:3000/games/bacara/apostar -H "Content-Type: application/json" -d '{"userId":"u1","betType":"banca","amount":100}'
+curl -X POST http://localhost:3000/games/banca-francesa/apostar -H "Content-Type: application/json" -d '{"userId":"u1","bets":[{"number":4,"amount":100}]}'
 ```
 
 Para conferir que o RTP configurado em `slots.config.ts` é realmente o que o motor entrega (fórmula exata batendo com simulação de 500 mil giros):

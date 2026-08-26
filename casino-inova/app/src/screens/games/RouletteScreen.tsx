@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../../navigation/types';
 import { getTutorialByGameId } from '../../data/tutorials';
+import { TABLE_IMAGES } from '../../data/tableImages';
+import { DEALER_IMAGES } from '../../data/dealerImages';
 import { TutorialModal } from '../../components/TutorialModal';
+import { GameBackdrop } from '../../components/GameBackdrop';
+import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
 import { ApiError } from '../../api/client';
 import { fetchRouletteConfig, spinRoulette, RouletteConfig, RouletteBetType, RouletteSpinResponse } from '../../api/roulette';
@@ -89,7 +92,7 @@ export function RouletteScreen({ navigation }: Props) {
   const multiplier = config ? config.totalMultiplier[betType] : undefined;
 
   return (
-    <LinearGradient colors={[colors.ruby, colors.background]} style={styles.container}>
+    <GameBackdrop source={TABLE_IMAGES.roleta}>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable onPress={() => navigation.goBack()} style={styles.iconButton} hitSlop={12}>
@@ -101,7 +104,10 @@ export function RouletteScreen({ navigation }: Props) {
           </Pressable>
         </View>
 
-        <Text style={styles.title}>Roleta</Text>
+        <View style={styles.titleRow}>
+          <DealerBadge source={DEALER_IMAGES.roleta} />
+          <Text style={styles.title}>Roleta</Text>
+        </View>
 
         {!config && !configError && <ActivityIndicator color={colors.goldBright} style={styles.loading} />}
 
@@ -196,12 +202,11 @@ export function RouletteScreen({ navigation }: Props) {
         tutorial={tutorial}
         onClose={() => setTutorialVisible(false)}
       />
-    </LinearGradient>
+    </GameBackdrop>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   safe: { flex: 1, paddingHorizontal: spacing.xl, alignItems: 'center' },
   topBar: {
     flexDirection: 'row',
@@ -210,6 +215,7 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: spacing.sm,
   },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.lg },
   iconButton: {
     width: 40,
     height: 40,
@@ -218,7 +224,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xl, color: colors.textPrimary, marginTop: spacing.lg },
+  title: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xl, color: colors.textPrimary },
   rtpLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center', marginTop: spacing.xs },
   loading: { marginTop: spacing.xxxl },
   errorBox: { marginTop: spacing.xxxl, alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg },

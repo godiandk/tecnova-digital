@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../../navigation/types';
 import { getTutorialByGameId } from '../../data/tutorials';
+import { TABLE_IMAGES } from '../../data/tableImages';
+import { DEALER_IMAGES } from '../../data/dealerImages';
 import { TutorialModal } from '../../components/TutorialModal';
+import { GameBackdrop } from '../../components/GameBackdrop';
+import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
 import { ApiError } from '../../api/client';
 import {
@@ -94,7 +97,7 @@ export function BlackjackScreen({ navigation }: Props) {
   };
 
   return (
-    <LinearGradient colors={[colors.felt, colors.background]} style={styles.container}>
+    <GameBackdrop source={TABLE_IMAGES.blackjack}>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable onPress={() => navigation.goBack()} style={styles.iconButton} hitSlop={12}>
@@ -106,7 +109,10 @@ export function BlackjackScreen({ navigation }: Props) {
           </Pressable>
         </View>
 
-        <Text style={styles.title}>Blackjack</Text>
+        <View style={styles.titleRow}>
+          <DealerBadge source={DEALER_IMAGES.blackjack} />
+          <Text style={styles.title}>Blackjack</Text>
+        </View>
 
         {!config && !configError && <ActivityIndicator color={colors.goldBright} style={styles.loading} />}
         {configError && (
@@ -178,12 +184,11 @@ export function BlackjackScreen({ navigation }: Props) {
         tutorial={tutorial}
         onClose={() => setTutorialVisible(false)}
       />
-    </LinearGradient>
+    </GameBackdrop>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   safe: { flex: 1, paddingHorizontal: spacing.xl, alignItems: 'center' },
   topBar: {
     flexDirection: 'row',
@@ -200,7 +205,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xl, color: colors.textPrimary, marginTop: spacing.lg },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.lg },
+  title: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xl, color: colors.textPrimary },
   loading: { marginTop: spacing.xxxl },
   errorBox: { marginTop: spacing.xxxl, alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },

@@ -1,5 +1,6 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { games } from '../data/games';
 import { mockPlayer } from '../data/mockPlayer';
@@ -15,8 +16,9 @@ export function LobbyScreen() {
   const phase1Games = games.filter((game) => game.phase === 1);
   const laterGames = games.filter((game) => game.phase > 1);
 
-  // Slots, roleta, blackjack (Fase 1) e agora bacará (Fase 2) já têm motor de
-  // verdade. Os outros 4 continuam na tela de mesa genérica até terem o próprio motor.
+  // Fase 1 inteira (slots, roleta, blackjack) e Fase 2 inteira (bacará, banca
+  // francesa) já têm motor de verdade. Truco, dominó e pôquer continuam na mesa
+  // genérica até terem o próprio motor.
   const openGame = (gameId: string) => {
     if (gameId === 'slots') {
       navigation.navigate('Slots');
@@ -26,13 +28,21 @@ export function LobbyScreen() {
       navigation.navigate('Blackjack');
     } else if (gameId === 'bacara') {
       navigation.navigate('Baccarat');
+    } else if (gameId === 'banca-francesa') {
+      navigation.navigate('BancaFrancesa');
     } else {
       navigation.navigate('GameTable', { gameId });
     }
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <ImageBackground
+      source={require('../../assets/images/backgrounds/lobby-fundo.jpg')}
+      style={styles.background}
+      resizeMode="cover"
+    >
+      <LinearGradient colors={['rgba(11,15,13,0.35)', colors.background]} locations={[0, 0.85]} style={StyleSheet.absoluteFillObject} />
+      <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Bem-vindo de volta</Text>
@@ -69,12 +79,14 @@ export function LobbyScreen() {
           ))}
         </View>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  background: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../../navigation/types';
 import { getTutorialByGameId } from '../../data/tutorials';
+import { TABLE_IMAGES } from '../../data/tableImages';
 import { TutorialModal } from '../../components/TutorialModal';
+import { GameBackdrop } from '../../components/GameBackdrop';
 import { ChipStack } from '../../components/ChipStack';
 import { ApiError } from '../../api/client';
 import { fetchSlotsConfig, spinSlots, SlotsConfig, WinningLineDto } from '../../api/slots';
@@ -96,7 +97,7 @@ export function SlotsScreen({ navigation }: Props) {
   const highlighted = winningCellSet(winningLines);
 
   return (
-    <LinearGradient colors={[colors.goldDeep, colors.background]} style={styles.container}>
+    <GameBackdrop source={TABLE_IMAGES.slots}>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable onPress={() => navigation.goBack()} style={styles.iconButton} hitSlop={12}>
@@ -182,12 +183,11 @@ export function SlotsScreen({ navigation }: Props) {
         tutorial={tutorial}
         onClose={() => setTutorialVisible(false)}
       />
-    </LinearGradient>
+    </GameBackdrop>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   safe: { flex: 1, paddingHorizontal: spacing.xl, alignItems: 'center' },
   topBar: {
     flexDirection: 'row',

@@ -13,61 +13,39 @@ import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
 import { ApiError } from '../../api/client';
-import { fetchBaccaratConfig, playBaccaratRound, BaccaratConfig, BaccaratBetType, BaccaratRoundResponse } from '../../api/baccarat';
+import { fetchBancaFrancesaConfig, playBancaFrancesaRound, BancaFrancesaConfig, BancaFrancesaRoundResponse } from '../../api/bancaFrancesa';
 import { mockPlayer } from '../../data/mockPlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Baccarat'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'BancaFrancesa'>;
 
 const BET_STEP = 50;
+const NUMBERS = [1, 2, 3, 4, 5, 6];
 
-const BET_OPTIONS: { type: BaccaratBetType; label: string; multiplier: string }[] = [
-  { type: 'jogador', label: 'Jogador', multiplier: '×2' },
-  { type: 'banca', label: 'Banca', multiplier: '×1,95' },
-  { type: 'empate', label: 'Empate', multiplier: '×9' },
+const CREW = [
+  { source: DEALER_IMAGES.bancaFrancesaBanqueiro, label: 'Banqueiro' },
+  { source: DEALER_IMAGES.bancaFrancesaTirador, label: 'Tirador' },
+  { source: DEALER_IMAGES.bancaFrancesaApontador, label: 'Apontador' },
 ];
 
-const OUTCOME_LABEL: Record<BaccaratBetType, string> = {
-  jogador: 'Jogador venceu',
-  banca: 'Banca venceu',
-  empate: 'Empate',
-};
-
-function Hand({ label, cards, total }: { label: string; cards: string[]; total: number }) {
-  return (
-    <View style={styles.handBlock}>
-      <Text style={styles.handLabel}>
-        {label} · {total}
-      </Text>
-      <View style={styles.cardRow}>
-        {cards.map((card, index) => (
-          <View key={index} style={styles.card}>
-            <Text style={styles.cardLabel}>{card}</Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-export function BaccaratScreen({ navigation }: Props) {
-  const tutorial = getTutorialByGameId('bacara');
+export function BancaFrancesaScreen({ navigation }: Props) {
+  const tutorial = getTutorialByGameId('banca-francesa');
 
   const [tutorialVisible, setTutorialVisible] = useState(true);
-  const [config, setConfig] = useState<BaccaratConfig | null>(null);
+  const [config, setConfig] = useState<BancaFrancesaConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
   const [balance, setBalance] = useState(mockPlayer.chipBalance);
-  const [amount, setAmount] = useState(100);
-  const [betType, setBetType] = useState<BaccaratBetType>('banca');
-  const [round, setRound] = useState<BaccaratRoundResponse | null>(null);
+  const [amountPerNumber, setAmountPerNumber] = useState(100);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [round, setRound] = useState<BancaFrancesaRoundResponse | null>(null);
   const [playing, setPlaying] = useState(false);
   const [playError, setPlayError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchBaccaratConfig()
+    fetchBancaFrancesaConfig()
       .then((data) => {
         setConfig(data);
-        setAmount(Math.max(data.minBet, Math.min(100, data.maxBet)));
+        setAmountPerNumber(Math.max(data.minBet, Math.min(100, data.maxBet)));
       })
       .catch((error: unknown) => {
         setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
@@ -76,15 +54,31 @@ export function BaccaratScreen({ navigation }: Props) {
 
   const adjustAmount = (delta: number) => {
     if (!config) return;
-    setAmount((current) => Math.max(config.minBet, Math.min(config.maxBet, current + delta)));
+    setAmountPerNumber((current) => Math.max(config.minBet, Math.min(config.maxBet, current + delta)));
   };
 
+  const toggleNumber = (number: number) => {
+    if (playing) return;
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(number)) {
+        next.delete(number);
+      } else if (config && next.size < config.maxSimultaneousNumbers) {
+        next.add(number);
+      }
+      return next;
+    });
+  };
+
+  const totalStake = amountPerNumber * selected.size;
+
   const handlePlay = async () => {
-    if (!config || playing) return;
+    if (!config || playing || selected.size === 0) return;
     setPlaying(true);
     setPlayError(null);
     try {
-      const result = await playBaccaratRound(betType, amount);
+      const bets = Array.from(selected).map((number) => ({ number, amount: amountPerNumber }));
+      const result = await playBancaFrancesaRound(bets);
       setRound(result);
       setBalance(result.newBalance);
     } catch (error) {
@@ -94,8 +88,10 @@ export function BaccaratScreen({ navigation }: Props) {
     }
   };
 
+  const resultByNumber = new Map(round?.results.map((result) => [result.number, result]));
+
   return (
-    <GameBackdrop source={TABLE_IMAGES.bacara}>
+    <GameBackdrop source={TABLE_IMAGES['banca-francesa']}>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable onPress={() => navigation.goBack()} style={styles.iconButton} hitSlop={12}>
@@ -107,9 +103,15 @@ export function BaccaratScreen({ navigation }: Props) {
           </Pressable>
         </View>
 
-        <View style={styles.titleRow}>
-          <DealerBadge source={DEALER_IMAGES.bacara} />
-          <Text style={styles.title}>Bacará</Text>
+        <Text style={styles.title}>Banca Francesa</Text>
+
+        <View style={styles.crewRow}>
+          {CREW.map((member) => (
+            <View key={member.label} style={styles.crewMember}>
+              <DealerBadge source={member.source} size={40} />
+              <Text style={styles.crewLabel}>{member.label}</Text>
+            </View>
+          ))}
         </View>
 
         {!config && !configError && <ActivityIndicator color={colors.goldBright} style={styles.loading} />}
@@ -122,57 +124,64 @@ export function BaccaratScreen({ navigation }: Props) {
 
         {config && (
           <>
-            <View style={styles.table}>
-              {round ? (
-                <>
-                  <Hand label="Banca" cards={round.bankerCards} total={round.bankerTotal} />
-                  <Hand label="Jogador" cards={round.playerCards} total={round.playerTotal} />
-                </>
-              ) : (
-                <Text style={styles.placeholderText}>Escolha onde apostar e mande jogar.</Text>
-              )}
-            </View>
+            <Text style={styles.rtpLabel}>RTP divulgado: {(config.theoreticalRtp * 100).toFixed(1)}%</Text>
 
-            {round && (
-              <Text style={[styles.resultLabel, round.winner === round.betType ? styles.resultWin : styles.resultLoss]}>
-                {OUTCOME_LABEL[round.winner]}
-                {round.totalReturn > 0 ? ` — +${round.totalReturn.toLocaleString('pt-BR')} fichas` : ' — não foi dessa vez'}
-              </Text>
-            )}
-
-            {playError && <Text style={styles.errorText}>{playError}</Text>}
-
-            <Text style={styles.sectionLabel}>Sua aposta</Text>
-            <View style={styles.betTypes}>
-              {BET_OPTIONS.map((option) => (
-                <Pressable
-                  key={option.type}
-                  onPress={() => setBetType(option.type)}
-                  style={[styles.betTypeChip, betType === option.type && styles.betTypeChipActive]}
-                  disabled={playing}
-                >
-                  <Text style={[styles.betTypeLabel, betType === option.type && styles.betTypeLabelActive]}>
-                    {option.label} · {option.multiplier}
-                  </Text>
-                </Pressable>
+            <View style={styles.diceRow}>
+              {(round?.dice ?? [null, null, null]).map((die, index) => (
+                <View key={index} style={styles.die}>
+                  <Text style={styles.dieLabel}>{die ?? '–'}</Text>
+                </View>
               ))}
             </View>
+
+            <View style={styles.numberGrid}>
+              {NUMBERS.map((number) => {
+                const isSelected = selected.has(number);
+                const result = resultByNumber.get(number);
+                const won = result && result.matches > 0;
+                return (
+                  <Pressable
+                    key={number}
+                    onPress={() => toggleNumber(number)}
+                    style={[styles.numberTile, isSelected && styles.numberTileSelected, won && styles.numberTileWon]}
+                    disabled={playing}
+                  >
+                    <Text style={styles.numberLabel}>{number}</Text>
+                    {result && (
+                      <Text style={styles.numberResult}>
+                        {result.matches > 0 ? `+${result.totalReturn.toLocaleString('pt-BR')}` : '—'}
+                      </Text>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {playError && <Text style={styles.errorText}>{playError}</Text>}
 
             <View style={styles.betRow}>
               <Pressable onPress={() => adjustAmount(-BET_STEP)} style={styles.betButton} disabled={playing}>
                 <Ionicons name="remove" size={20} color={colors.textPrimary} />
               </Pressable>
               <View style={styles.betValue}>
-                <Text style={styles.betLabel}>Aposta</Text>
-                <Text style={styles.betAmount}>{amount.toLocaleString('pt-BR')}</Text>
+                <Text style={styles.betLabel}>Por número · {selected.size} escolhido(s)</Text>
+                <Text style={styles.betAmount}>{amountPerNumber.toLocaleString('pt-BR')}</Text>
               </View>
               <Pressable onPress={() => adjustAmount(BET_STEP)} style={styles.betButton} disabled={playing}>
                 <Ionicons name="add" size={20} color={colors.textPrimary} />
               </Pressable>
             </View>
 
-            <Pressable onPress={handlePlay} disabled={playing} style={[styles.primaryButton, playing && styles.buttonDisabled]}>
-              {playing ? <ActivityIndicator color={colors.background} /> : <Text style={styles.primaryButtonLabel}>Apostar</Text>}
+            <Pressable
+              onPress={handlePlay}
+              disabled={playing || selected.size === 0}
+              style={[styles.primaryButton, (playing || selected.size === 0) && styles.buttonDisabled]}
+            >
+              {playing ? (
+                <ActivityIndicator color={colors.background} />
+              ) : (
+                <Text style={styles.primaryButtonLabel}>Apostar {totalStake.toLocaleString('pt-BR')}</Text>
+              )}
             </Pressable>
           </>
         )}
@@ -180,7 +189,7 @@ export function BaccaratScreen({ navigation }: Props) {
 
       <TutorialModal
         visible={tutorialVisible}
-        gameName="Bacará"
+        gameName="Banca Francesa"
         tutorial={tutorial}
         onClose={() => setTutorialVisible(false)}
       />
@@ -205,20 +214,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.lg },
-  title: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xl, color: colors.textPrimary },
+  title: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xl, color: colors.textPrimary, marginTop: spacing.lg },
+  crewRow: { flexDirection: 'row', gap: spacing.xl, marginTop: spacing.sm },
+  crewMember: { alignItems: 'center', gap: spacing.xs },
+  crewLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
   loading: { marginTop: spacing.xxxl },
   errorBox: { marginTop: spacing.xxxl, alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
   errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  table: { width: '100%', marginTop: spacing.xl, gap: spacing.xl, minHeight: 200, justifyContent: 'center' },
-  placeholderText: { fontFamily: fontFamily.body, fontSize: fontSize.base, color: colors.textFaint, textAlign: 'center' },
-  handBlock: { gap: spacing.sm, alignItems: 'center' },
-  handLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textSecondary },
-  cardRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
-  card: {
-    width: 52,
-    height: 72,
+  rtpLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, marginTop: spacing.md },
+  diceRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
+  die: {
+    width: 48,
+    height: 48,
     borderRadius: radius.sm,
     backgroundColor: colors.textPrimary,
     alignItems: 'center',
@@ -226,32 +234,23 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.goldBright,
   },
-  cardLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.md, color: colors.background },
-  resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, marginTop: spacing.lg, textAlign: 'center' },
-  resultWin: { color: colors.goldBright },
-  resultLoss: { color: colors.textFaint },
-  sectionLabel: {
-    fontFamily: fontFamily.bodySemiBold,
-    fontSize: fontSize.xs,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    color: colors.textFaint,
-    marginTop: spacing.xl,
-    marginBottom: spacing.sm,
-    alignSelf: 'flex-start',
-  },
-  betTypes: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center' },
-  betTypeChip: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.pill,
+  dieLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.background },
+  numberGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center', marginTop: spacing.xl, maxWidth: 3 * 88 + 2 * spacing.sm },
+  numberTile: {
+    width: 88,
+    height: 72,
+    borderRadius: radius.md,
     backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.feltLine,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
   },
-  betTypeChipActive: { backgroundColor: colors.feltBright, borderColor: colors.feltBright },
-  betTypeLabel: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.textSecondary },
-  betTypeLabelActive: { color: colors.textPrimary },
+  numberTileSelected: { borderColor: colors.goldBright, backgroundColor: colors.felt },
+  numberTileWon: { borderColor: colors.success },
+  numberLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
+  numberResult: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.xs, color: colors.textFaint },
   betRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: spacing.xl },
   betButton: {
     width: 40,
@@ -263,7 +262,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  betValue: { alignItems: 'center', minWidth: 100 },
+  betValue: { alignItems: 'center', minWidth: 160 },
   betLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
   betAmount: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
   primaryButton: {
@@ -273,7 +272,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxxl,
     marginTop: spacing.xl,
     marginBottom: spacing.xl,
-    minWidth: 180,
+    minWidth: 200,
     alignItems: 'center',
   },
   buttonDisabled: { opacity: 0.6 },
