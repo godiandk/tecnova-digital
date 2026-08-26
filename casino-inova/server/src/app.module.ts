@@ -9,6 +9,7 @@ import { BaccaratModule } from './modules/games/baccarat/baccarat.module';
 import { BancaFrancesaModule } from './modules/games/banca-francesa/banca-francesa.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
+import { TrucoModule } from './modules/games/truco/truco.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { CouponsModule } from './modules/coupons/coupons.module';
     BancaFrancesaModule,
     RolesModule,
     CouponsModule,
+    TrucoModule,
   ],
 })
 export class AppModule {}
