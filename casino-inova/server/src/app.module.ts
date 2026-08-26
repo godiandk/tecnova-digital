@@ -10,6 +10,7 @@ import { BancaFrancesaModule } from './modules/games/banca-francesa/banca-france
 import { RolesModule } from './modules/roles/roles.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { TrucoModule } from './modules/games/truco/truco.module';
+import { DominoModule } from './modules/games/domino/domino.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { TrucoModule } from './modules/games/truco/truco.module';
     RolesModule,
     CouponsModule,
     TrucoModule,
+    DominoModule,
   ],
 })
 export class AppModule {}

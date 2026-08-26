@@ -16,6 +16,7 @@ import { BlackjackScreen } from '../screens/games/BlackjackScreen';
 import { BaccaratScreen } from '../screens/games/BaccaratScreen';
 import { BancaFrancesaScreen } from '../screens/games/BancaFrancesaScreen';
 import { TrucoScreen } from '../screens/games/TrucoScreen';
+import { DominoScreen } from '../screens/games/DominoScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -75,6 +76,7 @@ export function RootNavigator() {
       <Stack.Screen name="Baccarat" component={BaccaratScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="BancaFrancesa" component={BancaFrancesaScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Truco" component={TrucoScreen} options={{ animation: 'fade' }} />
+      <Stack.Screen name="Domino" component={DominoScreen} options={{ animation: 'fade' }} />
     </Stack.Navigator>
   );
 }

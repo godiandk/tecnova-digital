@@ -16,8 +16,8 @@ export function LobbyScreen() {
   const phase1Games = games.filter((game) => game.phase === 1);
   const laterGames = games.filter((game) => game.phase > 1);
 
-  // Fases 1 e 2 inteiras, mais truco (Fase 3, contra bot — sem multiplayer real
-  // ainda) já têm motor de verdade. Dominó e pôquer continuam na mesa genérica.
+  // Fases 1 e 2 inteiras, mais truco e dominó (Fase 3, contra bot — sem multiplayer
+  // real ainda) já têm motor de verdade. Só falta pôquer, ainda na mesa genérica.
   const openGame = (gameId: string) => {
     if (gameId === 'slots') {
       navigation.navigate('Slots');
@@ -31,6 +31,8 @@ export function LobbyScreen() {
       navigation.navigate('BancaFrancesa');
     } else if (gameId === 'truco') {
       navigation.navigate('Truco');
+    } else if (gameId === 'domino') {
+      navigation.navigate('Domino');
     } else {
       navigation.navigate('GameTable', { gameId });
     }

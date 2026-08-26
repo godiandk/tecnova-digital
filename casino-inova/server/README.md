@@ -49,7 +49,14 @@ API sobe em `http://localhost:3000`.
 | `POST /games/truco/pedir-truco` `{ userId }` | Pede truco (só uma vez por mão, sem escalar pra 6/9/12 nesta versão). O bot decide aceitar ou correr na hora. |
 | `POST /games/truco/responder-truco` `{ userId, accept }` | Responde quando é o bot que pede truco (`pendingTruco: "bot"` na resposta de `jogar-carta` avisa que isso está esperando). |
 
-Truco é **contra bot, não multiplayer de verdade ainda** — truco/dominó/pôquer com outros jogadores de verdade exigem sala + WebSocket (o plano de produto aponta Colyseus), que não existe neste esqueleto. As regras (manilha, força de carta, desempate de mão) são reais; o "adversário" por enquanto é sempre a máquina.
+| `GET /games/domino/config` | Buy-in mín/máx e o tamanho da mão (7 peças). |
+| `POST /games/domino/nova-partida` `{ userId, buyIn }` | Debita o buy-in, distribui 7 peças pra cada lado (dominó "block" clássico, sem comprar do monte). |
+| `POST /games/domino/jogar-peca` `{ userId, tile: { a, b }, end? }` | Joga uma peça — `end` (`"esquerda"` ou `"direita"`) só é obrigatório depois da primeira peça da mesa. O bot joga (ou passa) na sequência, na mesma resposta. |
+| `POST /games/domino/passar` `{ userId }` | Passa a vez — só funciona se você realmente não tiver peça jogável em nenhuma ponta. |
+
+Termina quando alguém fica sem peças (bate) ou quando os dois passam seguido (travou) — nesse caso quem tiver menos pontos na mão vence; empate devolve o buy-in.
+
+Truco e dominó são **contra bot, não multiplayer de verdade ainda** — jogar com outros jogadores de verdade exige sala + WebSocket (o plano de produto aponta Colyseus), que não existe neste esqueleto. As regras de cada jogo são reais; o "adversário" por enquanto é sempre a máquina.
 
 ### Papéis e permissões
 
@@ -101,6 +108,7 @@ curl -X POST http://localhost:3000/games/banca-francesa/apostar -H "Content-Type
 curl -X POST http://localhost:3000/admin/cupons -H "Content-Type: application/json" -d '{"actingUserId":"u1","code":"BEMVINDO500","chips":500,"maxRedemptions":1000}'
 curl -X POST http://localhost:3000/cupons/resgatar -H "Content-Type: application/json" -d '{"userId":"u1","code":"bemvindo500"}'
 curl -X POST http://localhost:3000/games/truco/nova-partida -H "Content-Type: application/json" -d '{"userId":"u1","buyIn":200}'
+curl -X POST http://localhost:3000/games/domino/nova-partida -H "Content-Type: application/json" -d '{"userId":"u1","buyIn":200}'
 ```
 
 Para conferir que o RTP configurado em `slots.config.ts` é realmente o que o motor entrega (fórmula exata batendo com simulação de 500 mil giros):
