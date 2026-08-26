@@ -15,11 +15,13 @@ export function LobbyScreen() {
   const phase1Games = games.filter((game) => game.phase === 1);
   const laterGames = games.filter((game) => game.phase > 1);
 
-  // Slots é o único jogo com motor de verdade até agora — os outros 7 continuam na
-  // tela de mesa genérica até terem o próprio motor no servidor.
+  // Slots e roleta já têm motor de verdade — os outros 6 continuam na tela de mesa
+  // genérica até terem o próprio motor no servidor.
   const openGame = (gameId: string) => {
     if (gameId === 'slots') {
       navigation.navigate('Slots');
+    } else if (gameId === 'roleta') {
+      navigation.navigate('Roulette');
     } else {
       navigation.navigate('GameTable', { gameId });
     }
