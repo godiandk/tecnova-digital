@@ -9,4 +9,5 @@ export type TabParamList = {
 export type RootStackParamList = {
   Tabs: undefined;
   GameTable: { gameId: string };
+  Slots: undefined;
 };

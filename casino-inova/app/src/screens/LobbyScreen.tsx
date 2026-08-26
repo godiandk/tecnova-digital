@@ -15,6 +15,16 @@ export function LobbyScreen() {
   const phase1Games = games.filter((game) => game.phase === 1);
   const laterGames = games.filter((game) => game.phase > 1);
 
+  // Slots é o único jogo com motor de verdade até agora — os outros 7 continuam na
+  // tela de mesa genérica até terem o próprio motor no servidor.
+  const openGame = (gameId: string) => {
+    if (gameId === 'slots') {
+      navigation.navigate('Slots');
+    } else {
+      navigation.navigate('GameTable', { gameId });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -36,7 +46,7 @@ export function LobbyScreen() {
               key={game.id}
               game={game}
               playerLevel={mockPlayer.level}
-              onPress={() => navigation.navigate('GameTable', { gameId: game.id })}
+              onPress={() => openGame(game.id)}
             />
           ))}
         </View>
@@ -48,7 +58,7 @@ export function LobbyScreen() {
               key={game.id}
               game={game}
               playerLevel={mockPlayer.level}
-              onPress={() => navigation.navigate('GameTable', { gameId: game.id })}
+              onPress={() => openGame(game.id)}
             />
           ))}
         </View>

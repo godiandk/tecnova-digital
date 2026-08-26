@@ -10,6 +10,7 @@ import { StoreScreen } from '../screens/StoreScreen';
 import { FriendsScreen } from '../screens/FriendsScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { GameTableScreen } from '../screens/games/GameTableScreen';
+import { SlotsScreen } from '../screens/games/SlotsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -63,6 +64,7 @@ export function RootNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Tabs" component={TabsNavigator} />
       <Stack.Screen name="GameTable" component={GameTableScreen} options={{ animation: 'fade' }} />
+      <Stack.Screen name="Slots" component={SlotsScreen} options={{ animation: 'fade' }} />
     </Stack.Navigator>
   );
 }

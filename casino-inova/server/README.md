@@ -23,6 +23,8 @@ API sobe em `http://localhost:3000`.
 | `GET /wallet/:userId/historico` | Lista todas as entradas do ledger daquele usuário. |
 | `GET /store/pacotes` | Lista os 4 pacotes de fichas (bronze/prata/ouro/diamante). |
 | `POST /store/comprar` `{ userId, packageId }` | Credita as fichas do pacote na carteira — simula o que a RevenueCat faria depois de validar um recibo real. |
+| `GET /games/slots/config` | Símbolos, aposta mín/máx e o **RTP teórico exato** (calculado por fórmula, não chutado — ver `slots.engine.ts`). |
+| `POST /games/slots/girar` `{ userId, bet }` | Debita a aposta, sorteia a grade 3x3 no servidor, credita o prêmio se houver e devolve o resultado. |
 
 Teste rápido de ponta a ponta:
 
@@ -33,6 +35,16 @@ curl http://localhost:3000/wallet/u1/saldo
 ```
 
 O saldo depois da compra deve estar 40.000 fichas maior.
+
+```
+curl -X POST http://localhost:3000/games/slots/girar -H "Content-Type: application/json" -d '{"userId":"u1","bet":100}'
+```
+
+Para conferir que o RTP configurado em `slots.config.ts` é realmente o que o motor entrega (fórmula exata batendo com simulação de 500 mil giros):
+
+```
+npm run verify:rtp
+```
 
 ## O que falta para isto ser a Fase 0 de verdade
 
