@@ -1,27 +1,42 @@
-# Como testar o Casino Inova no iPhone
+# Como abrir o Casino Inova no seu iPhone
 
-Você **não precisa de Mac nem de conta de desenvolvedor Apple** pra isso. O app roda dentro do **Expo Go**, um aplicativo gratuito da App Store que serve justamente pra testar apps em desenvolvimento.
+Você **não precisa de Mac, nem de conta de desenvolvedor Apple, nem pagar nada** pra
+isso. O app roda dentro do **Expo Go**, um aplicativo gratuito da App Store feito
+justamente pra testar apps em desenvolvimento.
 
-O que você precisa:
-- Um computador (Windows, Mac ou Linux) com **Node.js 18 ou mais novo** instalado
-- Seu iPhone e o computador **na mesma rede Wi-Fi** (esse ponto é obrigatório)
-- O app **Expo Go** instalado no iPhone
+## Antes de começar: você precisa de um computador
+
+Não dá pra fazer isso só pelo celular. O computador é quem roda o servidor e serve o app
+pro seu iPhone. Pode ser Windows, Mac ou Linux — qualquer um serve.
+
+O que você vai precisar:
+
+- Um **computador** com Node.js instalado (o passo 1 explica)
+- Seu **iPhone e o computador na mesma rede Wi-Fi** — isso é obrigatório
+- O app **Expo Go**, grátis na App Store
+- Uns **20 minutos** na primeira vez
+
+O código **não está no seu computador**: ele está no GitHub. O passo 2 baixa.
 
 ---
 
-## Passo 1 — Instalar o Node.js no computador
+## Passo 1 — Node.js no computador
 
-Se ainda não tem, baixe em https://nodejs.org (pegue a versão "LTS"). Pra conferir se deu certo, abra o terminal (no Windows: Prompt de Comando ou PowerShell) e digite:
+Baixe em **nodejs.org** e pegue a versão marcada como **LTS**. Instale normalmente,
+avançando.
+
+Pra conferir, abra o terminal (Windows: procure por "PowerShell"; Mac: "Terminal") e
+digite:
 
 ```
 node --version
 ```
 
-Tem que aparecer algo como `v20.11.0`. Se aparecer erro, o Node não foi instalado.
+Tem que aparecer algo como `v20.11.0`. Se der erro, o Node não instalou.
 
 ## Passo 2 — Baixar o projeto
 
-No terminal, rode:
+No mesmo terminal:
 
 ```
 git clone https://github.com/godiandk/tecnova-digital.git
@@ -29,90 +44,136 @@ cd tecnova-digital
 git checkout claude/mobile-casino-tournaments-jdtyzb
 ```
 
-## Passo 3 — Ligar o servidor
+> Se `git` der erro, instale em **git-scm.com** e repita.
 
-O servidor é o cérebro do jogo: é ele que sorteia os dados, embaralha as cartas e controla as fichas. Sem ele no ar, o app abre mas não deixa jogar.
+## Passo 3 — Um banco de dados (5 minutos, de graça)
 
-Abra um terminal e rode:
+O servidor guarda saldo, contas e ranking num PostgreSQL. Você **não precisa instalar
+banco nenhum** — dá pra usar um gratuito na internet, que também vai servir quando o
+servidor for publicado de verdade.
 
+1. Vá em **neon.tech** e crie conta (dá pra entrar com o Google).
+2. Crie um projeto. Pode chamar de `casino-inova`.
+3. Ele mostra uma **connection string**, parecida com:
+   `postgresql://usuario:senha@ep-algo.neon.tech/neondb?sslmode=require`
+4. **Copie ela inteira.** É o que vai em `DATABASE_URL`.
+
+> Se preferir instalar o Postgres no seu computador, funciona igual — a connection
+> string fica `postgres://postgres@localhost:5432/casino_inova`, e você precisa criar o
+> banco com `createdb casino_inova`.
+
+## Passo 4 — Ligar o servidor
+
+O servidor é o cérebro do jogo: sorteia os dados, embaralha as cartas, controla as
+fichas. Sem ele no ar, o app abre mas não deixa jogar.
+
+Abra um terminal, entre na pasta do servidor e ligue — **trocando a connection string
+pela sua**:
+
+**No Mac ou Linux:**
 ```
 cd casino-inova/server
 npm install
+DATABASE_URL="cole-sua-connection-string-aqui" \
+JWT_SECRET="qualquer-frase-longa-que-voce-inventar" \
+PERMITIR_COMPRA_DE_TESTE=true \
 npm run start:dev
 ```
 
-A primeira vez demora um pouco (está baixando as dependências). Quando terminar, vai aparecer:
+**No Windows (PowerShell):**
+```
+cd casino-inova\server
+npm install
+$env:DATABASE_URL="cole-sua-connection-string-aqui"
+$env:JWT_SECRET="qualquer-frase-longa-que-voce-inventar"
+$env:PERMITIR_COMPRA_DE_TESTE="true"
+npm run start:dev
+```
+
+A primeira vez demora (está baixando dependências). Quando terminar, aparece:
 
 ```
 Casino Inova API rodando em http://localhost:3000
-Na rede local (é este que o celular usa): http://192.168.0.15:3000
+Na rede local (é este que o celular usa): http://192.168.x.x:3000
 ```
 
 **Deixe esse terminal aberto.** Se fechar, o servidor desliga.
 
-> Anote o número que aparece na segunda linha (no exemplo, `192.168.0.15`). Você não vai precisar dele normalmente — o app descobre sozinho — mas ele ajuda se algo der errado.
+> O `JWT_SECRET` pode ser qualquer coisa pra testar — `minha-frase-secreta-123` serve.
+> Em produção precisa ser longo e aleatório de verdade.
 
-## Passo 4 — Ligar o app
+## Passo 5 — Ligar o app
 
-Abra um **segundo terminal** (deixe o do servidor rodando) e rode:
+Abra **outro** terminal (o primeiro tem que continuar rodando o servidor):
 
 ```
-cd casino-inova/app
+cd tecnova-digital/casino-inova/app
 npm install
 npx expo start
 ```
 
-Vai aparecer um **QR Code** grande no terminal.
+Vai aparecer um **QR Code grande** no terminal.
 
-## Passo 5 — Abrir no iPhone
+## Passo 6 — Abrir no iPhone
 
-1. Instale o **Expo Go** pela App Store (é gratuito).
-2. Abra a **câmera** do iPhone e aponte pro QR Code que está no terminal.
-3. Toque na notificação que aparece — ela abre o Expo Go.
-4. Espere carregar (a primeira vez demora uns 30 segundos).
+1. Instale o **Expo Go** pela App Store, se ainda não tiver.
+2. Abra a **câmera** do iPhone e aponte pro QR Code.
+3. Toque no aviso que aparece — abre no Expo Go.
 
-Pronto, o jogo abre no seu iPhone.
+A primeira abertura demora um pouco (está montando o app). Depois fica rápido.
 
----
+## Passo 7 — Entrar
 
-## Se der errado
+A tela de login aparece. Use uma conta de teste:
 
-**"Network request failed" ou o jogo abre mas diz que não conseguiu falar com o servidor**
+| E-mail | Senha | Quem é |
+|---|---|---|
+| `u1@teste.local` | `casino123` | Admin, começa com 12.500 fichas |
+| `u2@teste.local` | `casino123` | Jogador comum, começa zerado |
+| `u3@teste.local` | `casino123` | Jogador comum |
+| `u4@teste.local` | `casino123` | Jogador comum |
 
-Quase sempre é uma destas três coisas:
+Ou toque em **"Criar conta"** e faça a sua — mas ela começa com zero fichas.
 
-1. **O servidor não está rodando.** Volte no primeiro terminal e confira se ainda está aberto com a mensagem "API rodando".
-2. **Celular e computador em redes diferentes.** É o caso mais comum: o celular está no 4G/5G em vez do Wi-Fi, ou o Wi-Fi da casa tem duas redes (uma de 2.4GHz e outra de 5GHz) e cada aparelho está numa. Coloque os dois na mesma.
-3. **O firewall do computador está bloqueando.** No Windows, quando você roda o servidor pela primeira vez costuma aparecer um aviso do Firewall — precisa clicar em "Permitir acesso" e marcar "Redes privadas".
-
-Pra testar se o celular enxerga o servidor: abra o **Safari no iPhone** e digite o endereço da rede local que apareceu no Passo 3, com `/games/bac-bo/config` no final. Por exemplo:
-
-```
-http://192.168.0.15:3000/games/bac-bo/config
-```
-
-Se aparecer um monte de texto em formato de código, está tudo certo e o problema é outro. Se não carregar nada, é rede ou firewall.
-
-**O QR Code não abre nada quando aponto a câmera**
-
-Abra o Expo Go direto e use a opção "Scan QR Code" de dentro dele.
-
-**Quero rodar sem estar na mesma rede**
-
-No terminal do app, rode `npx expo start --tunnel` em vez de `npx expo start`. Fica mais lento, mas funciona por qualquer rede, inclusive 4G. Nesse caso você precisa apontar o app pro servidor manualmente — me avise que eu te explico como.
+> **Sem fichas não dá pra jogar.** Entre com o `u1`, ou use a Loja pra "comprar" um
+> pacote (com `PERMITIR_COMPRA_DE_TESTE=true` ligado, ela credita de graça).
 
 ---
 
-## O que dá pra testar agora
+## Quando algo não funciona
 
-Funcionando de ponta a ponta:
-- Caça-níqueis, roleta, blackjack, bacará, banca francesa, truco, dominó, poker
-- Bac Bo e Stock Market (os dois jogos novos)
-- Banca Francesa multiplayer com chat (dá pra criar mesa e entrar por código)
-- Loja de fichas, cupons, amigos, perfil
+**"Network request failed" ou o app abre mas não carrega nada**
+O celular não está achando o servidor. Confira:
+- O terminal do servidor ainda está aberto e rodando?
+- O iPhone está na **mesma rede Wi-Fi** do computador? (dados móveis não funcionam)
+- Rede de empresa, hotel ou faculdade costuma bloquear — se for o caso, use o Wi-Fi de
+  casa ou o roteador do celular.
 
-Ainda **sem as imagens novas** (mesas, baralho, peças, sinais, placar) — as telas usam as imagens antigas até você gerar o lote novo. Então o visual ainda não é o final.
+**O QR Code não abre nada**
+Abra o Expo Go primeiro e use "Scan QR code" de dentro dele.
 
-## Quando quiser publicar de verdade na App Store
+**O servidor não sobe e fala de `DATABASE_URL`**
+A connection string não chegou. Confira se copiou inteira, com as aspas.
 
-Aí sim vai precisar de conta de desenvolvedor Apple (US$ 99/ano) e de um build de produção. Mas isso é bem depois — pra desenvolver e mostrar pros outros, o Expo Go resolve. Dá até pra mandar o link pra outra pessoa testar no celular dela, desde que esteja na mesma rede.
+**O servidor não sobe e fala de `JWT_SECRET`**
+Faltou essa variável. Ele recusa subir sem ela de propósito — sem segredo, não existe
+token confiável.
+
+**Erro de conexão com o banco**
+Se for o Neon: confira se a connection string tem `?sslmode=require` no fim.
+
+---
+
+## O que olhar quando estiver rodando
+
+Esta é a primeira vez que alguém vê o app funcionando. Vale olhar com atenção:
+
+- O **lobby** — os cartazes cabem bem na tela? O nome do jogo está legível?
+- A **barra de nível e o contador de fichas** no topo — o número está no lugar certo
+  dentro do desenho?
+- Entre em **um jogo** — dá pra apostar? O saldo muda?
+- O **truco**: escolha Paulista, depois Mineiro. As cartas aparecem?
+- A tela de **Torneios** — o ranking carrega?
+
+Anote o que estiver feio ou errado e me mande — inclusive print. Acabamento visual é a
+única coisa que eu não consigo conferir daqui.
