@@ -10,6 +10,7 @@ import { Server, Socket } from 'socket.io';
 import { BancaFrancesaTable, BancaFrancesaTableService, TableVisibility } from './banca-francesa-table.service';
 import { FriendsService } from '../friends/friends.service';
 import { BancaFrancesaBet } from '../games/banca-francesa/banca-francesa.engine';
+import { ChatScope, ChatService } from '../chat/chat.service';
 
 /**
  * Uma mesa compartilhada não precisa esconder nada de ninguém (todo mundo vê a
@@ -27,6 +28,7 @@ export class RoomsGateway implements OnGatewayDisconnect {
   constructor(
     private readonly tables: BancaFrancesaTableService,
     private readonly friends: FriendsService,
+    private readonly chat: ChatService,
   ) {}
 
   handleDisconnect(socket: Socket) {
@@ -121,6 +123,53 @@ export class RoomsGateway implements OnGatewayDisconnect {
       socket.leave(body.tableId);
       return this.broadcastAndReturn(result);
     });
+  }
+
+  @SubscribeMessage('chat:enviar')
+  handleChatSend(@MessageBody() body: { userId: string; roomId: string; scope?: ChatScope; text: string }) {
+    return this.safe(() => {
+      const scope: ChatScope = body.scope === 'dupla' ? 'dupla' : 'mesa';
+      // A cor da ficha vem do assento, pra mensagem aparecer identificada na mesa.
+      const seat = this.tables.findSeat(body.roomId, body.userId);
+      const message = this.chat.postMessage({
+        roomId: body.roomId,
+        scope,
+        userId: body.userId,
+        text: body.text,
+        color: seat?.color,
+      });
+      // Escopo `mesa` vai pra sala inteira. `dupla` ainda não tem mesa 2x2 no ar —
+      // quando truco/dominó em dupla existirem, o envio vai pros dois sockets da dupla.
+      if (scope === 'mesa') {
+        this.server.to(body.roomId).emit('chat:mensagem', message);
+      }
+      return message;
+    });
+  }
+
+  @SubscribeMessage('chat:historico')
+  handleChatHistory(@MessageBody() body: { userId: string; roomId: string; partnerUserId?: string }) {
+    return this.safe(() => this.chat.historyFor(body.roomId, body.userId, body.partnerUserId));
+  }
+
+  @SubscribeMessage('chat:silenciar')
+  handleChatMute(@MessageBody() body: { actingUserId: string; targetUserId: string; seconds: number }) {
+    return this.safe(() => {
+      const result = this.chat.muteUser(body.actingUserId, body.targetUserId, body.seconds);
+      this.emitToUser(body.targetUserId, 'chat:silenciado', result);
+      return result;
+    });
+  }
+
+  @SubscribeMessage('chat:remover-silencio')
+  handleChatUnmute(@MessageBody() body: { actingUserId: string; targetUserId: string }) {
+    return this.safe(() => this.chat.unmuteUser(body.actingUserId, body.targetUserId));
+  }
+
+  private emitToUser(userId: string, event: string, payload: unknown) {
+    for (const socketId of this.socketsByUser.get(userId) ?? []) {
+      this.server.to(socketId).emit(event, payload);
+    }
   }
 
   /**

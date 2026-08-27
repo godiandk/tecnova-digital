@@ -190,6 +190,11 @@ export class BancaFrancesaTableService {
     return this.walletService.balanceOf(userId);
   }
 
+  /** Assento de alguém numa mesa, se existir — usado pelo chat pra pegar a cor da ficha. */
+  findSeat(tableId: string, userId: string): TableSeat | undefined {
+    return this.tables.get(tableId)?.seats.find((seat) => seat.userId === userId);
+  }
+
   private seatPlayer(table: BancaFrancesaTable, userId: string): BancaFrancesaTable {
     if (table.seats.some((seat) => seat.userId === userId)) {
       return table;

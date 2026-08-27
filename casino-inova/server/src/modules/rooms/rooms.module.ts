@@ -4,9 +4,10 @@ import { BancaFrancesaTableService } from './banca-francesa-table.service';
 import { WalletModule } from '../wallet/wallet.module';
 import { UsersModule } from '../users/users.module';
 import { FriendsModule } from '../friends/friends.module';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
-  imports: [WalletModule, UsersModule, FriendsModule],
+  imports: [WalletModule, UsersModule, FriendsModule, ChatModule],
   providers: [RoomsGateway, BancaFrancesaTableService],
 })
 export class RoomsModule {}

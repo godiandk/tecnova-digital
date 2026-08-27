@@ -14,6 +14,8 @@ import { DominoModule } from './modules/games/domino/domino.module';
 import { PokerModule } from './modules/games/poker/poker.module';
 import { FriendsModule } from './modules/friends/friends.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
+import { BacBoModule } from './modules/games/bac-bo/bac-bo.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { RoomsModule } from './modules/rooms/rooms.module';
     BlackjackModule,
     BaccaratModule,
     BancaFrancesaModule,
+    BacBoModule,
+    ChatModule,
     RolesModule,
     CouponsModule,
     TrucoModule,
