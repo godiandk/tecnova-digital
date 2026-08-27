@@ -11,6 +11,7 @@
     "verify:bacara": "ts-node src/modules/games/baccarat/verify-rtp.ts",
     "verify:banca-francesa": "ts-node src/modules/games/banca-francesa/verify-rtp.ts",
     "verify:blackjack": "ts-node src/modules/games/blackjack/verify-strategy.ts",
+    "verify:firebase": "ts-node src/modules/auth/verify-firebase.ts",
     "verify:persistencia": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" ts-node src/database/verify-persistencia.ts",
     "verify:placar": "ts-node src/modules/roadmap/verify-roadmap.ts",
     "verify:poker-hands": "ts-node src/modules/games/poker/verify-hand-evaluator.ts",

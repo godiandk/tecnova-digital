@@ -107,14 +107,18 @@ export async function verificarTokenFirebase(
   }
 
   /*
-   * Confere que o token é do provedor que o app disse ter usado. Sem isso, um token
-   * legítimo do Google serviria pra entrar por uma credencial marcada como Apple, e as
-   * duas contas se misturariam.
+   * Confere que o token é do provedor que o app disse ter usado, e RECUSA quando não
+   * bate — inclusive quando o provedor é um que a gente não espera aqui.
+   *
+   * Por que fechado por padrão: um token legítimo do Google serviria pra entrar por uma
+   * credencial marcada como Apple, e as duas contas se misturariam. E um token de
+   * `custom` (que o Admin SDK sabe emitir) ou de `anonymous` não tem nada que fazer
+   * nesta rota — ela é só pra login social de verdade.
    */
   const provedorDoToken = mapearProvedor(decodificado.firebase?.sign_in_provider);
-  if (provedorDoToken && provedorDoToken !== provedorEsperado) {
+  if (provedorDoToken !== provedorEsperado) {
     throw new BadRequestException(
-      `Esse token é de ${provedorDoToken}, não de ${provedorEsperado}.`,
+      `Esse token não é de ${provedorEsperado}${provedorDoToken ? `, é de ${provedorDoToken}` : ''}.`,
     );
   }
 

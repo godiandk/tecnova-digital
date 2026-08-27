@@ -240,3 +240,39 @@ O trecho que o console entrega inclui `getAnalytics`. **Isso não funciona em Re
 Native** — o módulo `firebase/analytics` é só pra navegador. Por isso ele não está no
 nosso código. Se quiser analytics no app, é outro pacote
 (`@react-native-firebase/analytics`), e é uma decisão separada do login.
+
+
+---
+
+# Parte 7 — Revogar uma chave de serviço
+
+Faça isto sempre que uma chave sair do lugar dela: colada num chat, mandada por e-mail,
+commitada por engano, ou guardada em algum computador que não é mais seu.
+
+**Não dá pra "despublicar" um segredo.** Uma vez que ele saiu, o único conserto é
+trocar — quem já copiou continua com a cópia velha, e ela precisa parar de valer.
+
+1. **console.cloud.google.com** → selecione o projeto `inova-casino`.
+2. Menu → **IAM e administrador → Contas de serviço**.
+3. Clique na conta `firebase-adminsdk-fbsvc@inova-casino.iam.gserviceaccount.com`.
+4. Aba **Chaves**.
+5. Você vai ver as chaves pelo id (`private_key_id` do arquivo JSON). **Primeiro crie a
+   nova**: Adicionar chave → Criar nova chave → JSON.
+6. Atualize `FIREBASE_SERVICE_ACCOUNT` com o conteúdo da chave nova, onde o servidor
+   estiver rodando.
+7. Confira que subiu: o log tem que dizer `Firebase Admin ligado no projeto
+   inova-casino`. Ou rode `npm run verify:firebase`.
+8. **Só então apague a chave antiga**, pelo id, na mesma tela.
+
+Nessa ordem: cria a nova, troca, confirma, apaga a velha. Apagar antes de trocar derruba
+o login social até você terminar.
+
+## Como evitar que aconteça de novo
+
+- A chave nunca precisa sair do lugar onde o servidor roda. Em produção ela vive no
+  painel de variáveis de ambiente do serviço de hospedagem, e mais nada.
+- Em desenvolvimento, num `.env` — que o `.gitignore` deste projeto já cobre, junto com
+  os nomes de arquivo que o Firebase usa (`*firebase-adminsdk*.json`).
+- Se precisar mandar pra alguém, use um cofre de senha, não chat nem e-mail.
+- Nunca comite. E se comitar: **trocar a chave é obrigatório**, porque apagar o arquivo
+  num commit seguinte não tira ele do histórico.
