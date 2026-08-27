@@ -16,6 +16,16 @@ interface RespostaSessao {
   user: UsuarioLogado;
 }
 
+/** Quais logins sociais o servidor aceita agora — vazio enquanto o Firebase não estiver configurado. */
+export async function provedoresDisponiveis(): Promise<string[]> {
+  try {
+    const r = await apiRequest<{ provedores: string[] }>('/auth/provedores');
+    return r.provedores;
+  } catch {
+    return [];
+  }
+}
+
 export async function entrar(email: string, senha: string): Promise<UsuarioLogado> {
   const resposta = await apiRequest<RespostaSessao>('/auth/entrar', {
     method: 'POST',

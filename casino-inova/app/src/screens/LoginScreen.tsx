@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable, ImageBackground,
   KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
@@ -6,7 +6,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { cadastrar, entrar } from '../api/auth';
+import { cadastrar, entrar, provedoresDisponiveis } from '../api/auth';
+import { googleEstaConfigurado } from '../firebase/config';
+import { useLoginGoogle } from '../firebase/loginSocial';
 import { ApiError } from '../api/client';
 import { GoldButton } from '../components/GoldButton';
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
@@ -20,6 +22,36 @@ export function LoginScreen({ aoEntrar }: { aoEntrar: () => void }) {
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
+
+  /*
+   * O botão do Google só aparece quando as DUAS pontas estão prontas: o servidor com a
+   * chave de serviço (senão ele recusa o token) e o app com os ids de cliente OAuth
+   * (senão nem abre a tela do Google). Mostrar um botão que sempre dá erro é pior do
+   * que não mostrar botão.
+   */
+  const [servidorAceitaGoogle, setServidorAceitaGoogle] = useState(false);
+  const google = useLoginGoogle();
+  const mostrarGoogle = servidorAceitaGoogle && googleEstaConfigurado();
+
+  useEffect(() => {
+    provedoresDisponiveis().then((lista) => setServidorAceitaGoogle(lista.includes('google')));
+  }, []);
+
+  // A resposta do Google chega depois que o navegador fecha, não no retorno da chamada.
+  useEffect(() => {
+    if (google.resposta?.type !== 'success') return;
+    setOcupado(true);
+    google
+      .concluir()
+      .then((usuario) => {
+        if (usuario) aoEntrar();
+      })
+      .catch((capturado) => {
+        setErro(capturado instanceof ApiError ? capturado.message : 'Não deu pra entrar com o Google.');
+      })
+      .finally(() => setOcupado(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [google.resposta]);
 
   const enviar = async () => {
     if (ocupado) return;
@@ -100,6 +132,23 @@ export function LoginScreen({ aoEntrar }: { aoEntrar: () => void }) {
             />
             {ocupado && <ActivityIndicator color={colors.goldBright} style={styles.carregando} />}
 
+            {mostrarGoogle && (
+              <>
+                <View style={styles.separador}>
+                  <View style={styles.linha} />
+                  <Text style={styles.separadorTexto}>ou</Text>
+                  <View style={styles.linha} />
+                </View>
+                <Pressable
+                  onPress={() => google.pedirLogin()}
+                  disabled={ocupado}
+                  style={[styles.botaoGoogle, ocupado && { opacity: 0.5 }]}
+                >
+                  <Text style={styles.botaoGoogleTexto}>Entrar com Google</Text>
+                </Pressable>
+              </>
+            )}
+
             <Text style={styles.rodape}>
               Fichas do Casino Inova são só pra jogar aqui dentro. Não há saque, e nenhum jogo paga
               dinheiro de verdade.
@@ -178,6 +227,18 @@ const styles = StyleSheet.create({
   },
   dica: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
   erro: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger },
+  separador: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginVertical: spacing.sm },
+  linha: { flex: 1, height: 1, backgroundColor: colors.feltLine },
+  separadorTexto: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
+  botaoGoogle: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.feltLine,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  botaoGoogleTexto: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, color: colors.textPrimary },
   carregando: { marginTop: spacing.sm },
   rodape: {
     fontFamily: fontFamily.body,

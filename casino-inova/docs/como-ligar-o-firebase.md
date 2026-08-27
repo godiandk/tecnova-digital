@@ -140,3 +140,103 @@ lado do app.
 | Chave de serviço | Configurações → Contas de serviço | grátis |
 
 E a regra que vale pra tudo: **a chave de serviço nunca entra no repositório.**
+
+---
+
+# Parte 6 — Depois que o projeto existe (atualizado)
+
+O projeto `inova-casino` já está criado, e a configuração pública dele já está no app
+(`app/src/firebase/config.ts`). O que falta:
+
+## 6.1 — A chave de serviço (é o que o servidor precisa)
+
+O trecho que o console entrega na tela "Adicionar app da Web" **não serve pro servidor**.
+Aquilo é a metade pública. A chave de serviço é outra coisa:
+
+**Engrenagem → Configurações do projeto → Contas de serviço → Gerar nova chave privada.**
+
+Baixa um `.json`. O conteúdo dele vai em `FIREBASE_SERVICE_ACCOUNT`, e **nunca** no
+repositório.
+
+## 6.2 — Os ids de cliente OAuth (é o que o app precisa)
+
+Também não vêm no trecho público. Depois de ligar o Google em **Authentication → Sign-in
+method → Google**:
+
+- **Web client ID**: na mesma tela, abra "Configuração do SDK da Web". Copie o
+  *ID do cliente da Web*.
+- **iOS client ID**: em Configurações do projeto → Seus apps → adicione um app iOS com o
+  bundle `com.casinoinova.app`, baixe o `GoogleService-Info.plist` e pegue o
+  `CLIENT_ID` de dentro dele.
+- **Android client ID**: idem, com o pacote `com.casinoinova.app`.
+
+Eles vão num `.env` na pasta `app/`:
+
+```
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=...apps.googleusercontent.com
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=...apps.googleusercontent.com
+EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=...apps.googleusercontent.com
+```
+
+Enquanto estiverem vazios, o botão do Google simplesmente não aparece na tela de login —
+e o login por e-mail e senha continua funcionando.
+
+## 6.3 — Trancar o que o projeto não usa
+
+**Esta é a parte que mais gente esquece, e é a que dá problema.**
+
+Nosso projeto usa o Firebase **só pra login**. Toda a informação de jogador, ficha e
+partida está no nosso PostgreSQL, não no Firebase.
+
+Só que o Firebase oferece Firestore, Realtime Database e Storage — e, se algum deles for
+criado "em modo de teste", ele fica **aberto pra qualquer pessoa ler e escrever por 30
+dias**. E a chave pública que está no app é tudo que alguém precisa pra achar o caminho.
+
+Então:
+
+- **Não crie** Firestore, Realtime Database nem Storage. Se não existirem, não há o que
+  invadir.
+- Se já criou algum, entre em **Regras** e troque por isto, que nega tudo:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+```
+
+Para o Storage, o mesmo:
+
+```
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+```
+
+Negar tudo é o certo aqui: nada no nosso app lê ou escreve nesses serviços, então fechar
+não quebra nada — e deixar aberto seria um banco de dados público com o endereço colado
+dentro do aplicativo.
+
+## 6.4 — Restringir a chave pública (opcional, mas recomendado)
+
+A chave pública não autoriza nada sozinha, mas dá pra amarrar ela ao seu app pra ninguém
+usar sua cota:
+
+**console.cloud.google.com → APIs e serviços → Credenciais → a chave "Browser key" →
+Restrições de aplicativo** → escolha Android/iOS e informe o pacote e o bundle.
+
+## 6.5 — Um aviso sobre o Analytics
+
+O trecho que o console entrega inclui `getAnalytics`. **Isso não funciona em React
+Native** — o módulo `firebase/analytics` é só pra navegador. Por isso ele não está no
+nosso código. Se quiser analytics no app, é outro pacote
+(`@react-native-firebase/analytics`), e é uma decisão separada do login.
