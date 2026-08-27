@@ -16,6 +16,11 @@ export class BacBoController {
     return this.bacBoService.getConfig();
   }
 
+  @Get('placar')
+  getRoadmap() {
+    return this.bacBoService.getRoadmap();
+  }
+
   @Post('apostar')
   playRound(@Body() body: PlayDto) {
     if (!body?.userId || !Array.isArray(body?.bets)) {

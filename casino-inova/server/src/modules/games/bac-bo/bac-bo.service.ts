@@ -2,12 +2,25 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { BacBoBet, resolveBets, roll, theoreticalRtp } from './bac-bo.engine';
 import { MAX_BET, MIN_BET, SIDE_TOTAL_MULTIPLIER, TIE_PROFIT_ODDS, TIE_REFUND_MULTIPLIER } from './bac-bo.config';
+import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
 
 const BET_TYPES: BacBoBet['type'][] = ['jogador', 'banca', 'empate'];
+/** Quantas rodadas o placar guarda — o painel mostra 24 colunas de 6, então 144 cobre a tela cheia. */
+const HISTORY_LIMIT = 144;
 
 @Injectable()
 export class BacBoService {
-  constructor(private readonly walletService: WalletService) {}
+  private readonly history: RoundRecord[] = [];
+
+  constructor(
+    private readonly walletService: WalletService,
+    private readonly roadmapService: RoadmapService,
+  ) {}
+
+  /** As cinco estradas do placar, calculadas a partir do histórico da mesa. */
+  getRoadmap() {
+    return this.roadmapService.build(this.history);
+  }
 
   getConfig() {
     return {
@@ -54,6 +67,16 @@ export class BacBoService {
       this.walletService.credit(userId, totalReturn, 'premio');
     }
 
-    return { ...result, results, totalStake, totalReturn, newBalance: this.walletService.balanceOf(userId) };
+    this.history.push({ outcome: result.outcome });
+    if (this.history.length > HISTORY_LIMIT) this.history.shift();
+
+    return {
+      ...result,
+      results,
+      totalStake,
+      totalReturn,
+      newBalance: this.walletService.balanceOf(userId),
+      roadmap: this.getRoadmap(),
+    };
   }
 }

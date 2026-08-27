@@ -15,7 +15,9 @@ import { PokerModule } from './modules/games/poker/poker.module';
 import { FriendsModule } from './modules/friends/friends.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 import { BacBoModule } from './modules/games/bac-bo/bac-bo.module';
+import { StockMarketModule } from './modules/games/stock-market/stock-market.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { RoadmapModule } from './modules/roadmap/roadmap.module';
 
 @Module({
   imports: [
@@ -28,7 +30,9 @@ import { ChatModule } from './modules/chat/chat.module';
     BaccaratModule,
     BancaFrancesaModule,
     BacBoModule,
+    StockMarketModule,
     ChatModule,
+    RoadmapModule,
     RolesModule,
     CouponsModule,
     TrucoModule,
