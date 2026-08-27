@@ -11,8 +11,26 @@ const scryptAsync = promisify(scrypt);
 /** Quanto tempo o token vale. Curto o bastante pra um vazamento não ser eterno. */
 const VALIDADE_TOKEN = '30d';
 
-/** Os provedores de login social que o app oferece. */
-const PROVEDORES_ACEITOS = ['google', 'apple', 'facebook'];
+/**
+ * Quais logins sociais este servidor aceita.
+ *
+ * Vem de FIREBASE_PROVIDERS (lista separada por vírgula) porque precisa bater com o que
+ * está de fato LIGADO no console do Firebase. Anunciar um provedor que o projeto não tem
+ * faz o app mostrar um botão que sempre dá erro — pior do que não mostrar botão.
+ *
+ * O padrão é só `google`: é o único que dá pra ligar sem conta paga. Apple exige o Apple
+ * Developer Program, e Facebook exige um app criado no developers.facebook.com.
+ */
+const PROVEDORES_CONHECIDOS = ['google', 'apple', 'facebook'];
+
+function provedoresConfigurados(): string[] {
+  const bruto = process.env.FIREBASE_PROVIDERS;
+  if (!bruto) return ['google'];
+  return bruto
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter((item) => PROVEDORES_CONHECIDOS.includes(item));
+}
 
 export interface TokenPayload {
   /** userId. `sub` é o nome padrão desse campo em JWT. */
@@ -145,17 +163,18 @@ export class AuthService {
     provedor: string,
     token: string,
   ): Promise<{ subject: string; nome?: string }> {
-    if (!PROVEDORES_ACEITOS.includes(provedor)) {
+    const aceitos = provedoresConfigurados();
+    if (!aceitos.includes(provedor)) {
       throw new BadRequestException(
-        `Provedor "${provedor}" não é aceito. Use: ${PROVEDORES_ACEITOS.join(', ')}.`,
+        `Provedor "${provedor}" não está ligado neste servidor. Ligados: ${aceitos.join(', ') || 'nenhum'}.`,
       );
     }
     return verificarTokenFirebase(provedor, token);
   }
 
-  /** Pra tela de login saber se mostra os botões de login social ou esconde. */
+  /** Pra tela de login saber quais botões mostrar. Vazio = nenhum botão social. */
   provedoresDisponiveis(): string[] {
-    return firebaseEstaLigado() ? [...PROVEDORES_ACEITOS] : [];
+    return firebaseEstaLigado() ? provedoresConfigurados() : [];
   }
 
   /** Confere o token e devolve o userId. Usado pelo guard e pelo gateway. */

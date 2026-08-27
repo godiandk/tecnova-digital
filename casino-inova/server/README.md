@@ -347,6 +347,7 @@ Variáveis que o servidor exige:
 | `DATABASE_URL` | Endereço do Postgres. Sem ela o servidor não sobe. |
 | `JWT_SECRET` | Assina os tokens. Sem ela o servidor não sobe. |
 | `FIREBASE_SERVICE_ACCOUNT` | JSON da chave de serviço, pro login social. Sem ela, login social recusa. |
+| `FIREBASE_PROVIDERS` | Quais logins sociais estão ligados no console (padrão `google`). Anunciar um que o projeto não tem faz o app mostrar botão que sempre dá erro. |
 | `PURCHASE_WEBHOOK_SECRET` | Confere a assinatura do webhook de compra. |
 | `PERMITIR_COMPRA_DE_TESTE` | Só em desenvolvimento — libera a compra sem pagamento. |
 

@@ -276,3 +276,73 @@ o login social até você terminar.
 - Se precisar mandar pra alguém, use um cofre de senha, não chat nem e-mail.
 - Nunca comite. E se comitar: **trocar a chave é obrigatório**, porque apagar o arquivo
   num commit seguinte não tira ele do histórico.
+
+
+---
+
+# Parte 8 — Situação real do projeto `inova-casino`
+
+Estado em que o console está, e o que fazer com cada item.
+
+## Ligados e funcionando
+
+| Provedor | Situação |
+|---|---|
+| **E-mail/senha** | Ligado. É o que o app usa hoje, e funciona inteiro. |
+| **Google** | Ligado no console. Falta pegar os ids de cliente OAuth pro app (Parte 6.2). |
+
+Com esses dois, o app está completo pra testar e pra publicar no Android.
+
+## Travados por conta paga (e a conta é obrigatória por outro motivo)
+
+| Provedor | O que pede | Custo real |
+|---|---|---|
+| **Apple** | Services ID | Apple Developer Program, US$ 99/ano |
+| **Game Center** | ligado, mas só funciona em app assinado | mesma conta da Apple |
+| **Facebook** | App ID + Secret | **grátis** — só criar um app em developers.facebook.com |
+
+**O ponto que muda o planejamento:** os US$ 99/ano da Apple não são pelo "Entrar com
+Apple". São para **publicar qualquer aplicativo na App Store**. Sem essa conta:
+
+- não dá pra colocar o app na App Store, com ou sem login social;
+- dá pra publicar no Android (Google Play cobra US$ 25, uma vez só, pra sempre);
+- dá pra testar no seu próprio iPhone pelo Expo Go.
+
+Ou seja: se o plano é iPhone, a conta da Apple entra em algum momento — e aí o "Entrar
+com Apple" vem junto de graça. Se o plano é começar pelo Android, nada disso trava nada.
+
+**Facebook não custa nada.** Se quiser esse login, é só criar o app em
+developers.facebook.com e colar App ID e Secret. Fica aqui como opção, não como
+pendência.
+
+## O que fazer com o Game Center
+
+Ele está ligado no console, mas o app não usa e não vai usar por enquanto: Game Center é
+só iOS e exige app assinado com conta Apple. Pode deixar ligado (não faz mal) ou
+desligar. Se um dia for usado, o servidor precisa aceitar `gc.apple.com` na lista de
+provedores — hoje ele recusa, que é o comportamento certo pra algo que não foi
+construído.
+
+## Configuração do servidor pra esta situação
+
+```
+FIREBASE_PROVIDERS=google
+```
+
+O padrão já é esse. Quando ligar mais algum, é só acrescentar:
+`FIREBASE_PROVIDERS=google,facebook`.
+
+O app só mostra o botão de um provedor quando o servidor diz que aceita **e** o app tem
+o id de cliente dele. As duas pontas precisam concordar.
+
+## ⚠️ O Firestore foi criado — trancar
+
+O console mostra o Cloud Firestore criado (vazio, com "Iniciar coleção"). Nosso app não
+usa Firestore: jogador, ficha, partida e ranking estão todos no nosso PostgreSQL.
+
+Um Firestore em modo de teste fica **aberto pra qualquer pessoa ler e escrever por 30
+dias**, e a chave pública do Firebase está dentro do aplicativo — o endereço não é
+segredo pra ninguém.
+
+As regras que negam tudo estão em `docs/firestore-regras-trancar.txt`. Cole na aba
+**Regras** e publique. Como nada no app usa o Firestore, fechar não quebra coisa alguma.
