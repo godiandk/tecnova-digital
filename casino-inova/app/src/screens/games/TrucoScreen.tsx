@@ -46,7 +46,9 @@ function cardLabel(card: TrucoCard): string {
   return `${card.rank}${SUIT_SYMBOL[card.suit]}`;
 }
 
-export function TrucoScreen({ navigation }: Props) {
+export function TrucoScreen({ navigation, route }: Props) {
+  /** Variante escolhida na tela anterior; sem ela, cai no padrão do servidor. */
+  const variante = route.params?.variant ?? 'paulista';
   const tutorial = getTutorialByGameId('truco');
 
   const [tutorialVisible, setTutorialVisible] = useState(true);
@@ -142,7 +144,7 @@ export function TrucoScreen({ navigation }: Props) {
               </Pressable>
             </View>
             {actionError && <Text style={styles.errorText}>{actionError}</Text>}
-            <Pressable onPress={() => run(() => newTrucoMatch(buyIn))} disabled={busy} style={[styles.primaryButton, busy && styles.buttonDisabled]}>
+            <Pressable onPress={() => run(() => newTrucoMatch(buyIn, variante))} disabled={busy} style={[styles.primaryButton, busy && styles.buttonDisabled]}>
               {busy ? <ActivityIndicator color={colors.background} /> : <Text style={styles.primaryButtonLabel}>Começar partida</Text>}
             </Pressable>
           </View>

@@ -9,6 +9,7 @@ export type TabParamList = {
 export type RootStackParamList = {
   Tabs: undefined;
   GameTable: { gameId: string };
+  GameMode: { gameId: string };
   Slots: undefined;
   Roulette: undefined;
   Blackjack: undefined;
@@ -17,8 +18,8 @@ export type RootStackParamList = {
   BancaFrancesaMesa: undefined;
   BacBo: undefined;
   StockMarket: undefined;
-  Truco: undefined;
-  TrucoMesa: undefined;
+  Truco: { variant?: 'paulista' | 'mineiro' } | undefined;
+  TrucoMesa: { variant?: 'paulista' | 'mineiro' } | undefined;
   Domino: undefined;
   DominoMesa: undefined;
   Poker: undefined;

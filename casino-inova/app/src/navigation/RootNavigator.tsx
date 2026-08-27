@@ -10,6 +10,7 @@ import { StoreScreen } from '../screens/StoreScreen';
 import { FriendsScreen } from '../screens/FriendsScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { GameTableScreen } from '../screens/games/GameTableScreen';
+import { GameModeScreen } from '../screens/GameModeScreen';
 import { SlotsScreen } from '../screens/games/SlotsScreen';
 import { RouletteScreen } from '../screens/games/RouletteScreen';
 import { BlackjackScreen } from '../screens/games/BlackjackScreen';
@@ -76,6 +77,7 @@ export function RootNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Tabs" component={TabsNavigator} />
       <Stack.Screen name="GameTable" component={GameTableScreen} options={{ animation: 'fade' }} />
+      <Stack.Screen name="GameMode" component={GameModeScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Slots" component={SlotsScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Roulette" component={RouletteScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Blackjack" component={BlackjackScreen} options={{ animation: 'fade' }} />

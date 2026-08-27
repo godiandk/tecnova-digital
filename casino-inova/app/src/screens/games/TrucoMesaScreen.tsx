@@ -51,7 +51,9 @@ function errorMessage(error: unknown): string {
   return 'Não foi possível falar com o servidor.';
 }
 
-export function TrucoMesaScreen({ navigation }: Props) {
+export function TrucoMesaScreen({ navigation, route }: Props) {
+  /** Variante escolhida na tela anterior — se veio de lá, já entra selecionada. */
+  const variantePreescolhida = route.params?.variant;
   const [config, setConfig] = useState<TrucoConfig | null>(null);
   const [table, setTable] = useState<TrucoTableView | null>(null);
   const [publicTables, setPublicTables] = useState<TrucoPublicTable[]>([]);
@@ -82,13 +84,13 @@ export function TrucoMesaScreen({ navigation }: Props) {
     fetchTrucoConfig()
       .then((data) => {
         setConfig(data);
-        setVariant(data.defaultVariant);
+        setVariant(variantePreescolhida ?? data.defaultVariant);
         setStyle(data.defaultStyle);
         setBuyIn(Math.max(data.minBuyIn, Math.min(200, data.maxBuyIn)));
       })
       .catch((caught) => setError(errorMessage(caught)));
     refreshPublic();
-  }, [refreshPublic]);
+  }, [refreshPublic, variantePreescolhida]);
 
   useEffect(() => {
     const offUpdate = onTrucoTableUpdated((updated) => {

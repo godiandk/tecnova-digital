@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { games } from '../data/games';
+import { getGameMode } from '../data/gameModes';
 import { mockPlayer } from '../data/mockPlayer';
 import { colors, fontFamily, fontSize, spacing } from '../theme';
 import { ChipStack } from '../components/ChipStack';
@@ -16,32 +17,22 @@ export function LobbyScreen() {
   const phase1Games = games.filter((game) => game.phase === 1);
   const laterGames = games.filter((game) => game.phase > 1);
 
-  // Os 8 jogos têm motor de verdade agora. Truco, dominó e poker são contra bot —
-  // multiplayer de verdade com outro jogador ainda depende de sala + WebSocket.
+  /**
+   * Jogo sem variante abre direto; jogo com mais de um jeito de jogar passa pela tela
+   * de escolha. Quem decide é gameModes.ts — o lobby não conhece rota de jogo nenhuma,
+   * então acrescentar um modo novo não mexe aqui.
+   */
   const openGame = (gameId: string) => {
-    if (gameId === 'slots') {
-      navigation.navigate('Slots');
-    } else if (gameId === 'roleta') {
-      navigation.navigate('Roulette');
-    } else if (gameId === 'blackjack') {
-      navigation.navigate('Blackjack');
-    } else if (gameId === 'bacara') {
-      navigation.navigate('Baccarat');
-    } else if (gameId === 'banca-francesa') {
-      navigation.navigate('BancaFrancesa');
-    } else if (gameId === 'bac-bo') {
-      navigation.navigate('BacBo');
-    } else if (gameId === 'stock-market') {
-      navigation.navigate('StockMarket');
-    } else if (gameId === 'truco') {
-      navigation.navigate('Truco');
-    } else if (gameId === 'domino') {
-      navigation.navigate('Domino');
-    } else if (gameId === 'poker') {
-      navigation.navigate('Poker');
-    } else {
-      navigation.navigate('GameTable', { gameId });
+    const mode = getGameMode(gameId);
+    if (mode?.kind === 'direto' && mode.route) {
+      navigation.navigate(mode.route as never);
+      return;
     }
+    if (mode?.kind === 'escolher') {
+      navigation.navigate('GameMode', { gameId });
+      return;
+    }
+    navigation.navigate('GameTable', { gameId });
   };
 
   return (
