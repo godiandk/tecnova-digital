@@ -1,0 +1,24 @@
+# Publicação no Render, em um serviço só.
+#
+# O que este arquivo faz: cria o banco Postgres, cria o serviço web a partir do
+# Dockerfile e liga os dois. DATABASE_URL vem do banco automaticamente e JWT_SECRET é
+# sorteado pelo próprio Render — nenhum segredo fica escrito aqui.
+services:
+  - type: web
+    name: casino-inova
+    runtime: docker
+    dockerfilePath: ./casino-inova/Dockerfile
+    dockerContext: ./casino-inova
+    healthCheckPath: /games/slots/config
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: casino-inova-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+
+databases:
+  - name: casino-inova-db
+    databaseName: casino_inova
+    plan: free

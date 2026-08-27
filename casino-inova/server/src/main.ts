@@ -1,8 +1,10 @@
 import 'reflect-metadata';
 import { networkInterfaces } from 'os';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { UsersService } from './modules/users/users.service';
+import { PASTA_DO_SITE, SITE_PUBLICADO } from './site/pasta-do-site';
 
 /** IP da máquina na rede local — é por ele que o celular enxerga o servidor. */
 function localNetworkAddress(): string | null {
@@ -22,8 +24,10 @@ async function bootstrap() {
     throw new Error('JWT_SECRET não está definida — o servidor não sobe sem ela.');
   }
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.enableCors();
+
+  if (SITE_PUBLICADO) app.useStaticAssets(PASTA_DO_SITE, { index: false });
 
   /*
    * `init()` explícito antes da semente: é ele que dispara o onModuleInit do
@@ -52,3 +56,4 @@ async function bootstrap() {
 }
 
 bootstrap();
+

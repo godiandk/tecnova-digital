@@ -17,8 +17,12 @@ const SERVER_PORT = 3000;
  * servidor. Assim funciona no celular físico, no simulador e no emulador, sem você
  * precisar editar nada.
  *
- * Se um dia isso for pra produção, basta definir `EXPO_PUBLIC_API_URL` com a URL do
- * servidor publicado, que ela tem prioridade sobre tudo.
+ * Publicado, o caminho é outro: o servidor entrega o próprio app como site, então a
+ * API está no MESMO endereço da página e basta usar a origem dela. É o que faz o jogo
+ * funcionar em qualquer domínio sem recompilar e sem configurar CORS.
+ *
+ * `EXPO_PUBLIC_API_URL` continua tendo prioridade sobre tudo, pra quando o servidor
+ * ficar num endereço diferente do site.
  */
 function resolveApiBaseUrl(): string {
   const fromEnv = process.env.EXPO_PUBLIC_API_URL;
@@ -29,7 +33,15 @@ function resolveApiBaseUrl(): string {
 
   if (host) return `http://${host}:${SERVER_PORT}`;
 
-  // Último recurso (build sem Metro): só funciona no simulador da própria máquina.
+  /*
+   * Sem hostUri e rodando no navegador: é o site publicado, servido pelo próprio
+   * servidor. A API está na mesma origem da página.
+   */
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+
+  // Último recurso (build nativo sem Metro): só o simulador da própria máquina.
   return `http://localhost:${SERVER_PORT}`;
 }
 
