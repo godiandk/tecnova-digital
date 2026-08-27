@@ -1,6 +1,9 @@
+import { useEffect } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { LOBBY_UI } from '../data/lobbyAssets';
+import { CURVA, TEMPO } from '../animation';
 import { colors, fontFamily } from '../theme';
 
 interface LevelBarProps {
@@ -34,6 +37,18 @@ export function LevelBar({ level, xp, xpToNextLevel, width }: LevelBarProps) {
   const progresso = xpToNextLevel > 0 ? Math.max(0, Math.min(1, xp / xpToNextLevel)) : 0;
   const brasao = width * BRASAO_TAMANHO;
 
+  /*
+   * O preenchimento cresce até a marca nova em vez de aparecer nela. Ganhar XP passa a
+   * ser uma coisa que a pessoa VÊ acontecer — que é o ponto inteiro de existir uma
+   * barra de progresso em vez de um número.
+   */
+  const preenchido = useSharedValue(0);
+  useEffect(() => {
+    preenchido.value = withTiming(progresso, { duration: TEMPO.contagem, easing: CURVA.saida });
+  }, [progresso, preenchido]);
+
+  const animado = useAnimatedStyle(() => ({ width: width * preenchido.value }));
+
   return (
     <View style={{ width, height }} accessibilityLabel={`Nível ${level}, ${xp} de ${xpToNextLevel} XP`}>
       <Image source={LOBBY_UI.barraNivel} style={styles.camada} resizeMode="contain" />
@@ -43,9 +58,9 @@ export function LevelBar({ level, xp, xpToNextLevel, width }: LevelBarProps) {
         preenchimento continua na largura inteira lá dentro, então ela nunca estica
         nem deforma — só aparece menos dela.
       */}
-      <View style={[styles.recorte, { width: width * progresso }]} pointerEvents="none">
+      <Animated.View style={[styles.recorte, animado]} pointerEvents="none">
         <Image source={LOBBY_UI.barraNivelPreenchimento} style={{ width, height }} resizeMode="contain" />
-      </View>
+      </Animated.View>
 
       <View
         style={[

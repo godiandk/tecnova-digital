@@ -30,8 +30,6 @@ export function LobbyScreen() {
    */
   const larguraBarra = Math.min(larguraConteudo, 460);
 
-  const phase1Games = games.filter((game) => game.phase === 1);
-  const laterGames = games.filter((game) => game.phase > 1);
 
   /**
    * Jogo sem variante abre direto; jogo com mais de um jeito de jogar passa pela tela
@@ -82,25 +80,13 @@ export function LobbyScreen() {
         contentContainerStyle={[styles.scrollContent, { maxWidth: LARGURA_MAXIMA, width: '100%', alignSelf: 'center' }]}
         showsVerticalScrollIndicator={false}
       >
+        {/* Os dez jogos estão prontos e abertos — não existe mais "chegando em breve". */}
         <Text style={styles.sectionLabel}>Mesas abertas</Text>
         <View style={styles.grid}>
-          {phase1Games.map((game) => (
+          {games.map((game, indice) => (
             <GameTile
               key={game.id}
-              game={game}
-              playerLevel={jogador?.level ?? 1}
-              largura={grade.largura}
-              altura={grade.altura}
-              onPress={() => openGame(game.id)}
-            />
-          ))}
-        </View>
-
-        <Text style={[styles.sectionLabel, { marginTop: spacing.xl }]}>Chegando em breve</Text>
-        <View style={styles.grid}>
-          {laterGames.map((game) => (
-            <GameTile
-              key={game.id}
+              indice={indice}
               game={game}
               playerLevel={jogador?.level ?? 1}
               largura={grade.largura}

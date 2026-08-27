@@ -1,6 +1,9 @@
+import { useEffect } from 'react';
 import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 import { LOBBY_UI } from '../data/lobbyAssets';
+import { useContagem, MOLA, TEMPO } from '../animation';
 import { colors, fontFamily, fontSize } from '../theme';
 
 interface ChipStackProps {
@@ -38,8 +41,24 @@ function tamanhoDaFonte(altura: number, digitos: number): number {
 export function ChipStack({ amount, onPressAdd, width = 200 }: ChipStackProps) {
   const height = Math.round(width * PROPORCAO);
 
+  /*
+   * O saldo sobe contando, e a cápsula dá um pulinho quando o número muda.
+   *
+   * Sem isso, ganhar 500 fichas é um número diferente na tela e nada mais. Com isso, o
+   * ganho vira acontecimento — e o tamanho do ganho dá pra sentir pela duração da
+   * contagem, sem ninguém precisar ler nada.
+   */
+  const exibido = useContagem(amount, TEMPO.contagem);
+  const pulo = useSharedValue(1);
+
+  useEffect(() => {
+    pulo.value = withSequence(withTiming(1.08, { duration: 140 }), withSpring(1, MOLA));
+  }, [amount, pulo]);
+
+  const animado = useAnimatedStyle(() => ({ transform: [{ scale: pulo.value }] }));
+
   return (
-    <View style={[styles.container, { width, height }]}>
+    <Animated.View style={[styles.container, { width, height }, animado]}>
       <Image source={LOBBY_UI.hudFichas} style={styles.frame} resizeMode="contain" />
       <View
         style={[
@@ -54,7 +73,7 @@ export function ChipStack({ amount, onPressAdd, width = 200 }: ChipStackProps) {
           de virar "132.5...". Sem isso, o jogador não enxerga o próprio saldo.
         */}
         <Text style={[styles.amount, { fontSize: tamanhoDaFonte(height, formatChips(amount).length) }]} numberOfLines={1}>
-          {formatChips(amount)}
+          {formatChips(exibido)}
         </Text>
       </View>
       {onPressAdd && (
@@ -65,7 +84,7 @@ export function ChipStack({ amount, onPressAdd, width = 200 }: ChipStackProps) {
           accessibilityLabel="Comprar fichas"
         />
       )}
-    </View>
+    </Animated.View>
   );
 }
 

@@ -1,8 +1,9 @@
-import { Pressable, View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Game } from '../data/games';
 import { GAME_POSTERS, LOBBY_UI } from '../data/lobbyAssets';
+import { Entrada, Pressionavel } from '../animation';
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
 
 interface GameTileProps {
@@ -11,6 +12,8 @@ interface GameTileProps {
   /** Vem do lobby, que é quem sabe quantas colunas cabem na tela agora. */
   largura: number;
   altura: number;
+  /** Posição na grade — define o atraso da entrada em cascata. */
+  indice: number;
   onPress: () => void;
 }
 
@@ -19,16 +22,13 @@ interface GameTileProps {
  * nome — só a informação que a arte não tem (se é contra a casa ou mesa com gente, e o
  * nível que falta quando ainda está travado).
  */
-export function GameTile({ game, playerLevel, largura, altura, onPress }: GameTileProps) {
+export function GameTile({ game, playerLevel, largura, altura, indice, onPress }: GameTileProps) {
   const locked = playerLevel < game.minLevel;
   const poster = GAME_POSTERS[game.id];
 
   return (
-    <Pressable
-      onPress={locked ? undefined : onPress}
-      disabled={locked}
-      style={({ pressed }) => [{ width: largura }, pressed && styles.pressed]}
-    >
+    <Entrada indice={indice}>
+      <Pressionavel onPress={onPress} disabled={locked} style={{ width: largura }}>
       <View style={[styles.posterFrame, { width: largura, height: altura }]}>
         {poster ? (
           <Image source={poster} style={styles.poster} resizeMode="cover" />
@@ -63,13 +63,13 @@ export function GameTile({ game, playerLevel, largura, altura, onPress }: GameTi
         <Text style={styles.format} numberOfLines={1}>
           {game.format === 'vs-casa' ? 'Contra a casa' : 'Mesa com gente'}
         </Text>
-      )}
-    </Pressable>
+        )}
+      </Pressionavel>
+    </Entrada>
   );
 }
 
 const styles = StyleSheet.create({
-  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   posterFrame: {
     borderRadius: radius.lg,
     overflow: 'hidden',
