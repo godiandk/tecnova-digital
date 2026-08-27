@@ -11,6 +11,8 @@ import { BancaFrancesaTable, BancaFrancesaTableService, TableVisibility } from '
 import { FriendsService } from '../friends/friends.service';
 import { BancaFrancesaBet } from '../games/banca-francesa/banca-francesa.engine';
 import { ChatScope, ChatService } from '../chat/chat.service';
+import { TrucoOnlineTable, TrucoTableService } from './truco-table.service';
+import { Card, TrucoSignalId, TrucoStyle, TrucoVariant } from '../games/truco/truco.config';
 
 /**
  * Uma mesa compartilhada não precisa esconder nada de ninguém (todo mundo vê a
@@ -29,6 +31,7 @@ export class RoomsGateway implements OnGatewayDisconnect {
     private readonly tables: BancaFrancesaTableService,
     private readonly friends: FriendsService,
     private readonly chat: ChatService,
+    private readonly trucoTables: TrucoTableService,
   ) {}
 
   handleDisconnect(socket: Socket) {
@@ -170,6 +173,127 @@ export class RoomsGateway implements OnGatewayDisconnect {
     for (const socketId of this.socketsByUser.get(userId) ?? []) {
       this.server.to(socketId).emit(event, payload);
     }
+  }
+
+  // ---------- Truco 2x2 ----------
+  //
+  // Diferente da banca francesa, aqui NÃO dá pra transmitir o mesmo payload pra
+  // todo mundo: cada pessoa só pode ver as próprias cartas. Por isso o broadcast é
+  // feito socket a socket, com uma visão montada pra cada jogador (`viewFor`).
+
+  @SubscribeMessage('truco:criar-mesa')
+  handleTrucoCreate(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody()
+    body: { userId: string; visibility: TableVisibility; variant?: TrucoVariant; style?: TrucoStyle; buyIn: number },
+  ) {
+    return this.safe(() => {
+      const table = this.trucoTables.createTable(body.userId, {
+        visibility: body.visibility,
+        variant: body.variant,
+        style: body.style,
+        buyIn: body.buyIn,
+      });
+      socket.join(table.id);
+      return this.trucoTables.viewFor(table, body.userId);
+    });
+  }
+
+  @SubscribeMessage('truco:mesas-publicas')
+  handleTrucoListPublic() {
+    return this.safe(() => this.trucoTables.listPublicTables());
+  }
+
+  @SubscribeMessage('truco:entrar-por-codigo')
+  handleTrucoJoinByCode(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; code: string }) {
+    return this.safe(() => {
+      const table = this.trucoTables.joinByCode(body.userId, body.code);
+      socket.join(table.id);
+      return this.broadcastTruco(table, body.userId);
+    });
+  }
+
+  @SubscribeMessage('truco:entrar-por-id')
+  handleTrucoJoinById(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
+    return this.safe(() => {
+      const table = this.trucoTables.joinById(body.userId, body.tableId);
+      socket.join(table.id);
+      return this.broadcastTruco(table, body.userId);
+    });
+  }
+
+  @SubscribeMessage('truco:completar-com-bot')
+  handleTrucoAddBot(@MessageBody() body: { userId: string; tableId: string }) {
+    return this.safe(() => this.broadcastTruco(this.trucoTables.addBot(body.userId, body.tableId), body.userId));
+  }
+
+  @SubscribeMessage('truco:comecar')
+  handleTrucoStart(@MessageBody() body: { userId: string; tableId: string }) {
+    return this.safe(() => this.broadcastTruco(this.trucoTables.start(body.userId, body.tableId), body.userId));
+  }
+
+  @SubscribeMessage('truco:jogar-carta')
+  handleTrucoPlayCard(@MessageBody() body: { userId: string; tableId: string; card: Card }) {
+    return this.safe(() =>
+      this.broadcastTruco(this.trucoTables.playCard(body.userId, body.tableId, body.card), body.userId),
+    );
+  }
+
+  @SubscribeMessage('truco:pedir')
+  handleTrucoCallRaise(@MessageBody() body: { userId: string; tableId: string }) {
+    return this.safe(() => this.broadcastTruco(this.trucoTables.callRaise(body.userId, body.tableId), body.userId));
+  }
+
+  @SubscribeMessage('truco:responder')
+  handleTrucoRespond(
+    @MessageBody() body: { userId: string; tableId: string; response: 'aceitar' | 'correr' | 'aumentar' },
+  ) {
+    return this.safe(() =>
+      this.broadcastTruco(this.trucoTables.respondRaise(body.userId, body.tableId, body.response), body.userId),
+    );
+  }
+
+  /**
+   * Sinal (a careta) vai SÓ pro socket do parceiro — nunca pra sala. Se fosse
+   * transmitido pra mesa, os adversários veriam, e o sinal perderia o sentido.
+   */
+  @SubscribeMessage('truco:sinal')
+  handleTrucoSignal(@MessageBody() body: { userId: string; tableId: string; signalId: TrucoSignalId }) {
+    return this.safe(() => {
+      const result = this.trucoTables.makeSignal(body.userId, body.tableId, body.signalId);
+      if (result.partnerUserId) {
+        this.emitToUser(result.partnerUserId, 'truco:sinal-recebido', {
+          signal: result.signal,
+          fromName: result.fromName,
+        });
+      }
+      return { enviado: Boolean(result.partnerUserId), signal: result.signal };
+    });
+  }
+
+  @SubscribeMessage('truco:sair')
+  handleTrucoLeave(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
+    return this.safe(() => {
+      const result = this.trucoTables.leaveTable(body.userId, body.tableId);
+      socket.leave(body.tableId);
+      if ('removed' in result) {
+        this.server.to(body.tableId).emit('truco:mesa-fechada');
+        return { removed: true as const };
+      }
+      return this.broadcastTruco(result, body.userId);
+    });
+  }
+
+  /**
+   * Manda pra cada jogador a visão dele — é o que impede a mão de um vazar pro outro.
+   * Bots não têm socket, então são pulados. Devolve a visão de quem chamou, pro ack.
+   */
+  private broadcastTruco(table: TrucoOnlineTable, callerUserId: string) {
+    for (const seat of table.seats) {
+      if (seat.isBot) continue;
+      this.emitToUser(seat.userId, 'truco:mesa-atualizada', this.trucoTables.viewFor(table, seat.userId));
+    }
+    return this.trucoTables.viewFor(table, callerUserId);
   }
 
   /**
