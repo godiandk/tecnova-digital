@@ -99,9 +99,14 @@ export function TrucoScreen({ navigation }: Props) {
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </Pressable>
           <ChipStack amount={balance} />
-          <Pressable onPress={() => setTutorialVisible(true)} style={styles.iconButton} hitSlop={12}>
-            <Ionicons name="help-circle" size={24} color={colors.goldBright} />
-          </Pressable>
+          <View style={styles.topActions}>
+            <Pressable onPress={() => navigation.navigate('TrucoMesa')} style={styles.iconButton} hitSlop={12}>
+              <Ionicons name="people" size={22} color={colors.goldBright} />
+            </Pressable>
+            <Pressable onPress={() => setTutorialVisible(true)} style={styles.iconButton} hitSlop={12}>
+              <Ionicons name="help-circle" size={24} color={colors.goldBright} />
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.titleRow}>
@@ -239,6 +244,7 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: spacing.sm,
   },
+  topActions: { flexDirection: 'row', gap: spacing.xs },
   iconButton: {
     width: 40,
     height: 40,

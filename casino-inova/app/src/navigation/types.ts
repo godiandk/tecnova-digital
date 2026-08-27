@@ -18,6 +18,7 @@ export type RootStackParamList = {
   BacBo: undefined;
   StockMarket: undefined;
   Truco: undefined;
+  TrucoMesa: undefined;
   Domino: undefined;
   Poker: undefined;
 };
