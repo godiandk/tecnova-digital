@@ -76,7 +76,7 @@ O app **descobre o endereço do servidor sozinho** — em celular físico ele l�
 Nada disto é esquecimento — é o que ficou de fora do escopo construído até aqui, em ordem de importância:
 
 1. **Autenticação de verdade.** Hoje o `userId` viaja explícito em cada chamada e `GET /users/me` devolve um usuário fixo. Precisa de Firebase Auth (Google, Facebook, Apple, e-mail/senha).
-2. **Compra de verdade.** `POST /store/comprar` credita fichas sem validar recibo nenhum — serve pra testar o resto do fluxo e **não pode ir pra produção assim**. O caminho é RevenueCat validando o recibo da App Store/Play Store e chamando um webhook.
+2. **Ligar a RevenueCat de verdade.** O webhook de compra já existe, exige assinatura e não credita duas vezes se o evento for reenviado. A rota de compra de teste (que credita sem ninguém pagar) vem **trancada por padrão** — só responde com `PERMITIR_COMPRA_DE_TESTE=true`. O que falta é criar a conta na RevenueCat, apontar o webhook dela pra cá e conferir o formato exato do payload.
 3. **Poker multiplayer.** O único jogo de mesa que continua só contra bot — mesa de 2 a 9 lugares com side pot é bem mais trabalho que o 2x2 de assento fixo.
 4. **Planilha de economia** (curva de nível, preço dos pacotes) — documento de negócio, não código.
 

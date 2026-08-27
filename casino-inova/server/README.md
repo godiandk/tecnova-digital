@@ -46,7 +46,8 @@ ficha de verdade — fica anotado aqui como pendência conhecida, não como deci
 | `GET /wallet/:userId/saldo` | Soma todas as entradas do ledger daquele usuário. |
 | `GET /wallet/:userId/historico` | Lista todas as entradas do ledger daquele usuário. |
 | `GET /store/pacotes` | Lista os 4 pacotes de fichas (bronze/prata/ouro/diamante). |
-| `POST /store/comprar` `{ userId, packageId }` | Credita as fichas do pacote na carteira — simula o que a RevenueCat faria depois de validar um recibo real. |
+| `POST /store/webhook/compra` | **Caminho de produção.** O provedor de pagamento (RevenueCat) valida o recibo com a App Store / Play Store e chama aqui. Exige `Authorization: Bearer <hmac-sha256 do corpo>` com o segredo de `PURCHASE_WEBHOOK_SECRET`. |
+| `POST /store/comprar` `{ userId, packageId }` | **Caminho de teste, e só isso.** Credita ficha sem ninguém ter pago. Só responde com `PERMITIR_COMPRA_DE_TESTE=true` definida; sem ela, recusa com 403. |
 | `GET /games/slots/config` | Símbolos, aposta mín/máx e o **RTP teórico exato** (calculado por fórmula, não chutado — ver `slots.engine.ts`). |
 | `POST /games/slots/girar` `{ userId, bet }` | Debita a aposta, sorteia a grade 3x3 no servidor, credita o prêmio se houver e devolve o resultado. |
 | `GET /games/roleta/config` | Números vermelhos, aposta mín/máx, multiplicador por tipo de aposta e o RTP (36/37 ≈ 97,30%, fixo por regra matemática da roleta europeia). |
@@ -295,6 +296,34 @@ Blackjack não tem RTP fixo — depende da estratégia de quem joga. `npm run ve
 
 Bacará não tem decisão de jogador nenhuma, então o RTP de cada aposta é mesmo um número fixo — só complexo demais pra fórmula fechada por causa da tabela de compra da 3ª carta. `npm run verify:bacara` mede por simulação (1 milhão de rodadas) o RTP de jogador, banca e empate.
 
+## A loja, e por que a compra de teste vem trancada
+
+Ficha entra na carteira por dois caminhos, e eles são bem diferentes:
+
+**Produção** é o webhook. A compra acontece na App Store / Play Store, o provedor valida
+o recibo com a loja e só então chama `POST /store/webhook/compra`. Quem não tem o segredo
+de `PURCHASE_WEBHOOK_SECRET` não consegue chamar. A assinatura é conferida com
+`timingSafeEqual`, não com `===`: comparação de string comum para no primeiro byte
+diferente, e o tempo que ela leva vaza quantos bytes iniciais o atacante já acertou, o
+que permite descobrir a assinatura byte a byte.
+
+Reentrega não credita duas vezes. O id do evento do provedor é a chave primária de
+`purchases`, e a inserção usa `ON CONFLICT DO NOTHING` — provedor que não recebe o 200
+reenvia o evento, e isso é normal; dobrar as fichas de quem pagou uma vez só não é.
+
+**Teste** é `POST /store/comprar`, que credita ficha sem ninguém ter pago nada. Ele existe
+pra dar pra exercitar carteira, loja e jogo sem depender de loja de aplicativo. Só que em
+produção isso seria fichas de graça pra quem descobrisse o endereço — então ele **só
+responde quando `PERMITIR_COMPRA_DE_TESTE=true` está definida**. Produção simplesmente não
+define. Vir trancado por padrão, em vez de destrancado com um aviso no README, é o que
+garante que esquecer de configurar erra pro lado seguro.
+
+Pra desenvolver localmente:
+
+```
+DATABASE_URL=... PERMITIR_COMPRA_DE_TESTE=true npm run start:dev
+```
+
 ## A carteira, e por que o débito é atômico
 
 O ledger é append-only: nenhuma entrada é editada ou apagada, e o saldo é sempre a SOMA
@@ -321,7 +350,7 @@ origem de cada entrada sobrevivem a um processo novo.
 Nesta ordem:
 
 1. **Autenticação** — Firebase Auth com Google, Facebook, Apple e e-mail/senha; `GET /users/me` passa a ler o usuário do token, não um valor fixo.
-2. **Compra real** — integrar RevenueCat: o app faz a compra na App Store/Play Store, a RevenueCat valida o recibo e chama um webhook aqui, que só então chama `walletService.credit(...)`. O endpoint `POST /store/comprar` atual serve pra testar o resto do fluxo enquanto isso não existe — ele não deve ir para produção como está, porque hoje qualquer um pode chamá-lo e "comprar" fichas de graça.
+2. **Ligar a RevenueCat de verdade** — o webhook já existe e está trancado (ver "A loja" abaixo); o que falta é criar a conta, apontar o webhook dela pra cá e conferir o formato exato do payload que ela manda.
 4. **Poker multiplayer** — o único jogo de mesa que continua só contra bot.
 
 O módulo de **amigos** já existe e funciona (pedir/aceitar/recusar/listar); o que falta nele é só a persistência do item 1, junto com todo o resto.

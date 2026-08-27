@@ -78,3 +78,14 @@ CREATE TABLE IF NOT EXISTS tournament_settlements (
   settled_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (tournament_id, window_start)
 );
+
+-- Compras já processadas. A chave primária é o id do evento do provedor de pagamento:
+-- se ele reenviar o mesmo evento (o que provedores fazem quando não recebem o 200),
+-- a segunda inserção viola a chave e a ficha não é creditada de novo.
+CREATE TABLE IF NOT EXISTS purchases (
+  provider_event_id TEXT        PRIMARY KEY,
+  user_id           TEXT        NOT NULL REFERENCES users(id),
+  package_id        TEXT        NOT NULL,
+  chips             BIGINT      NOT NULL CHECK (chips > 0),
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
