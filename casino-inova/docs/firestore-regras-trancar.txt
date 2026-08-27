@@ -1,20 +1,19 @@
-COLE ISTO EM: console.firebase.google.com → Cloud Firestore → aba "Regras" → Publicar
-================================================================================
-Nosso app NÃO usa o Firestore. Tudo (jogador, ficha, partida, ranking) está no
-PostgreSQL do nosso servidor. O Firestore só foi criado junto com o projeto.
-
-Um Firestore em "modo de teste" fica aberto pra qualquer pessoa ler e escrever
-por 30 dias. E a chave pública do Firebase está dentro do aplicativo — ou seja,
-qualquer um que abra o app tem o endereço.
-
-Negar tudo não quebra nada aqui, porque nada no app lê ou escreve no Firestore.
-================================================================================
+// Regras do Cloud Firestore do projeto inova-casino.
+//
+// Nosso app NÃO usa o Firestore: jogador, ficha, partida e ranking estão todos
+// no PostgreSQL do nosso servidor. O Firestore só foi criado junto com o projeto.
+//
+// Um Firestore em "modo de teste" fica aberto pra qualquer pessoa ler e escrever
+// por 30 dias. A chave pública do Firebase está dentro do aplicativo, então o
+// endereço não é segredo pra ninguém.
+//
+// Negar tudo não quebra nada aqui, justamente porque nada no app usa o Firestore.
 
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // O app não usa o Firestore. Nada entra, nada sai.
+    // Nada entra, nada sai.
     match /{document=**} {
       allow read, write: if false;
     }
