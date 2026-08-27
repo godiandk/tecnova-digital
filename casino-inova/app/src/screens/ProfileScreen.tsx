@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ActivityIndicator, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { mockPlayer } from '../data/mockPlayer';
@@ -7,7 +7,7 @@ import { ApiError } from '../api/client';
 import { redeemCoupon } from '../api/coupons';
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
 import { CasinoCard } from '../components/CasinoCard';
-import { LevelBadge } from '../components/LevelBadge';
+import { LevelBar } from '../components/LevelBar';
 import { GoldButton } from '../components/GoldButton';
 
 const VIP_LABEL: Record<typeof mockPlayer.vipTier, string> = {
@@ -17,8 +17,10 @@ const VIP_LABEL: Record<typeof mockPlayer.vipTier, string> = {
   diamante: 'Diamante',
 };
 
+/** Largura útil do cartão de nível: a tela menos a margem e o respiro do cartão. */
+const LARGURA_BARRA = Dimensions.get('window').width - spacing.xl * 2 - spacing.lg * 2;
+
 export function ProfileScreen() {
-  const xpProgress = mockPlayer.xp / mockPlayer.xpToNextLevel;
 
   const [balance, setBalance] = useState(mockPlayer.chipBalance);
   const [couponCode, setCouponCode] = useState('');
@@ -52,17 +54,15 @@ export function ProfileScreen() {
       </View>
 
       <CasinoCard style={styles.levelCard}>
-        <View style={styles.levelRow}>
-          <LevelBadge level={mockPlayer.level} size={44} />
-          <View style={styles.levelInfo}>
-            <Text style={styles.levelLabel}>
-              Nível {mockPlayer.level} · {mockPlayer.xp}/{mockPlayer.xpToNextLevel} XP
-            </Text>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${Math.min(xpProgress * 100, 100)}%` }]} />
-            </View>
-          </View>
-        </View>
+        <LevelBar
+          level={mockPlayer.level}
+          xp={mockPlayer.xp}
+          xpToNextLevel={mockPlayer.xpToNextLevel}
+          width={LARGURA_BARRA}
+        />
+        <Text style={styles.levelLabel}>
+          {mockPlayer.xp} de {mockPlayer.xpToNextLevel} XP pro nível {mockPlayer.level + 1}
+        </Text>
       </CasinoCard>
 
       <View style={styles.statsRow}>
@@ -121,12 +121,8 @@ const styles = StyleSheet.create({
   name: { fontFamily: fontFamily.displayBold, fontSize: fontSize.xl, color: colors.textPrimary },
   vipPill: { backgroundColor: colors.backgroundElevated, borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: spacing.md },
   vipLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.xs, color: colors.goldBright },
-  levelCard: { marginBottom: spacing.lg },
-  levelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  levelInfo: { flex: 1, gap: spacing.xs },
-  levelLabel: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.textSecondary },
-  progressTrack: { height: 8, borderRadius: radius.pill, backgroundColor: colors.background, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: colors.goldBright },
+  levelCard: { marginBottom: spacing.lg, gap: spacing.sm, alignItems: 'center' },
+  levelLabel: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.xs, color: colors.textFaint },
   statsRow: { flexDirection: 'row', gap: spacing.lg, marginBottom: spacing.lg },
   statCard: { flex: 1, alignItems: 'center', gap: spacing.xs },
   statValue: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },

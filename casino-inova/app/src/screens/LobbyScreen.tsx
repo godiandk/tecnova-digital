@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ImageBackground, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -7,9 +7,12 @@ import { getGameMode } from '../data/gameModes';
 import { mockPlayer } from '../data/mockPlayer';
 import { colors, fontFamily, fontSize, spacing } from '../theme';
 import { ChipStack } from '../components/ChipStack';
-import { LevelBadge } from '../components/LevelBadge';
+import { LevelBar } from '../components/LevelBar';
 import { GameTile } from '../components/GameTile';
 import { useRootNavigation } from '../navigation/useRootNavigation';
+
+/** A barra de nível ocupa a linha inteira, descontada a margem lateral do lobby. */
+const LARGURA_BARRA = Dimensions.get('window').width - spacing.xl * 2;
 
 export function LobbyScreen() {
   const navigation = useRootNavigation();
@@ -44,14 +47,22 @@ export function LobbyScreen() {
       <LinearGradient colors={['rgba(11,15,13,0.35)', colors.background]} locations={[0, 0.85]} style={StyleSheet.absoluteFillObject} />
       <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Bem-vindo de volta</Text>
-          <Text style={styles.playerName}>{mockPlayer.name}</Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.greeting}>Bem-vindo de volta</Text>
+            <Text style={styles.playerName}>{mockPlayer.name}</Text>
+          </View>
+          <ChipStack
+            amount={mockPlayer.chipBalance}
+            onPressAdd={() => navigation.navigate('Tabs', { screen: 'Store' } as never)}
+          />
         </View>
-        <View style={styles.headerRight}>
-          <ChipStack amount={mockPlayer.chipBalance} />
-          <LevelBadge level={mockPlayer.level} />
-        </View>
+        <LevelBar
+          level={mockPlayer.level}
+          xp={mockPlayer.xp}
+          xpToNextLevel={mockPlayer.xpToNextLevel}
+          width={LARGURA_BARRA}
+        />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -88,16 +99,14 @@ const styles = StyleSheet.create({
   background: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1 },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.lg,
+    gap: spacing.sm,
   },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   greeting: { fontFamily: fontFamily.body, fontSize: fontSize.sm, color: colors.textFaint },
   playerName: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   scrollContent: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxxl },
   sectionLabel: {
     fontFamily: fontFamily.bodySemiBold,

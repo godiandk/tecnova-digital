@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ImageBackground, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -7,9 +7,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { getGameById } from '../data/games';
 import { getGameMode, GameModeOption } from '../data/gameModes';
-import { TABLE_IMAGES } from '../data/tableImages';
-import { GameBackdrop } from '../components/GameBackdrop';
+import { LOBBY_UI, MODE_BANNERS } from '../data/lobbyAssets';
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
+
+/** Os cartazes de variante são 1200x600 — deitados, empilhados numa lista. */
+const LARGURA_CARTAZ = Dimensions.get('window').width - spacing.lg * 2;
+const ALTURA_CARTAZ = Math.round(LARGURA_CARTAZ / 2);
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GameMode'>;
 
@@ -55,7 +58,8 @@ export function GameModeScreen({ navigation, route }: Props) {
   };
 
   return (
-    <GameBackdrop source={TABLE_IMAGES[gameId]}>
+    <ImageBackground source={LOBBY_UI.fundoSelecaoModo} style={styles.fundo} resizeMode="cover">
+      <View style={styles.veu} />
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable onPress={() => navigation.goBack()} style={styles.iconButton} hitSlop={12}>
@@ -73,6 +77,7 @@ export function GameModeScreen({ navigation, route }: Props) {
                 <Text style={styles.groupTitle}>{grupo.title}</Text>
                 {grupo.options.map((option) => {
                   const selecionado = escolhido?.id === option.id;
+                  const cartaz = MODE_BANNERS[option.id];
                   return (
                     <Pressable
                       key={option.id}
@@ -84,20 +89,32 @@ export function GameModeScreen({ navigation, route }: Props) {
                         option.comingSoon && styles.optionDisabled,
                       ]}
                     >
-                      <View style={styles.optionText}>
-                        <View style={styles.optionHeader}>
+                      {/*
+                        O cartaz já traz o nome da opção escrito na arte. Quando não
+                        existe cartaz pra essa opção, o nome aparece em texto — assim
+                        acrescentar um modo novo em gameModes.ts não quebra a tela
+                        enquanto a arte dele não chega.
+                      */}
+                      {cartaz ? (
+                        <Image source={cartaz} style={styles.cartaz} resizeMode="cover" />
+                      ) : (
+                        <View style={styles.cartazVazio}>
                           <Text style={styles.optionLabel}>{option.label}</Text>
-                          {option.comingSoon && <Text style={styles.badge}>em breve</Text>}
                         </View>
-                        <Text style={styles.optionHint}>{option.hint}</Text>
-                      </View>
-                      {!option.comingSoon && (
-                        <Ionicons
-                          name={selecionado ? 'checkmark-circle' : 'chevron-forward'}
-                          size={22}
-                          color={selecionado ? colors.goldBright : colors.textFaint}
-                        />
                       )}
+
+                      <View style={styles.rodape}>
+                        <Text style={styles.optionHint}>{option.hint}</Text>
+                        {option.comingSoon ? (
+                          <Text style={styles.badge}>em breve</Text>
+                        ) : (
+                          <Ionicons
+                            name={selecionado ? 'checkmark-circle' : 'chevron-forward'}
+                            size={20}
+                            color={selecionado ? colors.goldBright : colors.textFaint}
+                          />
+                        )}
+                      </View>
                     </Pressable>
                   );
                 })}
@@ -106,11 +123,13 @@ export function GameModeScreen({ navigation, route }: Props) {
           })}
         </ScrollView>
       </SafeAreaView>
-    </GameBackdrop>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  fundo: { flex: 1, backgroundColor: colors.background },
+  veu: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(11,15,13,0.55)' },
   safe: { flex: 1, paddingHorizontal: spacing.lg },
   fallback: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },
@@ -133,20 +152,29 @@ const styles = StyleSheet.create({
     color: colors.textFaint,
   },
   option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
     backgroundColor: colors.backgroundCard,
     borderRadius: radius.md,
     borderWidth: 2,
-    borderColor: colors.feltLine,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    borderColor: 'transparent',
+    overflow: 'hidden',
   },
-  optionSelected: { borderColor: colors.goldBright, backgroundColor: colors.felt },
+  optionSelected: { borderColor: colors.goldBright },
   optionDisabled: { opacity: 0.45 },
-  optionText: { flex: 1, gap: 2 },
-  optionHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  cartaz: { width: '100%', height: ALTURA_CARTAZ },
+  cartazVazio: {
+    width: '100%',
+    height: ALTURA_CARTAZ,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.felt,
+  },
+  rodape: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
   optionLabel: { fontFamily: fontFamily.displaySemiBold, fontSize: fontSize.md, color: colors.textPrimary },
   badge: {
     fontFamily: fontFamily.body,
@@ -158,6 +186,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 1,
   },
-  optionHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
+  optionHint: { flex: 1, fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textSecondary },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger },
 });

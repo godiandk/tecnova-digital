@@ -39,7 +39,7 @@ A regra aparece escrita na tela de torneios, do mesmo jeito que o RTP aparece na
 
 ## O que tem em cada pasta
 
-**`app/`** — o app mobile (Expo + React Native + TypeScript). Sistema de design próprio, navegação entre as 5 áreas (Lobby, Torneios, Loja, Amigos, Perfil), tela de cada jogo, tela de escolha de variante/modo pros jogos que têm mais de um jeito de jogar, chat de mesa em todas as mesas online (com aba separada pra falar só com o parceiro no truco e no dominó 2x2), painel de placar de histórico e tutorial "como jogar" por jogo escrito pra quem nunca jogou. As imagens já integradas vivem em `app/assets/images/` (235 arquivos, otimizados).
+**`app/`** — o app mobile (Expo + React Native + TypeScript). Sistema de design próprio, navegação entre as 5 áreas (Lobby, Torneios, Loja, Amigos, Perfil), tela de cada jogo, tela de escolha de variante/modo pros jogos que têm mais de um jeito de jogar, chat de mesa em todas as mesas online (com aba separada pra falar só com o parceiro no truco e no dominó 2x2), painel de placar de histórico e tutorial "como jogar" por jogo escrito pra quem nunca jogou. As imagens já integradas vivem em `app/assets/images/` (263 arquivos, otimizados) — incluindo o cartaz vertical de cada jogo no lobby, os cartazes de variante e as peças de HUD (cápsula de fichas, barra de nível, selo de jogo travado).
 
 **`server/`** — o backend (NestJS + TypeScript): usuários, carteira de fichas com ledger append-only, loja, cupons, papéis e permissões, amigos, os 10 motores de jogo, o placar de histórico, o chat, os torneios e o gateway WebSocket das mesas online. Todos os sorteios acontecem no servidor — o app nunca decide resultado. Ver `server/README.md` pra rota por rota, evento por evento e a matriz de permissões.
 
