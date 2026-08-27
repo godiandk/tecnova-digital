@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
+import { TournamentsService } from '../../tournaments/tournaments.service';
 import { BoardEnd, canPlay, chooseBotMove, otherEnd, shuffle, tileMatches, tileSum } from './domino.engine';
 import { buildTileSet, HAND_SIZE, MATCH_WIN_TOTAL_MULTIPLIER, MAX_BUY_IN, MIN_BUY_IN, Tile } from './domino.config';
 
@@ -21,11 +22,17 @@ interface DominoMatch {
  * + WebSocket, que não existe neste esqueleto ainda. O jogador sempre abre a partida
  * (simplificação — dominó de verdade decide quem abre pela maior pedra dupla).
  */
+/** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
+const GAME_ID = 'domino';
+
 @Injectable()
 export class DominoService {
   private readonly matches = new Map<string, DominoMatch>();
 
-  constructor(private readonly walletService: WalletService) {}
+  constructor(
+    private readonly walletService: WalletService,
+    private readonly tournaments: TournamentsService,
+  ) {}
 
   getConfig() {
     return { minBuyIn: MIN_BUY_IN, maxBuyIn: MAX_BUY_IN, handSize: HAND_SIZE };
@@ -40,7 +47,7 @@ export class DominoService {
       throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
     }
 
-    this.walletService.debit(userId, buyIn, 'aposta');
+    this.walletService.debit(userId, buyIn, 'aposta', GAME_ID);
     const deck = shuffle(buildTileSet());
     const match: DominoMatch = {
       buyIn,
@@ -154,11 +161,15 @@ export class DominoService {
   private awardMatch(userId: string, match: DominoMatch, winner: 'jogador' | 'bot' | 'empate') {
     match.finished = true;
     match.matchOutcome = winner;
+    // Empate devolve o buy-in: 0 ponto de torneio, que é exatamente o certo.
+    const retorno =
+      winner === 'jogador' ? match.buyIn * MATCH_WIN_TOTAL_MULTIPLIER : winner === 'empate' ? match.buyIn : 0;
     if (winner === 'jogador') {
-      this.walletService.credit(userId, match.buyIn * MATCH_WIN_TOTAL_MULTIPLIER, 'premio');
+      this.walletService.credit(userId, retorno, 'premio', GAME_ID);
     } else if (winner === 'empate') {
-      this.walletService.credit(userId, match.buyIn, 'ajuste');
+      this.walletService.credit(userId, match.buyIn, 'ajuste', GAME_ID);
     }
+    this.tournaments.recordRound(userId, GAME_ID, match.buyIn, retorno);
   }
 
   private requireMatch(userId: string): DominoMatch {

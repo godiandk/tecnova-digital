@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
+import { TournamentsService } from '../../tournaments/tournaments.service';
 import {
   buildDeck,
   botShouldCallTruco,
@@ -61,11 +62,17 @@ interface TrucoMatch {
  * carta, desempate de mão, pedir truco) jogáveis sozinho, e é a base que o motor
  * multiplayer real vai reaproveitar quando existir sala.
  */
+/** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
+const GAME_ID = 'truco';
+
 @Injectable()
 export class TrucoService {
   private readonly matches = new Map<string, TrucoMatch>();
 
-  constructor(private readonly walletService: WalletService) {}
+  constructor(
+    private readonly walletService: WalletService,
+    private readonly tournaments: TournamentsService,
+  ) {}
 
   getConfig() {
     return {
@@ -95,7 +102,7 @@ export class TrucoService {
       throw new BadRequestException('Estilo inválido — use "sujo" ou "limpo".');
     }
 
-    this.walletService.debit(userId, buyIn, 'aposta');
+    this.walletService.debit(userId, buyIn, 'aposta', GAME_ID);
     const match: TrucoMatch = {
       buyIn,
       variant,
@@ -296,9 +303,12 @@ export class TrucoService {
     if (match.playerScore >= target || match.botScore >= target) {
       match.finished = true;
       match.matchOutcome = match.playerScore >= target ? 'jogador' : 'bot';
-      if (match.matchOutcome === 'jogador') {
-        this.walletService.credit(userId, match.buyIn * MATCH_WIN_TOTAL_MULTIPLIER, 'premio');
+      const retorno = match.matchOutcome === 'jogador' ? match.buyIn * MATCH_WIN_TOTAL_MULTIPLIER : 0;
+      if (retorno > 0) {
+        this.walletService.credit(userId, retorno, 'premio', GAME_ID);
       }
+      // No truco a rodada de torneio é a partida inteira: o buy-in é a aposta.
+      this.tournaments.recordRound(userId, GAME_ID, match.buyIn, retorno);
       return;
     }
 

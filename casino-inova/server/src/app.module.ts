@@ -18,6 +18,7 @@ import { BacBoModule } from './modules/games/bac-bo/bac-bo.module';
 import { StockMarketModule } from './modules/games/stock-market/stock-market.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { RoadmapModule } from './modules/roadmap/roadmap.module';
+import { TournamentsModule } from './modules/tournaments/tournaments.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { RoadmapModule } from './modules/roadmap/roadmap.module';
     StockMarketModule,
     ChatModule,
     RoadmapModule,
+    TournamentsModule,
     RolesModule,
     CouponsModule,
     TrucoModule,

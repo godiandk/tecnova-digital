@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
+import { TournamentsService } from '../../tournaments/tournaments.service';
 import { drawCard, handValue, isBust, isNatural, playDealer, resolve, Resolution } from './blackjack.engine';
 import { BLACKJACK_PAYOUT_MULTIPLIER, DEALER_STANDS_ON, MAX_BET, MIN_BET, Rank } from './blackjack.config';
 
@@ -15,11 +16,17 @@ interface HandState {
  * de estado entre requisições — igual ao saldo, fica em memória nesta v1 e some se o
  * servidor reiniciar. Uma tabela `blackjack_hands` no Postgres resolve isso na Fase 0 real.
  */
+/** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
+const GAME_ID = 'blackjack';
+
 @Injectable()
 export class BlackjackService {
   private readonly hands = new Map<string, HandState>();
 
-  constructor(private readonly walletService: WalletService) {}
+  constructor(
+    private readonly walletService: WalletService,
+    private readonly tournaments: TournamentsService,
+  ) {}
 
   getConfig() {
     return {
@@ -39,7 +46,7 @@ export class BlackjackService {
       throw new BadRequestException(`A aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
     }
 
-    this.walletService.debit(userId, bet, 'aposta');
+    this.walletService.debit(userId, bet, 'aposta', GAME_ID);
     const hand: HandState = { bet, playerCards: [drawCard(), drawCard()], dealerCards: [drawCard(), drawCard()], finished: false };
     this.hands.set(userId, hand);
 
@@ -76,8 +83,10 @@ export class BlackjackService {
     hand.finished = true;
     const resolution = resolve(hand.playerCards, hand.dealerCards, hand.bet);
     if (resolution.totalReturn > 0) {
-      this.walletService.credit(userId, resolution.totalReturn, 'premio');
+      this.walletService.credit(userId, resolution.totalReturn, 'premio', GAME_ID);
     }
+    // A rodada de torneio é a mão inteira, contada só quando ela fecha.
+    this.tournaments.recordRound(userId, GAME_ID, hand.bet, resolution.totalReturn);
     return this.publicView(userId, hand, resolution);
   }
 

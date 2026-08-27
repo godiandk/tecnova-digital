@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { WalletService } from '../wallet/wallet.service';
+import { TournamentsService } from '../tournaments/tournaments.service';
 import { UsersService } from '../users/users.service';
 import { BancaFrancesaBet, BetResult, resolveBets, rollUntilDecisive } from '../games/banca-francesa/banca-francesa.engine';
 import { BET_TYPES, MAX_BET, MAX_SIMULTANEOUS_BETS, MIN_BET } from '../games/banca-francesa/banca-francesa.config';
@@ -39,6 +40,9 @@ export interface BancaFrancesaTable {
  * não precisa esconder informação entre jogadores, diferente de truco/dominó/poker.
  * Até 15 lugares (uma cor de ficha por pessoa, ver player-colors.ts).
  */
+/** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
+const GAME_ID = 'banca-francesa';
+
 @Injectable()
 export class BancaFrancesaTableService {
   private readonly tables = new Map<string, BancaFrancesaTable>();
@@ -46,6 +50,7 @@ export class BancaFrancesaTableService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly tournaments: TournamentsService,
     private readonly usersService: UsersService,
   ) {}
 
@@ -172,10 +177,11 @@ export class BancaFrancesaTableService {
       const totalReturn = results.reduce((sum, result) => sum + result.totalReturn, 0);
 
       if (!seat.isBot) {
-        this.walletService.debit(seat.userId, totalStake, 'aposta');
+        this.walletService.debit(seat.userId, totalStake, 'aposta', GAME_ID);
         if (totalReturn > 0) {
-          this.walletService.credit(seat.userId, totalReturn, 'premio');
+          this.walletService.credit(seat.userId, totalReturn, 'premio', GAME_ID);
         }
+        this.tournaments.recordRound(seat.userId, GAME_ID, totalStake, totalReturn);
       }
 
       bySeat[seat.userId] = { results, totalStake, totalReturn };

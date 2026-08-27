@@ -1,10 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
+import { TournamentsService } from '../../tournaments/tournaments.service';
 import { BancaFrancesaBet, resolveBets, rollUntilDecisive, theoreticalRtp } from './banca-francesa.engine';
 import { BET_TYPES, MAX_BET, MAX_SIMULTANEOUS_BETS, MIN_BET, TOTAL_RETURN_MULTIPLIER, WINNING_SUMS } from './banca-francesa.config';
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
 
 const HISTORY_LIMIT = 144;
+
+/** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
+const GAME_ID = 'banca-francesa';
 
 @Injectable()
 export class BancaFrancesaService {
@@ -12,6 +16,7 @@ export class BancaFrancesaService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly tournaments: TournamentsService,
     private readonly roadmapService: RoadmapService,
   ) {}
 
@@ -59,15 +64,16 @@ export class BancaFrancesaService {
     this.validateBets(bets);
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
-    this.walletService.debit(userId, totalStake, 'aposta');
+    this.walletService.debit(userId, totalStake, 'aposta', GAME_ID);
 
     const { dice, sum, outcome, rerolls } = rollUntilDecisive();
     const results = resolveBets(outcome, bets);
     const totalReturn = results.reduce((total, result) => total + result.totalReturn, 0);
 
     if (totalReturn > 0) {
-      this.walletService.credit(userId, totalReturn, 'premio');
+      this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
     }
+    this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn);
 
     this.history.push({
       outcome: outcome === 'grande' ? 'banca' : outcome === 'pequeno' ? 'jogador' : 'empate',

@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { WalletService } from '../wallet/wallet.service';
+import { TournamentsService } from '../tournaments/tournaments.service';
 import {
   buildDeck,
   compareCards,
@@ -86,6 +87,9 @@ function teamOfSeat(seatIndex: number): Team {
   return seatIndex % 2 === 0 ? 'A' : 'B';
 }
 
+/** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
+const GAME_ID = 'truco';
+
 @Injectable()
 export class TrucoTableService {
   private readonly tables = new Map<string, TrucoOnlineTable>();
@@ -94,6 +98,7 @@ export class TrucoTableService {
   constructor(
     private readonly usersService: UsersService,
     private readonly walletService: WalletService,
+    private readonly tournaments: TournamentsService,
   ) {}
 
   createTable(
@@ -194,7 +199,7 @@ export class TrucoTableService {
       }
     }
     for (const seat of table.seats) {
-      if (!seat.isBot) this.walletService.debit(seat.userId, table.buyIn, 'aposta');
+      if (!seat.isBot) this.walletService.debit(seat.userId, table.buyIn, 'aposta', GAME_ID);
     }
 
     table.started = true;
@@ -442,9 +447,14 @@ export class TrucoTableService {
       // O pote é o buy-in de todos; a dupla vencedora divide.
       const pot = table.buyIn * SEATS;
       const winners = table.seats.filter((seat) => seat.team === table.winnerTeam && !seat.isBot);
-      if (winners.length > 0) {
-        const share = Math.floor(pot / winners.length);
-        for (const seat of winners) this.walletService.credit(seat.userId, share, 'premio');
+      const share = winners.length > 0 ? Math.floor(pot / winners.length) : 0;
+      for (const seat of winners) this.walletService.credit(seat.userId, share, 'premio', GAME_ID);
+      // Todo mundo que pagou buy-in disputou a rodada de torneio — quem perdeu
+      // entra com retorno 0, que é o que vai puxar a pontuação dele pra baixo.
+      for (const seat of table.seats) {
+        if (seat.isBot) continue;
+        const retorno = seat.team === table.winnerTeam ? share : 0;
+        this.tournaments.recordRound(seat.userId, GAME_ID, table.buyIn, retorno);
       }
       table.lastEvent = `Dupla ${table.winnerTeam} venceu a partida!`;
       return;

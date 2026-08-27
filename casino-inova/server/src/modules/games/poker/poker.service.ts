@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
+import { TournamentsService } from '../../tournaments/tournaments.service';
 import { bestHandOf, botDecision, buildDeck, compareHandValues, handLabel, PokerAction, shuffle } from './poker.engine';
 import { BIG_BET, BIG_BLIND, Card, MAX_BUY_IN, MAX_RAISES_PER_STREET, MIN_BUY_IN, SMALL_BET, SMALL_BLIND } from './poker.config';
 
@@ -40,11 +41,17 @@ interface PokerHand {
  * complexo dos 8 (avaliador de mão + apostas em várias ruas), por isso é o último a
  * ganhar motor no roadmap.
  */
+/** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
+const GAME_ID = 'poker';
+
 @Injectable()
 export class PokerService {
   private readonly hands = new Map<string, PokerHand>();
 
-  constructor(private readonly walletService: WalletService) {}
+  constructor(
+    private readonly walletService: WalletService,
+    private readonly tournaments: TournamentsService,
+  ) {}
 
   getConfig() {
     return { minBuyIn: MIN_BUY_IN, maxBuyIn: MAX_BUY_IN, smallBlind: SMALL_BLIND, bigBlind: BIG_BLIND, smallBet: SMALL_BET, bigBet: BIG_BET };
@@ -59,7 +66,7 @@ export class PokerService {
       throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
     }
 
-    this.walletService.debit(userId, buyIn, 'aposta');
+    this.walletService.debit(userId, buyIn, 'aposta', GAME_ID);
     const deck = shuffle(buildDeck());
     const match: PokerHand = {
       userId,
@@ -221,8 +228,10 @@ export class PokerService {
     };
 
     if (match.playerStack > 0) {
-      this.walletService.credit(match.userId, match.playerStack, 'premio');
+      this.walletService.credit(match.userId, match.playerStack, 'premio', GAME_ID);
     }
+    // O buy-in virou o stack da mão; o que sobrou dele é o retorno.
+    this.tournaments.recordRound(match.userId, GAME_ID, match.buyIn, match.playerStack);
   }
 
   private runBotIfNeeded(match: PokerHand, depth = 0) {

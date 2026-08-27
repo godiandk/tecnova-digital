@@ -1,16 +1,23 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
+import { TournamentsService } from '../../tournaments/tournaments.service';
 import { spin, theoreticalRtp } from './roulette.engine';
 import { colorOf, MAX_BET, MIN_BET, RED_NUMBERS, RouletteBet, TOTAL_MULTIPLIER } from './roulette.config';
 
 /** Quantos números o painel da mesa guarda — mesa real costuma mostrar os últimos ~20. */
 const HISTORY_LIMIT = 40;
 
+/** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
+const GAME_ID = 'roleta';
+
 @Injectable()
 export class RouletteService {
   private readonly history: number[] = [];
 
-  constructor(private readonly walletService: WalletService) {}
+  constructor(
+    private readonly walletService: WalletService,
+    private readonly tournaments: TournamentsService,
+  ) {}
 
   /**
    * Placar da roleta. Diferente do bacará, mesa de roleta NÃO usa as cinco estradas:
@@ -61,12 +68,13 @@ export class RouletteService {
       throw new BadRequestException('Aposta em número exato precisa de um número entre 0 e 36.');
     }
 
-    this.walletService.debit(userId, amount, 'aposta');
+    this.walletService.debit(userId, amount, 'aposta', GAME_ID);
     const result = spin(bet, amount);
 
     if (result.totalReturn > 0) {
-      this.walletService.credit(userId, result.totalReturn, 'premio');
+      this.walletService.credit(userId, result.totalReturn, 'premio', GAME_ID);
     }
+    this.tournaments.recordRound(userId, GAME_ID, amount, result.totalReturn);
 
     this.history.push(result.pocket);
     if (this.history.length > HISTORY_LIMIT) this.history.shift();

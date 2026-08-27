@@ -7,9 +7,10 @@ import { WalletModule } from '../wallet/wallet.module';
 import { UsersModule } from '../users/users.module';
 import { FriendsModule } from '../friends/friends.module';
 import { ChatModule } from '../chat/chat.module';
+import { TournamentsModule } from '../tournaments/tournaments.module';
 
 @Module({
-  imports: [WalletModule, UsersModule, FriendsModule, ChatModule],
+  imports: [WalletModule, UsersModule, FriendsModule, ChatModule, TournamentsModule],
   providers: [RoomsGateway, BancaFrancesaTableService, TrucoTableService, DominoTableService],
 })
 export class RoomsModule {}

@@ -15,7 +15,8 @@
     "verify:poker-hands": "ts-node src/modules/games/poker/verify-hand-evaluator.ts",
     "verify:rtp": "ts-node src/modules/games/slots/verify-rtp.ts",
     "verify:stock-market": "ts-node src/modules/games/stock-market/verify-rtp.ts",
-    "verify:tudo": "npm run verify:bac-bo && npm run verify:bacara && npm run verify:banca-francesa && npm run verify:blackjack && npm run verify:placar && npm run verify:poker-hands && npm run verify:rtp && npm run verify:stock-market"
+    "verify:torneios": "ts-node src/modules/tournaments/verify-tournaments.ts",
+    "verify:tudo": "npm run verify:bac-bo && npm run verify:bacara && npm run verify:banca-francesa && npm run verify:blackjack && npm run verify:placar && npm run verify:poker-hands && npm run verify:rtp && npm run verify:stock-market && npm run verify:torneios"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

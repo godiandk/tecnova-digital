@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { WalletService } from '../wallet/wallet.service';
+import { TournamentsService } from '../tournaments/tournaments.service';
 import { BoardEnd, canPlay, otherEnd, shuffle, tileMatches, tileSum } from '../games/domino/domino.engine';
 import { buildTileSet, HAND_SIZE, MAX_BUY_IN, MIN_BUY_IN, Tile } from '../games/domino/domino.config';
 import { generateTableCode } from './table-code';
@@ -72,6 +73,9 @@ function isDouble(tile: Tile): boolean {
   return tile.a === tile.b;
 }
 
+/** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
+const GAME_ID = 'domino';
+
 @Injectable()
 export class DominoTableService {
   private readonly tables = new Map<string, DominoOnlineTable>();
@@ -80,6 +84,7 @@ export class DominoTableService {
   constructor(
     private readonly usersService: UsersService,
     private readonly walletService: WalletService,
+    private readonly tournaments: TournamentsService,
   ) {}
 
   createTable(hostUserId: string, options: { visibility: TableVisibility; buyIn: number }): DominoOnlineTable {
@@ -165,7 +170,7 @@ export class DominoTableService {
       }
     }
     for (const seat of table.seats) {
-      if (!seat.isBot) this.walletService.debit(seat.userId, table.buyIn, 'aposta');
+      if (!seat.isBot) this.walletService.debit(seat.userId, table.buyIn, 'aposta', GAME_ID);
     }
 
     table.started = true;
@@ -369,9 +374,11 @@ export class DominoTableService {
       table.winnerTeam = winner;
       const pot = table.buyIn * SEATS;
       const winners = table.seats.filter((seat) => seat.team === winner && !seat.isBot);
-      if (winners.length > 0) {
-        const share = Math.floor(pot / winners.length);
-        for (const seat of winners) this.walletService.credit(seat.userId, share, 'premio');
+      const share = winners.length > 0 ? Math.floor(pot / winners.length) : 0;
+      for (const seat of winners) this.walletService.credit(seat.userId, share, 'premio', GAME_ID);
+      for (const seat of table.seats) {
+        if (seat.isBot) continue;
+        this.tournaments.recordRound(seat.userId, GAME_ID, table.buyIn, seat.team === winner ? share : 0);
       }
       table.lastEvent = `${table.lastEvent ?? ''} Dupla ${winner} venceu a partida!`.trim();
       return;

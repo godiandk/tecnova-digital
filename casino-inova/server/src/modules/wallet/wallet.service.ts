@@ -8,6 +8,13 @@ export interface LedgerEntry {
   type: LedgerEntryType;
   /** Positivo = crédito, negativo = débito. */
   amount: number;
+  /**
+   * De onde veio a entrada: o id do jogo numa aposta ou prêmio de jogo, o id do
+   * torneio num prêmio de torneio, o id do pacote numa compra. Serve pra pessoa
+   * conseguir olhar o extrato e entender por que ganhou ou perdeu ficha — "Prêmio"
+   * sozinho não explica nada; "Prêmio — Corrida do Dia" explica.
+   */
+  origin?: string;
   createdAt: string;
 }
 
@@ -31,29 +38,30 @@ export class WalletService {
     return this.entries.filter((entry) => entry.userId === userId);
   }
 
-  credit(userId: string, amount: number, type: LedgerEntryType): LedgerEntry {
+  credit(userId: string, amount: number, type: LedgerEntryType, origin?: string): LedgerEntry {
     if (amount <= 0) {
       throw new BadRequestException('O valor de um crédito precisa ser maior que zero.');
     }
-    return this.appendEntry(userId, amount, type);
+    return this.appendEntry(userId, amount, type, origin);
   }
 
-  debit(userId: string, amount: number, type: LedgerEntryType): LedgerEntry {
+  debit(userId: string, amount: number, type: LedgerEntryType, origin?: string): LedgerEntry {
     if (amount <= 0) {
       throw new BadRequestException('O valor de um débito precisa ser maior que zero.');
     }
     if (this.balanceOf(userId) < amount) {
       throw new BadRequestException('Saldo de fichas insuficiente.');
     }
-    return this.appendEntry(userId, -amount, type);
+    return this.appendEntry(userId, -amount, type, origin);
   }
 
-  private appendEntry(userId: string, amount: number, type: LedgerEntryType): LedgerEntry {
+  private appendEntry(userId: string, amount: number, type: LedgerEntryType, origin?: string): LedgerEntry {
     const entry: LedgerEntry = {
       id: `entry-${this.entries.length + 1}`,
       userId,
       type,
       amount,
+      origin,
       createdAt: new Date().toISOString(),
     };
     this.entries.push(entry);

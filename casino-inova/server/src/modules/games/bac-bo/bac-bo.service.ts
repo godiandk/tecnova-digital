@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
+import { TournamentsService } from '../../tournaments/tournaments.service';
 import { BacBoBet, resolveBets, roll, theoreticalRtp } from './bac-bo.engine';
 import { MAX_BET, MIN_BET, SIDE_TOTAL_MULTIPLIER, TIE_PROFIT_ODDS, TIE_REFUND_MULTIPLIER } from './bac-bo.config';
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
@@ -8,12 +9,16 @@ const BET_TYPES: BacBoBet['type'][] = ['jogador', 'banca', 'empate'];
 /** Quantas rodadas o placar guarda — o painel mostra 24 colunas de 6, então 144 cobre a tela cheia. */
 const HISTORY_LIMIT = 144;
 
+/** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
+const GAME_ID = 'bac-bo';
+
 @Injectable()
 export class BacBoService {
   private readonly history: RoundRecord[] = [];
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly tournaments: TournamentsService,
     private readonly roadmapService: RoadmapService,
   ) {}
 
@@ -57,15 +62,16 @@ export class BacBoService {
     this.validateBets(bets);
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
-    this.walletService.debit(userId, totalStake, 'aposta');
+    this.walletService.debit(userId, totalStake, 'aposta', GAME_ID);
 
     const result = roll();
     const results = resolveBets(result, bets);
     const totalReturn = results.reduce((sum, item) => sum + item.totalReturn, 0);
 
     if (totalReturn > 0) {
-      this.walletService.credit(userId, totalReturn, 'premio');
+      this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
     }
+    this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn);
 
     this.history.push({ outcome: result.outcome });
     if (this.history.length > HISTORY_LIMIT) this.history.shift();

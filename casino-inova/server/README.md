@@ -94,6 +94,39 @@ Poker aqui é **heads-up limit hold'em** (você contra o bot, 1 mão de cada vez
 
 Amigos é pré-requisito pro convite de sala por "+" — sem saber quem é amigo de quem, não dá pra mostrar "convidar amigo" em lugar nenhum.
 
+| `GET /torneios` | Os três torneios com a janela aberta agora (início e fim), os jogos que contam, o mínimo de rodadas e a tabela de prêmios. |
+| `GET /torneios/:id/ranking?userId=` | O ranking da janela aberta, a linha de quem pediu (mesmo fora das 20 primeiras posições) e quantas rodadas faltam pra ele se classificar. |
+
+## Torneios
+
+Três torneios rodando sempre: **Corrida do Dia** (todos os jogos, zera à meia-noite), **Semana das Mesas** (só truco, dominó, poker e banca francesa) e **Grande Prêmio do Mês**.
+
+### Como se ganha ponto — e por que é assim
+
+Esta é a decisão de projeto mais importante do módulo. O caminho fácil seria pontuar pelo volume apostado, ou pelo saldo líquido em fichas. Os dois premiam quem aposta alto: no saldo líquido, quem aposta 5.000 por rodada oscila cem vezes mais que quem aposta 50, e o topo de um ranking é justamente a ponta de cima dessa oscilação. O ranking viraria uma lista de quem gastou mais, disfarçada de lista de quem jogou melhor.
+
+Aqui a pontuação é **proporcional ao que voltou**, não ao tamanho da ficha:
+
+```
+pontos da rodada = (retorno − aposta) / aposta × 100
+```
+
+Dobrar a aposta vale +100 pontos, apostando 10 fichas ou 10.000. Perder tudo vale −100. Empate que devolve a ficha vale 0. Acertar os ases da banca francesa (62x) vale +6.100. A regra aparece escrita na própria tela de torneios do app, do mesmo jeito que o RTP aparece na tela de cada jogo.
+
+Cada torneio exige um **mínimo de rodadas** pra entrar no ranking — sem isso, quem acertasse um 62x na primeira aposta e parasse de jogar seria imbatível. Empate em pontos desempata por quem jogou **menos** rodadas: chegar aos mesmos pontos em menos mãos é melhor resultado.
+
+### Como as janelas e o pagamento funcionam
+
+A janela nunca é guardada, é sempre calculada a partir do relógio (dia = meia-noite a meia-noite, semana = segunda a segunda, mês = dia 1 ao dia 1, tudo em UTC por enquanto). Assim ela nunca fica desalinhada e não precisa de ninguém rodando um cron pra virar o dia.
+
+O pagamento é **preguiçoso e idempotente**: qualquer leitura de torneio confere se a janela anterior fechou sem ter sido paga e, se for o caso, credita os prêmios ali mesmo. A janela paga fica marcada e nunca é paga de novo — `npm run verify:torneios` prova isso lendo o ranking quatro vezes seguidas e conferindo que o saldo só subiu uma. Quando existir persistência de verdade, isso vira tarefa agendada; a regra de quem ganha o quê continua a mesma.
+
+### Onde a rodada é contada
+
+O torneio guarda a estatística esportiva (o que foi apostado e o que voltou); **quem manda em ficha continua sendo só o ledger da carteira**. Nenhum ponto de torneio move saldo, e todo prêmio de torneio é creditado pelo ledger como qualquer outro crédito — com o id do torneio no campo `origin`, pra pessoa conseguir olhar o extrato e entender de onde vieram aquelas fichas.
+
+Esse mesmo campo `origin` passou a marcar toda aposta e todo prêmio com o id do jogo, o que deixa o extrato legível: "Aposta — Truco" em vez de só "Aposta".
+
 ## Mesa multiplayer (WebSocket)
 
 São **dois formatos de mesa**, tecnicamente bem diferentes, e vale entender a diferença antes de mexer no gateway:
@@ -231,6 +264,7 @@ Cada jogo tem um roteiro que **roda de verdade** e confere a matemática — nã
 | `npm run verify:blackjack` | Blackjack: simula uma estratégia simples só como referência de sanidade. |
 | `npm run verify:poker-hands` | Poker: o avaliador de mão contra casos conhecidos (flush vs. full house, sequência do bebê A-2-3-4-5, empates). |
 | `npm run verify:placar` | Placar de histórico: 14 casos montados à mão pras cinco estradas do bacará (empate virando contador, cauda do dragão, quando cada estrada derivada começa). |
+| `npm run verify:torneios` | Torneios: 24 casos — a pontuação proporcional (aposta de 50 e de 10.000 dando o mesmo ponto), o mínimo de rodadas barrando uma sorte grande isolada, o filtro por jogo, o desempate, as janelas de dia/semana/mês (inclusive domingo e virada de ano) e o prêmio pago uma vez só. |
 
 Blackjack não tem RTP fixo — depende da estratégia de quem joga. `npm run verify:blackjack` simula uma estratégia simples (pedir carta até 17) só como referência de que o jogo não está nem generoso nem apertado demais; com estratégia básica ótima de verdade, essas regras (dealer para em todos os 17, blackjack paga 3:2, baralho infinito) ficam perto de ~99,5%.
 
@@ -243,7 +277,6 @@ Nesta ordem:
 1. **Persistência real** — trocar os arrays em memória por PostgreSQL (as tabelas já estão desenhadas no plano de produto: `users`, `ledger_entries`, `purchases`).
 2. **Autenticação** — Firebase Auth com Google, Facebook, Apple e e-mail/senha; `GET /users/me` passa a ler o usuário do token, não um valor fixo.
 3. **Compra real** — integrar RevenueCat: o app faz a compra na App Store/Play Store, a RevenueCat valida o recibo e chama um webhook aqui, que só então chama `walletService.credit(...)`. O endpoint `POST /store/comprar` atual serve pra testar o resto do fluxo enquanto isso não existe — ele não deve ir para produção como está, porque hoje qualquer um pode chamá-lo e "comprar" fichas de graça.
-4. **Torneios e ranking** — tabelas `tournaments`, `tournament_entries`, `leaderboards` do plano de produto. É o que falta pra tela de Torneios deixar de ser mockada.
-5. **Poker multiplayer** — o único jogo de mesa que continua só contra bot.
+4. **Poker multiplayer** — o único jogo de mesa que continua só contra bot.
 
 O módulo de **amigos** já existe e funciona (pedir/aceitar/recusar/listar); o que falta nele é só a persistência do item 1, junto com todo o resto.
