@@ -9,6 +9,7 @@ import { TABLE_IMAGES } from '../../data/tableImages';
 import { PLAYER_CHIP_IMAGES, PLAYER_COLOR_LABELS } from '../../data/chipImages';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { CasinoCard } from '../../components/CasinoCard';
+import { ChatPanel } from '../../components/ChatPanel';
 import { MOCK_USER_ID, ApiError } from '../../api/client';
 import { SocketError } from '../../api/socket';
 import { BancaFrancesaBetType } from '../../api/bancaFrancesa';
@@ -358,6 +359,7 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
                     </Pressable>
                   </View>
 
+                  {/* Chat só aparece pra quem está sentado numa mesa. */}
                   {friends.length > 0 && (
                     <>
                       <Text style={styles.sectionLabel}>Convidar amigo</Text>
@@ -376,6 +378,9 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
                   )}
                 </CasinoCard>
               )}
+
+              {/* Chat da mesa — todo mundo sentado conversa aqui. */}
+              <ChatPanel roomId={table.id} scope="mesa" />
             </>
           )}
         </ScrollView>

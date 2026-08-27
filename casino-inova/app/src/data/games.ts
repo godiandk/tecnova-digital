@@ -13,7 +13,7 @@ export interface Game {
 }
 
 /**
- * Catálogo dos 8 jogos do Casino Inova. `minLevel` reflete a mesma regra descrita
+ * Catálogo dos 10 jogos do Casino Inova. `minLevel` reflete a mesma regra descrita
  * no plano de produto: nível libera acesso a mesas de aposta mais alta, nunca muda
  * a probabilidade de vitória.
  */
@@ -22,6 +22,8 @@ export const games: Game[] = [
   { id: 'roleta', name: 'Roleta', format: 'vs-casa', phase: 1, minLevel: 1, tableImageKey: 'mesa-roleta', accent: 'ruby' },
   { id: 'blackjack', name: 'Blackjack', format: 'vs-casa', phase: 1, minLevel: 3, tableImageKey: 'mesa-blackjack', accent: 'felt' },
   { id: 'bacara', name: 'Bacará', format: 'vs-casa', phase: 2, minLevel: 6, tableImageKey: 'mesa-bacara', accent: 'felt' },
+  { id: 'bac-bo', name: 'Bac Bo', format: 'vs-casa', phase: 2, minLevel: 6, tableImageKey: 'mesa-bac-bo', accent: 'ruby' },
+  { id: 'stock-market', name: 'Stock Market', format: 'vs-casa', phase: 2, minLevel: 4, tableImageKey: 'mesa-stock-market', accent: 'gold' },
   { id: 'banca-francesa', name: 'Banca Francesa', format: 'mesa-multiplayer', phase: 2, minLevel: 8, tableImageKey: 'mesa-banca-francesa', accent: 'gold' },
   { id: 'truco', name: 'Truco', format: 'mesa-multiplayer', phase: 3, minLevel: 10, tableImageKey: 'mesa-truco', accent: 'sapphire' },
   { id: 'domino', name: 'Dominó', format: 'mesa-multiplayer', phase: 3, minLevel: 10, tableImageKey: 'mesa-domino', accent: 'sapphire' },

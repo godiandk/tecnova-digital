@@ -15,6 +15,8 @@ export type RootStackParamList = {
   Baccarat: undefined;
   BancaFrancesa: undefined;
   BancaFrancesaMesa: undefined;
+  BacBo: undefined;
+  StockMarket: undefined;
   Truco: undefined;
   Domino: undefined;
   Poker: undefined;

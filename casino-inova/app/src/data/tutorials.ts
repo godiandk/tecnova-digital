@@ -141,6 +141,39 @@ export const tutorials: Record<string, GameTutorial> = {
       'Desistir de uma rodada ruim é normal e faz parte do jogo — não precisa jogar até o final toda vez.',
     ],
   },
+  'bac-bo': {
+    gameId: 'bac-bo',
+    whatIsIt: 'É o bacará jogado com dados no lugar das cartas. São 4 dados: dois para o lado "Player" e dois para o lado "Banker".',
+    goal: 'Acertar qual dos dois lados vai somar mais nos seus dois dados.',
+    steps: [
+      'Escolha um lado: Player, Banker, ou aposte no Empate.',
+      'Os quatro dados são chacoalhados e revelados, dois de cada lado.',
+      'Soma-se os dois dados de cada lado. O lado de maior soma vence.',
+      'Se os dois lados somarem igual, é empate — e aí quem apostou no Empate leva o prêmio grande.',
+    ],
+    tips: [
+      'Player e Banker pagam 1 para 1 (dobram sua ficha) e são as apostas mais seguras da mesa.',
+      'Se der empate e você tinha apostado em Player ou Banker, você não perde tudo: recebe 90% da sua ficha de volta.',
+      'O Empate paga muito mais quando a soma é difícil: empatar em 2 ou em 12 paga 88 vezes, enquanto empatar em 7 paga 4 vezes.',
+      'O placar ao lado mostra o que já saiu, mas não ajuda a adivinhar: cada rodada é sorteada do zero.',
+    ],
+  },
+  'stock-market': {
+    gameId: 'stock-market',
+    whatIsIt: 'Um jogo em que você aposta se o preço de uma "ação" vai subir ou descer. Não precisa entender nada de bolsa de valores — é só escolher um dos dois lados.',
+    goal: 'Acertar se a cotação vai fechar acima ou abaixo de onde começou.',
+    steps: [
+      'Escolha ALTA (acha que vai subir) ou BAIXA (acha que vai descer).',
+      'Escolha quanto quer investir e confirme.',
+      'A cotação começa em zero e vai balançando pra cima e pra baixo até fechar num valor.',
+      'Você ganha exatamente a porcentagem que a cotação andou pro seu lado.',
+    ],
+    tips: [
+      'Se você apostou em ALTA e fechou em +30%, você recebe sua ficha de volta mais 30%. Se fechou em -30%, você recebe só 70% dela.',
+      'Não é tudo ou nada como nos outros jogos: quase sempre volta alguma coisa, porque o resultado é proporcional ao tamanho do movimento.',
+      'A casa não torce por lado nenhum aqui — subir e descer têm a mesma chance. A única vantagem da casa é a comissão de 1%, que fica escrita na tela.',
+    ],
+  },
 };
 
 export function getTutorialByGameId(gameId: string): GameTutorial | undefined {

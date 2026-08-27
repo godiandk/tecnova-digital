@@ -29,6 +29,10 @@ export function LobbyScreen() {
       navigation.navigate('Baccarat');
     } else if (gameId === 'banca-francesa') {
       navigation.navigate('BancaFrancesa');
+    } else if (gameId === 'bac-bo') {
+      navigation.navigate('BacBo');
+    } else if (gameId === 'stock-market') {
+      navigation.navigate('StockMarket');
     } else if (gameId === 'truco') {
       navigation.navigate('Truco');
     } else if (gameId === 'domino') {
