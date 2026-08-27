@@ -12,8 +12,9 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
+import { RouletteHistoryPanel, RouletteHistory } from '../../components/RouletteHistoryPanel';
 import { ApiError } from '../../api/client';
-import { fetchRouletteConfig, spinRoulette, RouletteConfig, RouletteBetType, RouletteSpinResponse } from '../../api/roulette';
+import { fetchRouletteConfig, fetchRouletteHistory, spinRoulette, RouletteConfig, RouletteBetType, RouletteSpinResponse } from '../../api/roulette';
 import { mockPlayer } from '../../data/mockPlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
@@ -52,6 +53,7 @@ export function RouletteScreen({ navigation }: Props) {
   const [spinning, setSpinning] = useState(false);
   const [spinError, setSpinError] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<RouletteSpinResponse | null>(null);
+  const [history, setHistory] = useState<RouletteHistory | null>(null);
 
   useEffect(() => {
     fetchRouletteConfig()
@@ -62,6 +64,7 @@ export function RouletteScreen({ navigation }: Props) {
       .catch((error: unknown) => {
         setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
       });
+    fetchRouletteHistory().then(setHistory).catch(() => undefined);
   }, []);
 
   const adjustAmount = (delta: number) => {
@@ -82,6 +85,7 @@ export function RouletteScreen({ navigation }: Props) {
       const result = await spinRoulette(bet, amount);
       setLastResult(result);
       setBalance(result.newBalance);
+      setHistory(result.history);
     } catch (error) {
       setSpinError(error instanceof ApiError ? error.message : 'Não foi possível girar agora.');
     } finally {
@@ -192,6 +196,7 @@ export function RouletteScreen({ navigation }: Props) {
             <Pressable onPress={handleSpin} disabled={spinning} style={[styles.spinButton, spinning && styles.spinButtonDisabled]}>
               {spinning ? <ActivityIndicator color={colors.background} /> : <Text style={styles.spinButtonLabel}>Girar</Text>}
             </Pressable>
+            {history && history.totals.total > 0 && <RouletteHistoryPanel history={history} />}
           </ScrollView>
         )}
       </SafeAreaView>

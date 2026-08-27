@@ -1,11 +1,44 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { spin, theoreticalRtp } from './roulette.engine';
-import { MAX_BET, MIN_BET, RED_NUMBERS, RouletteBet, TOTAL_MULTIPLIER } from './roulette.config';
+import { colorOf, MAX_BET, MIN_BET, RED_NUMBERS, RouletteBet, TOTAL_MULTIPLIER } from './roulette.config';
+
+/** Quantos números o painel da mesa guarda — mesa real costuma mostrar os últimos ~20. */
+const HISTORY_LIMIT = 40;
 
 @Injectable()
 export class RouletteService {
+  private readonly history: number[] = [];
+
   constructor(private readonly walletService: WalletService) {}
+
+  /**
+   * Placar da roleta. Diferente do bacará, mesa de roleta NÃO usa as cinco estradas:
+   * ela mostra a lista dos últimos números sorteados com a cor de cada um, mais os
+   * contadores de vermelho/preto, par/ímpar e alto/baixo. Por isso aqui é um formato
+   * próprio, em vez de reusar o RoadmapService.
+   *
+   * Como em todo placar deste projeto: isso é histórico, não previsão. A roda não tem
+   * memória — sair 10 vermelhos seguidos não muda em nada a chance do próximo giro.
+   */
+  getHistory() {
+    const numbers = this.history.map((pocket) => ({ pocket, color: colorOf(pocket) }));
+    const decided = this.history.filter((pocket) => pocket !== 0);
+
+    return {
+      numbers,
+      totals: {
+        vermelho: this.history.filter((pocket) => colorOf(pocket) === 'vermelho').length,
+        preto: this.history.filter((pocket) => colorOf(pocket) === 'preto').length,
+        zero: this.history.filter((pocket) => pocket === 0).length,
+        par: decided.filter((pocket) => pocket % 2 === 0).length,
+        impar: decided.filter((pocket) => pocket % 2 === 1).length,
+        baixo: decided.filter((pocket) => pocket <= 18).length,
+        alto: decided.filter((pocket) => pocket >= 19).length,
+        total: this.history.length,
+      },
+    };
+  }
 
   getConfig() {
     return {
@@ -35,6 +68,9 @@ export class RouletteService {
       this.walletService.credit(userId, result.totalReturn, 'premio');
     }
 
-    return { ...result, amount, newBalance: this.walletService.balanceOf(userId) };
+    this.history.push(result.pocket);
+    if (this.history.length > HISTORY_LIMIT) this.history.shift();
+
+    return { ...result, amount, newBalance: this.walletService.balanceOf(userId), history: this.getHistory() };
   }
 }

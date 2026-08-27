@@ -2,10 +2,27 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { BancaFrancesaBet, resolveBets, rollUntilDecisive, theoreticalRtp } from './banca-francesa.engine';
 import { BET_TYPES, MAX_BET, MAX_SIMULTANEOUS_BETS, MIN_BET, TOTAL_RETURN_MULTIPLIER, WINNING_SUMS } from './banca-francesa.config';
+import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
+
+const HISTORY_LIMIT = 144;
 
 @Injectable()
 export class BancaFrancesaService {
-  constructor(private readonly walletService: WalletService) {}
+  private readonly history: RoundRecord[] = [];
+
+  constructor(
+    private readonly walletService: WalletService,
+    private readonly roadmapService: RoadmapService,
+  ) {}
+
+  /**
+   * O placar reusa as mesmas cinco estradas do bacará. O mapeamento é natural: grande
+   * e pequeno são os dois lados que se alternam (como banca e jogador), e ases é o
+   * resultado raro que interrompe a sequência sem abrir coluna (como o empate).
+   */
+  getRoadmap() {
+    return this.roadmapService.build(this.history);
+  }
 
   getConfig() {
     return {
@@ -52,6 +69,21 @@ export class BancaFrancesaService {
       this.walletService.credit(userId, totalReturn, 'premio');
     }
 
-    return { dice, sum, outcome, rerolls, results, totalStake, totalReturn, newBalance: this.walletService.balanceOf(userId) };
+    this.history.push({
+      outcome: outcome === 'grande' ? 'banca' : outcome === 'pequeno' ? 'jogador' : 'empate',
+    });
+    if (this.history.length > HISTORY_LIMIT) this.history.shift();
+
+    return {
+      dice,
+      sum,
+      outcome,
+      rerolls,
+      results,
+      totalStake,
+      totalReturn,
+      newBalance: this.walletService.balanceOf(userId),
+      roadmap: this.getRoadmap(),
+    };
   }
 }

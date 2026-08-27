@@ -1,4 +1,5 @@
 import { apiRequest, MOCK_USER_ID } from './client';
+import { Roadmap } from './roadmap';
 
 export type BancaFrancesaBetType = 'ases' | 'pequeno' | 'grande' | 'linha';
 export type BancaFrancesaOutcome = 'ases' | 'pequeno' | 'grande';
@@ -32,6 +33,7 @@ export interface BancaFrancesaRoundResponse {
   totalStake: number;
   totalReturn: number;
   newBalance: number;
+  roadmap: Roadmap;
 }
 
 export function fetchBancaFrancesaConfig(): Promise<BancaFrancesaConfig> {
@@ -43,4 +45,8 @@ export function playBancaFrancesaRound(bets: BancaFrancesaBet[]): Promise<BancaF
     method: 'POST',
     body: { userId: MOCK_USER_ID, bets },
   });
+}
+
+export function fetchBancaFrancesaRoadmap(): Promise<Roadmap> {
+  return apiRequest<Roadmap>('/games/banca-francesa/placar');
 }

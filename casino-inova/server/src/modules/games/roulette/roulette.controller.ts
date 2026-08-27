@@ -12,6 +12,11 @@ class SpinDto {
 export class RouletteController {
   constructor(private readonly rouletteService: RouletteService) {}
 
+  @Get('historico')
+  getHistory() {
+    return this.rouletteService.getHistory();
+  }
+
   @Get('config')
   getConfig() {
     return this.rouletteService.getConfig();

@@ -1,4 +1,5 @@
 import { apiRequest, MOCK_USER_ID } from './client';
+import { RouletteHistory } from '../components/RouletteHistoryPanel';
 
 export type RouletteBetType =
   | 'numero'
@@ -32,6 +33,7 @@ export interface RouletteSpinResponse {
   totalReturn: number;
   amount: number;
   newBalance: number;
+  history: RouletteHistory;
 }
 
 export function fetchRouletteConfig(): Promise<RouletteConfig> {
@@ -43,4 +45,8 @@ export function spinRoulette(bet: RouletteBet, amount: number): Promise<Roulette
     method: 'POST',
     body: { userId: MOCK_USER_ID, bet, amount },
   });
+}
+
+export function fetchRouletteHistory(): Promise<RouletteHistory> {
+  return apiRequest<RouletteHistory>('/games/roleta/historico');
 }

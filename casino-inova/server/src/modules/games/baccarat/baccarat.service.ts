@@ -2,15 +2,31 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { playRound as playBaccaratRound, resolveBet } from './baccarat.engine';
 import { BaccaratBetType, MAX_BET, MIN_BET } from './baccarat.config';
+import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
 
 const VALID_BET_TYPES: BaccaratBetType[] = ['jogador', 'banca', 'empate'];
+/** 24 colunas de 6 no painel — 144 rodadas enchem a tela inteira. */
+const HISTORY_LIMIT = 144;
 
 @Injectable()
 export class BaccaratService {
-  constructor(private readonly walletService: WalletService) {}
+  private readonly history: RoundRecord[] = [];
+
+  constructor(
+    private readonly walletService: WalletService,
+    private readonly roadmapService: RoadmapService,
+  ) {}
 
   getConfig() {
     return { minBet: MIN_BET, maxBet: MAX_BET };
+  }
+
+  /**
+   * As cinco estradas do placar. O bacará é o jogo pra que elas foram inventadas —
+   * banca/jogador/empate mapeia direto, sem adaptação.
+   */
+  getRoadmap() {
+    return this.roadmapService.build(this.history);
   }
 
   /**
@@ -34,6 +50,16 @@ export class BaccaratService {
       this.walletService.credit(userId, totalReturn, 'premio');
     }
 
-    return { ...round, betType, amount, totalReturn, newBalance: this.walletService.balanceOf(userId) };
+    this.history.push({ outcome: round.winner });
+    if (this.history.length > HISTORY_LIMIT) this.history.shift();
+
+    return {
+      ...round,
+      betType,
+      amount,
+      totalReturn,
+      newBalance: this.walletService.balanceOf(userId),
+      roadmap: this.getRoadmap(),
+    };
   }
 }

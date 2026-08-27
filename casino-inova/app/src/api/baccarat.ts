@@ -1,4 +1,5 @@
 import { apiRequest, MOCK_USER_ID } from './client';
+import { Roadmap } from './roadmap';
 
 export type BaccaratBetType = 'jogador' | 'banca' | 'empate';
 
@@ -17,6 +18,7 @@ export interface BaccaratRoundResponse {
   amount: number;
   totalReturn: number;
   newBalance: number;
+  roadmap: Roadmap;
 }
 
 export function fetchBaccaratConfig(): Promise<BaccaratConfig> {
@@ -28,4 +30,8 @@ export function playBaccaratRound(betType: BaccaratBetType, amount: number): Pro
     method: 'POST',
     body: { userId: MOCK_USER_ID, betType, amount },
   });
+}
+
+export function fetchBaccaratRoadmap(): Promise<Roadmap> {
+  return apiRequest<Roadmap>('/games/bacara/placar');
 }

@@ -12,6 +12,11 @@ class BetDto {
 export class BaccaratController {
   constructor(private readonly baccaratService: BaccaratService) {}
 
+  @Get('placar')
+  getRoadmap() {
+    return this.baccaratService.getRoadmap();
+  }
+
   @Get('config')
   getConfig() {
     return this.baccaratService.getConfig();

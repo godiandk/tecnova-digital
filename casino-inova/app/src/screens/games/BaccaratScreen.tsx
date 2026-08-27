@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -12,8 +12,10 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
+import { RoadmapPanel } from '../../components/RoadmapPanel';
 import { ApiError } from '../../api/client';
-import { fetchBaccaratConfig, playBaccaratRound, BaccaratConfig, BaccaratBetType, BaccaratRoundResponse } from '../../api/baccarat';
+import { Roadmap } from '../../api/roadmap';
+import { fetchBaccaratConfig, fetchBaccaratRoadmap, playBaccaratRound, BaccaratConfig, BaccaratBetType, BaccaratRoundResponse } from '../../api/baccarat';
 import { mockPlayer } from '../../data/mockPlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
@@ -61,6 +63,7 @@ export function BaccaratScreen({ navigation }: Props) {
   const [betType, setBetType] = useState<BaccaratBetType>('banca');
   const [round, setRound] = useState<BaccaratRoundResponse | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [playError, setPlayError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,6 +75,7 @@ export function BaccaratScreen({ navigation }: Props) {
       .catch((error: unknown) => {
         setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
       });
+    fetchBaccaratRoadmap().then(setRoadmap).catch(() => undefined);
   }, []);
 
   const adjustAmount = (delta: number) => {
@@ -87,6 +91,7 @@ export function BaccaratScreen({ navigation }: Props) {
       const result = await playBaccaratRound(betType, amount);
       setRound(result);
       setBalance(result.newBalance);
+      setRoadmap(result.roadmap);
     } catch (error) {
       setPlayError(error instanceof ApiError ? error.message : 'Não foi possível apostar agora.');
     } finally {
@@ -107,6 +112,7 @@ export function BaccaratScreen({ navigation }: Props) {
           </Pressable>
         </View>
 
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.titleRow}>
           <DealerBadge source={DEALER_IMAGES.bacara} />
           <Text style={styles.title}>Bacará</Text>
@@ -174,8 +180,11 @@ export function BaccaratScreen({ navigation }: Props) {
             <Pressable onPress={handlePlay} disabled={playing} style={[styles.primaryButton, playing && styles.buttonDisabled]}>
               {playing ? <ActivityIndicator color={colors.background} /> : <Text style={styles.primaryButtonLabel}>Apostar</Text>}
             </Pressable>
+
+            {roadmap && roadmap.totals.total > 0 && <RoadmapPanel roadmap={roadmap} />}
           </>
         )}
+        </ScrollView>
       </SafeAreaView>
 
       <TutorialModal
@@ -189,7 +198,8 @@ export function BaccaratScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, paddingHorizontal: spacing.xl, alignItems: 'center' },
+  safe: { flex: 1, paddingHorizontal: spacing.xl },
+  scroll: { alignItems: 'center', paddingBottom: spacing.xxxl },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',

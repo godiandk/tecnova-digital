@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -12,9 +12,12 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
+import { RoadmapPanel } from '../../components/RoadmapPanel';
 import { ApiError } from '../../api/client';
+import { Roadmap } from '../../api/roadmap';
 import {
   fetchBancaFrancesaConfig,
+  fetchBancaFrancesaRoadmap,
   playBancaFrancesaRound,
   BancaFrancesaBetType,
   BancaFrancesaConfig,
@@ -54,6 +57,7 @@ export function BancaFrancesaScreen({ navigation }: Props) {
   const [round, setRound] = useState<BancaFrancesaRoundResponse | null>(null);
   const [playing, setPlaying] = useState(false);
   const [playError, setPlayError] = useState<string | null>(null);
+  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
 
   useEffect(() => {
     fetchBancaFrancesaConfig()
@@ -64,6 +68,7 @@ export function BancaFrancesaScreen({ navigation }: Props) {
       .catch((error: unknown) => {
         setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
       });
+    fetchBancaFrancesaRoadmap().then(setRoadmap).catch(() => undefined);
   }, []);
 
   const adjustAmount = (delta: number) => {
@@ -95,6 +100,7 @@ export function BancaFrancesaScreen({ navigation }: Props) {
       const result = await playBancaFrancesaRound(bets);
       setRound(result);
       setBalance(result.newBalance);
+      setRoadmap(result.roadmap);
     } catch (error) {
       setPlayError(error instanceof ApiError ? error.message : 'Não foi possível apostar agora.');
     } finally {
@@ -123,6 +129,7 @@ export function BancaFrancesaScreen({ navigation }: Props) {
           </View>
         </View>
 
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Banca Francesa</Text>
 
         <View style={styles.crewRow}>
@@ -210,8 +217,11 @@ export function BancaFrancesaScreen({ navigation }: Props) {
                 <Text style={styles.primaryButtonLabel}>Apostar {totalStake.toLocaleString('pt-BR')}</Text>
               )}
             </Pressable>
+
+            {roadmap && roadmap.totals.total > 0 && <RoadmapPanel roadmap={roadmap} />}
           </>
         )}
+        </ScrollView>
       </SafeAreaView>
 
       <TutorialModal
@@ -225,7 +235,8 @@ export function BancaFrancesaScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, paddingHorizontal: spacing.xl, alignItems: 'center' },
+  safe: { flex: 1, paddingHorizontal: spacing.xl },
+  scroll: { alignItems: 'center', paddingBottom: spacing.xxxl },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',

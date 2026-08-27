@@ -11,6 +11,11 @@ class PlayDto {
 export class BancaFrancesaController {
   constructor(private readonly bancaFrancesaService: BancaFrancesaService) {}
 
+  @Get('placar')
+  getRoadmap() {
+    return this.bancaFrancesaService.getRoadmap();
+  }
+
   @Get('config')
   getConfig() {
     return this.bancaFrancesaService.getConfig();
