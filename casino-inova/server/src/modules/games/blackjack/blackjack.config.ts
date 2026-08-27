@@ -11,3 +11,15 @@ export const PUSH_PAYOUT_MULTIPLIER = 1;
 
 export const MIN_BET = 50;
 export const MAX_BET = 5000;
+
+/**
+ * Os naipes, só pra desenhar a carta na tela.
+ *
+ * O baralho do blackjack aqui é "infinito": cada carta é sorteada com reposição, então
+ * naipe não muda valor nenhum e não dá pra contar carta. Mesmo assim o naipe é sorteado
+ * DE VERDADE no servidor e mandado junto — o app tem 52 imagens de carta, e desenhar
+ * uma delas sem que ela tenha sido sorteada seria a tela mostrando uma carta que não
+ * saiu. Custa um sorteio a mais e mantém a regra de que a tela nunca inventa.
+ */
+export const NAIPES = ['copas', 'ouros', 'espadas', 'paus'] as const;
+export type Naipe = (typeof NAIPES)[number];

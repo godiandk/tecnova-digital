@@ -12,6 +12,7 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
+import { Carta } from '../../components/Carta';
 import { ApiError } from '../../api/client';
 import {
   fetchBlackjackConfig,
@@ -25,6 +26,9 @@ import { usePlayer } from '../../data/usePlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Blackjack'>;
+
+/** Largura da carta na mesa. Cinco cabem lado a lado num celular estreito. */
+const LARGURA_DA_CARTA = 60;
 
 const BET_STEP = 50;
 
@@ -43,9 +47,7 @@ function Hand({ label, cards, total, hidden }: { label: string; cards: (string |
       </Text>
       <View style={styles.cardRow}>
         {cards.map((card, index) => (
-          <View key={index} style={[styles.card, card === null && styles.cardHidden]}>
-            <Text style={styles.cardLabel}>{card ?? '?'}</Text>
-          </View>
+          <Carta key={index} carta={card} indice={index} largura={LARGURA_DA_CARTA} />
         ))}
       </View>
     </View>
@@ -223,18 +225,6 @@ const styles = StyleSheet.create({
   handBlock: { gap: spacing.sm, alignItems: 'center' },
   handLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textSecondary },
   cardRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
-  card: {
-    width: 52,
-    height: 72,
-    borderRadius: radius.sm,
-    backgroundColor: colors.textPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.goldBright,
-  },
-  cardHidden: { backgroundColor: colors.backgroundElevated, borderColor: colors.feltLine },
-  cardLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.md, color: colors.background },
   resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, marginTop: spacing.lg, textAlign: 'center' },
   resultWin: { color: colors.goldBright },
   resultLoss: { color: colors.textFaint },
