@@ -311,6 +311,7 @@ export class DominoTableService {
     }
 
     table.consecutivePasses = 0;
+    table.lastEvent = `${seat.name} jogou ${tile.a}-${tile.b}.`;
 
     if (seat.hand.length === 0) {
       // Fechou nas duas pontas? Só dá pra saber comparando com o estado ANTES da
@@ -389,6 +390,8 @@ export class DominoTableService {
     table.leftEnd = null;
     table.rightEnd = null;
     table.consecutivePasses = 0;
+    // Sem isso, o "Fulano bateu" da mão anterior ficaria na tela a mão inteira.
+    table.lastEvent = 'Mão nova.';
 
     // Na primeira mão começa quem tem a maior carroça; depois, quem bateu antes.
     if (table.lastHandStarter >= 0) {

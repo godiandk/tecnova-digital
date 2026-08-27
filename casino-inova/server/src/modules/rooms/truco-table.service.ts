@@ -473,6 +473,7 @@ export class TrucoTableService {
     table.lastRaiseByTeam = null;
     table.currentTrick = [];
     table.roundResults = [];
+    table.lastEvent = 'Mão nova.';
     // A cada mão o "pé" gira um assento, igual mesa real.
     table.leadSeat = (table.leadSeat + 1) % SEATS;
     table.turnSeat = table.leadSeat;

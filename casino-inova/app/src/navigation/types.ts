@@ -20,5 +20,6 @@ export type RootStackParamList = {
   Truco: undefined;
   TrucoMesa: undefined;
   Domino: undefined;
+  DominoMesa: undefined;
   Poker: undefined;
 };

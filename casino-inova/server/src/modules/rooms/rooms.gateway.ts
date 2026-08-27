@@ -12,6 +12,9 @@ import { FriendsService } from '../friends/friends.service';
 import { BancaFrancesaBet } from '../games/banca-francesa/banca-francesa.engine';
 import { ChatScope, ChatService } from '../chat/chat.service';
 import { TrucoOnlineTable, TrucoTableService } from './truco-table.service';
+import { DominoOnlineTable, DominoTableService } from './domino-table.service';
+import { BoardEnd } from '../games/domino/domino.engine';
+import { Tile } from '../games/domino/domino.config';
 import { Card, TrucoSignalId, TrucoStyle, TrucoVariant } from '../games/truco/truco.config';
 
 /**
@@ -32,6 +35,7 @@ export class RoomsGateway implements OnGatewayDisconnect {
     private readonly friends: FriendsService,
     private readonly chat: ChatService,
     private readonly trucoTables: TrucoTableService,
+    private readonly dominoTables: DominoTableService,
   ) {}
 
   handleDisconnect(socket: Socket) {
@@ -294,6 +298,89 @@ export class RoomsGateway implements OnGatewayDisconnect {
       this.emitToUser(seat.userId, 'truco:mesa-atualizada', this.trucoTables.viewFor(table, seat.userId));
     }
     return this.trucoTables.viewFor(table, callerUserId);
+  }
+
+  // ---------- Dominó 2x2 ----------
+  //
+  // Mesma lógica de sigilo do truco: cada um só vê as próprias peças, então o
+  // broadcast é socket a socket com a visão montada pra cada jogador.
+
+  @SubscribeMessage('domino:criar-mesa')
+  handleDominoCreate(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() body: { userId: string; visibility: TableVisibility; buyIn: number },
+  ) {
+    return this.safe(() => {
+      const table = this.dominoTables.createTable(body.userId, { visibility: body.visibility, buyIn: body.buyIn });
+      socket.join(table.id);
+      return this.dominoTables.viewFor(table, body.userId);
+    });
+  }
+
+  @SubscribeMessage('domino:mesas-publicas')
+  handleDominoListPublic() {
+    return this.safe(() => this.dominoTables.listPublicTables());
+  }
+
+  @SubscribeMessage('domino:entrar-por-codigo')
+  handleDominoJoinByCode(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; code: string }) {
+    return this.safe(() => {
+      const table = this.dominoTables.joinByCode(body.userId, body.code);
+      socket.join(table.id);
+      return this.broadcastDomino(table, body.userId);
+    });
+  }
+
+  @SubscribeMessage('domino:entrar-por-id')
+  handleDominoJoinById(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
+    return this.safe(() => {
+      const table = this.dominoTables.joinById(body.userId, body.tableId);
+      socket.join(table.id);
+      return this.broadcastDomino(table, body.userId);
+    });
+  }
+
+  @SubscribeMessage('domino:completar-com-bot')
+  handleDominoAddBot(@MessageBody() body: { userId: string; tableId: string }) {
+    return this.safe(() => this.broadcastDomino(this.dominoTables.addBot(body.userId, body.tableId), body.userId));
+  }
+
+  @SubscribeMessage('domino:comecar')
+  handleDominoStart(@MessageBody() body: { userId: string; tableId: string }) {
+    return this.safe(() => this.broadcastDomino(this.dominoTables.start(body.userId, body.tableId), body.userId));
+  }
+
+  @SubscribeMessage('domino:jogar-peca')
+  handleDominoPlay(@MessageBody() body: { userId: string; tableId: string; tile: Tile; end: BoardEnd }) {
+    return this.safe(() =>
+      this.broadcastDomino(this.dominoTables.playTile(body.userId, body.tableId, body.tile, body.end), body.userId),
+    );
+  }
+
+  @SubscribeMessage('domino:passar')
+  handleDominoPass(@MessageBody() body: { userId: string; tableId: string }) {
+    return this.safe(() => this.broadcastDomino(this.dominoTables.pass(body.userId, body.tableId), body.userId));
+  }
+
+  @SubscribeMessage('domino:sair')
+  handleDominoLeave(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
+    return this.safe(() => {
+      const result = this.dominoTables.leaveTable(body.userId, body.tableId);
+      socket.leave(body.tableId);
+      if ('removed' in result) {
+        this.server.to(body.tableId).emit('domino:mesa-fechada');
+        return { removed: true as const };
+      }
+      return this.broadcastDomino(result, body.userId);
+    });
+  }
+
+  private broadcastDomino(table: DominoOnlineTable, callerUserId: string) {
+    for (const seat of table.seats) {
+      if (seat.isBot) continue;
+      this.emitToUser(seat.userId, 'domino:mesa-atualizada', this.dominoTables.viewFor(table, seat.userId));
+    }
+    return this.dominoTables.viewFor(table, callerUserId);
   }
 
   /**

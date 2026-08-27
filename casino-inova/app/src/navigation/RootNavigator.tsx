@@ -21,6 +21,7 @@ import { StockMarketScreen } from '../screens/games/StockMarketScreen';
 import { TrucoScreen } from '../screens/games/TrucoScreen';
 import { TrucoMesaScreen } from '../screens/games/TrucoMesaScreen';
 import { DominoScreen } from '../screens/games/DominoScreen';
+import { DominoMesaScreen } from '../screens/games/DominoMesaScreen';
 import { PokerScreen } from '../screens/games/PokerScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -86,6 +87,7 @@ export function RootNavigator() {
       <Stack.Screen name="Truco" component={TrucoScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="TrucoMesa" component={TrucoMesaScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Domino" component={DominoScreen} options={{ animation: 'fade' }} />
+      <Stack.Screen name="DominoMesa" component={DominoMesaScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Poker" component={PokerScreen} options={{ animation: 'fade' }} />
     </Stack.Navigator>
   );
