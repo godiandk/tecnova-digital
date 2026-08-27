@@ -4,11 +4,15 @@ import { promisify } from 'util';
 import * as jwt from 'jsonwebtoken';
 import { DatabaseService } from '../../database/database.service';
 import { UsersService, User } from '../users/users.service';
+import { firebaseEstaLigado, verificarTokenFirebase } from './firebase';
 
 const scryptAsync = promisify(scrypt);
 
 /** Quanto tempo o token vale. Curto o bastante pra um vazamento não ser eterno. */
 const VALIDADE_TOKEN = '30d';
+
+/** Os provedores de login social que o app oferece. */
+const PROVEDORES_ACEITOS = ['google', 'apple', 'facebook'];
 
 export interface TokenPayload {
   /** userId. `sub` é o nome padrão desse campo em JWT. */
@@ -23,10 +27,9 @@ export interface TokenPayload {
  * catastrófico: dá pra testar bilhões de senhas por segundo. scrypt é lento e come
  * memória de propósito, o que derruba a taxa de tentativa em ordens de grandeza.
  *
- * O login por Google/Apple/Facebook (Firebase Auth) entra por `loginComProvedor`, que
- * já existe e funciona — só falta o verificador de token do provedor, que é a única
- * peça que não dá pra construir sem uma conta lá. Está isolado em `verificarProvedor`
- * de propósito: plugar o Firebase é trocar o corpo daquela função e mais nada.
+ * O login por Google/Apple/Facebook passa pelo Firebase Auth: o app faz o login com o
+ * provedor, recebe um token, e manda pra cá; aqui a gente confere com o Google que o
+ * token é legítimo antes de criar sessão nenhuma (ver `firebase.ts`).
  */
 @Injectable()
 export class AuthService {
@@ -131,21 +134,28 @@ export class AuthService {
   }
 
   /**
-   * A ÚNICA peça que falta pro login social funcionar de verdade: conferir com o
-   * provedor que o token é dele mesmo. Com o Firebase Admin SDK isso é uma linha
-   * (`admin.auth().verifyIdToken(token)`), mas exige uma conta e uma chave de serviço,
-   * que este servidor ainda não tem.
+   * Confere com o Firebase que o token é legítimo. Aceita `google`, `apple` e
+   * `facebook` — os três que o plano de produto pede.
    *
-   * Enquanto não tem, recusa — em vez de aceitar qualquer token, que seria pior do que
-   * não ter login nenhum.
+   * Se FIREBASE_SERVICE_ACCOUNT não estiver definida, isto recusa: aceitar sem
+   * conferir seria pior do que não ter login social nenhum, porque bastaria inventar
+   * um token pra entrar como qualquer pessoa.
    */
   private async verificarProvedor(
     provedor: string,
-    _token: string,
+    token: string,
   ): Promise<{ subject: string; nome?: string }> {
-    throw new BadRequestException(
-      `Login por ${provedor} ainda não está ligado neste servidor — falta configurar o Firebase Admin.`,
-    );
+    if (!PROVEDORES_ACEITOS.includes(provedor)) {
+      throw new BadRequestException(
+        `Provedor "${provedor}" não é aceito. Use: ${PROVEDORES_ACEITOS.join(', ')}.`,
+      );
+    }
+    return verificarTokenFirebase(provedor, token);
+  }
+
+  /** Pra tela de login saber se mostra os botões de login social ou esconde. */
+  provedoresDisponiveis(): string[] {
+    return firebaseEstaLigado() ? [...PROVEDORES_ACEITOS] : [];
   }
 
   /** Confere o token e devolve o userId. Usado pelo guard e pelo gateway. */

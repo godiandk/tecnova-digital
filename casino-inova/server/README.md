@@ -323,12 +323,21 @@ chame não tem de onde tirar o userId.
 rápido tipo SHA-256: hash rápido é o que torna um vazamento de banco catastrófico, porque
 dá pra testar bilhões de senhas por segundo. scrypt é lento e come memória de propósito.
 
-**Login social** (`POST /auth/entrar-com-provedor`) está construído e funciona — cria a
-conta na primeira entrada, liga a credencial ao provedor, devolve o token. Falta uma peça
-só: `verificarProvedor` em `auth.service.ts`, que precisa conferir com o Firebase que o
-token é dele mesmo. Com o Firebase Admin SDK isso é uma linha, mas exige conta e chave de
-serviço. **Enquanto não tem, a rota recusa** — aceitar qualquer token seria pior do que
-não ter login social nenhum.
+**Login social** (`POST /auth/entrar-com-provedor`) está pronto do lado do servidor:
+`firebase.ts` confere o token com o Google (assinatura, validade, emissor, público-alvo e
+se a sessão foi revogada) antes de criar sessão nenhuma, e confere também que o provedor
+do token bate com o que o app disse ter usado — sem isso, um token legítimo do Google
+serviria pra entrar por uma credencial marcada como Apple.
+
+Falta só a configuração: definir `FIREBASE_SERVICE_ACCOUNT` com o JSON da chave de
+serviço. **Sem ela a rota recusa** — aceitar sem conferir seria pior do que não ter login
+social nenhum. `GET /auth/provedores` diz quais estão ligados agora, e é por ele que a
+tela de login decide mostrar ou esconder os botões.
+
+O passo a passo de console está em `docs/como-ligar-o-firebase.md`. O lado do **app**
+(pegar o token do provedor) ainda não foi construído: ele depende dos ids que só existem
+depois do projeto Firebase criado, e login com Google exige *development build* — não
+funciona no Expo Go.
 
 Variáveis que o servidor exige:
 
@@ -336,6 +345,7 @@ Variáveis que o servidor exige:
 |---|---|
 | `DATABASE_URL` | Endereço do Postgres. Sem ela o servidor não sobe. |
 | `JWT_SECRET` | Assina os tokens. Sem ela o servidor não sobe. |
+| `FIREBASE_SERVICE_ACCOUNT` | JSON da chave de serviço, pro login social. Sem ela, login social recusa. |
 | `PURCHASE_WEBHOOK_SECRET` | Confere a assinatura do webhook de compra. |
 | `PERMITIR_COMPRA_DE_TESTE` | Só em desenvolvimento — libera a compra sem pagamento. |
 
@@ -392,7 +402,7 @@ origem de cada entrada sobrevivem a um processo novo.
 
 Nesta ordem:
 
-1. **Ligar o Firebase Admin** pro login social funcionar — é a única peça que falta na autenticação (ver acima). E-mail/senha já funciona inteiro.
+1. **Configurar o Firebase e construir o lado do app** pro login social — o servidor já confere o token; ver `docs/como-ligar-o-firebase.md`. E-mail/senha já funciona inteiro.
 2. **Ligar a RevenueCat de verdade** — o webhook já existe e está trancado (ver "A loja" abaixo); o que falta é criar a conta, apontar o webhook dela pra cá e conferir o formato exato do payload que ela manda.
 4. **Poker multiplayer** — o único jogo de mesa que continua só contra bot.
 

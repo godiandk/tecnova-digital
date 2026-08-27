@@ -27,6 +27,7 @@
     "@nestjs/websockets": "^10.4.22",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/pg": "^8.23.1",
+    "firebase-admin": "^14.3.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.1",

@@ -4,3 +4,15 @@ dist/
 .expo-shared/
 *.log
 .DS_Store
+
+# Segredos. Nada disto pode entrar no repositório:
+#
+# - .env guarda DATABASE_URL, JWT_SECRET e a chave de serviço do Firebase.
+# - a chave de serviço do Firebase dá acesso administrativo ao projeto inteiro,
+#   incluindo poder entrar como qualquer usuário. Vazar ela é entregar as contas
+#   de todo mundo — e o histórico do git não esquece.
+.env
+.env.*
+!.env.example
+*firebase-adminsdk*.json
+service-account*.json

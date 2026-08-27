@@ -46,6 +46,17 @@ export class AuthController {
     return this.auth.loginComSenha(body.email, body.senha);
   }
 
+  /**
+   * Quais logins sociais este servidor aceita agora. Vem vazio enquanto o Firebase não
+   * estiver configurado — é o que permite a tela de login esconder os botões em vez de
+   * mostrar um botão que sempre dá erro.
+   */
+  @Publico()
+  @Get('provedores')
+  provedores() {
+    return { provedores: this.auth.provedoresDisponiveis() };
+  }
+
   @Publico()
   @Post('entrar-com-provedor')
   entrarComProvedor(@Body() body: LoginProvedorDto) {
