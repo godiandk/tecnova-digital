@@ -22,16 +22,27 @@ Já está: branch `claude/mobile-casino-tournaments-jdtyzb` do repositório.
 [render.com](https://render.com) → entre com o GitHub. O plano gratuito serve pra testar.
 
 ### 3. Aponte pro repositório
-No painel: **New → Blueprint**, escolha o repositório e a branch.
 
-O Render lê o `casino-inova/render.yaml`, que já está no projeto, e monta sozinho:
+Blueprint **não fica** na lista do botão "New +" (lá só aparecem Static Site, Web
+Service, Postgres e companhia). Ele tem seção própria:
+
+- direto pelo endereço: **dashboard.render.com/blueprints**
+- ou pelo menu ☰ no canto superior esquerdo → **Blueprints**
+
+Lá dentro: **New Blueprint Instance** → escolha o repositório → escolha a branch
+`claude/mobile-casino-tournaments-jdtyzb` → **Apply**.
+
+O Render lê o `render.yaml` da RAIZ do repositório — é lá que ele procura, e é lá que o
+arquivo está. Ele monta sozinho:
 
 - **o banco Postgres** (`casino-inova-db`), plano gratuito;
 - **o serviço web** (`casino-inova`), a partir do `casino-inova/Dockerfile`;
 - **`DATABASE_URL`**, ligada ao banco automaticamente;
-- **`JWT_SECRET`**, sorteado pelo próprio Render.
+- **`JWT_SECRET`** e **`PURCHASE_WEBHOOK_SECRET`**, sorteados pelo próprio Render;
+- **o plano gratuito nos dois**, escrito no arquivo — sem essa linha o Render usaria o
+  plano pago por padrão no serviço web.
 
-Nenhuma senha fica escrita no projeto — os dois valores nascem lá dentro.
+Nenhuma senha fica escrita no projeto — os valores nascem lá dentro.
 
 ### 4. Espere a primeira construção
 Uns 5 a 10 minutos na primeira vez: ele instala tudo, constrói o app web e compila o
@@ -48,9 +59,13 @@ aplicativo. No Android é o mesmo caminho no Chrome, em "Instalar aplicativo".
 ## Depois que estiver no ar
 
 **Avise a RevenueCat.** No painel dela, o endereço do webhook passa a ser
-`https://SEU-ENDERECO/store/webhook`. Sem isso a compra é cobrada e as fichas não
-entram. O segredo que você configurar lá tem que ser o mesmo da variável
-`PURCHASE_WEBHOOK_SECRET` no Render.
+`https://SEU-ENDERECO/store/webhook/compra`. Sem isso a compra é cobrada e as fichas
+não entram.
+
+O segredo já foi sorteado pelo Render: copie o valor de `PURCHASE_WEBHOOK_SECRET` (no
+serviço, aba **Environment**) e cole no campo de autorização do webhook da RevenueCat.
+Enquanto os dois não forem iguais, o servidor recusa o aviso — de propósito, senão
+qualquer um poderia mandar um "comprou" falso e ganhar fichas.
 
 **Se quiser domínio próprio.** No Render, em Settings → Custom Domain. Ele cuida do
 certificado. O app não precisa de mudança nenhuma: ele usa a origem da própria página.

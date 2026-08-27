@@ -1,0 +1,16 @@
+# O que não deve entrar na imagem.
+#
+# node_modules fica de fora porque a imagem instala as suas próprias (as da máquina de
+# desenvolvimento podem ser de outro sistema operacional). dist também: é construído
+# lá dentro. E os segredos nunca entram, pelo mesmo motivo de não entrarem no git.
+node_modules
+*/node_modules
+dist
+*/dist
+.expo
+*/.expo
+*.log
+.env
+.env.*
+*firebase-adminsdk*.json
+service-account*.json
