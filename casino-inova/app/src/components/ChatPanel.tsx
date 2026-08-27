@@ -23,13 +23,27 @@ export interface ChatMessage {
 
 const MAX_LENGTH = 200;
 
+interface ChatPanelProps {
+  roomId: string;
+  /** Aba que abre selecionada. */
+  scope?: ChatScope;
+  /**
+   * Liga a aba "Dupla" — só em mesa 2x2 (truco e dominó). Em mesa aberta não existe
+   * parceiro, e o servidor recusa o envio, então nem mostramos a aba.
+   */
+  comDupla?: boolean;
+}
+
 /**
- * Chat da mesa. `scope` é "mesa" (todo mundo vê) ou "dupla" (só o parceiro), que só
- * faz sentido em truco/dominó 2x2. As regras de tamanho, anti-flood e silenciamento
- * são todas do servidor — aqui a gente só mostra o erro que ele devolve.
+ * Chat da mesa. Duas abas quando `comDupla`: "Mesa" (todo mundo vê) e "Dupla" (só o
+ * parceiro). O histórico vem filtrado do servidor — ele já não manda a conversa
+ * privada da dupla adversária —, então separar por aba aqui é só apresentação. As
+ * regras de tamanho, anti-flood e silenciamento são todas do servidor; aqui a gente
+ * só mostra o erro que ele devolve.
  */
-export function ChatPanel({ roomId, scope = 'mesa' }: { roomId: string; scope?: ChatScope }) {
+export function ChatPanel({ roomId, scope = 'mesa', comDupla = false }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [abaAtiva, setAbaAtiva] = useState<ChatScope>(scope);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +82,7 @@ export function ChatPanel({ roomId, scope = 'mesa' }: { roomId: string; scope?: 
     setSending(true);
     setError(null);
     try {
-      await emitWithAck('chat:enviar', { userId: MOCK_USER_ID, roomId, scope, text });
+      await emitWithAck('chat:enviar', { userId: MOCK_USER_ID, roomId, scope: abaAtiva, text });
       setDraft('');
     } catch (caught) {
       setError(caught instanceof SocketError ? caught.message : 'Não deu pra enviar agora.');
@@ -77,12 +91,43 @@ export function ChatPanel({ roomId, scope = 'mesa' }: { roomId: string; scope?: 
     }
   };
 
+  // Aviso do sistema ("Fulano entrou") é sempre de mesa; o resto separa por aba.
+  const visiveis = messages.filter((message) => message.scope === abaAtiva);
+
   return (
     <View style={styles.panel}>
-      <View style={styles.header}>
-        <Ionicons name={scope === 'dupla' ? 'people' : 'chatbubble'} size={14} color={colors.goldBright} />
-        <Text style={styles.headerLabel}>{scope === 'dupla' ? 'Conversa da dupla' : 'Chat da mesa'}</Text>
-      </View>
+      {comDupla ? (
+        <View style={styles.tabs}>
+          {(['mesa', 'dupla'] as ChatScope[]).map((aba) => {
+            const ativa = aba === abaAtiva;
+            return (
+              <Pressable
+                key={aba}
+                onPress={() => {
+                  setAbaAtiva(aba);
+                  setError(null);
+                }}
+                style={[styles.tab, ativa && styles.tabAtiva]}
+                hitSlop={6}
+              >
+                <Ionicons
+                  name={aba === 'dupla' ? 'people' : 'chatbubble'}
+                  size={12}
+                  color={ativa ? colors.goldBright : colors.textFaint}
+                />
+                <Text style={[styles.tabLabel, ativa && styles.tabLabelAtiva]}>
+                  {aba === 'dupla' ? 'Dupla' : 'Mesa'}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : (
+        <View style={styles.header}>
+          <Ionicons name={abaAtiva === 'dupla' ? 'people' : 'chatbubble'} size={14} color={colors.goldBright} />
+          <Text style={styles.headerLabel}>{abaAtiva === 'dupla' ? 'Conversa da dupla' : 'Chat da mesa'}</Text>
+        </View>
+      )}
 
       {loading ? (
         <ActivityIndicator color={colors.goldBright} style={styles.loading} />
@@ -94,8 +139,12 @@ export function ChatPanel({ roomId, scope = 'mesa' }: { roomId: string; scope?: 
           onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
           showsVerticalScrollIndicator={false}
         >
-          {messages.length === 0 && <Text style={styles.empty}>Ninguém falou nada ainda.</Text>}
-          {messages.map((message) => (
+          {visiveis.length === 0 && (
+            <Text style={styles.empty}>
+              {abaAtiva === 'dupla' ? 'Nada combinado com o parceiro ainda.' : 'Ninguém falou nada ainda.'}
+            </Text>
+          )}
+          {visiveis.map((message) => (
             <View key={message.id} style={styles.messageRow}>
               {message.isSystem ? (
                 <Text style={styles.systemText}>{message.text}</Text>
@@ -123,7 +172,7 @@ export function ChatPanel({ roomId, scope = 'mesa' }: { roomId: string; scope?: 
         <TextInput
           value={draft}
           onChangeText={setDraft}
-          placeholder={scope === 'dupla' ? 'Falar só com o parceiro...' : 'Falar na mesa...'}
+          placeholder={abaAtiva === 'dupla' ? 'Falar só com o parceiro...' : 'Falar na mesa...'}
           placeholderTextColor={colors.textFaint}
           style={styles.input}
           maxLength={MAX_LENGTH}
@@ -153,6 +202,26 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   header: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  tabs: { flexDirection: 'row', gap: spacing.xs },
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.feltLine,
+  },
+  tabAtiva: { borderColor: colors.goldBright, backgroundColor: colors.overlay },
+  tabLabel: {
+    fontFamily: fontFamily.bodySemiBold,
+    fontSize: fontSize.xs,
+    color: colors.textFaint,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  tabLabelAtiva: { color: colors.goldBright },
   headerLabel: {
     fontFamily: fontFamily.bodySemiBold,
     fontSize: fontSize.xs,

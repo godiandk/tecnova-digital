@@ -136,6 +136,15 @@ export class RoomsGateway implements OnGatewayDisconnect {
   handleChatSend(@MessageBody() body: { userId: string; roomId: string; scope?: ChatScope; text: string }) {
     return this.safe(() => {
       const scope: ChatScope = body.scope === 'dupla' ? 'dupla' : 'mesa';
+
+      // Falar com o parceiro só faz sentido em mesa de dupla (truco/dominó 2x2). Se
+      // não tem parceiro, é melhor recusar do que guardar uma mensagem que ninguém
+      // nunca vai ler.
+      const partnerUserId = scope === 'dupla' ? this.partnerUserIdOf(body.roomId, body.userId) : undefined;
+      if (scope === 'dupla' && !partnerUserId) {
+        throw new Error('Você não tem parceiro nesta mesa.');
+      }
+
       // A cor da ficha vem do assento, pra mensagem aparecer identificada na mesa.
       const seat = this.tables.findSeat(body.roomId, body.userId);
       const message = this.chat.postMessage({
@@ -145,18 +154,38 @@ export class RoomsGateway implements OnGatewayDisconnect {
         text: body.text,
         color: seat?.color,
       });
-      // Escopo `mesa` vai pra sala inteira. `dupla` ainda não tem mesa 2x2 no ar —
-      // quando truco/dominó em dupla existirem, o envio vai pros dois sockets da dupla.
+
       if (scope === 'mesa') {
         this.server.to(body.roomId).emit('chat:mensagem', message);
+      } else {
+        // Dupla vai socket a socket, só pros dois. Mandar pra sala entregaria a
+        // conversa na mão dos adversários, que é exatamente o que não pode.
+        this.emitToUser(body.userId, 'chat:mensagem', message);
+        this.emitToUser(partnerUserId as string, 'chat:mensagem', message);
       }
       return message;
     });
   }
 
   @SubscribeMessage('chat:historico')
-  handleChatHistory(@MessageBody() body: { userId: string; roomId: string; partnerUserId?: string }) {
-    return this.safe(() => this.chat.historyFor(body.roomId, body.userId, body.partnerUserId));
+  handleChatHistory(@MessageBody() body: { userId: string; roomId: string }) {
+    return this.safe(() =>
+      // Quem é o parceiro é o servidor que decide, olhando o assento. Se viesse do
+      // cliente, bastava mandar o userId do adversário pra ler a conversa da outra
+      // dupla.
+      this.chat.historyFor(body.roomId, body.userId, this.partnerUserIdOf(body.roomId, body.userId)),
+    );
+  }
+
+  /**
+   * O parceiro de dupla, venha a sala do truco ou do dominó. Mesa aberta (banca
+   * francesa e afins) não tem dupla, então devolve undefined e o escopo `dupla`
+   * nem chega a ser aceito lá.
+   */
+  private partnerUserIdOf(roomId: string, userId: string): string | undefined {
+    return (
+      this.trucoTables.partnerUserIdOf(roomId, userId) ?? this.dominoTables.partnerUserIdOf(roomId, userId)
+    );
   }
 
   @SubscribeMessage('chat:silenciar')

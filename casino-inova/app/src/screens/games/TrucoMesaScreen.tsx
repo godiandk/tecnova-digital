@@ -449,7 +449,7 @@ export function TrucoMesaScreen({ navigation, route }: Props) {
               )}
 
               {/* Chat geral da mesa — o da dupla entra quando o servidor rotear por parceiro. */}
-              <ChatPanel roomId={table.id} scope="mesa" />
+              <ChatPanel roomId={table.id} scope="mesa" comDupla />
             </>
           )}
         </ScrollView>

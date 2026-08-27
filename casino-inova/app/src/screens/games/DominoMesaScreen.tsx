@@ -358,7 +358,7 @@ export function DominoMesaScreen({ navigation }: Props) {
                 </>
               )}
 
-              <ChatPanel roomId={table.id} scope="mesa" />
+              <ChatPanel roomId={table.id} scope="mesa" comDupla />
             </>
           )}
         </ScrollView>
