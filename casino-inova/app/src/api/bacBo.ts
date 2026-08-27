@@ -1,4 +1,4 @@
-import { apiRequest, MOCK_USER_ID } from './client';
+import { apiRequest } from './client';
 import { Roadmap } from './roadmap';
 
 export type BacBoBetType = 'jogador' | 'banca' | 'empate';
@@ -48,6 +48,6 @@ export function fetchBacBoRoadmap(): Promise<Roadmap> {
 export function playBacBoRound(bets: BacBoBet[]): Promise<BacBoRoundResponse> {
   return apiRequest<BacBoRoundResponse>('/games/bac-bo/apostar', {
     method: 'POST',
-    body: { userId: MOCK_USER_ID, bets },
+    body: { bets },
   });
 }

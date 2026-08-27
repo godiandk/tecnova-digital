@@ -1,0 +1,63 @@
+import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { UsersService } from '../users/users.service';
+import { Publico } from './auth.guard';
+import { UsuarioAtual } from './usuario-atual.decorator';
+
+class CadastroDto {
+  email!: string;
+  senha!: string;
+  nome!: string;
+}
+
+class LoginDto {
+  email!: string;
+  senha!: string;
+}
+
+class LoginProvedorDto {
+  provedor!: string;
+  token!: string;
+  nome?: string;
+}
+
+@Controller('auth')
+export class AuthController {
+  constructor(
+    private readonly auth: AuthService,
+    private readonly users: UsersService,
+  ) {}
+
+  @Publico()
+  @Post('cadastrar')
+  cadastrar(@Body() body: CadastroDto) {
+    if (!body?.email || !body?.senha || !body?.nome) {
+      throw new BadRequestException('Informe email, senha e nome.');
+    }
+    return this.auth.registrarComSenha(body.email, body.senha, body.nome);
+  }
+
+  @Publico()
+  @Post('entrar')
+  entrar(@Body() body: LoginDto) {
+    if (!body?.email || !body?.senha) {
+      throw new BadRequestException('Informe email e senha.');
+    }
+    return this.auth.loginComSenha(body.email, body.senha);
+  }
+
+  @Publico()
+  @Post('entrar-com-provedor')
+  entrarComProvedor(@Body() body: LoginProvedorDto) {
+    if (!body?.provedor || !body?.token) {
+      throw new BadRequestException('Informe provedor e token.');
+    }
+    return this.auth.loginComProvedor(body.provedor, body.token, body.nome);
+  }
+
+  /** Quem sou eu, segundo o token que mandei. Exige estar logado. */
+  @Get('eu')
+  async eu(@UsuarioAtual() userId: string) {
+    return this.users.findById(userId);
+  }
+}

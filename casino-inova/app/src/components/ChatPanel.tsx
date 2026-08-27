@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { MOCK_USER_ID } from '../api/client';
+import { usuarioLogadoId } from '../api/session';
 import { emitWithAck, getSocket, SocketError } from '../api/socket';
 import { PLAYER_CHIP_IMAGES, PlayerColor } from '../data/chipImages';
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
@@ -53,7 +53,7 @@ export function ChatPanel({ roomId, scope = 'mesa', comDupla = false }: ChatPane
   useEffect(() => {
     let cancelled = false;
 
-    emitWithAck<ChatMessage[]>('chat:historico', { userId: MOCK_USER_ID, roomId })
+    emitWithAck<ChatMessage[]>('chat:historico', { roomId })
       .then((history) => {
         if (!cancelled) setMessages(history);
       })
@@ -82,7 +82,7 @@ export function ChatPanel({ roomId, scope = 'mesa', comDupla = false }: ChatPane
     setSending(true);
     setError(null);
     try {
-      await emitWithAck('chat:enviar', { userId: MOCK_USER_ID, roomId, scope: abaAtiva, text });
+      await emitWithAck('chat:enviar', { roomId, scope: abaAtiva, text });
       setDraft('');
     } catch (caught) {
       setError(caught instanceof SocketError ? caught.message : 'Não deu pra enviar agora.');
@@ -154,7 +154,7 @@ export function ChatPanel({ roomId, scope = 'mesa', comDupla = false }: ChatPane
                     <Image source={PLAYER_CHIP_IMAGES[message.color]} style={styles.chip} resizeMode="contain" />
                   )}
                   <Text style={styles.messageText}>
-                    <Text style={[styles.messageAuthor, message.userId === MOCK_USER_ID && styles.messageAuthorSelf]}>
+                    <Text style={[styles.messageAuthor, message.userId === usuarioLogadoId() && styles.messageAuthorSelf]}>
                       {message.userName}:{' '}
                     </Text>
                     {message.text}

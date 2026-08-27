@@ -17,6 +17,11 @@ function localNetworkAddress(): string | null {
 }
 
 async function bootstrap() {
+  // Falha na subida, não no primeiro login: sem segredo não existe token confiável.
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET não está definida — o servidor não sobe sem ela.');
+  }
+
   const app = await NestFactory.create(AppModule);
   app.enableCors();
 

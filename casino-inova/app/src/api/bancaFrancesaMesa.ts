@@ -1,4 +1,3 @@
-import { MOCK_USER_ID } from './client';
 import { emitWithAck, getSocket } from './socket';
 import { BancaFrancesaBet, BancaFrancesaOutcome, BetResult } from './bancaFrancesa';
 import { PlayerColor } from '../data/chipImages';
@@ -37,7 +36,7 @@ export interface PublicTableSummary {
 }
 
 export function createTable(visibility: 'publica' | 'privada'): Promise<TableView> {
-  return emitWithAck('banca-francesa:criar-mesa', { userId: MOCK_USER_ID, visibility });
+  return emitWithAck('banca-francesa:criar-mesa', { visibility });
 }
 
 export function listPublicTables(): Promise<PublicTableSummary[]> {
@@ -45,31 +44,31 @@ export function listPublicTables(): Promise<PublicTableSummary[]> {
 }
 
 export function joinByCode(code: string): Promise<TableView> {
-  return emitWithAck('banca-francesa:entrar-por-codigo', { userId: MOCK_USER_ID, code });
+  return emitWithAck('banca-francesa:entrar-por-codigo', { code });
 }
 
 export function joinById(tableId: string): Promise<TableView> {
-  return emitWithAck('banca-francesa:entrar-por-id', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('banca-francesa:entrar-por-id', { tableId });
 }
 
 export function inviteFriend(tableId: string, friendUserId: string): Promise<{ enviado: boolean; motivo?: string; amigoOnline?: boolean }> {
-  return emitWithAck('banca-francesa:convidar-amigo', { userId: MOCK_USER_ID, tableId, friendUserId });
+  return emitWithAck('banca-francesa:convidar-amigo', { tableId, friendUserId });
 }
 
 export function addBot(tableId: string): Promise<TableView> {
-  return emitWithAck('banca-francesa:completar-com-bot', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('banca-francesa:completar-com-bot', { tableId });
 }
 
 export function placeBets(tableId: string, bets: BancaFrancesaBet[]): Promise<TableView> {
-  return emitWithAck('banca-francesa:apostar', { userId: MOCK_USER_ID, tableId, bets });
+  return emitWithAck('banca-francesa:apostar', { tableId, bets });
 }
 
 export function roll(tableId: string): Promise<TableView> {
-  return emitWithAck('banca-francesa:girar', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('banca-francesa:girar', { tableId });
 }
 
 export function leaveTable(tableId: string): Promise<TableView | { removed: true }> {
-  return emitWithAck('banca-francesa:sair', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('banca-francesa:sair', { tableId });
 }
 
 /** Cada `on*` devolve a função de cancelar — chame no cleanup do useEffect. */

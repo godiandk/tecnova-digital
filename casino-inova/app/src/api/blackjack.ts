@@ -1,4 +1,4 @@
-import { apiRequest, MOCK_USER_ID } from './client';
+import { apiRequest } from './client';
 
 export interface BlackjackConfig {
   minBet: number;
@@ -27,13 +27,13 @@ export function fetchBlackjackConfig(): Promise<BlackjackConfig> {
 }
 
 export function startBlackjackHand(bet: number): Promise<BlackjackHandResponse> {
-  return apiRequest<BlackjackHandResponse>('/games/blackjack/apostar', { method: 'POST', body: { userId: MOCK_USER_ID, bet } });
+  return apiRequest<BlackjackHandResponse>('/games/blackjack/apostar', { method: 'POST', body: { bet } });
 }
 
 export function hitBlackjack(): Promise<BlackjackHandResponse> {
-  return apiRequest<BlackjackHandResponse>('/games/blackjack/pedir-carta', { method: 'POST', body: { userId: MOCK_USER_ID } });
+  return apiRequest<BlackjackHandResponse>('/games/blackjack/pedir-carta', { method: 'POST', body: {} });
 }
 
 export function standBlackjack(): Promise<BlackjackHandResponse> {
-  return apiRequest<BlackjackHandResponse>('/games/blackjack/parar', { method: 'POST', body: { userId: MOCK_USER_ID } });
+  return apiRequest<BlackjackHandResponse>('/games/blackjack/parar', { method: 'POST', body: {} });
 }

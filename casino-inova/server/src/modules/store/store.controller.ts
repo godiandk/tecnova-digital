@@ -10,9 +10,10 @@ import {
 } from '@nestjs/common';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { StoreService } from './store.service';
+import { UsuarioAtual } from '../auth/usuario-atual.decorator';
+import { Publico } from '../auth/auth.guard';
 
 class FulfillPurchaseDto {
-  userId!: string;
   packageId!: string;
 }
 
@@ -35,6 +36,7 @@ class WebhookDto {
 export class StoreController {
   constructor(private readonly storeService: StoreService) {}
 
+  @Publico()
   @Get('pacotes')
   listPackages() {
     return this.storeService.listPackages();
@@ -84,16 +86,16 @@ export class StoreController {
    * configurar erra pro lado seguro.
    */
   @Post('comprar')
-  async fulfillPurchase(@Body() body: FulfillPurchaseDto) {
+  async fulfillPurchase(@UsuarioAtual() usuarioLogado: string, @Body() body: FulfillPurchaseDto) {
     if (process.env.PERMITIR_COMPRA_DE_TESTE !== 'true') {
       throw new ForbiddenException(
         'Compra de teste desligada. Em produção a ficha só entra pelo webhook de compra validada.',
       );
     }
-    if (!body?.userId || !body?.packageId) {
-      throw new BadRequestException('Informe userId e packageId.');
+    if (!body?.packageId) {
+      throw new BadRequestException('Informe packageId.');
     }
-    return this.storeService.fulfillPurchase(body.userId, body.packageId);
+    return this.storeService.fulfillPurchase(usuarioLogado, body.packageId);
   }
 }
 

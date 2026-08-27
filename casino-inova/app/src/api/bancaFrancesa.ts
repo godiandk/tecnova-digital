@@ -1,4 +1,4 @@
-import { apiRequest, MOCK_USER_ID } from './client';
+import { apiRequest } from './client';
 import { Roadmap } from './roadmap';
 
 export type BancaFrancesaBetType = 'ases' | 'pequeno' | 'grande' | 'linha';
@@ -43,7 +43,7 @@ export function fetchBancaFrancesaConfig(): Promise<BancaFrancesaConfig> {
 export function playBancaFrancesaRound(bets: BancaFrancesaBet[]): Promise<BancaFrancesaRoundResponse> {
   return apiRequest<BancaFrancesaRoundResponse>('/games/banca-francesa/apostar', {
     method: 'POST',
-    body: { userId: MOCK_USER_ID, bets },
+    body: { bets },
   });
 }
 

@@ -53,12 +53,17 @@ Suba o servidor primeiro — as telas dos jogos falam com ele de verdade:
 createdb casino_inova
 cd server
 npm install
-DATABASE_URL=postgres://postgres@localhost:5432/casino_inova npm run start:dev
+DATABASE_URL=postgres://postgres@localhost:5432/casino_inova \
+  JWT_SECRET=troque-isto-em-producao \
+  PERMITIR_COMPRA_DE_TESTE=true \
+  npm run start:dev
 ```
 
 O servidor cria as tabelas sozinho e, só na primeira vez (base vazia), quatro contas de
-teste. `DATABASE_URL` é obrigatória — sem ela o servidor não sobe, em vez de subir
-gravando num banco que ninguém escolheu.
+teste — `u1@teste.local` a `u4@teste.local`, todas com a senha `casino123`. `u1` é admin.
+
+`DATABASE_URL` e `JWT_SECRET` são obrigatórias: sem banco escolhido ou sem segredo pra
+assinar token, o servidor recusa subir em vez de subir errado.
 
 Em outro terminal:
 
@@ -75,7 +80,7 @@ O app **descobre o endereço do servidor sozinho** — em celular físico ele l�
 
 Nada disto é esquecimento — é o que ficou de fora do escopo construído até aqui, em ordem de importância:
 
-1. **Autenticação de verdade.** Hoje o `userId` viaja explícito em cada chamada e `GET /users/me` devolve um usuário fixo. Precisa de Firebase Auth (Google, Facebook, Apple, e-mail/senha).
+1. **Login social (Google/Apple/Facebook).** E-mail e senha já funciona inteiro — conta, token assinado, e o `userId` do corpo deixou de valer qualquer coisa. Pro login social falta só configurar o Firebase Admin: o caminho está construído e recusa enquanto não estiver ligado, em vez de aceitar qualquer token.
 2. **Ligar a RevenueCat de verdade.** O webhook de compra já existe, exige assinatura e não credita duas vezes se o evento for reenviado. A rota de compra de teste (que credita sem ninguém pagar) vem **trancada por padrão** — só responde com `PERMITIR_COMPRA_DE_TESTE=true`. O que falta é criar a conta na RevenueCat, apontar o webhook dela pra cá e conferir o formato exato do payload.
 3. **Poker multiplayer.** O único jogo de mesa que continua só contra bot — mesa de 2 a 9 lugares com side pot é bem mais trabalho que o 2x2 de assento fixo.
 4. **Planilha de economia** (curva de nível, preço dos pacotes) — documento de negócio, não código.

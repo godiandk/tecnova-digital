@@ -1,11 +1,5 @@
 import Constants from 'expo-constants';
-
-/**
- * A Fase 0 não tem autenticação real ainda, então todo request usa o mesmo usuário
- * mock do servidor (`u1` — ver server/src/modules/users/users.service.ts). Isso troca
- * pelo id do usuário logado assim que o login existir.
- */
-export const MOCK_USER_ID = 'u1';
+import { limparSessao, tokenAtual } from './session';
 
 const SERVER_PORT = 3000;
 
@@ -48,11 +42,22 @@ export class ApiError extends Error {
 }
 
 export async function apiRequest<T>(path: string, options?: { method?: 'GET' | 'POST'; body?: unknown }): Promise<T> {
+  const token = tokenAtual();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options?.method ?? 'GET',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      // Quem você é vai no cabeçalho, assinado. Nenhuma rota lê identidade do corpo.
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: options?.body ? JSON.stringify(options.body) : undefined,
   });
+
+  // Token expirado ou revogado: derruba a sessão pra o app voltar pro login em vez de
+  // ficar mostrando erro em toda tela.
+  if (response.status === 401) {
+    await limparSessao();
+  }
 
   const payload = await response.json().catch(() => undefined);
 

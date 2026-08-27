@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ActivityIndicator, Dimensions } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TextInput, ActivityIndicator, Dimensions, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { mockPlayer } from '../data/mockPlayer';
+import { usePlayer } from '../data/usePlayer';
+import { fetchFriends } from '../api/friends';
+import { sair } from '../api/auth';
 import { ApiError } from '../api/client';
 import { redeemCoupon } from '../api/coupons';
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
@@ -10,7 +12,7 @@ import { CasinoCard } from '../components/CasinoCard';
 import { LevelBar } from '../components/LevelBar';
 import { GoldButton } from '../components/GoldButton';
 
-const VIP_LABEL: Record<typeof mockPlayer.vipTier, string> = {
+const VIP_LABEL: Record<'bronze' | 'prata' | 'ouro' | 'diamante', string> = {
   bronze: 'Bronze',
   prata: 'Prata',
   ouro: 'Ouro',
@@ -21,11 +23,23 @@ const VIP_LABEL: Record<typeof mockPlayer.vipTier, string> = {
 const LARGURA_BARRA = Dimensions.get('window').width - spacing.xl * 2 - spacing.lg * 2;
 
 export function ProfileScreen() {
+  const { jogador, recarregar } = usePlayer();
+  const [totalAmigos, setTotalAmigos] = useState(0);
 
-  const [balance, setBalance] = useState(mockPlayer.chipBalance);
+  const [balance, setBalance] = useState(jogador?.chipBalance ?? 0);
   const [couponCode, setCouponCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
   const [couponMessage, setCouponMessage] = useState<{ text: string; ok: boolean } | null>(null);
+
+  useEffect(() => {
+    fetchFriends()
+      .then((amigos) => setTotalAmigos(amigos.length))
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (jogador) setBalance(jogador.chipBalance);
+  }, [jogador]);
 
   const handleRedeem = async () => {
     if (!couponCode.trim() || redeeming) return;
@@ -47,21 +61,21 @@ export function ProfileScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.headerBlock}>
         <View style={styles.avatar} />
-        <Text style={styles.name}>{mockPlayer.name}</Text>
+        <Text style={styles.name}>{jogador?.name ?? ''}</Text>
         <View style={styles.vipPill}>
-          <Text style={styles.vipLabel}>Clube {VIP_LABEL[mockPlayer.vipTier]}</Text>
+          <Text style={styles.vipLabel}>Clube {VIP_LABEL[jogador?.vipTier ?? 'bronze']}</Text>
         </View>
       </View>
 
       <CasinoCard style={styles.levelCard}>
         <LevelBar
-          level={mockPlayer.level}
-          xp={mockPlayer.xp}
-          xpToNextLevel={mockPlayer.xpToNextLevel}
+          level={jogador?.level ?? 1}
+          xp={jogador?.xp ?? 0}
+          xpToNextLevel={jogador?.xpToNextLevel ?? 500}
           width={LARGURA_BARRA}
         />
         <Text style={styles.levelLabel}>
-          {mockPlayer.xp} de {mockPlayer.xpToNextLevel} XP pro nível {mockPlayer.level + 1}
+          {jogador?.xp ?? 0} de {jogador?.xpToNextLevel ?? 500} XP pro nível {jogador?.level ?? 1 + 1}
         </Text>
       </CasinoCard>
 
@@ -71,7 +85,7 @@ export function ProfileScreen() {
           <Text style={styles.statLabel}>Fichas</Text>
         </CasinoCard>
         <CasinoCard style={styles.statCard}>
-          <Text style={styles.statValue}>{mockPlayer.friends.length}</Text>
+          <Text style={styles.statValue}>{totalAmigos}</Text>
           <Text style={styles.statLabel}>Amigos</Text>
         </CasinoCard>
       </View>
@@ -103,6 +117,10 @@ export function ProfileScreen() {
           </Text>
         )}
       </CasinoCard>
+
+      <Pressable onPress={sair} style={styles.sairBotao}>
+        <Text style={styles.sairTexto}>Sair da conta</Text>
+      </Pressable>
     </SafeAreaView>
   );
 }
@@ -122,6 +140,8 @@ const styles = StyleSheet.create({
   vipPill: { backgroundColor: colors.backgroundElevated, borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: spacing.md },
   vipLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.xs, color: colors.goldBright },
   levelCard: { marginBottom: spacing.lg, gap: spacing.sm, alignItems: 'center' },
+  sairBotao: { marginTop: spacing.xl, alignSelf: 'center', paddingVertical: spacing.sm, paddingHorizontal: spacing.xl },
+  sairTexto: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.danger },
   levelLabel: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.xs, color: colors.textFaint },
   statsRow: { flexDirection: 'row', gap: spacing.lg, marginBottom: spacing.lg },
   statCard: { flex: 1, alignItems: 'center', gap: spacing.xs },

@@ -1,13 +1,12 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { FriendsService } from './friends.service';
+import { UsuarioAtual } from '../auth/usuario-atual.decorator';
 
 class SendRequestDto {
-  userId!: string;
   targetUserId!: string;
 }
 
 class RespondDto {
-  userId!: string;
   accept!: boolean;
 }
 
@@ -16,30 +15,34 @@ export class FriendsController {
   constructor(private readonly friendsService: FriendsService) {}
 
   @Get()
-  listFriends(@Query('userId') userId: string) {
-    if (!userId) throw new BadRequestException('Informe userId.');
+  listFriends(@UsuarioAtual() userId: string) {
+    if (!userId) throw new BadRequestException('Requisição inválida.');
     return this.friendsService.listFriends(userId);
   }
 
   @Get('pendentes')
-  listPending(@Query('userId') userId: string) {
-    if (!userId) throw new BadRequestException('Informe userId.');
+  listPending(@UsuarioAtual() userId: string) {
+    if (!userId) throw new BadRequestException('Requisição inválida.');
     return this.friendsService.listPending(userId);
   }
 
   @Post('pedir')
-  sendRequest(@Body() body: SendRequestDto) {
-    if (!body?.userId || !body?.targetUserId) {
-      throw new BadRequestException('Informe userId e targetUserId.');
+  sendRequest(@UsuarioAtual() usuarioLogado: string, @Body() body: SendRequestDto) {
+    if (!body?.targetUserId) {
+      throw new BadRequestException('Informe targetUserId.');
     }
-    return this.friendsService.sendRequest(body.userId, body.targetUserId);
+    return this.friendsService.sendRequest(usuarioLogado, body.targetUserId);
   }
 
   @Post(':requestId/responder')
-  respond(@Param('requestId') requestId: string, @Body() body: RespondDto) {
-    if (!body?.userId || typeof body.accept !== 'boolean') {
-      throw new BadRequestException('Informe userId e accept.');
+  respond(
+    @UsuarioAtual() usuarioLogado: string,
+    @Param('requestId') requestId: string,
+    @Body() body: RespondDto,
+  ) {
+    if (typeof body.accept !== 'boolean') {
+      throw new BadRequestException('Informe accept.');
     }
-    return this.friendsService.respondToRequest(body.userId, requestId, body.accept);
+    return this.friendsService.respondToRequest(usuarioLogado, requestId, body.accept);
   }
 }

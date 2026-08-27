@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { chipPackages } from '../data/mockPlayer';
+import { chipPackages } from '../data/chipPackages';
 import { colors, fontFamily, fontSize, spacing } from '../theme';
 import { CasinoCard } from '../components/CasinoCard';
 import { GoldButton } from '../components/GoldButton';

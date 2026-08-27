@@ -23,6 +23,9 @@
         "foregroundImage": "./assets/images/branding/app-icon-adaptive.png",
         "backgroundColor": "#0B0F0D"
       }
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

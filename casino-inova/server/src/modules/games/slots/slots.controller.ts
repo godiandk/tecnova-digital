@@ -1,8 +1,9 @@
 import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common';
 import { SlotsService } from './slots.service';
+import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
+import { Publico } from '../../auth/auth.guard';
 
 class SpinDto {
-  userId!: string;
   bet!: number;
 }
 
@@ -10,16 +11,17 @@ class SpinDto {
 export class SlotsController {
   constructor(private readonly slotsService: SlotsService) {}
 
+  @Publico()
   @Get('config')
   getConfig() {
     return this.slotsService.getConfig();
   }
 
   @Post('girar')
-  spin(@Body() body: SpinDto) {
-    if (!body?.userId || typeof body.bet !== 'number') {
-      throw new BadRequestException('Informe userId e bet.');
+  spin(@UsuarioAtual() usuarioLogado: string, @Body() body: SpinDto) {
+    if (typeof body.bet !== 'number') {
+      throw new BadRequestException('Informe bet.');
     }
-    return this.slotsService.playSpin(body.userId, body.bet);
+    return this.slotsService.playSpin(usuarioLogado, body.bet);
   }
 }

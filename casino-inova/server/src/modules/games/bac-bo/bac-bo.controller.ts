@@ -1,9 +1,10 @@
 import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common';
 import { BacBoService } from './bac-bo.service';
 import { BacBoBet } from './bac-bo.engine';
+import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
+import { Publico } from '../../auth/auth.guard';
 
 class PlayDto {
-  userId!: string;
   bets!: BacBoBet[];
 }
 
@@ -11,21 +12,23 @@ class PlayDto {
 export class BacBoController {
   constructor(private readonly bacBoService: BacBoService) {}
 
+  @Publico()
   @Get('config')
   getConfig() {
     return this.bacBoService.getConfig();
   }
 
+  @Publico()
   @Get('placar')
   getRoadmap() {
     return this.bacBoService.getRoadmap();
   }
 
   @Post('apostar')
-  playRound(@Body() body: PlayDto) {
-    if (!body?.userId || !Array.isArray(body?.bets)) {
-      throw new BadRequestException('Informe userId e bets.');
+  playRound(@UsuarioAtual() usuarioLogado: string, @Body() body: PlayDto) {
+    if (!Array.isArray(body?.bets)) {
+      throw new BadRequestException('Informe bets.');
     }
-    return this.bacBoService.playRound(body.userId, body.bets);
+    return this.bacBoService.playRound(usuarioLogado, body.bets);
   }
 }

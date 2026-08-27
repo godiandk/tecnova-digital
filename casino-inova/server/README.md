@@ -42,9 +42,14 @@ ficha de verdade — fica anotado aqui como pendência conhecida, não como deci
 
 | Rota | O que faz |
 |---|---|
-| `GET /users/me` | Retorna o usuário mock (`u1`) — não existe login ainda. |
-| `GET /wallet/:userId/saldo` | Soma todas as entradas do ledger daquele usuário. |
-| `GET /wallet/:userId/historico` | Lista todas as entradas do ledger daquele usuário. |
+| `POST /auth/cadastrar` `{ email, senha, nome }` | Cria a conta e já devolve `{ token, user }`. Senha de no mínimo 8 caracteres. |
+| `POST /auth/entrar` `{ email, senha }` | Devolve `{ token, user }`. E-mail inexistente e senha errada dão a MESMA mensagem, de propósito. |
+| `POST /auth/entrar-com-provedor` `{ provedor, token }` | Login social (Google/Apple/Facebook). Recusa enquanto o Firebase Admin não estiver configurado — ver "Autenticação" abaixo. |
+| `GET /auth/eu` | Quem é o dono do token. É o que o app chama na subida pra saber se a sessão guardada ainda vale. |
+| `GET /users/me` | O usuário logado, tirado do token. |
+| `GET /wallet/saldo` | O saldo de quem está logado. |
+| `GET /wallet/historico` | O extrato de quem está logado. |
+| `GET /admin/carteira/:userId/saldo` | A carteira de OUTRA pessoa — ação de suporte, exige `ver_carteira_usuario`. |
 | `GET /store/pacotes` | Lista os 4 pacotes de fichas (bronze/prata/ouro/diamante). |
 | `POST /store/webhook/compra` | **Caminho de produção.** O provedor de pagamento (RevenueCat) valida o recibo com a App Store / Play Store e chama aqui. Exige `Authorization: Bearer <hmac-sha256 do corpo>` com o segredo de `PURCHASE_WEBHOOK_SECRET`. |
 | `POST /store/comprar` `{ userId, packageId }` | **Caminho de teste, e só isso.** Credita ficha sem ninguém ter pago. Só responde com `PERMITIR_COMPRA_DE_TESTE=true` definida; sem ela, recusa com 403. |
@@ -296,6 +301,44 @@ Blackjack não tem RTP fixo — depende da estratégia de quem joga. `npm run ve
 
 Bacará não tem decisão de jogador nenhuma, então o RTP de cada aposta é mesmo um número fixo — só complexo demais pra fórmula fechada por causa da tabela de compra da 3ª carta. `npm run verify:bacara` mede por simulação (1 milhão de rodadas) o RTP de jogador, banca e empate.
 
+## Autenticação
+
+Toda rota exige token, **menos** as marcadas com `@Publico()` — login, cadastro, e as
+leituras de regra e histórico de jogo (dá pra ver o RTP e o placar de uma mesa sem ter
+conta). O padrão fechado é de propósito: esquecer de proteger uma rota nova é bem mais
+fácil, e bem mais caro, do que esquecer de abrir uma.
+
+O que isso conserta: antes, `userId` viajava no corpo de cada requisição. Mandar
+`{"userId":"u1"}` era o suficiente pra apostar as fichas do u1, ler o extrato dele, ou
+usar as rotas de admin se ele fosse admin. Sem senha, sem nada. Agora o id sai do token
+assinado (`@UsuarioAtual()`) e **o corpo não tem voz nenhuma sobre quem você é** — mandar
+um userId de outra pessoa simplesmente não faz nada.
+
+O mesmo vale no WebSocket: `identificar` passou a exigir o token, e a partir dali o
+gateway tira a identidade do socket. Nenhum evento de mesa carrega userId. O envelope
+`comUsuario(socket, fn)` é o que garante isso na prática — um evento novo que não o
+chame não tem de onde tirar o userId.
+
+**Senha** é guardada como scrypt com sal por conta. Nunca em texto, e nunca com hash
+rápido tipo SHA-256: hash rápido é o que torna um vazamento de banco catastrófico, porque
+dá pra testar bilhões de senhas por segundo. scrypt é lento e come memória de propósito.
+
+**Login social** (`POST /auth/entrar-com-provedor`) está construído e funciona — cria a
+conta na primeira entrada, liga a credencial ao provedor, devolve o token. Falta uma peça
+só: `verificarProvedor` em `auth.service.ts`, que precisa conferir com o Firebase que o
+token é dele mesmo. Com o Firebase Admin SDK isso é uma linha, mas exige conta e chave de
+serviço. **Enquanto não tem, a rota recusa** — aceitar qualquer token seria pior do que
+não ter login social nenhum.
+
+Variáveis que o servidor exige:
+
+| Variável | Pra quê |
+|---|---|
+| `DATABASE_URL` | Endereço do Postgres. Sem ela o servidor não sobe. |
+| `JWT_SECRET` | Assina os tokens. Sem ela o servidor não sobe. |
+| `PURCHASE_WEBHOOK_SECRET` | Confere a assinatura do webhook de compra. |
+| `PERMITIR_COMPRA_DE_TESTE` | Só em desenvolvimento — libera a compra sem pagamento. |
+
 ## A loja, e por que a compra de teste vem trancada
 
 Ficha entra na carteira por dois caminhos, e eles são bem diferentes:
@@ -349,7 +392,7 @@ origem de cada entrada sobrevivem a um processo novo.
 
 Nesta ordem:
 
-1. **Autenticação** — Firebase Auth com Google, Facebook, Apple e e-mail/senha; `GET /users/me` passa a ler o usuário do token, não um valor fixo.
+1. **Ligar o Firebase Admin** pro login social funcionar — é a única peça que falta na autenticação (ver acima). E-mail/senha já funciona inteiro.
 2. **Ligar a RevenueCat de verdade** — o webhook já existe e está trancado (ver "A loja" abaixo); o que falta é criar a conta, apontar o webhook dela pra cá e conferir o formato exato do payload que ela manda.
 4. **Poker multiplayer** — o único jogo de mesa que continua só contra bot.
 

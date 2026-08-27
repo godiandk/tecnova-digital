@@ -14,7 +14,7 @@ import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
 import { ApiError } from '../../api/client';
 import { fetchPokerConfig, newPokerHand, actPoker, PokerConfig, PokerHandState, PokerCard, PokerAction } from '../../api/poker';
-import { mockPlayer } from '../../data/mockPlayer';
+import { usePlayer } from '../../data/usePlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Poker'>;
@@ -54,7 +54,14 @@ export function PokerScreen({ navigation }: Props) {
   const [tutorialVisible, setTutorialVisible] = useState(true);
   const [config, setConfig] = useState<PokerConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
-  const [balance, setBalance] = useState(mockPlayer.chipBalance);
+  const [balance, setBalance] = useState(0);
+  const { jogador } = usePlayer();
+
+  // Semeia o saldo com a carteira de verdade; a partir da primeira aposta quem manda é
+  // o `newBalance` que o servidor devolve.
+  useEffect(() => {
+    if (jogador) setBalance(jogador.chipBalance);
+  }, [jogador]);
   const [buyIn, setBuyIn] = useState(1000);
   const [hand, setHand] = useState<PokerHandState | null>(null);
   const [busy, setBusy] = useState(false);

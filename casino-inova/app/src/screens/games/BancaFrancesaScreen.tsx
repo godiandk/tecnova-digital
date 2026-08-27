@@ -24,7 +24,7 @@ import {
   BancaFrancesaConfig,
   BancaFrancesaRoundResponse,
 } from '../../api/bancaFrancesa';
-import { mockPlayer } from '../../data/mockPlayer';
+import { usePlayer } from '../../data/usePlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BancaFrancesa'>;
@@ -52,7 +52,14 @@ export function BancaFrancesaScreen({ navigation }: Props) {
   const [tutorialVisible, setTutorialVisible] = useState(true);
   const [config, setConfig] = useState<BancaFrancesaConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
-  const [balance, setBalance] = useState(mockPlayer.chipBalance);
+  const [balance, setBalance] = useState(0);
+  const { jogador } = usePlayer();
+
+  // Semeia o saldo com a carteira de verdade; a partir da primeira aposta quem manda é
+  // o `newBalance` que o servidor devolve.
+  useEffect(() => {
+    if (jogador) setBalance(jogador.chipBalance);
+  }, [jogador]);
   const [amountPerBet, setAmountPerBet] = useState(100);
   const [selected, setSelected] = useState<Set<BancaFrancesaBetType>>(new Set());
   const [round, setRound] = useState<BancaFrancesaRoundResponse | null>(null);

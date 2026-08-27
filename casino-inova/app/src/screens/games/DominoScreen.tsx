@@ -23,7 +23,7 @@ import {
   DominoTile,
   DominoEnd,
 } from '../../api/domino';
-import { mockPlayer } from '../../data/mockPlayer';
+import { usePlayer } from '../../data/usePlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Domino'>;
@@ -44,7 +44,14 @@ export function DominoScreen({ navigation }: Props) {
   const [tutorialVisible, setTutorialVisible] = useState(true);
   const [config, setConfig] = useState<DominoConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
-  const [balance, setBalance] = useState(mockPlayer.chipBalance);
+  const [balance, setBalance] = useState(0);
+  const { jogador } = usePlayer();
+
+  // Semeia o saldo com a carteira de verdade; a partir da primeira aposta quem manda é
+  // o `newBalance` que o servidor devolve.
+  useEffect(() => {
+    if (jogador) setBalance(jogador.chipBalance);
+  }, [jogador]);
   const [buyIn, setBuyIn] = useState(200);
   const [match, setMatch] = useState<DominoMatchState | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);

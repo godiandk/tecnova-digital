@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { games } from '../data/games';
 import { getGameMode } from '../data/gameModes';
-import { mockPlayer } from '../data/mockPlayer';
+import { usePlayer } from '../data/usePlayer';
 import { colors, fontFamily, fontSize, spacing } from '../theme';
 import { ChipStack } from '../components/ChipStack';
 import { LevelBar } from '../components/LevelBar';
@@ -16,6 +16,7 @@ const LARGURA_BARRA = Dimensions.get('window').width - spacing.xl * 2;
 
 export function LobbyScreen() {
   const navigation = useRootNavigation();
+  const { jogador } = usePlayer();
 
   const phase1Games = games.filter((game) => game.phase === 1);
   const laterGames = games.filter((game) => game.phase > 1);
@@ -50,17 +51,17 @@ export function LobbyScreen() {
         <View style={styles.headerTop}>
           <View>
             <Text style={styles.greeting}>Bem-vindo de volta</Text>
-            <Text style={styles.playerName}>{mockPlayer.name}</Text>
+            <Text style={styles.playerName}>{jogador?.name ?? ''}</Text>
           </View>
           <ChipStack
-            amount={mockPlayer.chipBalance}
+            amount={jogador?.chipBalance ?? 0}
             onPressAdd={() => navigation.navigate('Tabs', { screen: 'Store' } as never)}
           />
         </View>
         <LevelBar
-          level={mockPlayer.level}
-          xp={mockPlayer.xp}
-          xpToNextLevel={mockPlayer.xpToNextLevel}
+          level={jogador?.level ?? 1}
+          xp={jogador?.xp ?? 0}
+          xpToNextLevel={jogador?.xpToNextLevel ?? 500}
           width={LARGURA_BARRA}
         />
       </View>
@@ -72,7 +73,7 @@ export function LobbyScreen() {
             <GameTile
               key={game.id}
               game={game}
-              playerLevel={mockPlayer.level}
+              playerLevel={jogador?.level ?? 1}
               onPress={() => openGame(game.id)}
             />
           ))}
@@ -84,7 +85,7 @@ export function LobbyScreen() {
             <GameTile
               key={game.id}
               game={game}
-              playerLevel={mockPlayer.level}
+              playerLevel={jogador?.level ?? 1}
               onPress={() => openGame(game.id)}
             />
           ))}

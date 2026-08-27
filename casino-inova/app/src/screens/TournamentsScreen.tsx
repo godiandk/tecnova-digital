@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
 import { CasinoCard } from '../components/CasinoCard';
-import { MOCK_USER_ID } from '../api/client';
+import { usuarioLogadoId } from '../api/session';
 import { fetchLeaderboard, fetchTournaments, LeaderboardDto, TournamentDto } from '../api/tournaments';
 import { getGameById } from '../data/games';
 
@@ -163,7 +163,7 @@ export function TournamentsScreen() {
           <Text style={styles.empty}>Ninguém se classificou ainda. Vai que a primeira colocação é sua.</Text>
         ) : (
           board.rows.map((row) => {
-            const souEu = row.userId === MOCK_USER_ID;
+            const souEu = row.userId === usuarioLogadoId();
             return (
               <CasinoCard key={row.userId} style={[styles.row, souEu && styles.rowSelf]}>
                 <Text style={[styles.position, row.position <= 3 && styles.positionTop]}>{row.position}º</Text>

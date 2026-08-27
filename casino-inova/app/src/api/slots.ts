@@ -1,4 +1,4 @@
-import { apiRequest, MOCK_USER_ID } from './client';
+import { apiRequest } from './client';
 
 export interface SlotSymbolDto {
   id: string;
@@ -33,5 +33,5 @@ export function fetchSlotsConfig(): Promise<SlotsConfig> {
 }
 
 export function spinSlots(bet: number): Promise<SpinResponse> {
-  return apiRequest<SpinResponse>('/games/slots/girar', { method: 'POST', body: { userId: MOCK_USER_ID, bet } });
+  return apiRequest<SpinResponse>('/games/slots/girar', { method: 'POST', body: { bet } });
 }

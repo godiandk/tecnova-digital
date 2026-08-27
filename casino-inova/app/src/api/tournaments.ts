@@ -1,4 +1,4 @@
-import { apiRequest, MOCK_USER_ID } from './client';
+import { apiRequest } from './client';
 
 export type TournamentPeriod = 'diario' | 'semanal' | 'mensal';
 
@@ -40,5 +40,5 @@ export function fetchTournaments(): Promise<TournamentDto[]> {
 }
 
 export function fetchLeaderboard(tournamentId: string): Promise<LeaderboardDto> {
-  return apiRequest<LeaderboardDto>(`/torneios/${tournamentId}/ranking?userId=${MOCK_USER_ID}`);
+  return apiRequest<LeaderboardDto>(`/torneios/${tournamentId}/ranking`);
 }

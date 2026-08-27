@@ -1,9 +1,10 @@
 import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common';
 import { StockMarketService } from './stock-market.service';
 import { StockDirection } from './stock-market.config';
+import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
+import { Publico } from '../../auth/auth.guard';
 
 class PlayDto {
-  userId!: string;
   direction!: StockDirection;
   amount!: number;
 }
@@ -12,21 +13,20 @@ class PlayDto {
 export class StockMarketController {
   constructor(private readonly stockMarketService: StockMarketService) {}
 
+  @Publico()
   @Get('config')
   getConfig() {
     return this.stockMarketService.getConfig();
   }
 
+  @Publico()
   @Get('historico')
   getHistory() {
     return this.stockMarketService.getHistory();
   }
 
   @Post('apostar')
-  playRound(@Body() body: PlayDto) {
-    if (!body?.userId) {
-      throw new BadRequestException('Informe userId.');
-    }
-    return this.stockMarketService.playRound(body.userId, { direction: body.direction, amount: body.amount });
+  playRound(@UsuarioAtual() usuarioLogado: string, @Body() body: PlayDto) {
+    return this.stockMarketService.playRound(usuarioLogado, { direction: body.direction, amount: body.amount });
   }
 }

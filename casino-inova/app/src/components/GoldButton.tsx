@@ -6,15 +6,21 @@ interface GoldButtonProps {
   label: string;
   onPress?: () => void;
   variant?: 'gold' | 'felt';
+  /** Desligado: não responde ao toque e aparece apagado. */
+  disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
-export function GoldButton({ label, onPress, variant = 'gold', style }: GoldButtonProps) {
+export function GoldButton({ label, onPress, variant = 'gold', disabled = false, style }: GoldButtonProps) {
   const gradientColors: [string, string] =
     variant === 'gold' ? [colors.goldBright, colors.gold] : [colors.feltBright, colors.felt];
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }, style]}>
+    <Pressable
+      onPress={disabled ? undefined : onPress}
+      disabled={disabled}
+      style={({ pressed }) => [{ opacity: disabled ? 0.45 : pressed ? 0.85 : 1 }, style]}
+    >
       <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.button}>
         <Text style={[styles.label, variant === 'felt' && { color: colors.textPrimary }]}>{label}</Text>
       </LinearGradient>

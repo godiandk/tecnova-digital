@@ -1,15 +1,14 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { CouponsService } from './coupons.service';
+import { UsuarioAtual } from '../auth/usuario-atual.decorator';
 
 class CreateCouponDto {
-  actingUserId!: string;
   code!: string;
   chips!: number;
   maxRedemptions!: number;
 }
 
 class RedeemDto {
-  userId!: string;
   code!: string;
 }
 
@@ -18,34 +17,28 @@ export class CouponsController {
   constructor(private readonly couponsService: CouponsService) {}
 
   @Post('admin/cupons')
-  create(@Body() body: CreateCouponDto) {
-    if (!body?.actingUserId || !body?.code || typeof body.chips !== 'number' || typeof body.maxRedemptions !== 'number') {
-      throw new BadRequestException('Informe actingUserId, code, chips e maxRedemptions.');
+  create(@UsuarioAtual() usuarioLogado: string, @Body() body: CreateCouponDto) {
+    if (!body?.code || typeof body.chips !== 'number' || typeof body.maxRedemptions !== 'number') {
+      throw new BadRequestException('Informe code, chips e maxRedemptions.');
     }
-    return this.couponsService.create(body.actingUserId, body.code, body.chips, body.maxRedemptions);
+    return this.couponsService.create(usuarioLogado, body.code, body.chips, body.maxRedemptions);
   }
 
   @Get('admin/cupons')
-  list(@Query('actingUserId') actingUserId: string) {
-    if (!actingUserId) {
-      throw new BadRequestException('Informe actingUserId.');
-    }
+  list(@UsuarioAtual() actingUserId: string) {
     return this.couponsService.list(actingUserId);
   }
 
   @Post('admin/cupons/:code/desativar')
-  deactivate(@Param('code') code: string, @Body() body: { actingUserId: string }) {
-    if (!body?.actingUserId) {
-      throw new BadRequestException('Informe actingUserId.');
-    }
-    return this.couponsService.deactivate(body.actingUserId, code);
+  deactivate(@UsuarioAtual() usuarioLogado: string, @Param('code') code: string) {
+    return this.couponsService.deactivate(usuarioLogado, code);
   }
 
   @Post('cupons/resgatar')
-  redeem(@Body() body: RedeemDto) {
-    if (!body?.userId || !body?.code) {
-      throw new BadRequestException('Informe userId e code.');
+  redeem(@UsuarioAtual() usuarioLogado: string, @Body() body: RedeemDto) {
+    if (!body?.code) {
+      throw new BadRequestException('Informe code.');
     }
-    return this.couponsService.redeem(body.userId, body.code);
+    return this.couponsService.redeem(usuarioLogado, body.code);
   }
 }

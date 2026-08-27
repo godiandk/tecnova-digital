@@ -1,21 +1,32 @@
 import { io, Socket } from 'socket.io-client';
-import { API_BASE_URL, MOCK_USER_ID } from './client';
+import { API_BASE_URL } from './client';
+import { tokenAtual } from './session';
 
 let socket: Socket | null = null;
 
 /**
  * Uma conexão só pro app inteiro (as mesas em tempo real usam todas a mesma). Assim
- * que conecta — e a cada reconexão automática — manda `identificar`, que é o que
- * permite o servidor achar seu socket pra entregar convite de amigo.
+ * que conecta — e a cada reconexão automática — manda `identificar` com o token.
+ *
+ * O `identificar` é o que decide quem esse socket é: dali pra frente nenhum evento de
+ * mesa carrega userId, o servidor tira do socket. Reconexão precisa reidentificar,
+ * senão o socket novo não é ninguém e todo evento é recusado.
  */
 export function getSocket(): Socket {
   if (socket) return socket;
 
   socket = io(API_BASE_URL, { transports: ['websocket'] });
   socket.on('connect', () => {
-    socket?.emit('identificar', { userId: MOCK_USER_ID });
+    const token = tokenAtual();
+    if (token) socket?.emit('identificar', { token });
   });
   return socket;
+}
+
+/** Derruba a conexão — usado ao sair da conta, pra o socket não continuar identificado. */
+export function fecharSocket() {
+  socket?.close();
+  socket = null;
 }
 
 export class SocketError extends Error {}

@@ -16,6 +16,7 @@ import { DominoOnlineTable, DominoTableService } from './domino-table.service';
 import { BoardEnd } from '../games/domino/domino.engine';
 import { Tile } from '../games/domino/domino.config';
 import { Card, TrucoSignalId, TrucoStyle, TrucoVariant } from '../games/truco/truco.config';
+import { AuthService } from '../auth/auth.service';
 
 /**
  * Uma mesa compartilhada não precisa esconder nada de ninguém (todo mundo vê a
@@ -29,6 +30,8 @@ export class RoomsGateway implements OnGatewayDisconnect {
   @WebSocketServer() server!: Server;
 
   private readonly socketsByUser = new Map<string, Set<string>>();
+  /** socketId -> userId, preenchido no `identificar` com o token conferido. */
+  private readonly userIdBySocket = new Map<string, string>();
 
   constructor(
     private readonly tables: BancaFrancesaTableService,
@@ -36,28 +39,63 @@ export class RoomsGateway implements OnGatewayDisconnect {
     private readonly chat: ChatService,
     private readonly trucoTables: TrucoTableService,
     private readonly dominoTables: DominoTableService,
+    private readonly auth: AuthService,
   ) {}
 
   handleDisconnect(socket: Socket) {
+    this.userIdBySocket.delete(socket.id);
     for (const [userId, socketIds] of this.socketsByUser) {
       socketIds.delete(socket.id);
       if (socketIds.size === 0) this.socketsByUser.delete(userId);
     }
   }
 
+  /**
+   * Primeira coisa que o cliente manda ao conectar. Antes bastava dizer "sou o u1" e o
+   * servidor acreditava — qualquer um podia se passar por qualquer pessoa, sentar na
+   * mesa dela e apostar as fichas dela. Agora vem o token assinado, e quem o socket é
+   * fica decidido aqui, uma vez só: nenhum evento depois disso lê identidade do corpo.
+   */
   @SubscribeMessage('identificar')
-  handleIdentify(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string }) {
-    if (!body?.userId) return { ok: false };
-    const set = this.socketsByUser.get(body.userId) ?? new Set<string>();
-    set.add(socket.id);
-    this.socketsByUser.set(body.userId, set);
-    return { ok: true };
+  handleIdentify(@ConnectedSocket() socket: Socket, @MessageBody() body: { token: string }) {
+    return this.safe(() => {
+      const userId = this.auth.verificarToken(body?.token ?? '');
+      this.userIdBySocket.set(socket.id, userId);
+      const set = this.socketsByUser.get(userId) ?? new Set<string>();
+      set.add(socket.id);
+      this.socketsByUser.set(userId, set);
+      return { ok: true, userId };
+    });
+  }
+
+  /**
+   * Envelope de todo evento de mesa: descobre quem é o socket, entrega o userId
+   * conferido pro handler e traduz exceção em resposta (via `safe`).
+   *
+   * Existir como envelope, e não como uma linha copiada em cada handler, é o que
+   * garante que um evento novo não consiga esquecer de conferir a identidade — sem
+   * chamar isto aqui, o handler simplesmente não tem de onde tirar o userId.
+   */
+  private comUsuario<T>(socket: Socket, fn: (usuario: string) => T | Promise<T>) {
+    return this.safe(async () => fn(this.exigirUsuario(socket)));
+  }
+
+  /**
+   * Quem é este socket. Lança se ainda não se identificou — todo evento de mesa passa
+   * por aqui, então esquecer de identificar dá erro claro em vez de agir como ninguém.
+   */
+  private exigirUsuario(socket: Socket): string {
+    const userId = this.userIdBySocket.get(socket.id);
+    if (!userId) {
+      throw new Error('Identifique-se antes (envie "identificar" com o seu token).');
+    }
+    return userId;
   }
 
   @SubscribeMessage('banca-francesa:criar-mesa')
-  handleCreateTable(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; visibility: TableVisibility }) {
-    return this.safe(async () => {
-      const table = await this.tables.createTable(body.userId, body.visibility);
+  handleCreateTable(@ConnectedSocket() socket: Socket, @MessageBody() body: { visibility: TableVisibility }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const table = await this.tables.createTable(usuario, body.visibility);
       socket.join(table.id);
       return this.view(table);
     });
@@ -69,34 +107,34 @@ export class RoomsGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('banca-francesa:entrar-por-codigo')
-  handleJoinByCode(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; code: string }) {
-    return this.safe(async () => {
-      const table = await this.tables.joinByCode(body.userId, body.code);
+  handleJoinByCode(@ConnectedSocket() socket: Socket, @MessageBody() body: { code: string }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const table = await this.tables.joinByCode(usuario, body.code);
       socket.join(table.id);
       return this.broadcastAndReturn(table);
     });
   }
 
   @SubscribeMessage('banca-francesa:entrar-por-id')
-  handleJoinById(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => {
-      const table = await this.tables.joinById(body.userId, body.tableId);
+  handleJoinById(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const table = await this.tables.joinById(usuario, body.tableId);
       socket.join(table.id);
       return this.broadcastAndReturn(table);
     });
   }
 
   @SubscribeMessage('banca-francesa:convidar-amigo')
-  async handleInviteFriend(@MessageBody() body: { userId: string; tableId: string; friendUserId: string }) {
-    return this.safe(async () => {
-      const isFriend = await this.friends.areFriends(body.userId, body.friendUserId);
+  async handleInviteFriend(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string; friendUserId: string }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const isFriend = await this.friends.areFriends(usuario, body.friendUserId);
       if (!isFriend) {
         return { enviado: false, motivo: 'Só dá pra convidar quem já é seu amigo.' };
       }
       const socketIds = this.socketsByUser.get(body.friendUserId);
       if (socketIds) {
         for (const socketId of socketIds) {
-          this.server.to(socketId).emit('banca-francesa:convite-recebido', { fromUserId: body.userId, tableId: body.tableId });
+          this.server.to(socketId).emit('banca-francesa:convite-recebido', { fromUserId: usuario, tableId: body.tableId });
         }
       }
       return { enviado: true, amigoOnline: Boolean(socketIds?.size) };
@@ -104,24 +142,24 @@ export class RoomsGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('banca-francesa:completar-com-bot')
-  handleAddBot(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => this.broadcastAndReturn(this.tables.addBot(body.userId, body.tableId)));
+  handleAddBot(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => this.broadcastAndReturn(this.tables.addBot(usuario, body.tableId)));
   }
 
   @SubscribeMessage('banca-francesa:apostar')
-  async handleBet(@MessageBody() body: { userId: string; tableId: string; bets: BancaFrancesaBet[] }) {
-    return this.safe(async () => this.broadcastAndReturn(await this.tables.placeBets(body.userId, body.tableId, body.bets)));
+  async handleBet(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string; bets: BancaFrancesaBet[] }) {
+    return this.comUsuario(socket, async (usuario) => this.broadcastAndReturn(await this.tables.placeBets(usuario, body.tableId, body.bets)));
   }
 
   @SubscribeMessage('banca-francesa:girar')
-  async handleRoll(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => this.broadcastAndReturn(await this.tables.roll(body.userId, body.tableId)));
+  async handleRoll(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => this.broadcastAndReturn(await this.tables.roll(usuario, body.tableId)));
   }
 
   @SubscribeMessage('banca-francesa:sair')
-  handleLeave(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => {
-      const result = this.tables.leaveTable(body.userId, body.tableId);
+  handleLeave(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const result = this.tables.leaveTable(usuario, body.tableId);
       if ('removed' in result) {
         this.server.to(body.tableId).emit('banca-francesa:mesa-fechada');
         socket.leave(body.tableId);
@@ -133,24 +171,24 @@ export class RoomsGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('chat:enviar')
-  handleChatSend(@MessageBody() body: { userId: string; roomId: string; scope?: ChatScope; text: string }) {
-    return this.safe(async () => {
+  handleChatSend(@ConnectedSocket() socket: Socket, @MessageBody() body: { roomId: string; scope?: ChatScope; text: string }) {
+    return this.comUsuario(socket, async (usuario) => {
       const scope: ChatScope = body.scope === 'dupla' ? 'dupla' : 'mesa';
 
       // Falar com o parceiro só faz sentido em mesa de dupla (truco/dominó 2x2). Se
       // não tem parceiro, é melhor recusar do que guardar uma mensagem que ninguém
       // nunca vai ler.
-      const partnerUserId = scope === 'dupla' ? this.partnerUserIdOf(body.roomId, body.userId) : undefined;
+      const partnerUserId = scope === 'dupla' ? this.partnerUserIdOf(body.roomId, usuario) : undefined;
       if (scope === 'dupla' && !partnerUserId) {
         throw new Error('Você não tem parceiro nesta mesa.');
       }
 
       // A cor da ficha vem do assento, pra mensagem aparecer identificada na mesa.
-      const seat = this.tables.findSeat(body.roomId, body.userId);
+      const seat = this.tables.findSeat(body.roomId, usuario);
       const message = await this.chat.postMessage({
         roomId: body.roomId,
         scope,
-        userId: body.userId,
+        userId: usuario,
         text: body.text,
         color: seat?.color,
       });
@@ -160,7 +198,7 @@ export class RoomsGateway implements OnGatewayDisconnect {
       } else {
         // Dupla vai socket a socket, só pros dois. Mandar pra sala entregaria a
         // conversa na mão dos adversários, que é exatamente o que não pode.
-        this.emitToUser(body.userId, 'chat:mensagem', message);
+        this.emitToUser(usuario, 'chat:mensagem', message);
         this.emitToUser(partnerUserId as string, 'chat:mensagem', message);
       }
       return message;
@@ -168,12 +206,12 @@ export class RoomsGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('chat:historico')
-  handleChatHistory(@MessageBody() body: { userId: string; roomId: string }) {
-    return this.safe(async () =>
+  handleChatHistory(@ConnectedSocket() socket: Socket, @MessageBody() body: { roomId: string }) {
+    return this.comUsuario(socket, async (usuario) =>
       // Quem é o parceiro é o servidor que decide, olhando o assento. Se viesse do
       // cliente, bastava mandar o userId do adversário pra ler a conversa da outra
       // dupla.
-      await this.chat.historyFor(body.roomId, body.userId, this.partnerUserIdOf(body.roomId, body.userId)),
+      await this.chat.historyFor(body.roomId, usuario, this.partnerUserIdOf(body.roomId, usuario)),
     );
   }
 
@@ -189,17 +227,17 @@ export class RoomsGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('chat:silenciar')
-  handleChatMute(@MessageBody() body: { actingUserId: string; targetUserId: string; seconds: number }) {
-    return this.safe(async () => {
-      const result = await this.chat.muteUser(body.actingUserId, body.targetUserId, body.seconds);
+  handleChatMute(@ConnectedSocket() socket: Socket, @MessageBody() body: { targetUserId: string; seconds: number }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const result = await this.chat.muteUser(usuario, body.targetUserId, body.seconds);
       this.emitToUser(body.targetUserId, 'chat:silenciado', result);
       return result;
     });
   }
 
   @SubscribeMessage('chat:remover-silencio')
-  handleChatUnmute(@MessageBody() body: { actingUserId: string; targetUserId: string }) {
-    return this.safe(async () => await this.chat.unmuteUser(body.actingUserId, body.targetUserId));
+  handleChatUnmute(@ConnectedSocket() socket: Socket, @MessageBody() body: { targetUserId: string }) {
+    return this.comUsuario(socket, async (usuario) => await this.chat.unmuteUser(usuario, body.targetUserId));
   }
 
   private emitToUser(userId: string, event: string, payload: unknown) {
@@ -218,17 +256,17 @@ export class RoomsGateway implements OnGatewayDisconnect {
   handleTrucoCreate(
     @ConnectedSocket() socket: Socket,
     @MessageBody()
-    body: { userId: string; visibility: TableVisibility; variant?: TrucoVariant; style?: TrucoStyle; buyIn: number },
+    body: { visibility: TableVisibility; variant?: TrucoVariant; style?: TrucoStyle; buyIn: number },
   ) {
-    return this.safe(async () => {
-      const table = await this.trucoTables.createTable(body.userId, {
+    return this.comUsuario(socket, async (usuario) => {
+      const table = await this.trucoTables.createTable(usuario, {
         visibility: body.visibility,
         variant: body.variant,
         style: body.style,
         buyIn: body.buyIn,
       });
       socket.join(table.id);
-      return this.trucoTables.viewFor(table, body.userId);
+      return this.trucoTables.viewFor(table, usuario);
     });
   }
 
@@ -238,51 +276,50 @@ export class RoomsGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('truco:entrar-por-codigo')
-  handleTrucoJoinByCode(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; code: string }) {
-    return this.safe(async () => {
-      const table = await this.trucoTables.joinByCode(body.userId, body.code);
+  handleTrucoJoinByCode(@ConnectedSocket() socket: Socket, @MessageBody() body: { code: string }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const table = await this.trucoTables.joinByCode(usuario, body.code);
       socket.join(table.id);
-      return this.broadcastTruco(table, body.userId);
+      return this.broadcastTruco(table, usuario);
     });
   }
 
   @SubscribeMessage('truco:entrar-por-id')
-  handleTrucoJoinById(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => {
-      const table = await this.trucoTables.joinById(body.userId, body.tableId);
+  handleTrucoJoinById(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const table = await this.trucoTables.joinById(usuario, body.tableId);
       socket.join(table.id);
-      return this.broadcastTruco(table, body.userId);
+      return this.broadcastTruco(table, usuario);
     });
   }
 
   @SubscribeMessage('truco:completar-com-bot')
-  handleTrucoAddBot(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => this.broadcastTruco(this.trucoTables.addBot(body.userId, body.tableId), body.userId));
+  handleTrucoAddBot(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => this.broadcastTruco(this.trucoTables.addBot(usuario, body.tableId), usuario));
   }
 
   @SubscribeMessage('truco:comecar')
-  async handleTrucoStart(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => this.broadcastTruco(await this.trucoTables.start(body.userId, body.tableId), body.userId));
+  async handleTrucoStart(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => this.broadcastTruco(await this.trucoTables.start(usuario, body.tableId), usuario));
   }
 
   @SubscribeMessage('truco:jogar-carta')
-  handleTrucoPlayCard(@MessageBody() body: { userId: string; tableId: string; card: Card }) {
-    return this.safe(async () =>
-      this.broadcastTruco(this.trucoTables.playCard(body.userId, body.tableId, body.card), body.userId),
+  handleTrucoPlayCard(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string; card: Card }) {
+    return this.comUsuario(socket, async (usuario) =>
+      this.broadcastTruco(this.trucoTables.playCard(usuario, body.tableId, body.card), usuario),
     );
   }
 
   @SubscribeMessage('truco:pedir')
-  handleTrucoCallRaise(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => this.broadcastTruco(this.trucoTables.callRaise(body.userId, body.tableId), body.userId));
+  handleTrucoCallRaise(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => this.broadcastTruco(this.trucoTables.callRaise(usuario, body.tableId), usuario));
   }
 
   @SubscribeMessage('truco:responder')
-  handleTrucoRespond(
-    @MessageBody() body: { userId: string; tableId: string; response: 'aceitar' | 'correr' | 'aumentar' },
+  handleTrucoRespond(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string; response: 'aceitar' | 'correr' | 'aumentar' },
   ) {
-    return this.safe(async () =>
-      this.broadcastTruco(this.trucoTables.respondRaise(body.userId, body.tableId, body.response), body.userId),
+    return this.comUsuario(socket, async (usuario) =>
+      this.broadcastTruco(this.trucoTables.respondRaise(usuario, body.tableId, body.response), usuario),
     );
   }
 
@@ -291,9 +328,9 @@ export class RoomsGateway implements OnGatewayDisconnect {
    * transmitido pra mesa, os adversários veriam, e o sinal perderia o sentido.
    */
   @SubscribeMessage('truco:sinal')
-  handleTrucoSignal(@MessageBody() body: { userId: string; tableId: string; signalId: TrucoSignalId }) {
-    return this.safe(async () => {
-      const result = this.trucoTables.makeSignal(body.userId, body.tableId, body.signalId);
+  handleTrucoSignal(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string; signalId: TrucoSignalId }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const result = this.trucoTables.makeSignal(usuario, body.tableId, body.signalId);
       if (result.partnerUserId) {
         this.emitToUser(result.partnerUserId, 'truco:sinal-recebido', {
           signal: result.signal,
@@ -305,15 +342,15 @@ export class RoomsGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('truco:sair')
-  handleTrucoLeave(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => {
-      const result = this.trucoTables.leaveTable(body.userId, body.tableId);
+  handleTrucoLeave(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const result = this.trucoTables.leaveTable(usuario, body.tableId);
       socket.leave(body.tableId);
       if ('removed' in result) {
         this.server.to(body.tableId).emit('truco:mesa-fechada');
         return { removed: true as const };
       }
-      return this.broadcastTruco(result, body.userId);
+      return this.broadcastTruco(result, usuario);
     });
   }
 
@@ -337,12 +374,12 @@ export class RoomsGateway implements OnGatewayDisconnect {
   @SubscribeMessage('domino:criar-mesa')
   handleDominoCreate(
     @ConnectedSocket() socket: Socket,
-    @MessageBody() body: { userId: string; visibility: TableVisibility; buyIn: number },
+    @MessageBody() body: { visibility: TableVisibility; buyIn: number },
   ) {
-    return this.safe(async () => {
-      const table = await this.dominoTables.createTable(body.userId, { visibility: body.visibility, buyIn: body.buyIn });
+    return this.comUsuario(socket, async (usuario) => {
+      const table = await this.dominoTables.createTable(usuario, { visibility: body.visibility, buyIn: body.buyIn });
       socket.join(table.id);
-      return this.dominoTables.viewFor(table, body.userId);
+      return this.dominoTables.viewFor(table, usuario);
     });
   }
 
@@ -352,55 +389,55 @@ export class RoomsGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('domino:entrar-por-codigo')
-  handleDominoJoinByCode(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; code: string }) {
-    return this.safe(async () => {
-      const table = await this.dominoTables.joinByCode(body.userId, body.code);
+  handleDominoJoinByCode(@ConnectedSocket() socket: Socket, @MessageBody() body: { code: string }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const table = await this.dominoTables.joinByCode(usuario, body.code);
       socket.join(table.id);
-      return this.broadcastDomino(table, body.userId);
+      return this.broadcastDomino(table, usuario);
     });
   }
 
   @SubscribeMessage('domino:entrar-por-id')
-  handleDominoJoinById(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => {
-      const table = await this.dominoTables.joinById(body.userId, body.tableId);
+  handleDominoJoinById(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const table = await this.dominoTables.joinById(usuario, body.tableId);
       socket.join(table.id);
-      return this.broadcastDomino(table, body.userId);
+      return this.broadcastDomino(table, usuario);
     });
   }
 
   @SubscribeMessage('domino:completar-com-bot')
-  handleDominoAddBot(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => this.broadcastDomino(this.dominoTables.addBot(body.userId, body.tableId), body.userId));
+  handleDominoAddBot(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => this.broadcastDomino(this.dominoTables.addBot(usuario, body.tableId), usuario));
   }
 
   @SubscribeMessage('domino:comecar')
-  async handleDominoStart(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => this.broadcastDomino(await this.dominoTables.start(body.userId, body.tableId), body.userId));
+  async handleDominoStart(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => this.broadcastDomino(await this.dominoTables.start(usuario, body.tableId), usuario));
   }
 
   @SubscribeMessage('domino:jogar-peca')
-  handleDominoPlay(@MessageBody() body: { userId: string; tableId: string; tile: Tile; end: BoardEnd }) {
-    return this.safe(async () =>
-      this.broadcastDomino(this.dominoTables.playTile(body.userId, body.tableId, body.tile, body.end), body.userId),
+  handleDominoPlay(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string; tile: Tile; end: BoardEnd }) {
+    return this.comUsuario(socket, async (usuario) =>
+      this.broadcastDomino(this.dominoTables.playTile(usuario, body.tableId, body.tile, body.end), usuario),
     );
   }
 
   @SubscribeMessage('domino:passar')
-  handleDominoPass(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => this.broadcastDomino(this.dominoTables.pass(body.userId, body.tableId), body.userId));
+  handleDominoPass(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => this.broadcastDomino(this.dominoTables.pass(usuario, body.tableId), usuario));
   }
 
   @SubscribeMessage('domino:sair')
-  handleDominoLeave(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(async () => {
-      const result = this.dominoTables.leaveTable(body.userId, body.tableId);
+  handleDominoLeave(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const result = this.dominoTables.leaveTable(usuario, body.tableId);
       socket.leave(body.tableId);
       if ('removed' in result) {
         this.server.to(body.tableId).emit('domino:mesa-fechada');
         return { removed: true as const };
       }
-      return this.broadcastDomino(result, body.userId);
+      return this.broadcastDomino(result, usuario);
     });
   }
 

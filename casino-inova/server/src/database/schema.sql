@@ -14,6 +14,23 @@ CREATE TABLE IF NOT EXISTS users (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Credenciais ficam FORA da tabela users de propósito: o hash da senha não tem por que
+-- ser carregado junto toda vez que alguém lê um nome de jogador na mesa. Uma conta pode
+-- ter mais de uma credencial (senha hoje, Google/Apple depois) — por isso a chave é
+-- (provedor, identificador), e não o user_id.
+CREATE TABLE IF NOT EXISTS credentials (
+  provider      TEXT        NOT NULL,   -- 'senha' | 'google' | 'apple' | 'facebook'
+  subject       TEXT        NOT NULL,   -- e-mail na senha; uid do provedor nos outros
+  user_id       TEXT        NOT NULL REFERENCES users(id),
+  -- Só o provedor 'senha' usa: scrypt em "salt:hash". Nulo nos provedores externos,
+  -- onde quem confere a identidade é o provedor.
+  password_hash TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (provider, subject)
+);
+
+CREATE INDEX IF NOT EXISTS credentials_user_idx ON credentials (user_id);
+
 CREATE TABLE IF NOT EXISTS ledger_entries (
   id          BIGSERIAL   PRIMARY KEY,
   user_id     TEXT        NOT NULL REFERENCES users(id),

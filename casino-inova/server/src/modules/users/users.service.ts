@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { randomBytes, scrypt } from 'crypto';
+import { promisify } from 'util';
 import type { Role } from '../roles/roles.constants';
 import { DatabaseService } from '../../database/database.service';
+
+const scryptAsync = promisify(scrypt);
 
 export interface User {
   id: string;
@@ -29,13 +33,19 @@ interface LinhaUsuario {
  * exercitar uma mesa 2x2 de verdade (nem conferir que a mão de um não vaza pro outro).
  *
  * A semente só roda em base vazia — reiniciar o servidor não recria nem sobrescreve
- * ninguém, que é o ponto de ter banco. Some com tudo isto quando o login real existir.
+ * ninguém, que é o ponto de ter banco.
+ *
+ * Cada conta nasce com e-mail e senha (`SENHA_SEMENTE`) pra dar pra entrar e testar. A
+ * senha padrão é fraca de propósito, pra ser óbvio que isto é semente de teste — em
+ * base que já tem gente, este bloco inteiro nunca roda.
  */
-const SEMENTE: Array<User & { fichasIniciais: number }> = [
-  { id: 'u1', name: 'Convidado', level: 4, xp: 320, vipTier: 'prata', role: 'admin', fichasIniciais: 12_500 },
-  { id: 'u2', name: 'Suporte Ana', level: 1, xp: 0, vipTier: 'bronze', role: 'jogador', fichasIniciais: 0 },
-  { id: 'u3', name: 'Teste Bruno', level: 2, xp: 40, vipTier: 'bronze', role: 'jogador', fichasIniciais: 0 },
-  { id: 'u4', name: 'Teste Carla', level: 2, xp: 60, vipTier: 'bronze', role: 'jogador', fichasIniciais: 0 },
+const SENHA_SEMENTE = 'casino123';
+
+const SEMENTE: Array<User & { fichasIniciais: number; email: string }> = [
+  { id: 'u1', name: 'Convidado', level: 4, xp: 320, vipTier: 'prata', role: 'admin', fichasIniciais: 12_500, email: 'u1@teste.local' },
+  { id: 'u2', name: 'Suporte Ana', level: 1, xp: 0, vipTier: 'bronze', role: 'jogador', fichasIniciais: 0, email: 'u2@teste.local' },
+  { id: 'u3', name: 'Teste Bruno', level: 2, xp: 40, vipTier: 'bronze', role: 'jogador', fichasIniciais: 0, email: 'u3@teste.local' },
+  { id: 'u4', name: 'Teste Carla', level: 2, xp: 60, vipTier: 'bronze', role: 'jogador', fichasIniciais: 0, email: 'u4@teste.local' },
 ];
 
 @Injectable()
@@ -53,6 +63,14 @@ export class UsersService {
           `INSERT INTO users (id, name, level, xp, vip_tier, role) VALUES ($1,$2,$3,$4,$5,$6)`,
           [usuario.id, usuario.name, usuario.level, usuario.xp, usuario.vipTier, usuario.role],
         );
+        const sal = randomBytes(16);
+        const derivada = (await scryptAsync(SENHA_SEMENTE, sal, 64)) as Buffer;
+        await client.query(
+          `INSERT INTO credentials (provider, subject, user_id, password_hash)
+           VALUES ('senha', $1, $2, $3)`,
+          [usuario.email, usuario.id, `${sal.toString('hex')}:${derivada.toString('hex')}`],
+        );
+
         if (usuario.fichasIniciais > 0) {
           await client.query(
             `INSERT INTO ledger_entries (user_id, type, amount, origin) VALUES ($1,'ajuste',$2,'semente')`,

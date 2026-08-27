@@ -10,7 +10,8 @@ import { PLAYER_CHIP_IMAGES, PLAYER_COLOR_LABELS } from '../../data/chipImages';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { CasinoCard } from '../../components/CasinoCard';
 import { ChatPanel } from '../../components/ChatPanel';
-import { MOCK_USER_ID, ApiError } from '../../api/client';
+import { ApiError } from '../../api/client';
+import { usuarioLogadoId } from '../../api/session';
 import { SocketError } from '../../api/socket';
 import { BancaFrancesaBetType } from '../../api/bancaFrancesa';
 import { fetchFriends, Friend } from '../../api/friends';
@@ -61,7 +62,7 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const isHost = table?.hostUserId === MOCK_USER_ID;
+  const isHost = table?.hostUserId === usuarioLogadoId();
 
   const refreshPublic = useCallback(async () => {
     try {
@@ -285,7 +286,7 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
                       <View style={styles.seatInfo}>
                         <Text style={styles.seatName}>
                           {seat.name}
-                          {seat.userId === MOCK_USER_ID ? ' (você)' : ''}
+                          {seat.userId === usuarioLogadoId() ? ' (você)' : ''}
                           {seat.userId === table.hostUserId ? ' · anfitrião' : ''}
                         </Text>
                         <Text style={styles.seatMeta}>

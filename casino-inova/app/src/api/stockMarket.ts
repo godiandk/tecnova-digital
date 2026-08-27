@@ -1,4 +1,4 @@
-import { apiRequest, MOCK_USER_ID } from './client';
+import { apiRequest } from './client';
 
 export type StockDirection = 'alta' | 'baixa';
 
@@ -35,6 +35,6 @@ export function fetchStockMarketHistory(): Promise<{ closes: number[] }> {
 export function playStockMarketRound(direction: StockDirection, amount: number): Promise<StockMarketRoundResponse> {
   return apiRequest<StockMarketRoundResponse>('/games/stock-market/apostar', {
     method: 'POST',
-    body: { userId: MOCK_USER_ID, direction, amount },
+    body: { direction, amount },
   });
 }

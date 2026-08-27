@@ -15,7 +15,7 @@ import { ChipStack } from '../../components/ChipStack';
 import { RouletteHistoryPanel, RouletteHistory } from '../../components/RouletteHistoryPanel';
 import { ApiError } from '../../api/client';
 import { fetchRouletteConfig, fetchRouletteHistory, spinRoulette, RouletteConfig, RouletteBetType, RouletteSpinResponse } from '../../api/roulette';
-import { mockPlayer } from '../../data/mockPlayer';
+import { usePlayer } from '../../data/usePlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Roulette'>;
@@ -46,7 +46,14 @@ export function RouletteScreen({ navigation }: Props) {
   const [tutorialVisible, setTutorialVisible] = useState(true);
   const [config, setConfig] = useState<RouletteConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
-  const [balance, setBalance] = useState(mockPlayer.chipBalance);
+  const [balance, setBalance] = useState(0);
+  const { jogador } = usePlayer();
+
+  // Semeia o saldo com a carteira de verdade; a partir da primeira aposta quem manda é
+  // o `newBalance` que o servidor devolve.
+  useEffect(() => {
+    if (jogador) setBalance(jogador.chipBalance);
+  }, [jogador]);
   const [amount, setAmount] = useState(100);
   const [betType, setBetType] = useState<RouletteBetType>('vermelho');
   const [betNumber, setBetNumber] = useState(7);

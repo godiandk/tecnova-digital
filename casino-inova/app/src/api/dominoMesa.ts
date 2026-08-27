@@ -1,4 +1,3 @@
-import { MOCK_USER_ID } from './client';
 import { emitWithAck, getSocket } from './socket';
 
 export type Team = 'A' | 'B';
@@ -52,7 +51,7 @@ export interface DominoPublicTable {
 }
 
 export function createDominoTable(visibility: 'publica' | 'privada', buyIn: number): Promise<DominoTableView> {
-  return emitWithAck('domino:criar-mesa', { userId: MOCK_USER_ID, visibility, buyIn });
+  return emitWithAck('domino:criar-mesa', { visibility, buyIn });
 }
 
 export function listPublicDominoTables(): Promise<DominoPublicTable[]> {
@@ -60,31 +59,31 @@ export function listPublicDominoTables(): Promise<DominoPublicTable[]> {
 }
 
 export function joinDominoByCode(code: string): Promise<DominoTableView> {
-  return emitWithAck('domino:entrar-por-codigo', { userId: MOCK_USER_ID, code });
+  return emitWithAck('domino:entrar-por-codigo', { code });
 }
 
 export function joinDominoById(tableId: string): Promise<DominoTableView> {
-  return emitWithAck('domino:entrar-por-id', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('domino:entrar-por-id', { tableId });
 }
 
 export function addDominoBot(tableId: string): Promise<DominoTableView> {
-  return emitWithAck('domino:completar-com-bot', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('domino:completar-com-bot', { tableId });
 }
 
 export function startDominoMatch(tableId: string): Promise<DominoTableView> {
-  return emitWithAck('domino:comecar', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('domino:comecar', { tableId });
 }
 
 export function playDominoTile(tableId: string, tile: Tile, end: BoardEnd): Promise<DominoTableView> {
-  return emitWithAck('domino:jogar-peca', { userId: MOCK_USER_ID, tableId, tile, end });
+  return emitWithAck('domino:jogar-peca', { tableId, tile, end });
 }
 
 export function passDominoTurn(tableId: string): Promise<DominoTableView> {
-  return emitWithAck('domino:passar', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('domino:passar', { tableId });
 }
 
 export function leaveDominoTable(tableId: string): Promise<DominoTableView | { removed: true }> {
-  return emitWithAck('domino:sair', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('domino:sair', { tableId });
 }
 
 export function onDominoTableUpdated(handler: (table: DominoTableView) => void): () => void {

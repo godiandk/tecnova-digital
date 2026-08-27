@@ -1,4 +1,4 @@
-import { apiRequest, MOCK_USER_ID } from './client';
+import { apiRequest } from './client';
 
 export interface DominoTile {
   a: number;
@@ -32,13 +32,13 @@ export function fetchDominoConfig(): Promise<DominoConfig> {
 }
 
 export function newDominoMatch(buyIn: number): Promise<DominoMatchState> {
-  return apiRequest<DominoMatchState>('/games/domino/nova-partida', { method: 'POST', body: { userId: MOCK_USER_ID, buyIn } });
+  return apiRequest<DominoMatchState>('/games/domino/nova-partida', { method: 'POST', body: { buyIn } });
 }
 
 export function playDominoTile(tile: DominoTile, end?: DominoEnd): Promise<DominoMatchState> {
-  return apiRequest<DominoMatchState>('/games/domino/jogar-peca', { method: 'POST', body: { userId: MOCK_USER_ID, tile, end } });
+  return apiRequest<DominoMatchState>('/games/domino/jogar-peca', { method: 'POST', body: { tile, end } });
 }
 
 export function passDominoTurn(): Promise<DominoMatchState> {
-  return apiRequest<DominoMatchState>('/games/domino/passar', { method: 'POST', body: { userId: MOCK_USER_ID } });
+  return apiRequest<DominoMatchState>('/games/domino/passar', { method: 'POST', body: {} });
 }

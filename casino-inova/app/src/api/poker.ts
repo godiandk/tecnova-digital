@@ -1,4 +1,4 @@
-import { apiRequest, MOCK_USER_ID } from './client';
+import { apiRequest } from './client';
 
 export type PokerSuit = 'ouros' | 'espadas' | 'copas' | 'paus';
 
@@ -51,9 +51,9 @@ export function fetchPokerConfig(): Promise<PokerConfig> {
 }
 
 export function newPokerHand(buyIn: number): Promise<PokerHandState> {
-  return apiRequest<PokerHandState>('/games/poker/nova-mao', { method: 'POST', body: { userId: MOCK_USER_ID, buyIn } });
+  return apiRequest<PokerHandState>('/games/poker/nova-mao', { method: 'POST', body: { buyIn } });
 }
 
 export function actPoker(action: PokerAction): Promise<PokerHandState> {
-  return apiRequest<PokerHandState>('/games/poker/agir', { method: 'POST', body: { userId: MOCK_USER_ID, action } });
+  return apiRequest<PokerHandState>('/games/poker/agir', { method: 'POST', body: { action } });
 }

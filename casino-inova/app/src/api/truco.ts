@@ -1,4 +1,4 @@
-import { apiRequest, MOCK_USER_ID } from './client';
+import { apiRequest } from './client';
 
 export type TrucoSuit = 'ouros' | 'espadas' | 'copas' | 'paus';
 export type TrucoRank = '4' | '5' | '6' | '7' | 'Q' | 'J' | 'K' | 'A' | '2' | '3';
@@ -75,22 +75,22 @@ export function fetchTrucoConfig(): Promise<TrucoConfig> {
 export function newTrucoMatch(buyIn: number, variant: TrucoVariant = 'paulista', style: TrucoStyle = 'sujo'): Promise<TrucoMatchState> {
   return apiRequest<TrucoMatchState>('/games/truco/nova-partida', {
     method: 'POST',
-    body: { userId: MOCK_USER_ID, buyIn, variant, style },
+    body: { buyIn, variant, style },
   });
 }
 
 export function sendTrucoSignal(signalId: string): Promise<unknown> {
-  return apiRequest('/games/truco/sinal', { method: 'POST', body: { userId: MOCK_USER_ID, signalId } });
+  return apiRequest('/games/truco/sinal', { method: 'POST', body: { signalId } });
 }
 
 export function playTrucoCard(card: TrucoCard): Promise<TrucoMatchState> {
-  return apiRequest<TrucoMatchState>('/games/truco/jogar-carta', { method: 'POST', body: { userId: MOCK_USER_ID, card } });
+  return apiRequest<TrucoMatchState>('/games/truco/jogar-carta', { method: 'POST', body: { card } });
 }
 
 export function callTruco(): Promise<TrucoMatchState> {
-  return apiRequest<TrucoMatchState>('/games/truco/pedir-truco', { method: 'POST', body: { userId: MOCK_USER_ID } });
+  return apiRequest<TrucoMatchState>('/games/truco/pedir-truco', { method: 'POST', body: {} });
 }
 
 export function respondTruco(response: TrucoResponse): Promise<TrucoMatchState> {
-  return apiRequest<TrucoMatchState>('/games/truco/responder-truco', { method: 'POST', body: { userId: MOCK_USER_ID, response } });
+  return apiRequest<TrucoMatchState>('/games/truco/responder-truco', { method: 'POST', body: { response } });
 }

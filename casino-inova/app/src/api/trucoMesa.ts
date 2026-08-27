@@ -1,4 +1,3 @@
-import { MOCK_USER_ID } from './client';
 import { emitWithAck, getSocket } from './socket';
 import { TrucoCard, TrucoStyle, TrucoVariant } from './truco';
 
@@ -63,7 +62,7 @@ export function createTrucoTable(options: {
   style: TrucoStyle;
   buyIn: number;
 }): Promise<TrucoTableView> {
-  return emitWithAck('truco:criar-mesa', { userId: MOCK_USER_ID, ...options });
+  return emitWithAck('truco:criar-mesa', { ...options });
 }
 
 export function listPublicTrucoTables(): Promise<TrucoPublicTable[]> {
@@ -71,39 +70,39 @@ export function listPublicTrucoTables(): Promise<TrucoPublicTable[]> {
 }
 
 export function joinTrucoByCode(code: string): Promise<TrucoTableView> {
-  return emitWithAck('truco:entrar-por-codigo', { userId: MOCK_USER_ID, code });
+  return emitWithAck('truco:entrar-por-codigo', { code });
 }
 
 export function joinTrucoById(tableId: string): Promise<TrucoTableView> {
-  return emitWithAck('truco:entrar-por-id', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('truco:entrar-por-id', { tableId });
 }
 
 export function addTrucoBot(tableId: string): Promise<TrucoTableView> {
-  return emitWithAck('truco:completar-com-bot', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('truco:completar-com-bot', { tableId });
 }
 
 export function startTrucoMatch(tableId: string): Promise<TrucoTableView> {
-  return emitWithAck('truco:comecar', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('truco:comecar', { tableId });
 }
 
 export function playTrucoTableCard(tableId: string, card: TrucoCard): Promise<TrucoTableView> {
-  return emitWithAck('truco:jogar-carta', { userId: MOCK_USER_ID, tableId, card });
+  return emitWithAck('truco:jogar-carta', { tableId, card });
 }
 
 export function callTrucoRaise(tableId: string): Promise<TrucoTableView> {
-  return emitWithAck('truco:pedir', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('truco:pedir', { tableId });
 }
 
 export function respondTrucoRaise(tableId: string, response: RaiseResponse): Promise<TrucoTableView> {
-  return emitWithAck('truco:responder', { userId: MOCK_USER_ID, tableId, response });
+  return emitWithAck('truco:responder', { tableId, response });
 }
 
 export function sendTableSignal(tableId: string, signalId: string): Promise<{ enviado: boolean }> {
-  return emitWithAck('truco:sinal', { userId: MOCK_USER_ID, tableId, signalId });
+  return emitWithAck('truco:sinal', { tableId, signalId });
 }
 
 export function leaveTrucoTable(tableId: string): Promise<TrucoTableView | { removed: true }> {
-  return emitWithAck('truco:sair', { userId: MOCK_USER_ID, tableId });
+  return emitWithAck('truco:sair', { tableId });
 }
 
 export function onTrucoTableUpdated(handler: (table: TrucoTableView) => void): () => void {

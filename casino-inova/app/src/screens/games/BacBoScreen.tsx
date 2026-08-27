@@ -22,7 +22,7 @@ import {
   BacBoConfig,
   BacBoRoundResponse,
 } from '../../api/bacBo';
-import { mockPlayer } from '../../data/mockPlayer';
+import { usePlayer } from '../../data/usePlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BacBo'>;
@@ -47,7 +47,14 @@ export function BacBoScreen({ navigation }: Props) {
   const [tutorialVisible, setTutorialVisible] = useState(true);
   const [config, setConfig] = useState<BacBoConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
-  const [balance, setBalance] = useState(mockPlayer.chipBalance);
+  const [balance, setBalance] = useState(0);
+  const { jogador } = usePlayer();
+
+  // Semeia o saldo com a carteira de verdade; a partir da primeira aposta quem manda é
+  // o `newBalance` que o servidor devolve.
+  useEffect(() => {
+    if (jogador) setBalance(jogador.chipBalance);
+  }, [jogador]);
   const [amountPerBet, setAmountPerBet] = useState(100);
   const [selected, setSelected] = useState<Set<BacBoBetType>>(new Set());
   const [round, setRound] = useState<BacBoRoundResponse | null>(null);

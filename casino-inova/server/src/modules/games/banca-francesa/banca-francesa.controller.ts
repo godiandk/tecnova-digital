@@ -1,9 +1,10 @@
 import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common';
 import { BancaFrancesaService } from './banca-francesa.service';
 import { BancaFrancesaBet } from './banca-francesa.engine';
+import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
+import { Publico } from '../../auth/auth.guard';
 
 class PlayDto {
-  userId!: string;
   bets!: BancaFrancesaBet[];
 }
 
@@ -11,21 +12,23 @@ class PlayDto {
 export class BancaFrancesaController {
   constructor(private readonly bancaFrancesaService: BancaFrancesaService) {}
 
+  @Publico()
   @Get('placar')
   getRoadmap() {
     return this.bancaFrancesaService.getRoadmap();
   }
 
+  @Publico()
   @Get('config')
   getConfig() {
     return this.bancaFrancesaService.getConfig();
   }
 
   @Post('apostar')
-  playRound(@Body() body: PlayDto) {
-    if (!body?.userId || !Array.isArray(body?.bets)) {
-      throw new BadRequestException('Informe userId e bets.');
+  playRound(@UsuarioAtual() usuarioLogado: string, @Body() body: PlayDto) {
+    if (!Array.isArray(body?.bets)) {
+      throw new BadRequestException('Informe bets.');
     }
-    return this.bancaFrancesaService.playRound(body.userId, body.bets);
+    return this.bancaFrancesaService.playRound(usuarioLogado, body.bets);
   }
 }
