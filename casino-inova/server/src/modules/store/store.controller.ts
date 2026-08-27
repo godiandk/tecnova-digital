@@ -32,6 +32,16 @@ class WebhookDto {
   };
 }
 
+/**
+ * Tipos de evento que significam "entrou dinheiro". Consumível (nossos pacotes de
+ * ficha) chega como NON_RENEWING_PURCHASE; os outros são de assinatura, e estão aqui
+ * pra o dia em que existir um passe mensal.
+ */
+const EVENTOS_DE_COMPRA = ['INITIAL_PURCHASE', 'NON_RENEWING_PURCHASE', 'RENEWAL'];
+
+/** Saiu dinheiro: a compra foi desfeita depois de já ter sido paga. */
+const EVENTOS_DE_ESTORNO = ['REFUND', 'CANCELLATION'];
+
 @Controller('store')
 export class StoreController {
   constructor(private readonly storeService: StoreService) {}
@@ -51,6 +61,13 @@ export class StoreController {
    * string comum para no primeiro byte diferente, e o tempo que ela leva vaza quantos
    * bytes iniciais o atacante já acertou — dá pra descobrir a assinatura byte a byte.
    */
+  /*
+   * Público no sentido do guard de sessão — o provedor de pagamento não tem, e nunca
+   * vai ter, um token de jogador. Quem tranca esta porta é a assinatura HMAC logo
+   * abaixo. Sem este @Publico(), o guard global recusaria o webhook com 401 e nenhuma
+   * compra seria creditada nunca.
+   */
+  @Publico()
   @Post('webhook/compra')
   async handlePurchaseWebhook(
     @Headers('authorization') authorization: string | undefined,
@@ -64,11 +81,35 @@ export class StoreController {
       throw new UnauthorizedException('Assinatura inválida.');
     }
 
+    const tipo = (body?.event?.type ?? '').toUpperCase();
     const userId = body?.event?.app_user_id;
     const packageId = body?.event?.product_id;
     if (!userId || !packageId) {
       throw new BadRequestException('Evento sem app_user_id ou product_id.');
     }
+
+    /*
+     * O TIPO do evento decide o que fazer, e ignorar isso é caro.
+     *
+     * O provedor manda muito mais que "comprou": manda cancelamento, expiração,
+     * problema de cobrança, transferência de conta e ESTORNO. Se a gente creditasse em
+     * todo evento, bastaria comprar, receber as fichas, pedir o dinheiro de volta — e
+     * o evento de estorno creditaria as fichas outra vez. A pessoa ficaria com o
+     * dobro das fichas e sem ter pago nada.
+     */
+    if (EVENTOS_DE_ESTORNO.includes(tipo)) {
+      return this.storeService.registrarEstorno(body.event.id!, userId);
+    }
+
+    if (!EVENTOS_DE_COMPRA.includes(tipo)) {
+      /*
+       * Tipo que não movimenta ficha (cancelamento de renovação, aviso de cobrança).
+       * Responde 200 assim mesmo: devolver erro faz o provedor reenviar o mesmo evento
+       * de novo e de novo, pra sempre, achando que a gente caiu.
+       */
+      return { ignorado: true, tipo };
+    }
+
     return this.storeService.fulfillPurchase(userId, packageId, body.event.id);
   }
 

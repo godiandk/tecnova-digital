@@ -104,5 +104,11 @@ CREATE TABLE IF NOT EXISTS purchases (
   user_id           TEXT        NOT NULL REFERENCES users(id),
   package_id        TEXT        NOT NULL,
   chips             BIGINT      NOT NULL CHECK (chips > 0),
-  created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  -- Preenchido quando o provedor avisa que a compra foi estornada. As fichas NÃO são
+  -- retiradas automaticamente (a pessoa pode já ter apostado, e saldo negativo quebra
+  -- a carteira) — fica marcado aqui pra o suporte decidir o que fazer.
+  refunded_at       TIMESTAMPTZ
 );
+
+CREATE INDEX IF NOT EXISTS purchases_user_idx ON purchases (user_id, created_at);

@@ -366,6 +366,26 @@ Reentrega não credita duas vezes. O id do evento do provedor é a chave primár
 `purchases`, e a inserção usa `ON CONFLICT DO NOTHING` — provedor que não recebe o 200
 reenvia o evento, e isso é normal; dobrar as fichas de quem pagou uma vez só não é.
 
+**O TIPO do evento decide o que fazer, e ignorar isso é caro.** O provedor manda muito
+mais que "comprou": manda cancelamento, expiração, problema de cobrança, transferência
+de conta e **estorno**. Creditar em todo evento significaria que bastava comprar,
+receber as fichas, pedir o dinheiro de volta — e o evento de estorno creditaria as
+fichas outra vez, deixando a pessoa com o dobro e sem ter pago nada. Só
+`INITIAL_PURCHASE`, `NON_RENEWING_PURCHASE` (é assim que consumível chega) e `RENEWAL`
+creditam.
+
+**Estorno marca, não retira.** `REFUND` e `CANCELLATION` gravam `refunded_at` na compra
+e deixam um aviso no log. As fichas não saem sozinhas de propósito: a pessoa pode já ter
+apostado tudo, e forçar o débito deixaria a carteira negativa — estado que o ledger não
+deveria conhecer. E nem todo estorno é fraude (cobrança duplicada pelo provedor, compra
+que a criança fez no cartão do pai), então quem decide é o suporte.
+
+**Tipo desconhecido responde 200 e não faz nada.** Devolver erro faz o provedor reenviar
+o mesmo evento pra sempre, achando que o servidor caiu.
+
+A rota do webhook é `@Publico()` no sentido do guard de sessão: o provedor de pagamento
+não tem, e nunca vai ter, um token de jogador. Quem tranca a porta é a assinatura HMAC.
+
 **Teste** é `POST /store/comprar`, que credita ficha sem ninguém ter pago nada. Ele existe
 pra dar pra exercitar carteira, loja e jogo sem depender de loja de aplicativo. Só que em
 produção isso seria fichas de graça pra quem descobrisse o endereço — então ele **só
