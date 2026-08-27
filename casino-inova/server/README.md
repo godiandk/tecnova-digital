@@ -43,11 +43,36 @@ API sobe em `http://localhost:3000`.
 | `GET /admin/cupons?actingUserId=` | Lista cupons com quantos resgates cada um já teve — exige `gerenciar_cupons`. |
 | `POST /admin/cupons/:code/desativar` `{ actingUserId }` | Desativa um cupom sem apagar o histórico de quem já resgatou. |
 | `POST /cupons/resgatar` `{ userId, code }` | Qualquer jogador resgata um cupom ativo — uma vez por pessoa, até o limite de resgates do cupom. Sem permissão nenhuma exigida, é uma ação de jogador normal. |
-| `GET /games/truco/config` | Buy-in mín/máx, pontos pra vencer a partida (12) e o valor da mão depois de pedir truco (3). |
-| `POST /games/truco/nova-partida` `{ userId, buyIn }` | Debita o buy-in e começa uma partida nova contra o bot (placar 0 a 0), já distribuindo a primeira mão. |
+| `GET /games/truco/config` | Buy-in mín/máx, as duas variantes com a regra de cada uma (`variants`), as manilhas fixas do mineiro, os estilos (`sujo`/`limpo`) e a lista dos 9 sinais. |
+| `POST /games/truco/nova-partida` `{ userId, buyIn, variant?, style? }` | Debita o buy-in e começa uma partida nova contra o bot (placar 0 a 0), já distribuindo a primeira mão. `variant` é `paulista` (padrão) ou `mineiro`; `style` é `sujo` (padrão) ou `limpo`. |
 | `POST /games/truco/jogar-carta` `{ userId, card: { rank, suit } }` | Joga uma carta da sua mão; o bot responde na hora. Resolve a rodada e, se a mão terminar, já reparte a próxima automaticamente (ou fecha a partida, se alguém chegou a 12). |
-| `POST /games/truco/pedir-truco` `{ userId }` | Pede truco (só uma vez por mão, sem escalar pra 6/9/12 nesta versão). O bot decide aceitar ou correr na hora. |
-| `POST /games/truco/responder-truco` `{ userId, accept }` | Responde quando é o bot que pede truco (`pendingTruco: "bot"` na resposta de `jogar-carta` avisa que isso está esperando). |
+| `POST /games/truco/pedir-truco` `{ userId }` | Sobe a mão pro próximo degrau da escada da variante. Quem acabou de pedir não pode pedir de novo — a vez de subir é de quem respondeu. O bot decide aceitar, correr ou aumentar na hora. |
+| `POST /games/truco/responder-truco` `{ userId, response }` | Responde ao pedido do bot: `aceitar`, `correr` ou `aumentar` (que sobe mais um degrau e devolve o pedido). |
+| `POST /games/truco/sinal` `{ userId, signalId }` | Faz a careta pro parceiro. Só existe no estilo `sujo`; no `limpo` o servidor recusa. Contra bot é só o gesto — em mesa 2x2 ele vai pro socket do parceiro. |
+
+### Variantes de truco
+
+Escolhidas por partida, não por mesa global — a mesma pessoa pode jogar paulista agora e mineiro depois.
+
+| | Paulista | Mineiro |
+|---|---|---|
+| Manilha | Sai da **vira**: a carta virada define qual é a manilha daquela mão | **Fixa**: 4♣ (zap), 7♥ (copeta), A♠ (espadilha), 7♦ (mole) — não tem vira |
+| Mão começa valendo | 1 ponto | 2 pontos |
+| Escada de aumento | 1 → 3 → 6 → 9 → 12 | 2 → 4 → 6 → 10 → 12 |
+| Partida | 12 pontos | 12 pontos |
+
+A escada do mineiro é a ambiguidade conhecida deste projeto: as fontes divergem entre `2 → 4 → 6 → 10 → 12` e `2 → 4 → 6 → 12`. Adotamos a primeira, e o comentário em `truco.config.ts` marca isso como decisão a confirmar com quem joga na região.
+
+**Sujo x limpo** é sobre sinal, não sobre manilha: no `sujo` combinar por careta com o parceiro é parte do jogo; no `limpo` é proibido, e o endpoint de sinal recusa.
+
+| `GET /games/bac-bo/config` | Aposta mín/máx, a tabela de pagamento do empate por total (2 e 12 pagam 88 pra 1; 7 paga 4 pra 1) e o RTP de cada aposta. |
+| `GET /games/bac-bo/placar` | O placar de histórico (as cinco estradas do bacará) montado em cima dos resultados de bac bo. |
+| `POST /games/bac-bo/apostar` `{ userId, bets: [{ type, amount }] }` | Rola os 4 dados (2 pro jogador, 2 pra banca), soma cada lado e resolve. `type` é `jogador`, `banca` ou `empate`. No empate, quem apostou em jogador/banca leva 90% de volta — é dessa regra que sai toda a vantagem da casa (1,13%). |
+| `GET /games/stock-market/config` | Aposta mín/máx, o teto de movimento (±100%) e a comissão de 1% — a única vantagem da casa neste jogo. |
+| `GET /games/stock-market/historico` | Os últimos fechamentos, pro gráfico e pros contadores de alta/baixa. |
+| `POST /games/stock-market/apostar` `{ userId, direction, amount }` | `direction` é `alta` ou `baixa`. A cotação anda 30 passos e fecha entre -100% e +100%; você recebe exatamente a porcentagem que acertou, menos a comissão. |
+| `GET /games/bacara/placar` `GET /games/banca-francesa/placar` | Mesmo placar de cinco estradas do bac bo, pro jogo correspondente. |
+| `GET /games/roleta/historico` | Histórico da roleta — números que saíram e os contadores de vermelho/preto, par/ímpar, baixo/alto. Roleta **não** usa as estradas do bacará: mesa de roleta de verdade mostra outra coisa. |
 
 | `GET /games/domino/config` | Buy-in mín/máx e o tamanho da mão (7 peças). |
 | `POST /games/domino/nova-partida` `{ userId, buyIn }` | Debita o buy-in, distribui 7 peças pra cada lado (dominó "block" clássico, sem comprar do monte). |
@@ -71,7 +96,13 @@ Amigos é pré-requisito pro convite de sala por "+" — sem saber quem é amigo
 
 ## Mesa multiplayer (WebSocket)
 
-Primeiro jogo em tempo real do projeto: banca francesa numa mesa compartilhada, até 15 jogadores, cada um com uma cor de ficha (`src/modules/rooms/player-colors.ts`) — igual cassino físico. Ninguém joga contra o outro aqui, todo mundo aposta contra o mesmo resultado de dado, então não precisa esconder informação entre jogadores (diferente de truco/dominó/poker, que ficam pra depois). `npm run start:dev` já sobe o WebSocket na mesma porta 3000, sem configuração extra.
+São **dois formatos de mesa**, tecnicamente bem diferentes, e vale entender a diferença antes de mexer no gateway:
+
+**Mesa compartilhada** (banca francesa): até 15 jogadores, cada um com uma cor de ficha (`src/modules/rooms/player-colors.ts`), igual cassino físico. Ninguém joga contra o outro — todo mundo aposta contra o mesmo resultado de dado. Como não existe informação escondida, o mesmo payload vai pra sala inteira de uma vez.
+
+**Mesa 2x2** (truco e dominó): quatro jogadores, dois times. Aqui **não dá** pra transmitir o mesmo payload pra todo mundo, porque cada um só pode ver a própria mão. O gateway monta uma visão por jogador (`viewFor`) e emite socket a socket; dos outros vai só a contagem de cartas/peças. Assentos 0 e 2 são a dupla A, 1 e 3 a dupla B — o parceiro é sempre quem está de frente.
+
+`npm run start:dev` já sobe o WebSocket na mesma porta 3000, sem configuração extra.
 
 Eventos (cliente → servidor), todos aceitam callback de confirmação e todos (exceto `mesas-publicas`) também transmitem `banca-francesa:mesa-atualizada` pra sala inteira:
 
@@ -90,7 +121,43 @@ Eventos (cliente → servidor), todos aceitam callback de confirmação e todos 
 
 Bot nunca mexe em carteira de verdade — só o lado do jogador real (real ou o amigo convidado) debita/credita fichas de verdade, igual no resto do projeto.
 
-Truco, dominó e poker são **contra bot, não multiplayer de verdade ainda** — jogar com outros jogadores de verdade exige sala + WebSocket (o plano de produto aponta Colyseus), que não existe neste esqueleto. As regras de cada jogo são reais; o "adversário" por enquanto é sempre a máquina.
+### Truco 2x2 e dominó 2x2
+
+Mesmo desenho da banca francesa pra criar/entrar (mesa pública ou código de 6 caracteres, convite por amigo, bot completando vaga), com os eventos próprios de cada jogo. Todos devolvem a visão de quem chamou no ack e emitem `truco:mesa-atualizada` / `domino:mesa-atualizada` pra cada jogador, um por um.
+
+| Evento | Payload | O que faz |
+|---|---|---|
+| `truco:criar-mesa` | `{ userId, visibility, variant?, style?, buyIn }` | Cria a mesa já com a variante e o estilo escolhidos. |
+| `truco:mesas-publicas` | — | Lista mesas públicas com vaga. |
+| `truco:entrar-por-codigo` / `truco:entrar-por-id` | `{ userId, code }` / `{ userId, tableId }` | Senta na próxima vaga — o assento define de quem você é parceiro. |
+| `truco:completar-com-bot` | `{ userId, tableId }` | Só o anfitrião — senta um bot numa vaga livre. |
+| `truco:comecar` | `{ userId, tableId }` | Só o anfitrião, com os 4 assentos ocupados — distribui a primeira mão. |
+| `truco:jogar-carta` | `{ userId, tableId, card }` | Joga a carta, resolve a rodada e reparte a mão seguinte quando fecha. |
+| `truco:pedir` | `{ userId, tableId }` | Sobe a mão um degrau. A dupla que acabou de pedir não pode pedir de novo. |
+| `truco:responder` | `{ userId, tableId, response }` | `aceitar`, `correr` ou `aumentar`. |
+| `truco:sinal` | `{ userId, tableId, signalId }` | A careta. Vai **só** pro socket do parceiro (`truco:sinal-recebido`) — se fosse pra sala, os adversários veriam e o sinal perderia o sentido. |
+| `truco:sair` | `{ userId, tableId }` | Sai; sem ninguém, a mesa fecha (`truco:mesa-fechada`). |
+| `domino:criar-mesa` | `{ userId, visibility, buyIn }` | Cria a mesa 2x2. |
+| `domino:mesas-publicas` / `domino:entrar-por-codigo` / `domino:entrar-por-id` / `domino:completar-com-bot` / `domino:comecar` / `domino:sair` | igual ao truco | Mesmo fluxo de sala. |
+| `domino:jogar-peca` | `{ userId, tableId, tile, end? }` | `end` (`esquerda`/`direita`) só é obrigatório depois da primeira peça. |
+| `domino:passar` | `{ userId, tableId }` | Só funciona se você realmente não tiver peça jogável. |
+
+Pontuação do dominó em dupla, do jeito que se joga no Brasil: batida simples 1 ponto, carroça (bater com dupla) 2, lá-e-lô (fechar as duas pontas) 3, cruzada (as duas coisas) 4. Vence a dupla que chegar a 6 pontos.
+
+### Chat
+
+O mesmo chat serve todas as mesas, com dois escopos.
+
+| Evento | Payload | O que faz |
+|---|---|---|
+| `chat:enviar` | `{ userId, roomId, scope?, text }` | `scope` é `mesa` (padrão, vai pra sala inteira) ou `dupla` (vai só pro seu parceiro, socket a socket). Máximo 200 caracteres, no máximo 5 mensagens a cada 5 segundos. |
+| `chat:historico` | `{ userId, roomId }` | As últimas 50 mensagens que **você** pode ler. Quem é seu parceiro é o servidor que decide, olhando o assento — se viesse do cliente, bastava mandar o userId de um adversário pra ler a conversa da outra dupla. |
+| `chat:silenciar` | `{ actingUserId, targetUserId, seconds }` | Exige a permissão `silenciar_usuario` (moderador ou admin). Quem foi silenciado recebe `chat:silenciado`. |
+| `chat:remover-silencio` | `{ actingUserId, targetUserId }` | Tira o silêncio. |
+
+Escopo `dupla` em mesa que não é 2x2 é recusado na hora — melhor recusar do que guardar uma mensagem que ninguém leria.
+
+**Poker ainda é só contra bot.** É o único que sobrou: multiplayer de verdade nele exige mesa de 2 a 9 lugares com side pot, que é bem mais trabalho que o 2x2 de assento fixo do truco e do dominó.
 
 ### Papéis e permissões
 
@@ -108,7 +175,7 @@ Não são só dois blocos fixos de poder — cada ação administrativa é uma p
 | `ajustar_economia` — mexer em RTP, preço de pacote, curva de nível |  |  | ✓ |
 | `ver_analytics` — dashboards |  | ✓ | ✓ |
 
-`u1` (o "usuário logado" nesta v1) já nasce `admin`. `u2` nasce `jogador`, só pra ter alguém pra promover:
+`u1` (o "usuário logado" nesta v1) já nasce `admin`. `u2`, `u3` e `u4` nascem `jogador` — `u2` pra ter alguém pra promover, e os outros dois pra dar pra encher uma mesa 2x2 sem bot no teste:
 
 ```
 curl -X POST http://localhost:3000/admin/papeis/atribuir -H "Content-Type: application/json" -d '{"actingUserId":"u1","targetUserId":"u2","role":"moderador"}'
@@ -144,13 +211,26 @@ curl -X POST http://localhost:3000/cupons/resgatar -H "Content-Type: application
 curl -X POST http://localhost:3000/games/truco/nova-partida -H "Content-Type: application/json" -d '{"userId":"u1","buyIn":200}'
 curl -X POST http://localhost:3000/games/domino/nova-partida -H "Content-Type: application/json" -d '{"userId":"u1","buyIn":200}'
 curl -X POST http://localhost:3000/games/poker/nova-mao -H "Content-Type: application/json" -d '{"userId":"u1","buyIn":1000}'
+curl -X POST http://localhost:3000/games/bac-bo/apostar -H "Content-Type: application/json" -d '{"userId":"u1","bets":[{"type":"jogador","amount":100}]}'
+curl -X POST http://localhost:3000/games/stock-market/apostar -H "Content-Type: application/json" -d '{"userId":"u1","direction":"alta","amount":100}'
+curl http://localhost:3000/games/bacara/placar
+curl http://localhost:3000/games/roleta/historico
 ```
 
-Para conferir que o RTP configurado em `slots.config.ts` é realmente o que o motor entrega (fórmula exata batendo com simulação de 500 mil giros):
+## Verificação
 
-```
-npm run verify:rtp
-```
+Cada jogo tem um roteiro que **roda de verdade** e confere a matemática — não é comentário no código dizendo qual é o RTP, é o número saindo do próprio motor. `npm run verify:tudo` roda os oito de uma vez:
+
+| Comando | O que confere |
+|---|---|
+| `npm run verify:rtp` | Slots: fórmula exata do RTP batendo com 500 mil giros simulados. |
+| `npm run verify:banca-francesa` | Banca francesa: RTP condicionado às 63 combinações decisivas de 216 — as quatro apostas dão 98,413%. |
+| `npm run verify:bac-bo` | Bac bo: três caminhos independentes (fórmula, enumeração das 1296 combinações e 1 milhão de rodadas) batendo com a referência pública. |
+| `npm run verify:stock-market` | Stock market: prova a identidade `alta + baixa = 2` pra todo fechamento, o que fixa o RTP em 99% (a comissão) **independente** de como a cotação se move — testado inclusive com uma distribuição enviesada de propósito. |
+| `npm run verify:bacara` | Bacará: RTP de jogador, banca e empate por simulação de 1 milhão de rodadas. |
+| `npm run verify:blackjack` | Blackjack: simula uma estratégia simples só como referência de sanidade. |
+| `npm run verify:poker-hands` | Poker: o avaliador de mão contra casos conhecidos (flush vs. full house, sequência do bebê A-2-3-4-5, empates). |
+| `npm run verify:placar` | Placar de histórico: 14 casos montados à mão pras cinco estradas do bacará (empate virando contador, cauda do dragão, quando cada estrada derivada começa). |
 
 Blackjack não tem RTP fixo — depende da estratégia de quem joga. `npm run verify:blackjack` simula uma estratégia simples (pedir carta até 17) só como referência de que o jogo não está nem generoso nem apertado demais; com estratégia básica ótima de verdade, essas regras (dealer para em todos os 17, blackjack paga 3:2, baralho infinito) ficam perto de ~99,5%.
 
@@ -163,5 +243,7 @@ Nesta ordem:
 1. **Persistência real** — trocar os arrays em memória por PostgreSQL (as tabelas já estão desenhadas no plano de produto: `users`, `ledger_entries`, `purchases`).
 2. **Autenticação** — Firebase Auth com Google, Facebook, Apple e e-mail/senha; `GET /users/me` passa a ler o usuário do token, não um valor fixo.
 3. **Compra real** — integrar RevenueCat: o app faz a compra na App Store/Play Store, a RevenueCat valida o recibo e chama um webhook aqui, que só então chama `walletService.credit(...)`. O endpoint `POST /store/comprar` atual serve pra testar o resto do fluxo enquanto isso não existe — ele não deve ir para produção como está, porque hoje qualquer um pode chamá-lo e "comprar" fichas de graça.
-4. **Amigos** — tabela `friendships` e endpoints de convite/aceite.
-5. **Torneios e ranking** — tabelas `tournaments`, `tournament_entries`, `leaderboards` do plano de produto.
+4. **Torneios e ranking** — tabelas `tournaments`, `tournament_entries`, `leaderboards` do plano de produto. É o que falta pra tela de Torneios deixar de ser mockada.
+5. **Poker multiplayer** — o único jogo de mesa que continua só contra bot.
+
+O módulo de **amigos** já existe e funciona (pedir/aceitar/recusar/listar); o que falta nele é só a persistência do item 1, junto com todo o resto.
