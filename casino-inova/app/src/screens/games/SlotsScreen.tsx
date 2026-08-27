@@ -10,6 +10,7 @@ import { TABLE_IMAGES } from '../../data/tableImages';
 import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { ChipStack } from '../../components/ChipStack';
+import { Rolo } from '../../components/Rolo';
 import { ApiError } from '../../api/client';
 import { fetchSlotsConfig, spinSlots, SlotsConfig, WinningLineDto } from '../../api/slots';
 import { usePlayer } from '../../data/usePlayer';
@@ -19,19 +20,6 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Slots'>;
 
 const BET_STEP = 50;
 
-/** Cores de placeholder só pra diferenciar os símbolos visualmente até a arte real chegar. */
-const SYMBOL_COLOR: Record<string, string> = {
-  ferradura: '#8A7355',
-  sino: '#9AA79E',
-  barras: '#43514A',
-  estrela: '#3D7DE0',
-  moeda: '#E5B567',
-  coroa: '#E67E22',
-  diamante: '#5FD3C4',
-  sete: '#E63950',
-  jackpot: '#FFD98A',
-};
-
 /** Espelha PAYLINES de server/src/modules/games/slots/slots.config.ts — só para destacar as células vencedoras. */
 const PAYLINE_CELLS: Record<string, [number, number, number]> = {
   'linha-superior': [0, 1, 2],
@@ -40,6 +28,18 @@ const PAYLINE_CELLS: Record<string, [number, number, number]> = {
   'diagonal-descendente': [0, 4, 8],
   'diagonal-ascendente': [6, 4, 2],
 };
+
+/** Tamanho de uma célula do gabinete, em pixel. Três delas formam a janela do rolo. */
+const CELULA = 92;
+
+/**
+ * A grade vem do servidor em linha (0..8, da esquerda pra direita, de cima pra baixo),
+ * mas o rolo é uma COLUNA. Aqui a leitura é virada de lado.
+ */
+function colunaDoResultado(grade: string[] | null, coluna: number): string[] | null {
+  if (!grade) return null;
+  return [grade[coluna], grade[coluna + 3], grade[coluna + 6]];
+}
 
 function winningCellSet(winningLines: WinningLineDto[]): Set<number> {
   const cells = new Set<number>();
@@ -131,25 +131,39 @@ export function SlotsScreen({ navigation }: Props) {
           <>
             <Text style={styles.rtpLabel}>RTP divulgado: {(config.theoreticalRtp * 100).toFixed(1)}%</Text>
 
-            <View style={styles.grid}>
-              {Array.from({ length: 9 }).map((_, index) => {
-                const symbolId = grid?.[index];
-                const isWinning = highlighted.has(index);
-                return (
-                  <View
-                    key={index}
-                    style={[
-                      styles.cell,
-                      { backgroundColor: symbolId ? SYMBOL_COLOR[symbolId] : colors.backgroundElevated },
-                      isWinning && styles.cellWinning,
-                    ]}
-                  >
-                    <Text style={styles.cellLabel} numberOfLines={1}>
-                      {symbolId ? symbolId.slice(0, 3).toUpperCase() : '?'}
-                    </Text>
-                  </View>
-                );
-              })}
+            <View style={styles.gabinete}>
+              <View style={styles.rolos}>
+                {[0, 1, 2].map((coluna) => (
+                  <Rolo
+                    key={coluna}
+                    coluna={coluna}
+                    girando={spinning}
+                    resultado={colunaDoResultado(grid, coluna)}
+                    largura={CELULA}
+                    altura={CELULA}
+                  />
+                ))}
+              </View>
+
+              {/*
+                As linhas premiadas acendem POR CIMA dos rolos, depois que eles param.
+                Marcar a célula por baixo não daria: o rolo é uma tira que desliza, e a
+                célula premiada nem existe como caixa própria.
+              */}
+              {!spinning && highlighted.size > 0 && (
+                <View pointerEvents="none" style={styles.marcacoes}>
+                  {Array.from({ length: 9 }).map((_, indice) => (
+                    <View
+                      key={indice}
+                      style={[
+                        styles.marcacao,
+                        { width: CELULA, height: CELULA },
+                        highlighted.has(indice) && styles.marcacaoAcesa,
+                      ]}
+                    />
+                  ))}
+                </View>
+              )}
             </View>
 
             {lastWin !== null && (
@@ -217,25 +231,33 @@ const styles = StyleSheet.create({
   errorBox: { marginTop: spacing.xxxl, alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
   errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  grid: {
+  gabinete: {
+    marginTop: spacing.xl,
+    padding: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: 2,
+    borderColor: colors.goldDeep,
+    backgroundColor: 'rgba(11,15,13,0.82)',
+  },
+  rolos: { flexDirection: 'row', gap: spacing.xs },
+  /*
+   * A grade de marcação tem que cair EXATAMENTE em cima dos rolos: vão entre colunas,
+   * nenhum entre linhas (o rolo é uma tira contínua de três células, sem respiro no
+   * meio). Por isso columnGap/rowGap separados, e a largura fixada pra a quebra de
+   * linha acontecer de três em três.
+   */
+  marcacoes: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+    width: 3 * CELULA + 2 * spacing.xs,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    width: 3 * 88 + 2 * spacing.sm,
-    gap: spacing.sm,
-    marginTop: spacing.xl,
-    justifyContent: 'center',
+    columnGap: spacing.xs,
+    rowGap: 0,
   },
-  cell: {
-    width: 88,
-    height: 88,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  cellWinning: { borderColor: colors.goldBright },
-  cellLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.sm, color: colors.background },
+  marcacao: { borderRadius: radius.sm, borderWidth: 2, borderColor: 'transparent' },
+  marcacaoAcesa: { borderColor: colors.goldBright, backgroundColor: 'rgba(255,217,138,0.14)' },
   resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, marginTop: spacing.lg, textAlign: 'center' },
   resultWin: { color: colors.goldBright },
   resultLoss: { color: colors.textFaint },

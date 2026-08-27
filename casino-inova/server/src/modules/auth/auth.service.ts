@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { randomBytes, scrypt, timingSafeEqual } from 'crypto';
+import { PoolClient } from 'pg';
 import { promisify } from 'util';
 import * as jwt from 'jsonwebtoken';
 import { DatabaseService } from '../../database/database.service';
@@ -49,6 +50,20 @@ export interface TokenPayload {
  * provedor, recebe um token, e manda pra cá; aqui a gente confere com o Google que o
  * token é legítimo antes de criar sessão nenhuma (ver `firebase.ts`).
  */
+/**
+ * Fichas que toda conta nova recebe.
+ *
+ * Sem isso a conta nasce com saldo zero e não dá pra fazer NADA: o app abre, os dez
+ * jogos aparecem abertos, e qualquer aposta é recusada por saldo insuficiente. Não é
+ * promoção nem isca — é o mínimo pro produto funcionar, e todo cassino social entrega
+ * uma pilha inicial pelo mesmo motivo.
+ *
+ * Entra como lançamento no ledger, do tipo `presente`, e não como número guardado na
+ * conta: o saldo continua sendo a SOMA das entradas, e essa aparece no extrato como
+ * qualquer outra.
+ */
+export const FICHAS_DE_BOAS_VINDAS = 10_000;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -93,6 +108,7 @@ export class AuthService {
         `INSERT INTO credentials (provider, subject, user_id, password_hash) VALUES ('senha', $1, $2, $3)`,
         [emailNormalizado, userId, hash],
       );
+      await creditarBoasVindas(client, userId);
     });
 
     return this.sessaoDe(userId);
@@ -147,6 +163,7 @@ export class AuthService {
         subject,
         userId,
       ]);
+      await creditarBoasVindas(client, userId);
     });
     return this.sessaoDe(userId);
   }
@@ -217,4 +234,17 @@ async function senhaConfere(senha: string, guardada: string): Promise<boolean> {
   const esperada = Buffer.from(hashHex, 'hex');
   // timingSafeEqual pelo mesmo motivo da assinatura do webhook da loja.
   return derivada.length === esperada.length && timingSafeEqual(derivada, esperada);
+}
+
+/**
+ * Lança as fichas de boas-vindas DENTRO da transação que cria a conta.
+ *
+ * Junto de propósito: se o lançamento falhasse depois, existiria conta sem fichas e
+ * ninguém saberia. Ou nasce com saldo, ou não nasce.
+ */
+async function creditarBoasVindas(client: PoolClient, userId: string): Promise<void> {
+  await client.query(
+    `INSERT INTO ledger_entries (user_id, type, amount, origin) VALUES ($1, 'presente', $2, 'boas-vindas')`,
+    [userId, FICHAS_DE_BOAS_VINDAS],
+  );
 }

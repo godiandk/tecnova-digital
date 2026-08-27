@@ -12,6 +12,7 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
+import { RodaDaRoleta } from '../../components/RodaDaRoleta';
 import { RouletteHistoryPanel, RouletteHistory } from '../../components/RouletteHistoryPanel';
 import { ApiError } from '../../api/client';
 import { fetchRouletteConfig, fetchRouletteHistory, spinRoulette, RouletteConfig, RouletteBetType, RouletteSpinResponse } from '../../api/roulette';
@@ -19,6 +20,9 @@ import { usePlayer } from '../../data/usePlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Roulette'>;
+
+/** Diâmetro da roda na tela. Cabe num celular estreito e ainda deixa ler as casas. */
+const TAMANHO_DA_RODA = 268;
 
 const BET_STEP = 50;
 
@@ -133,8 +137,22 @@ export function RouletteScreen({ navigation }: Props) {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             <Text style={styles.rtpLabel}>RTP divulgado: {(config.theoreticalRtp * 100).toFixed(2)}%</Text>
 
-            <View style={[styles.resultWheel, { backgroundColor: lastResult ? POCKET_COLOR[lastResult.color] : colors.backgroundElevated }]}>
-              <Text style={styles.resultNumber}>{lastResult ? lastResult.pocket : '–'}</Text>
+            <View style={styles.roda}>
+              <RodaDaRoleta
+                resultado={lastResult ? lastResult.pocket : null}
+                girando={spinning}
+                tamanho={TAMANHO_DA_RODA}
+              />
+              {/*
+                O número também aparece escrito, e não só na roda: a casa que para
+                embaixo do marcador é pequena num celular, e ninguém deveria precisar
+                apertar os olhos pra saber no que deu.
+              */}
+              {!spinning && lastResult && (
+                <View style={[styles.selo, { backgroundColor: POCKET_COLOR[lastResult.color] }]}>
+                  <Text style={styles.resultNumber}>{lastResult.pocket}</Text>
+                </View>
+              )}
             </View>
 
             {lastResult && (
@@ -243,13 +261,18 @@ const styles = StyleSheet.create({
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
   errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
   scrollContent: { alignItems: 'center', paddingBottom: spacing.xxxl },
-  resultWheel: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+  roda: { marginTop: spacing.xl, alignItems: 'center', justifyContent: 'center' },
+  /*
+   * O selo do número fica no miolo da roda, onde só existe o eixo dourado da arte —
+   * não cobre casa nenhuma.
+   */
+  selo: {
+    position: 'absolute',
+    width: 74,
+    height: 74,
+    borderRadius: 37,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.xl,
     borderWidth: 3,
     borderColor: colors.goldBright,
   },
