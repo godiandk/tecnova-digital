@@ -14,19 +14,27 @@ import {
 import {
   BASE_HAND_VALUE,
   Card,
+  HAND_VALUE_LADDER,
   MATCH_WIN_TOTAL_MULTIPLIER,
   MAX_BUY_IN,
   MIN_BUY_IN,
+  nextHandValue,
   POINTS_TO_WIN_MATCH,
-  TRUCO_HAND_VALUE,
+  RAISE_LABEL,
   TrucoRank,
 } from './truco.config';
+
+export type TrucoResponse = 'aceitar' | 'correr' | 'aumentar';
 
 interface TrucoMatch {
   buyIn: number;
   playerScore: number;
   botScore: number;
   handValue: number;
+  /** Valor que o pedido em aberto quer alcançar — null quando não tem pedido pendente. */
+  pendingHandValue: number | null;
+  /** Quem pediu por último nesta mão: esse lado não pode aumentar de novo até o outro responder. */
+  lastRaiseBy: 'jogador' | 'bot' | null;
   vira: Card;
   manilhaRank: TrucoRank;
   playerHand: Card[];
@@ -54,7 +62,13 @@ export class TrucoService {
   constructor(private readonly walletService: WalletService) {}
 
   getConfig() {
-    return { minBuyIn: MIN_BUY_IN, maxBuyIn: MAX_BUY_IN, pointsToWinMatch: POINTS_TO_WIN_MATCH, trucoHandValue: TRUCO_HAND_VALUE };
+    return {
+      minBuyIn: MIN_BUY_IN,
+      maxBuyIn: MAX_BUY_IN,
+      pointsToWinMatch: POINTS_TO_WIN_MATCH,
+      handValueLadder: HAND_VALUE_LADDER,
+      raiseLabel: RAISE_LABEL,
+    };
   }
 
   newMatch(userId: string, buyIn: number) {
@@ -72,6 +86,8 @@ export class TrucoService {
       playerScore: 0,
       botScore: 0,
       handValue: BASE_HAND_VALUE,
+      pendingHandValue: null,
+      lastRaiseBy: null,
       vira: { rank: '4', suit: 'ouros' },
       manilhaRank: '5',
       playerHand: [],
@@ -111,50 +127,105 @@ export class TrucoService {
     return this.publicView(userId, match);
   }
 
+  /** Pede o próximo degrau da escada (truco → seis → nove → doze) e já resolve a resposta do bot. */
   callTruco(userId: string) {
     const match = this.requireMatch(userId);
     if (match.pendingTruco) {
-      throw new BadRequestException('Já tem um pedido de truco em aberto.');
+      throw new BadRequestException('Já tem um pedido esperando resposta.');
     }
-    if (match.handValue !== BASE_HAND_VALUE) {
-      throw new BadRequestException('Truco já foi pedido nesta mão.');
+    if (match.lastRaiseBy === 'jogador') {
+      throw new BadRequestException('Você pediu por último — espere o bot pedir pra poder aumentar de novo.');
     }
 
-    const botAccepts = botTrucoDecision(match.botHand, match.manilhaRank);
-    if (botAccepts) {
-      match.handValue = TRUCO_HAND_VALUE;
-      match.lastEvent = 'O bot aceitou o truco — a mão agora vale 3.';
-    } else {
-      this.awardHand(userId, match, 'jogador');
-      match.lastEvent = 'O bot correu do truco — você fica com a mão. ' + (match.lastEvent ?? '');
+    const target = nextHandValue(match.handValue);
+    if (target === null) {
+      throw new BadRequestException('A mão já vale 12 — não dá pra aumentar mais.');
     }
+
+    match.lastRaiseBy = 'jogador';
+    this.resolveBotResponseToRaise(userId, match, target);
     return this.publicView(userId, match);
   }
 
-  respondTruco(userId: string, accept: boolean) {
+  respondTruco(userId: string, response: TrucoResponse) {
     const match = this.requireMatch(userId);
-    if (match.pendingTruco !== 'bot') {
-      throw new BadRequestException('Não tem pedido de truco do bot esperando resposta.');
+    if (match.pendingTruco !== 'bot' || match.pendingHandValue === null) {
+      throw new BadRequestException('Não tem pedido do bot esperando resposta.');
     }
 
-    if (accept) {
-      match.handValue = TRUCO_HAND_VALUE;
+    const asked = match.pendingHandValue;
+    const askedLabel = RAISE_LABEL[asked] ?? String(asked);
+
+    if (response === 'correr') {
+      // Correr entrega ao adversário o valor do degrau anterior, não o valor pedido.
       match.pendingTruco = null;
-      match.lastEvent = 'Você aceitou o truco — a mão agora vale 3.';
-    } else {
-      match.pendingTruco = null;
+      match.pendingHandValue = null;
       this.awardHand(userId, match, 'bot');
-      match.lastEvent = 'Você correu do truco — o bot fica com a mão. ' + (match.lastEvent ?? '');
+      match.lastEvent = `Você correu do ${askedLabel} — o bot fica com a mão. ` + (match.lastEvent ?? '');
+      return this.publicView(userId, match);
     }
+
+    if (response === 'aceitar') {
+      match.handValue = asked;
+      match.pendingTruco = null;
+      match.pendingHandValue = null;
+      match.lastEvent = `Você aceitou o ${askedLabel} — a mão agora vale ${asked}.`;
+      return this.publicView(userId, match);
+    }
+
+    const target = nextHandValue(asked);
+    if (target === null) {
+      throw new BadRequestException('O pedido já é de 12 — só dá pra aceitar ou correr.');
+    }
+
+    // Aumentar = aceitar o pedido do bot e já subir mais um degrau em cima dele.
+    match.handValue = asked;
+    match.pendingTruco = null;
+    match.pendingHandValue = null;
+    match.lastRaiseBy = 'jogador';
+    this.resolveBotResponseToRaise(userId, match, target);
     return this.publicView(userId, match);
+  }
+
+  /**
+   * O bot responde a um pedido do jogador: corre, aceita, ou devolve subindo mais um
+   * degrau (só devolve com mão forte, e nunca acima de doze).
+   */
+  private resolveBotResponseToRaise(userId: string, match: TrucoMatch, target: number) {
+    const label = RAISE_LABEL[target] ?? String(target);
+
+    if (!botTrucoDecision(match.botHand, match.manilhaRank)) {
+      // Corre: o jogador leva o valor de ANTES do pedido.
+      this.awardHand(userId, match, 'jogador');
+      match.lastEvent = `O bot correu do ${label} — você fica com a mão. ` + (match.lastEvent ?? '');
+      return;
+    }
+
+    const counter = nextHandValue(target);
+    if (counter !== null && botShouldCallTruco(match.botHand, match.manilhaRank)) {
+      // Aceita e devolve: a mão passa a valer o pedido do jogador e o bot pede o próximo.
+      match.handValue = target;
+      match.pendingTruco = 'bot';
+      match.pendingHandValue = counter;
+      match.lastRaiseBy = 'bot';
+      match.lastEvent = `O bot aceitou o ${label} e pediu ${RAISE_LABEL[counter] ?? counter}!`;
+      return;
+    }
+
+    match.handValue = target;
+    match.lastEvent = `O bot aceitou o ${label} — a mão agora vale ${target}.`;
   }
 
   private settleOrContinueHand(userId: string, match: TrucoMatch) {
     const outcome = resolveHand(match.roundResults);
     if (outcome === 'pendente') {
-      if (botShouldCallTruco(match.botHand, match.manilhaRank) && match.handValue === BASE_HAND_VALUE) {
+      const target = nextHandValue(match.handValue);
+      const botCanRaise = match.lastRaiseBy !== 'bot' && target !== null;
+      if (botCanRaise && botShouldCallTruco(match.botHand, match.manilhaRank)) {
         match.pendingTruco = 'bot';
-        match.lastEvent = 'O bot pediu truco!';
+        match.pendingHandValue = target;
+        match.lastRaiseBy = 'bot';
+        match.lastEvent = `O bot pediu ${RAISE_LABEL[target!] ?? target}!`;
       }
       return;
     }
@@ -196,6 +267,8 @@ export class TrucoService {
     match.botCardsPlayed = [];
     match.handValue = BASE_HAND_VALUE;
     match.pendingTruco = null;
+    match.pendingHandValue = null;
+    match.lastRaiseBy = null;
   }
 
   private requireMatch(userId: string): TrucoMatch {
@@ -212,6 +285,9 @@ export class TrucoService {
       playerScore: match.playerScore,
       botScore: match.botScore,
       handValue: match.handValue,
+      pendingHandValue: match.pendingHandValue,
+      /** Quanto o jogador pode pedir agora (null = não pode aumentar nesse momento). */
+      nextRaiseValue: match.lastRaiseBy === 'jogador' || match.pendingTruco ? null : nextHandValue(match.handValue),
       vira: match.vira,
       playerHand: match.playerHand,
       playerCardsPlayed: match.playerCardsPlayed,

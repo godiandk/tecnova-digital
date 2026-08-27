@@ -16,8 +16,30 @@ export interface Card {
 }
 
 export const POINTS_TO_WIN_MATCH = 12;
-export const TRUCO_HAND_VALUE = 3;
 export const BASE_HAND_VALUE = 1;
+
+/**
+ * Escada de aumento do truco: a mão começa valendo 1 e cada pedido sobe um degrau —
+ * "truco" (3), "seis", "nove" e "doze". Quem aceita joga pelo novo valor; quem corre
+ * entrega ao adversário o valor do degrau ANTERIOR (correr do truco dá 1 ponto, do
+ * seis dá 3, do nove dá 6, do doze dá 9). Só o lado que NÃO pediu por último pode
+ * subir o próximo degrau — ninguém aumenta o próprio pedido.
+ */
+export const HAND_VALUE_LADDER = [1, 3, 6, 9, 12] as const;
+
+/** Nome de cada pedido, na mesma ordem dos degraus a partir do segundo. */
+export const RAISE_LABEL: Record<number, string> = {
+  3: 'truco',
+  6: 'seis',
+  9: 'nove',
+  12: 'doze',
+};
+
+export function nextHandValue(current: number): number | null {
+  const index = HAND_VALUE_LADDER.indexOf(current as (typeof HAND_VALUE_LADDER)[number]);
+  if (index === -1 || index === HAND_VALUE_LADDER.length - 1) return null;
+  return HAND_VALUE_LADDER[index + 1];
+}
 
 export const MIN_BUY_IN = 100;
 export const MAX_BUY_IN = 5000;

@@ -32,6 +32,16 @@ const BUY_IN_STEP = 100;
 
 const SUIT_SYMBOL: Record<string, string> = { ouros: '♦', espadas: '♠', copas: '♥', paus: '♣' };
 
+/** Nome de cada degrau da escada de aumento — espelha RAISE_LABEL do servidor. */
+const RAISE_LABEL: Record<number, string> = { 3: 'truco', 6: 'seis', 9: 'nove', 12: 'doze' };
+const LADDER = [1, 3, 6, 9, 12];
+
+/** Próximo degrau depois de `value` — 0 quando já está no topo (12), pra cair no `&&` do JSX. */
+function nextRung(value: number): number {
+  const index = LADDER.indexOf(value);
+  return index === -1 || index === LADDER.length - 1 ? 0 : LADDER[index + 1];
+}
+
 function cardLabel(card: TrucoCard): string {
   return `${card.rank}${SUIT_SYMBOL[card.suit]}`;
 }
@@ -169,12 +179,19 @@ export function TrucoScreen({ navigation }: Props) {
 
             {awaitingBotTruco ? (
               <View style={styles.actionRow}>
-                <Pressable onPress={() => run(() => respondTruco(false))} disabled={busy} style={[styles.secondaryButton, busy && styles.buttonDisabled]}>
+                <Pressable onPress={() => run(() => respondTruco('correr'))} disabled={busy} style={[styles.secondaryButton, busy && styles.buttonDisabled]}>
                   <Text style={styles.secondaryButtonLabel}>Correr</Text>
                 </Pressable>
-                <Pressable onPress={() => run(() => respondTruco(true))} disabled={busy} style={[styles.primaryButton, busy && styles.buttonDisabled]}>
-                  <Text style={styles.primaryButtonLabel}>Aceitar truco</Text>
+                <Pressable onPress={() => run(() => respondTruco('aceitar'))} disabled={busy} style={[styles.primaryButton, busy && styles.buttonDisabled]}>
+                  <Text style={styles.primaryButtonLabel}>
+                    Aceitar {match.pendingHandValue ? RAISE_LABEL[match.pendingHandValue] ?? match.pendingHandValue : ''}
+                  </Text>
                 </Pressable>
+                {match.pendingHandValue !== null && RAISE_LABEL[nextRung(match.pendingHandValue)] && (
+                  <Pressable onPress={() => run(() => respondTruco('aumentar'))} disabled={busy} style={[styles.primaryButton, busy && styles.buttonDisabled]}>
+                    <Text style={styles.primaryButtonLabel}>Pedir {RAISE_LABEL[nextRung(match.pendingHandValue)]}</Text>
+                  </Pressable>
+                )}
               </View>
             ) : (
               <>
@@ -192,10 +209,12 @@ export function TrucoScreen({ navigation }: Props) {
                 </View>
                 <Pressable
                   onPress={() => run(callTruco)}
-                  disabled={busy || match.handValue !== 1}
-                  style={[styles.secondaryButton, (busy || match.handValue !== 1) && styles.buttonDisabled]}
+                  disabled={busy || match.nextRaiseValue === null}
+                  style={[styles.secondaryButton, (busy || match.nextRaiseValue === null) && styles.buttonDisabled]}
                 >
-                  <Text style={styles.secondaryButtonLabel}>Pedir truco</Text>
+                  <Text style={styles.secondaryButtonLabel}>
+                    {match.nextRaiseValue ? `Pedir ${RAISE_LABEL[match.nextRaiseValue] ?? match.nextRaiseValue}` : 'Não dá pra aumentar'}
+                  </Text>
                 </Pressable>
               </>
             )}

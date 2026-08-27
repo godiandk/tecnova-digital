@@ -1,6 +1,8 @@
 import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common';
-import { TrucoService } from './truco.service';
+import { TrucoResponse, TrucoService } from './truco.service';
 import { Card } from './truco.config';
+
+const VALID_RESPONSES: TrucoResponse[] = ['aceitar', 'correr', 'aumentar'];
 
 class NewMatchDto {
   userId!: string;
@@ -17,7 +19,7 @@ class UserIdDto {
 }
 
 class RespondTrucoDto extends UserIdDto {
-  accept!: boolean;
+  response!: TrucoResponse;
 }
 
 @Controller('games/truco')
@@ -55,9 +57,9 @@ export class TrucoController {
 
   @Post('responder-truco')
   respondTruco(@Body() body: RespondTrucoDto) {
-    if (!body?.userId || typeof body.accept !== 'boolean') {
-      throw new BadRequestException('Informe userId e accept.');
+    if (!body?.userId || !VALID_RESPONSES.includes(body.response)) {
+      throw new BadRequestException('Informe userId e response (aceitar, correr ou aumentar).');
     }
-    return this.trucoService.respondTruco(body.userId, body.accept);
+    return this.trucoService.respondTruco(body.userId, body.response);
   }
 }
