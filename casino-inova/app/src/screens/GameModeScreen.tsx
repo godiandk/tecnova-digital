@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ImageBackground, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -9,6 +9,7 @@ import { getGameById } from '../data/games';
 import { getGameMode, GameModeOption } from '../data/gameModes';
 import { LOBBY_UI, MODE_BANNERS } from '../data/lobbyAssets';
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
+import { Fundo } from '../components/Fundo';
 
 /** Os cartazes de variante são 1200x600 — deitados, empilhados numa lista. */
 const LARGURA_CARTAZ = Dimensions.get('window').width - spacing.lg * 2;
@@ -58,7 +59,7 @@ export function GameModeScreen({ navigation, route }: Props) {
   };
 
   return (
-    <ImageBackground source={LOBBY_UI.fundoSelecaoModo} style={styles.fundo} resizeMode="cover">
+    <Fundo source={LOBBY_UI.fundoSelecaoModo} style={styles.fundo} resizeMode="cover">
       <View style={styles.veu} />
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
@@ -123,7 +124,7 @@ export function GameModeScreen({ navigation, route }: Props) {
           })}
         </ScrollView>
       </SafeAreaView>
-    </ImageBackground>
+    </Fundo>
   );
 }
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -11,6 +11,7 @@ import { getTutorialByGameId } from '../../data/tutorials';
 import { TABLE_IMAGES } from '../../data/tableImages';
 import { TutorialModal } from '../../components/TutorialModal';
 import { colors, fontFamily, fontSize, spacing } from '../../theme';
+import { Fundo } from '../../components/Fundo';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GameTable'>;
 
@@ -34,7 +35,7 @@ export function GameTableScreen({ route, navigation }: Props) {
   }
 
   return (
-    <ImageBackground source={TABLE_IMAGES[game.id]} style={styles.container} resizeMode="cover">
+    <Fundo source={TABLE_IMAGES[game.id]} style={styles.container} resizeMode="cover">
       <LinearGradient colors={['rgba(11,15,13,0.25)', colors.background]} locations={[0, 0.8]} style={styles.overlay} />
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
@@ -63,7 +64,7 @@ export function GameTableScreen({ route, navigation }: Props) {
         tutorial={tutorial}
         onClose={() => setTutorialVisible(false)}
       />
-    </ImageBackground>
+    </Fundo>
   );
 }
 

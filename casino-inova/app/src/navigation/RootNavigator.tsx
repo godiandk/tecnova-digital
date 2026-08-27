@@ -1,9 +1,9 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+
+import { BarraDeAbas } from '../components/BarraDeAbas';
 
 import { RootStackParamList, TabParamList } from './types';
-import { colors, fontFamily, fontSize } from '../theme';
 import { LobbyScreen } from '../screens/LobbyScreen';
 import { TournamentsScreen } from '../screens/TournamentsScreen';
 import { StoreScreen } from '../screens/StoreScreen';
@@ -28,40 +28,11 @@ import { PokerScreen } from '../screens/games/PokerScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
-const TAB_ICONS: Record<keyof TabParamList, keyof typeof Ionicons.glyphMap> = {
-  Lobby: 'home',
-  Tournaments: 'trophy',
-  Store: 'cart',
-  Friends: 'people',
-  Profile: 'person-circle',
-};
-
-const TAB_LABELS: Record<keyof TabParamList, string> = {
-  Lobby: 'Lobby',
-  Tournaments: 'Torneios',
-  Store: 'Loja',
-  Friends: 'Amigos',
-  Profile: 'Perfil',
-};
-
 function TabsNavigator() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: colors.goldBright,
-        tabBarInactiveTintColor: colors.textFaint,
-        tabBarStyle: {
-          backgroundColor: colors.backgroundElevated,
-          borderTopColor: colors.feltLine,
-          height: 64,
-          paddingBottom: 10,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.xs },
-        tabBarIcon: ({ color, size }) => <Ionicons name={TAB_ICONS[route.name]} size={size} color={color} />,
-        tabBarLabel: TAB_LABELS[route.name],
-      })}
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <BarraDeAbas {...props} />}
     >
       <Tab.Screen name="Lobby" component={LobbyScreen} />
       <Tab.Screen name="Tournaments" component={TournamentsScreen} />

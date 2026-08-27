@@ -5,6 +5,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AuthGuard } from './modules/auth/auth.guard';
 import { UsersModule } from './modules/users/users.module';
 import { WalletModule } from './modules/wallet/wallet.module';
+import { LobbyModule } from './modules/lobby/lobby.module';
 import { StoreModule } from './modules/store/store.module';
 import { SlotsModule } from './modules/games/slots/slots.module';
 import { RouletteModule } from './modules/games/roulette/roulette.module';
@@ -30,6 +31,7 @@ import { TournamentsModule } from './modules/tournaments/tournaments.module';
     AuthModule,
     UsersModule,
     WalletModule,
+    LobbyModule,
     StoreModule,
     SlotsModule,
     RouletteModule,

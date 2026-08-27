@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, Pressable, ImageBackground,
+  View, Text, StyleSheet, TextInput, Pressable,
   KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import { useLoginGoogle } from '../firebase/loginSocial';
 import { ApiError } from '../api/client';
 import { GoldButton } from '../components/GoldButton';
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
+import { Fundo } from '../components/Fundo';
 
 type Modo = 'entrar' | 'cadastrar';
 
@@ -75,7 +76,7 @@ export function LoginScreen({ aoEntrar }: { aoEntrar: () => void }) {
     email.trim().length > 0 && senha.length > 0 && (modo === 'entrar' || nome.trim().length > 0);
 
   return (
-    <ImageBackground
+    <Fundo
       source={require('../../assets/images/backgrounds/lobby-fundo.jpg')}
       style={styles.fundo}
       resizeMode="cover"
@@ -156,7 +157,7 @@ export function LoginScreen({ aoEntrar }: { aoEntrar: () => void }) {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </ImageBackground>
+    </Fundo>
   );
 }
 
