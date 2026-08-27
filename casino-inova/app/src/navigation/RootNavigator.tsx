@@ -15,6 +15,7 @@ import { RouletteScreen } from '../screens/games/RouletteScreen';
 import { BlackjackScreen } from '../screens/games/BlackjackScreen';
 import { BaccaratScreen } from '../screens/games/BaccaratScreen';
 import { BancaFrancesaScreen } from '../screens/games/BancaFrancesaScreen';
+import { BancaFrancesaMesaScreen } from '../screens/games/BancaFrancesaMesaScreen';
 import { TrucoScreen } from '../screens/games/TrucoScreen';
 import { DominoScreen } from '../screens/games/DominoScreen';
 import { PokerScreen } from '../screens/games/PokerScreen';
@@ -76,6 +77,7 @@ export function RootNavigator() {
       <Stack.Screen name="Blackjack" component={BlackjackScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Baccarat" component={BaccaratScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="BancaFrancesa" component={BancaFrancesaScreen} options={{ animation: 'fade' }} />
+      <Stack.Screen name="BancaFrancesaMesa" component={BancaFrancesaMesaScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Truco" component={TrucoScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Domino" component={DominoScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Poker" component={PokerScreen} options={{ animation: 'fade' }} />

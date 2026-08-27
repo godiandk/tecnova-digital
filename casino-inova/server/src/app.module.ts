@@ -13,6 +13,7 @@ import { TrucoModule } from './modules/games/truco/truco.module';
 import { DominoModule } from './modules/games/domino/domino.module';
 import { PokerModule } from './modules/games/poker/poker.module';
 import { FriendsModule } from './modules/friends/friends.module';
+import { RoomsModule } from './modules/rooms/rooms.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { FriendsModule } from './modules/friends/friends.module';
     DominoModule,
     PokerModule,
     FriendsModule,
+    RoomsModule,
   ],
 })
 export class AppModule {}

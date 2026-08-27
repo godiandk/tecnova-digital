@@ -81,17 +81,19 @@ export const tutorials: Record<string, GameTutorial> = {
   },
   'banca-francesa': {
     gameId: 'banca-francesa',
-    whatIsIt: 'Um jogo de dados brasileiro clássico, jogado numa mesa com seis casas numeradas de 1 a 6.',
-    goal: 'Acertar em qual número os dados vão parar.',
+    whatIsIt: 'O tradicional jogo de dados português "Grande e Pequena". Três dados são lançados e você aposta na SOMA dos três, não num número sozinho.',
+    goal: 'Acertar em qual faixa a soma dos 3 dados vai cair: Pequeno, Grande ou Ases.',
     steps: [
-      'Coloque suas fichas na casa do número em que você acredita.',
-      'Quando todo mundo terminar de apostar, os dados são lançados na mesa.',
-      'O resultado é registrado no placar da mesa.',
-      'Quem apostou no número certo recebe o prêmio automaticamente.',
+      'Escolha uma ou mais apostas: Pequeno (soma 5, 6 ou 7), Grande (soma 14, 15 ou 16), Ases (soma 3 — os três dados caem no 1) ou Linha (meio a meio entre Grande e Pequeno).',
+      'Quando todo mundo terminar de apostar, os 3 dados são lançados.',
+      'Se a soma não cair em nenhuma dessas faixas (por exemplo 9 ou 12), o resultado é nulo: os dados são lançados de novo automaticamente, e suas apostas continuam valendo.',
+      'Quem acertou a faixa recebe o prêmio na hora.',
     ],
     tips: [
-      'Dá pra apostar em mais de um número ao mesmo tempo, dividindo suas fichas entre eles.',
-      'É um jogo rápido — cada rodada dura poucos segundos.',
+      'Ases é a aposta mais arriscada (só 1 jeito em 216 de sair), mas paga 61 pra 1 — de longe o maior prêmio da mesa.',
+      'Pequeno e Grande pagam 1 pra 1 (dobra sua ficha) e saem quase metade das vezes cada — são as apostas mais seguras.',
+      'A Linha divide sua ficha meio a meio entre Grande e Pequeno: se sair qualquer um dos dois você recebe sua ficha de volta inteira, só perde tudo se sair Ases.',
+      'Dá pra apostar em mais de um tipo ao mesmo tempo na mesma rodada.',
     ],
   },
   truco: {

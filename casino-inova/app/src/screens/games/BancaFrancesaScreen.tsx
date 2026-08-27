@@ -13,14 +13,28 @@ import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
 import { ApiError } from '../../api/client';
-import { fetchBancaFrancesaConfig, playBancaFrancesaRound, BancaFrancesaConfig, BancaFrancesaRoundResponse } from '../../api/bancaFrancesa';
+import {
+  fetchBancaFrancesaConfig,
+  playBancaFrancesaRound,
+  BancaFrancesaBetType,
+  BancaFrancesaConfig,
+  BancaFrancesaRoundResponse,
+} from '../../api/bancaFrancesa';
 import { mockPlayer } from '../../data/mockPlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BancaFrancesa'>;
 
 const BET_STEP = 50;
-const NUMBERS = [1, 2, 3, 4, 5, 6];
+
+const BET_OPTIONS: { type: BancaFrancesaBetType; label: string; description: string; payoutLabel: string }[] = [
+  { type: 'pequeno', label: 'Pequeno', description: 'Soma 5, 6 ou 7', payoutLabel: 'paga 1 p/ 1' },
+  { type: 'grande', label: 'Grande', description: 'Soma 14, 15 ou 16', payoutLabel: 'paga 1 p/ 1' },
+  { type: 'ases', label: 'Ases', description: 'Soma 3 (raro!)', payoutLabel: 'paga 61 p/ 1' },
+  { type: 'linha', label: 'Linha', description: 'Metade Grande + metade Pequeno', payoutLabel: 'só perde se sair Ases' },
+];
+
+const OUTCOME_LABEL: Record<string, string> = { ases: 'Ases', pequeno: 'Pequeno', grande: 'Grande' };
 
 const CREW = [
   { source: DEALER_IMAGES.bancaFrancesaBanqueiro, label: 'Banqueiro' },
@@ -35,8 +49,8 @@ export function BancaFrancesaScreen({ navigation }: Props) {
   const [config, setConfig] = useState<BancaFrancesaConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
   const [balance, setBalance] = useState(mockPlayer.chipBalance);
-  const [amountPerNumber, setAmountPerNumber] = useState(100);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [amountPerBet, setAmountPerBet] = useState(100);
+  const [selected, setSelected] = useState<Set<BancaFrancesaBetType>>(new Set());
   const [round, setRound] = useState<BancaFrancesaRoundResponse | null>(null);
   const [playing, setPlaying] = useState(false);
   const [playError, setPlayError] = useState<string | null>(null);
@@ -45,7 +59,7 @@ export function BancaFrancesaScreen({ navigation }: Props) {
     fetchBancaFrancesaConfig()
       .then((data) => {
         setConfig(data);
-        setAmountPerNumber(Math.max(data.minBet, Math.min(100, data.maxBet)));
+        setAmountPerBet(Math.max(data.minBet, Math.min(100, data.maxBet)));
       })
       .catch((error: unknown) => {
         setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
@@ -54,30 +68,30 @@ export function BancaFrancesaScreen({ navigation }: Props) {
 
   const adjustAmount = (delta: number) => {
     if (!config) return;
-    setAmountPerNumber((current) => Math.max(config.minBet, Math.min(config.maxBet, current + delta)));
+    setAmountPerBet((current) => Math.max(config.minBet, Math.min(config.maxBet, current + delta)));
   };
 
-  const toggleNumber = (number: number) => {
+  const toggleBet = (type: BancaFrancesaBetType) => {
     if (playing) return;
     setSelected((current) => {
       const next = new Set(current);
-      if (next.has(number)) {
-        next.delete(number);
-      } else if (config && next.size < config.maxSimultaneousNumbers) {
-        next.add(number);
+      if (next.has(type)) {
+        next.delete(type);
+      } else if (config && next.size < config.maxSimultaneousBets) {
+        next.add(type);
       }
       return next;
     });
   };
 
-  const totalStake = amountPerNumber * selected.size;
+  const totalStake = amountPerBet * selected.size;
 
   const handlePlay = async () => {
     if (!config || playing || selected.size === 0) return;
     setPlaying(true);
     setPlayError(null);
     try {
-      const bets = Array.from(selected).map((number) => ({ number, amount: amountPerNumber }));
+      const bets = Array.from(selected).map((type) => ({ type, amount: amountPerBet }));
       const result = await playBancaFrancesaRound(bets);
       setRound(result);
       setBalance(result.newBalance);
@@ -88,7 +102,8 @@ export function BancaFrancesaScreen({ navigation }: Props) {
     }
   };
 
-  const resultByNumber = new Map(round?.results.map((result) => [result.number, result]));
+  const resultByType = new Map(round?.results.map((result) => [result.type, result]));
+  const rtpLabel = config ? (config.theoreticalRtpByType.pequeno * 100).toFixed(1) : null;
 
   return (
     <GameBackdrop source={TABLE_IMAGES['banca-francesa']}>
@@ -98,9 +113,14 @@ export function BancaFrancesaScreen({ navigation }: Props) {
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </Pressable>
           <ChipStack amount={balance} />
-          <Pressable onPress={() => setTutorialVisible(true)} style={styles.iconButton} hitSlop={12}>
-            <Ionicons name="help-circle" size={24} color={colors.goldBright} />
-          </Pressable>
+          <View style={styles.topActions}>
+            <Pressable onPress={() => navigation.navigate('BancaFrancesaMesa')} style={styles.iconButton} hitSlop={12}>
+              <Ionicons name="people" size={22} color={colors.goldBright} />
+            </Pressable>
+            <Pressable onPress={() => setTutorialVisible(true)} style={styles.iconButton} hitSlop={12}>
+              <Ionicons name="help-circle" size={24} color={colors.goldBright} />
+            </Pressable>
+          </View>
         </View>
 
         <Text style={styles.title}>Banca Francesa</Text>
@@ -124,7 +144,7 @@ export function BancaFrancesaScreen({ navigation }: Props) {
 
         {config && (
           <>
-            <Text style={styles.rtpLabel}>RTP divulgado: {(config.theoreticalRtp * 100).toFixed(1)}%</Text>
+            <Text style={styles.rtpLabel}>RTP divulgado: {rtpLabel}% (igual em todas as apostas)</Text>
 
             <View style={styles.diceRow}>
               {(round?.dice ?? [null, null, null]).map((die, index) => (
@@ -133,23 +153,30 @@ export function BancaFrancesaScreen({ navigation }: Props) {
                 </View>
               ))}
             </View>
+            {round && (
+              <Text style={styles.outcomeLabel}>
+                Soma {round.sum} → {OUTCOME_LABEL[round.outcome]}
+                {round.rerolls > 0 ? ` (relançou ${round.rerolls}x até decidir)` : ''}
+              </Text>
+            )}
 
-            <View style={styles.numberGrid}>
-              {NUMBERS.map((number) => {
-                const isSelected = selected.has(number);
-                const result = resultByNumber.get(number);
-                const won = result && result.matches > 0;
+            <View style={styles.betGrid}>
+              {BET_OPTIONS.map((option) => {
+                const isSelected = selected.has(option.type);
+                const result = resultByType.get(option.type);
                 return (
                   <Pressable
-                    key={number}
-                    onPress={() => toggleNumber(number)}
-                    style={[styles.numberTile, isSelected && styles.numberTileSelected, won && styles.numberTileWon]}
+                    key={option.type}
+                    onPress={() => toggleBet(option.type)}
+                    style={[styles.betTile, isSelected && styles.betTileSelected, result?.won && styles.betTileWon]}
                     disabled={playing}
                   >
-                    <Text style={styles.numberLabel}>{number}</Text>
+                    <Text style={styles.betLabel}>{option.label}</Text>
+                    <Text style={styles.betDescription}>{option.description}</Text>
+                    <Text style={styles.betPayout}>{option.payoutLabel}</Text>
                     {result && (
-                      <Text style={styles.numberResult}>
-                        {result.matches > 0 ? `+${result.totalReturn.toLocaleString('pt-BR')}` : '—'}
+                      <Text style={styles.betResult}>
+                        {result.won ? `+${result.totalReturn.toLocaleString('pt-BR')}` : '—'}
                       </Text>
                     )}
                   </Pressable>
@@ -164,8 +191,8 @@ export function BancaFrancesaScreen({ navigation }: Props) {
                 <Ionicons name="remove" size={20} color={colors.textPrimary} />
               </Pressable>
               <View style={styles.betValue}>
-                <Text style={styles.betLabel}>Por número · {selected.size} escolhido(s)</Text>
-                <Text style={styles.betAmount}>{amountPerNumber.toLocaleString('pt-BR')}</Text>
+                <Text style={styles.betValueLabel}>Por aposta · {selected.size} escolhida(s)</Text>
+                <Text style={styles.betAmount}>{amountPerBet.toLocaleString('pt-BR')}</Text>
               </View>
               <Pressable onPress={() => adjustAmount(BET_STEP)} style={styles.betButton} disabled={playing}>
                 <Ionicons name="add" size={20} color={colors.textPrimary} />
@@ -214,6 +241,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  topActions: { flexDirection: 'row', gap: spacing.xs },
   title: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xl, color: colors.textPrimary, marginTop: spacing.lg },
   crewRow: { flexDirection: 'row', gap: spacing.xl, marginTop: spacing.sm },
   crewMember: { alignItems: 'center', gap: spacing.xs },
@@ -235,10 +263,18 @@ const styles = StyleSheet.create({
     borderColor: colors.goldBright,
   },
   dieLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.background },
-  numberGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center', marginTop: spacing.xl, maxWidth: 3 * 88 + 2 * spacing.sm },
-  numberTile: {
-    width: 88,
-    height: 72,
+  outcomeLabel: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.goldBright, marginTop: spacing.sm },
+  betGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    justifyContent: 'center',
+    marginTop: spacing.xl,
+    maxWidth: 2 * 150 + spacing.sm,
+  },
+  betTile: {
+    width: 150,
+    height: 96,
     borderRadius: radius.md,
     backgroundColor: colors.backgroundElevated,
     borderWidth: 2,
@@ -246,11 +282,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
+    paddingHorizontal: spacing.xs,
   },
-  numberTileSelected: { borderColor: colors.goldBright, backgroundColor: colors.felt },
-  numberTileWon: { borderColor: colors.success },
-  numberLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
-  numberResult: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.xs, color: colors.textFaint },
+  betTileSelected: { borderColor: colors.goldBright, backgroundColor: colors.felt },
+  betTileWon: { borderColor: colors.success },
+  betLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.md, color: colors.textPrimary },
+  betDescription: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
+  betPayout: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
+  betResult: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.xs, color: colors.goldBright },
   betRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: spacing.xl },
   betButton: {
     width: 40,
@@ -263,7 +302,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   betValue: { alignItems: 'center', minWidth: 160 },
-  betLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
+  betValueLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
   betAmount: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
   primaryButton: {
     backgroundColor: colors.goldBright,

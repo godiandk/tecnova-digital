@@ -1,10 +1,10 @@
 import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common';
 import { BancaFrancesaService } from './banca-francesa.service';
-import { NumberBet } from './banca-francesa.engine';
+import { BancaFrancesaBet } from './banca-francesa.engine';
 
 class PlayDto {
   userId!: string;
-  bets!: NumberBet[];
+  bets!: BancaFrancesaBet[];
 }
 
 @Controller('games/banca-francesa')

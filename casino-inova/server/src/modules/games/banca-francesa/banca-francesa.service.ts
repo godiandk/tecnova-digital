@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
-import { NumberBet, resolveBets, rollDice, theoreticalRtp } from './banca-francesa.engine';
-import { MAX_BET, MAX_SIMULTANEOUS_NUMBERS, MIN_BET, TOTAL_MULTIPLIER_BY_MATCHES } from './banca-francesa.config';
+import { BancaFrancesaBet, resolveBets, rollUntilDecisive, theoreticalRtp } from './banca-francesa.engine';
+import { BET_TYPES, MAX_BET, MAX_SIMULTANEOUS_BETS, MIN_BET, TOTAL_RETURN_MULTIPLIER, WINNING_SUMS } from './banca-francesa.config';
 
 @Injectable()
 export class BancaFrancesaService {
@@ -11,42 +11,47 @@ export class BancaFrancesaService {
     return {
       minBet: MIN_BET,
       maxBet: MAX_BET,
-      maxSimultaneousNumbers: MAX_SIMULTANEOUS_NUMBERS,
-      totalMultiplierByMatches: TOTAL_MULTIPLIER_BY_MATCHES,
-      theoreticalRtp: theoreticalRtp(),
+      maxSimultaneousBets: MAX_SIMULTANEOUS_BETS,
+      betTypes: BET_TYPES,
+      winningSums: WINNING_SUMS,
+      totalReturnMultiplier: TOTAL_RETURN_MULTIPLIER,
+      theoreticalRtpByType: Object.fromEntries(BET_TYPES.map((type) => [type, theoreticalRtp(type)])),
     };
   }
 
-  playRound(userId: string, bets: NumberBet[]) {
-    if (!Array.isArray(bets) || bets.length === 0 || bets.length > MAX_SIMULTANEOUS_NUMBERS) {
-      throw new BadRequestException(`Aposte em 1 a ${MAX_SIMULTANEOUS_NUMBERS} números.`);
+  validateBets(bets: BancaFrancesaBet[]) {
+    if (!Array.isArray(bets) || bets.length === 0 || bets.length > MAX_SIMULTANEOUS_BETS) {
+      throw new BadRequestException(`Aposte em 1 a ${MAX_SIMULTANEOUS_BETS} tipos (ases, pequeno, grande, linha).`);
     }
-
-    const seenNumbers = new Set<number>();
+    const seenTypes = new Set<string>();
     for (const bet of bets) {
-      if (!Number.isInteger(bet.number) || bet.number < 1 || bet.number > 6) {
-        throw new BadRequestException('Cada número apostado precisa estar entre 1 e 6.');
+      if (!BET_TYPES.includes(bet.type)) {
+        throw new BadRequestException(`Tipo de aposta inválido: ${bet.type}.`);
       }
-      if (seenNumbers.has(bet.number)) {
-        throw new BadRequestException(`Número ${bet.number} apostado mais de uma vez — some tudo numa aposta só.`);
+      if (seenTypes.has(bet.type)) {
+        throw new BadRequestException(`Aposta em "${bet.type}" duplicada — some tudo numa aposta só.`);
       }
-      seenNumbers.add(bet.number);
+      seenTypes.add(bet.type);
       if (!Number.isFinite(bet.amount) || bet.amount < MIN_BET || bet.amount > MAX_BET) {
         throw new BadRequestException(`Cada aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
       }
     }
+  }
+
+  playRound(userId: string, bets: BancaFrancesaBet[]) {
+    this.validateBets(bets);
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
     this.walletService.debit(userId, totalStake, 'aposta');
 
-    const dice = rollDice();
-    const results = resolveBets(dice, bets);
-    const totalReturn = results.reduce((sum, result) => sum + result.totalReturn, 0);
+    const { dice, sum, outcome, rerolls } = rollUntilDecisive();
+    const results = resolveBets(outcome, bets);
+    const totalReturn = results.reduce((total, result) => total + result.totalReturn, 0);
 
     if (totalReturn > 0) {
       this.walletService.credit(userId, totalReturn, 'premio');
     }
 
-    return { dice, results, totalStake, totalReturn, newBalance: this.walletService.balanceOf(userId) };
+    return { dice, sum, outcome, rerolls, results, totalStake, totalReturn, newBalance: this.walletService.balanceOf(userId) };
   }
 }

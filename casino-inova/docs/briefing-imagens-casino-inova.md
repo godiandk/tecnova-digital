@@ -110,7 +110,7 @@ Mesa de roleta completa: a roda dourada e preta com os números encaixada numa e
 Mesa oval de bacará, feltro verde mais escuro e luxuoso que o do blackjack, com as áreas demarcadas em dourado para "Punto" e "Banco" (representadas como formas/campos geométricos, sem escrever as palavras), estofado em couro bordô nas bordas.
 
 **25. `mesa-banca-francesa.png`**
-Mesa de banca francesa: tampo com uma grade de seis casas numeradas (1 a 6, representados por pontos de dado gravados em vez de números escritos) em feltro verde, uma área central rebaixada em veludo escuro para o lançamento dos dados, borda em madeira escura.
+Mesa de banca francesa (jogo real "Grande e Pequena": aposta-se na soma de 3 dados, não num número) — layout completo e o texto exato pra pedir essa imagem estão em `docs/prompt-mesa-banca-francesa.md`, já que o layout de apostas (zonas Pequeno/Grande/Ases/Linha) é mais específico do que cabe num item deste briefing geral.
 
 **26. `mesa-truco.png`**
 Mesa de truco brasileira, mais rústica e calorosa que as outras: tampo de madeira de lei escura envernizada (não feltro), um centro com uma leve textura de couro trançado, quatro lugares marcados nos cantos, um pequeno espaço lateral com marcador de pontos entalhado em relevo (sem números escritos).

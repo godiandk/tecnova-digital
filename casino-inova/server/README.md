@@ -33,8 +33,8 @@ API sobe em `http://localhost:3000`.
 | `POST /games/blackjack/parar` `{ userId }` | Jogador para, dealer compra até 17, resultado é decidido e o prêmio (se houver) é creditado. |
 | `GET /games/bacara/config` | Aposta mín/máx. |
 | `POST /games/bacara/apostar` `{ userId, betType, amount }` | Roda a mão inteira numa chamada só (bacará não tem decisão do jogador) e credita se houver prêmio. `betType` é `jogador`, `banca` ou `empate`. Empate com aposta em jogador/banca devolve a ficha (nem ganha nem perde). |
-| `GET /games/banca-francesa/config` | Aposta mín/máx, quantos números dá pra apostar na mesma rodada, multiplicador por quantidade de dados que bateram e o RTP (199/216 ≈ 92,13%, o mesmo do "Chuck-a-Luck" internacional). |
-| `POST /games/banca-francesa/apostar` `{ userId, bets: [{ number, amount }] }` | Rola 3 dados pra toda a mesa numa tacada só e resolve cada número apostado contra o mesmo resultado — pode apostar em vários números na mesma rodada. |
+| `GET /games/banca-francesa/config` | Aposta mín/máx, os 4 tipos de aposta (`ases`, `pequeno`, `grande`, `linha`), as somas que cada um cobre e o RTP de cada um (todos ≈ 98,41% = 62/63 — é o jogo tradicional português "Grande e Pequena", não o Chuck-a-Luck). |
+| `POST /games/banca-francesa/apostar` `{ userId, bets: [{ type, amount }] }` | Lança 3 dados até sair um resultado decisivo (soma 3, 5-7 ou 14-16 — qualquer outra soma é nula e os dados são relançados automaticamente) e resolve cada aposta contra esse resultado. `type` é `ases` (soma 3, paga 61 pra 1), `pequeno` (soma 5-6-7, paga 1 pra 1), `grande` (soma 14-15-16, paga 1 pra 1) ou `linha` (meia aposta em cada lado — só perde tudo se sair ases). |
 | `GET /admin/papeis/permissoes` | A matriz de permissões inteira — o que cada papel pode fazer. |
 | `GET /admin/usuarios?actingUserId=` | Lista todo mundo com o papel atual — exige `gerenciar_papeis`. |
 | `POST /admin/papeis/atribuir` `{ actingUserId, targetUserId, role }` | Promove/rebaixa entre `jogador` e `moderador` — exige `gerenciar_papeis`. Nunca promove a `admin` por aqui (ver seção de papéis abaixo). |
@@ -67,7 +67,28 @@ Poker aqui é **heads-up limit hold'em** (você contra o bot, 1 mão de cada vez
 | `POST /amigos/pedir` `{ userId, targetUserId }` | Manda pedido de amizade. |
 | `POST /amigos/:requestId/responder` `{ userId, accept }` | Aceita ou recusa um pedido recebido — `accept:false` remove o pedido. |
 
-Amigos é pré-requisito pro convite de sala por "+" que ainda vem (ver seção de salas multiplayer no README da raiz do projeto) — sem saber quem é amigo de quem, não dá pra mostrar "convidar amigo" em lugar nenhum.
+Amigos é pré-requisito pro convite de sala por "+" — sem saber quem é amigo de quem, não dá pra mostrar "convidar amigo" em lugar nenhum.
+
+## Mesa multiplayer (WebSocket)
+
+Primeiro jogo em tempo real do projeto: banca francesa numa mesa compartilhada, até 15 jogadores, cada um com uma cor de ficha (`src/modules/rooms/player-colors.ts`) — igual cassino físico. Ninguém joga contra o outro aqui, todo mundo aposta contra o mesmo resultado de dado, então não precisa esconder informação entre jogadores (diferente de truco/dominó/poker, que ficam pra depois). `npm run start:dev` já sobe o WebSocket na mesma porta 3000, sem configuração extra.
+
+Eventos (cliente → servidor), todos aceitam callback de confirmação e todos (exceto `mesas-publicas`) também transmitem `banca-francesa:mesa-atualizada` pra sala inteira:
+
+| Evento | Payload | O que faz |
+|---|---|---|
+| `identificar` | `{ userId }` | Associa esse socket a um usuário — manda assim que conectar, antes de mais nada (é o que permite mandar convite direto pra alguém online). |
+| `banca-francesa:criar-mesa` | `{ userId, visibility: "publica"\|"privada" }` | Cria a mesa, te senta nela, gera um código de 6 caracteres. |
+| `banca-francesa:mesas-publicas` | — | Lista mesas públicas com vaga. |
+| `banca-francesa:entrar-por-codigo` | `{ userId, code }` | Senta na mesa daquele código, se tiver vaga. |
+| `banca-francesa:entrar-por-id` | `{ userId, tableId }` | Igual, mas por ID (pra entrar direto de uma mesa pública listada). |
+| `banca-francesa:convidar-amigo` | `{ userId, tableId, friendUserId }` | Só funciona se `friendUserId` já for seu amigo de verdade (checa contra o módulo `amigos`). Se a pessoa estiver com socket conectado, ela recebe `banca-francesa:convite-recebido` na hora. |
+| `banca-francesa:completar-com-bot` | `{ userId, tableId }` | Só o anfitrião — senta um bot numa vaga livre. |
+| `banca-francesa:apostar` | `{ userId, tableId, bets: [{ type, amount }] }` | Registra sua aposta da rodada (fica pendente até o anfitrião girar). `type` é `ases`\|`pequeno`\|`grande`\|`linha`. Recusa na hora se você não tiver ficha suficiente. |
+| `banca-francesa:girar` | `{ userId, tableId }` | Só o anfitrião — lança os dados (relançando sozinho até sair um resultado decisivo) e resolve a aposta de todo mundo sentado contra o mesmo resultado. |
+| `banca-francesa:sair` | `{ userId, tableId }` | Sai da mesa. Se for o anfitrião, o próximo assento humano vira anfitrião; se não sobrar ninguém, a mesa fecha (`banca-francesa:mesa-fechada` avisa quem ficou). |
+
+Bot nunca mexe em carteira de verdade — só o lado do jogador real (real ou o amigo convidado) debita/credita fichas de verdade, igual no resto do projeto.
 
 Truco, dominó e poker são **contra bot, não multiplayer de verdade ainda** — jogar com outros jogadores de verdade exige sala + WebSocket (o plano de produto aponta Colyseus), que não existe neste esqueleto. As regras de cada jogo são reais; o "adversário" por enquanto é sempre a máquina.
 
@@ -117,7 +138,7 @@ curl -X POST http://localhost:3000/games/blackjack/apostar -H "Content-Type: app
 curl -X POST http://localhost:3000/games/blackjack/pedir-carta -H "Content-Type: application/json" -d '{"userId":"u1"}'
 curl -X POST http://localhost:3000/games/blackjack/parar -H "Content-Type: application/json" -d '{"userId":"u1"}'
 curl -X POST http://localhost:3000/games/bacara/apostar -H "Content-Type: application/json" -d '{"userId":"u1","betType":"banca","amount":100}'
-curl -X POST http://localhost:3000/games/banca-francesa/apostar -H "Content-Type: application/json" -d '{"userId":"u1","bets":[{"number":4,"amount":100}]}'
+curl -X POST http://localhost:3000/games/banca-francesa/apostar -H "Content-Type: application/json" -d '{"userId":"u1","bets":[{"type":"pequeno","amount":100}]}'
 curl -X POST http://localhost:3000/admin/cupons -H "Content-Type: application/json" -d '{"actingUserId":"u1","code":"BEMVINDO500","chips":500,"maxRedemptions":1000}'
 curl -X POST http://localhost:3000/cupons/resgatar -H "Content-Type: application/json" -d '{"userId":"u1","code":"bemvindo500"}'
 curl -X POST http://localhost:3000/games/truco/nova-partida -H "Content-Type: application/json" -d '{"userId":"u1","buyIn":200}'
