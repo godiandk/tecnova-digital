@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -11,6 +11,7 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { ChipStack } from '../../components/ChipStack';
 import { RoadmapPanel } from '../../components/RoadmapPanel';
+import { BACBO_DIE_IMAGES } from '../../data/gameAssets';
 import { ApiError } from '../../api/client';
 import { Roadmap } from '../../api/roadmap';
 import {
@@ -239,11 +240,13 @@ function DiceSide({
     <View style={[styles.side, won && { borderColor: accent }]}>
       <Text style={[styles.sideLabel, { color: accent }]}>{label}</Text>
       <View style={styles.diceRow}>
-        {(dice ?? [null, null]).map((die, index) => (
-          <View key={index} style={styles.die}>
-            <Text style={styles.dieLabel}>{die ?? '–'}</Text>
-          </View>
-        ))}
+        {(dice ?? [null, null]).map((die, index) =>
+          die ? (
+            <Image key={index} source={BACBO_DIE_IMAGES[die]} style={styles.die} resizeMode="contain" />
+          ) : (
+            <View key={index} style={[styles.die, styles.dieEmpty]} />
+          ),
+        )}
       </View>
       <Text style={styles.sideTotal}>{total ?? '–'}</Text>
     </View>
@@ -292,17 +295,13 @@ const styles = StyleSheet.create({
   },
   sideLabel: { fontFamily: fontFamily.displaySemiBold, fontSize: fontSize.sm },
   diceRow: { flexDirection: 'row', gap: spacing.sm },
-  die: {
-    width: 40,
-    height: 40,
+  die: { width: 52, height: 52 },
+  dieEmpty: {
     borderRadius: radius.sm,
-    backgroundColor: colors.textPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.goldBright,
+    borderColor: colors.feltLine,
+    backgroundColor: colors.overlay,
   },
-  dieLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.md, color: colors.background },
   sideTotal: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.lg, color: colors.textPrimary },
   outcomeLabel: {
     fontFamily: fontFamily.displaySemiBold,

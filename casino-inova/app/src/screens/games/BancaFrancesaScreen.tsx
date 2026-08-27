@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -13,6 +13,7 @@ import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
 import { RoadmapPanel } from '../../components/RoadmapPanel';
+import { DIE_FACE_IMAGES } from '../../data/gameAssets';
 import { ApiError } from '../../api/client';
 import { Roadmap } from '../../api/roadmap';
 import {
@@ -154,11 +155,13 @@ export function BancaFrancesaScreen({ navigation }: Props) {
             <Text style={styles.rtpLabel}>RTP divulgado: {rtpLabel}% (igual em todas as apostas)</Text>
 
             <View style={styles.diceRow}>
-              {(round?.dice ?? [null, null, null]).map((die, index) => (
-                <View key={index} style={styles.die}>
-                  <Text style={styles.dieLabel}>{die ?? '–'}</Text>
-                </View>
-              ))}
+              {(round?.dice ?? [null, null, null]).map((die, index) =>
+                die ? (
+                  <Image key={index} source={DIE_FACE_IMAGES[die]} style={styles.die} resizeMode="contain" />
+                ) : (
+                  <View key={index} style={[styles.die, styles.dieEmpty]} />
+                ),
+              )}
             </View>
             {round && (
               <Text style={styles.outcomeLabel}>
@@ -263,17 +266,13 @@ const styles = StyleSheet.create({
   errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
   rtpLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, marginTop: spacing.md },
   diceRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
-  die: {
-    width: 48,
-    height: 48,
+  die: { width: 56, height: 56 },
+  dieEmpty: {
     borderRadius: radius.sm,
-    backgroundColor: colors.textPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.goldBright,
+    borderColor: colors.feltLine,
+    backgroundColor: colors.overlay,
   },
-  dieLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.background },
   outcomeLabel: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.goldBright, marginTop: spacing.sm },
   betGrid: {
     flexDirection: 'row',

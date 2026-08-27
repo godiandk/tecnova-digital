@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -9,6 +9,7 @@ import { TABLE_IMAGES } from '../../data/tableImages';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { CasinoCard } from '../../components/CasinoCard';
 import { ChatPanel } from '../../components/ChatPanel';
+import { TRUCO_CARD_IMAGES, TRUCO_SIGNAL_IMAGES } from '../../data/gameAssets';
 import { ApiError } from '../../api/client';
 import { SocketError } from '../../api/socket';
 import { fetchTrucoConfig, TrucoCard, TrucoConfig, TrucoStyle, TrucoVariant } from '../../api/truco';
@@ -35,10 +36,14 @@ import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 type Props = NativeStackScreenProps<RootStackParamList, 'TrucoMesa'>;
 
 const SUIT_SYMBOL: Record<string, string> = { ouros: '♦', espadas: '♠', copas: '♥', paus: '♣' };
-const RED_SUITS = ['ouros', 'copas'];
 
 function cardLabel(card: TrucoCard): string {
   return `${card.rank}${SUIT_SYMBOL[card.suit]}`;
+}
+
+/** A chave do baralho é "naipe-rank" — ver gameAssets.ts. */
+function cardImage(card: TrucoCard): number | undefined {
+  return TRUCO_CARD_IMAGES[`${card.suit}-${card.rank}`];
 }
 
 function errorMessage(error: unknown): string {
@@ -333,9 +338,7 @@ export function TrucoMesaScreen({ navigation }: Props) {
                         const seat = table.seats.find((item) => item.seatIndex === play.seatIndex);
                         return (
                           <View key={index} style={styles.trickCard}>
-                            <Text style={[styles.cardText, RED_SUITS.includes(play.card.suit) && styles.cardTextRed]}>
-                              {cardLabel(play.card)}
-                            </Text>
+                            <Image source={cardImage(play.card)} style={styles.trickCardImage} resizeMode="contain" />
                             <Text style={styles.trickWho}>{seat?.name.split(' ')[0]}</Text>
                           </View>
                         );
@@ -384,11 +387,9 @@ export function TrucoMesaScreen({ navigation }: Props) {
                               key={`${card.rank}-${card.suit}-${index}`}
                               onPress={() => run(async () => setTable(await playTrucoTableCard(table.id, card)))}
                               disabled={busy || !isMyTurn}
-                              style={[styles.handCard, !isMyTurn && styles.buttonDisabled]}
+                              style={[styles.handCardWrap, !isMyTurn && styles.buttonDisabled]}
                             >
-                              <Text style={[styles.cardText, RED_SUITS.includes(card.suit) && styles.cardTextRed]}>
-                                {cardLabel(card)}
-                              </Text>
+                              <Image source={cardImage(card)} style={styles.handCardImage} resizeMode="contain" />
                             </Pressable>
                           ))}
                         </View>
@@ -427,8 +428,13 @@ export function TrucoMesaScreen({ navigation }: Props) {
                                   style={styles.signalTile}
                                   disabled={busy}
                                 >
-                                  <Text style={styles.signalLabel}>{signal.label}</Text>
-                                  <Text style={styles.signalGesture}>{signal.gesture}</Text>
+                                  {TRUCO_SIGNAL_IMAGES[signal.id] && (
+                                    <Image source={TRUCO_SIGNAL_IMAGES[signal.id]} style={styles.signalIcon} resizeMode="contain" />
+                                  )}
+                                  <View style={styles.signalText}>
+                                    <Text style={styles.signalLabel}>{signal.label}</Text>
+                                    <Text style={styles.signalGesture}>{signal.gesture}</Text>
+                                  </View>
                                 </Pressable>
                               ))}
                             </View>
@@ -598,22 +604,16 @@ const styles = StyleSheet.create({
   trickCard: { alignItems: 'center', gap: 2 },
   trickWho: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
   handRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
-  handCard: {
-    width: 54,
-    height: 76,
-    borderRadius: radius.sm,
-    backgroundColor: colors.textPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.goldBright,
-  },
-  cardText: { fontFamily: fontFamily.displayBold, fontSize: fontSize.md, color: colors.background },
-  cardTextRed: { color: colors.ruby },
+  handCardWrap: { borderRadius: radius.sm, overflow: 'hidden' },
+  handCardImage: { width: 58, height: 82 },
+  trickCardImage: { width: 46, height: 64 },
   signalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.xs },
   signalTile: {
     flexBasis: '48%',
     flexGrow: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     borderRadius: radius.sm,
     backgroundColor: colors.backgroundElevated,
     borderWidth: 1,
@@ -621,6 +621,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
   },
+  signalIcon: { width: 34, height: 34 },
+  signalText: { flex: 1 },
   signalLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.xs, color: colors.textPrimary },
   signalGesture: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.xs, color: colors.danger, textAlign: 'center', marginTop: spacing.sm },
