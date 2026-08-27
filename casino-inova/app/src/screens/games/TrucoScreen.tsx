@@ -148,7 +148,10 @@ export function TrucoScreen({ navigation }: Props) {
             <Text style={styles.score}>
               Você {match.playerScore} × {match.botScore} Bot · mão vale {match.handValue}
             </Text>
-            <Text style={styles.vira}>Vira: {cardLabel(match.vira)}</Text>
+            {/* Paulista mostra a vira; mineiro não tem vira, as manilhas são fixas. */}
+            <Text style={styles.vira}>
+              {match.vira ? `Vira: ${cardLabel(match.vira)}` : 'Mineiro · manilhas fixas: 4♣ 7♥ A♠ 7♦'}
+            </Text>
 
             {match.lastEvent && <Text style={styles.eventText}>{match.lastEvent}</Text>}
 

@@ -8,13 +8,35 @@ export interface TrucoCard {
   suit: TrucoSuit;
 }
 
+export type TrucoVariant = 'paulista' | 'mineiro';
+/** "sujo" permite sinal pro parceiro; "limpo" proíbe. */
+export type TrucoStyle = 'sujo' | 'limpo';
+
+export interface TrucoVariantRules {
+  hasVira: boolean;
+  baseHandValue: number;
+  handValueLadder: number[];
+  raiseLabel: Record<string, string>;
+  pointsToWinMatch: number;
+  ironHandAt: number;
+}
+
+export interface TrucoSignal {
+  id: string;
+  label: string;
+  gesture: string;
+  iconIndex: number;
+}
+
 export interface TrucoConfig {
   minBuyIn: number;
   maxBuyIn: number;
-  pointsToWinMatch: number;
-  /** Escada de valor da mão: [1, 3, 6, 9, 12] — truco, seis, nove, doze. */
-  handValueLadder: number[];
-  raiseLabel: Record<string, string>;
+  variants: Record<TrucoVariant, TrucoVariantRules>;
+  defaultVariant: TrucoVariant;
+  styles: TrucoStyle[];
+  defaultStyle: TrucoStyle;
+  mineiroFixedManilhas: { card: TrucoCard; nickname: string }[];
+  signals: TrucoSignal[];
 }
 
 export type TrucoResponse = 'aceitar' | 'correr' | 'aumentar';
@@ -25,12 +47,16 @@ export interface TrucoMatchState {
   buyIn: number;
   playerScore: number;
   botScore: number;
+  variant: TrucoVariant;
+  style: TrucoStyle;
+  pointsToWinMatch: number;
   handValue: number;
   /** Valor que o pedido em aberto quer alcançar (null = nenhum pedido pendente). */
   pendingHandValue: number | null;
   /** Quanto você pode pedir agora (null = não pode aumentar nesse momento). */
   nextRaiseValue: number | null;
-  vira: TrucoCard;
+  /** Null no mineiro, que não tem vira — as manilhas lá são fixas. */
+  vira: TrucoCard | null;
   playerHand: TrucoCard[];
   playerCardsPlayed: TrucoCard[];
   botCardsPlayed: TrucoCard[];
@@ -46,8 +72,15 @@ export function fetchTrucoConfig(): Promise<TrucoConfig> {
   return apiRequest<TrucoConfig>('/games/truco/config');
 }
 
-export function newTrucoMatch(buyIn: number): Promise<TrucoMatchState> {
-  return apiRequest<TrucoMatchState>('/games/truco/nova-partida', { method: 'POST', body: { userId: MOCK_USER_ID, buyIn } });
+export function newTrucoMatch(buyIn: number, variant: TrucoVariant = 'paulista', style: TrucoStyle = 'sujo'): Promise<TrucoMatchState> {
+  return apiRequest<TrucoMatchState>('/games/truco/nova-partida', {
+    method: 'POST',
+    body: { userId: MOCK_USER_ID, buyIn, variant, style },
+  });
+}
+
+export function sendTrucoSignal(signalId: string): Promise<unknown> {
+  return apiRequest('/games/truco/sinal', { method: 'POST', body: { userId: MOCK_USER_ID, signalId } });
 }
 
 export function playTrucoCard(card: TrucoCard): Promise<TrucoMatchState> {

@@ -1,12 +1,21 @@
 import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common';
 import { TrucoResponse, TrucoService } from './truco.service';
-import { Card } from './truco.config';
+import { Card, TrucoSignalId, TrucoStyle, TrucoVariant } from './truco.config';
 
 const VALID_RESPONSES: TrucoResponse[] = ['aceitar', 'correr', 'aumentar'];
 
 class NewMatchDto {
   userId!: string;
   buyIn!: number;
+  /** "paulista" (padrão) ou "mineiro". */
+  variant?: TrucoVariant;
+  /** "sujo" (padrão, permite sinal pro parceiro) ou "limpo". */
+  style?: TrucoStyle;
+}
+
+class SignalDto {
+  userId!: string;
+  signalId!: TrucoSignalId;
 }
 
 class PlayCardDto {
@@ -36,7 +45,7 @@ export class TrucoController {
     if (!body?.userId || typeof body.buyIn !== 'number') {
       throw new BadRequestException('Informe userId e buyIn.');
     }
-    return this.trucoService.newMatch(body.userId, body.buyIn);
+    return this.trucoService.newMatch(body.userId, body.buyIn, body.variant, body.style);
   }
 
   @Post('jogar-carta')
@@ -53,6 +62,14 @@ export class TrucoController {
       throw new BadRequestException('Informe userId.');
     }
     return this.trucoService.callTruco(body.userId);
+  }
+
+  @Post('sinal')
+  makeSignal(@Body() body: SignalDto) {
+    if (!body?.userId || !body?.signalId) {
+      throw new BadRequestException('Informe userId e signalId.');
+    }
+    return this.trucoService.makeSignal(body.userId, body.signalId);
   }
 
   @Post('responder-truco')

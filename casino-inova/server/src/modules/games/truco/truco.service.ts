@@ -6,22 +6,25 @@ import {
   botTrucoDecision,
   chooseBotCard,
   compareCards,
+  ManilhaContext,
   manilhaRankFor,
   resolveHand,
   RoundResult,
   shuffle,
 } from './truco.engine';
 import {
-  BASE_HAND_VALUE,
   Card,
-  HAND_VALUE_LADDER,
   MATCH_WIN_TOTAL_MULTIPLIER,
   MAX_BUY_IN,
   MIN_BUY_IN,
+  MINEIRO_FIXED_MANILHAS,
   nextHandValue,
-  POINTS_TO_WIN_MATCH,
-  RAISE_LABEL,
+  TRUCO_SIGNALS,
   TrucoRank,
+  TrucoSignalId,
+  TrucoStyle,
+  TrucoVariant,
+  VARIANT_RULES,
 } from './truco.config';
 
 export type TrucoResponse = 'aceitar' | 'correr' | 'aumentar';
@@ -30,13 +33,16 @@ interface TrucoMatch {
   buyIn: number;
   playerScore: number;
   botScore: number;
+  variant: TrucoVariant;
+  style: TrucoStyle;
   handValue: number;
   /** Valor que o pedido em aberto quer alcançar — null quando não tem pedido pendente. */
   pendingHandValue: number | null;
   /** Quem pediu por último nesta mão: esse lado não pode aumentar de novo até o outro responder. */
   lastRaiseBy: 'jogador' | 'bot' | null;
-  vira: Card;
-  manilhaRank: TrucoRank;
+  /** Só existe no paulista — no mineiro as manilhas são fixas e não tem vira. */
+  vira: Card | null;
+  manilhaRank: TrucoRank | null;
   playerHand: Card[];
   botHand: Card[];
   roundResults: RoundResult[];
@@ -65,13 +71,16 @@ export class TrucoService {
     return {
       minBuyIn: MIN_BUY_IN,
       maxBuyIn: MAX_BUY_IN,
-      pointsToWinMatch: POINTS_TO_WIN_MATCH,
-      handValueLadder: HAND_VALUE_LADDER,
-      raiseLabel: RAISE_LABEL,
+      variants: VARIANT_RULES,
+      defaultVariant: 'paulista' as TrucoVariant,
+      styles: ['sujo', 'limpo'] as TrucoStyle[],
+      defaultStyle: 'sujo' as TrucoStyle,
+      mineiroFixedManilhas: MINEIRO_FIXED_MANILHAS,
+      signals: TRUCO_SIGNALS,
     };
   }
 
-  newMatch(userId: string, buyIn: number) {
+  newMatch(userId: string, buyIn: number, variant: TrucoVariant = 'paulista', style: TrucoStyle = 'sujo') {
     const existing = this.matches.get(userId);
     if (existing && !existing.finished) {
       throw new BadRequestException('Você já tem uma partida de truco em andamento.');
@@ -79,17 +88,25 @@ export class TrucoService {
     if (!Number.isFinite(buyIn) || buyIn < MIN_BUY_IN || buyIn > MAX_BUY_IN) {
       throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
     }
+    if (!VARIANT_RULES[variant]) {
+      throw new BadRequestException('Variante inválida — use "paulista" ou "mineiro".');
+    }
+    if (style !== 'sujo' && style !== 'limpo') {
+      throw new BadRequestException('Estilo inválido — use "sujo" ou "limpo".');
+    }
 
     this.walletService.debit(userId, buyIn, 'aposta');
     const match: TrucoMatch = {
       buyIn,
+      variant,
+      style,
       playerScore: 0,
       botScore: 0,
-      handValue: BASE_HAND_VALUE,
+      handValue: VARIANT_RULES[variant].baseHandValue,
       pendingHandValue: null,
       lastRaiseBy: null,
-      vira: { rank: '4', suit: 'ouros' },
-      manilhaRank: '5',
+      vira: null,
+      manilhaRank: null,
       playerHand: [],
       botHand: [],
       roundResults: [],
@@ -116,11 +133,11 @@ export class TrucoService {
     const [playedCard] = match.playerHand.splice(cardIndex, 1);
     match.playerCardsPlayed.push(playedCard);
 
-    const botCard = chooseBotCard(match.botHand, playedCard, match.manilhaRank);
+    const botCard = chooseBotCard(match.botHand, playedCard, this.contextOf(match));
     match.botHand = match.botHand.filter((item) => item !== botCard);
     match.botCardsPlayed.push(botCard);
 
-    const comparison = compareCards(playedCard, botCard, match.manilhaRank);
+    const comparison = compareCards(playedCard, botCard, this.contextOf(match));
     match.roundResults.push(comparison > 0 ? 'jogador' : comparison < 0 ? 'bot' : 'empate');
 
     this.settleOrContinueHand(userId, match);
@@ -137,7 +154,7 @@ export class TrucoService {
       throw new BadRequestException('Você pediu por último — espere o bot pedir pra poder aumentar de novo.');
     }
 
-    const target = nextHandValue(match.handValue);
+    const target = nextHandValue(match.variant, match.handValue);
     if (target === null) {
       throw new BadRequestException('A mão já vale 12 — não dá pra aumentar mais.');
     }
@@ -154,7 +171,7 @@ export class TrucoService {
     }
 
     const asked = match.pendingHandValue;
-    const askedLabel = RAISE_LABEL[asked] ?? String(asked);
+    const askedLabel = this.labelFor(match, asked);
 
     if (response === 'correr') {
       // Correr entrega ao adversário o valor do degrau anterior, não o valor pedido.
@@ -173,7 +190,7 @@ export class TrucoService {
       return this.publicView(userId, match);
     }
 
-    const target = nextHandValue(asked);
+    const target = nextHandValue(match.variant, asked);
     if (target === null) {
       throw new BadRequestException('O pedido já é de 12 — só dá pra aceitar ou correr.');
     }
@@ -192,23 +209,23 @@ export class TrucoService {
    * degrau (só devolve com mão forte, e nunca acima de doze).
    */
   private resolveBotResponseToRaise(userId: string, match: TrucoMatch, target: number) {
-    const label = RAISE_LABEL[target] ?? String(target);
+    const label = this.labelFor(match, target);
 
-    if (!botTrucoDecision(match.botHand, match.manilhaRank)) {
+    if (!botTrucoDecision(match.botHand, this.contextOf(match))) {
       // Corre: o jogador leva o valor de ANTES do pedido.
       this.awardHand(userId, match, 'jogador');
       match.lastEvent = `O bot correu do ${label} — você fica com a mão. ` + (match.lastEvent ?? '');
       return;
     }
 
-    const counter = nextHandValue(target);
-    if (counter !== null && botShouldCallTruco(match.botHand, match.manilhaRank)) {
+    const counter = nextHandValue(match.variant, target);
+    if (counter !== null && botShouldCallTruco(match.botHand, this.contextOf(match))) {
       // Aceita e devolve: a mão passa a valer o pedido do jogador e o bot pede o próximo.
       match.handValue = target;
       match.pendingTruco = 'bot';
       match.pendingHandValue = counter;
       match.lastRaiseBy = 'bot';
-      match.lastEvent = `O bot aceitou o ${label} e pediu ${RAISE_LABEL[counter] ?? counter}!`;
+      match.lastEvent = `O bot aceitou o ${label} e pediu ${this.labelFor(match, counter)}!`;
       return;
     }
 
@@ -216,16 +233,48 @@ export class TrucoService {
     match.lastEvent = `O bot aceitou o ${label} — a mão agora vale ${target}.`;
   }
 
+  /**
+   * O que define a manilha nesta partida. No paulista sai da vira da mão; no mineiro
+   * não tem vira, e o motor usa as quatro cartas fixas.
+   */
+  private contextOf(match: TrucoMatch): ManilhaContext {
+    return { variant: match.variant, manilhaRank: match.manilhaRank };
+  }
+
+  /** Nome do pedido na linguagem da variante — "truco" vale 3 no paulista e 4 no mineiro. */
+  private labelFor(match: TrucoMatch, value: number): string {
+    return VARIANT_RULES[match.variant].raiseLabel[value] ?? String(value);
+  }
+
+  /**
+   * Sinal pro parceiro (a "careta"). Só existe em mesa suja — no truco limpo combinar
+   * sinal é considerado trapaça, então o servidor recusa em vez de deixar passar.
+   *
+   * Em partida contra bot não tem parceiro pra ver, então isto serve pra validar a
+   * regra e já deixar pronto pro 2x2 online: lá o sinal vai só pro socket do parceiro.
+   */
+  makeSignal(userId: string, signalId: TrucoSignalId) {
+    const match = this.requireMatch(userId);
+    if (match.style === 'limpo') {
+      throw new BadRequestException('Esta mesa é de truco limpo — sinal pro parceiro não é permitido aqui.');
+    }
+    const signal = TRUCO_SIGNALS.find((item) => item.id === signalId);
+    if (!signal) {
+      throw new BadRequestException('Sinal desconhecido.');
+    }
+    return { signal, sentTo: 'parceiro', note: 'Numa mesa 2x2 este sinal aparece só pro seu parceiro.' };
+  }
+
   private settleOrContinueHand(userId: string, match: TrucoMatch) {
     const outcome = resolveHand(match.roundResults);
     if (outcome === 'pendente') {
-      const target = nextHandValue(match.handValue);
+      const target = nextHandValue(match.variant, match.handValue);
       const botCanRaise = match.lastRaiseBy !== 'bot' && target !== null;
-      if (botCanRaise && botShouldCallTruco(match.botHand, match.manilhaRank)) {
+      if (botCanRaise && botShouldCallTruco(match.botHand, this.contextOf(match))) {
         match.pendingTruco = 'bot';
         match.pendingHandValue = target;
         match.lastRaiseBy = 'bot';
-        match.lastEvent = `O bot pediu ${RAISE_LABEL[target!] ?? target}!`;
+        match.lastEvent = `O bot pediu ${this.labelFor(match, target!)}!`;
       }
       return;
     }
@@ -243,9 +292,10 @@ export class TrucoService {
           ? `O bot venceu a mão (+${match.handValue} ponto${match.handValue > 1 ? 's' : ''}).`
           : 'A mão empatou — ninguém pontuou.';
 
-    if (match.playerScore >= POINTS_TO_WIN_MATCH || match.botScore >= POINTS_TO_WIN_MATCH) {
+    const target = VARIANT_RULES[match.variant].pointsToWinMatch;
+    if (match.playerScore >= target || match.botScore >= target) {
       match.finished = true;
-      match.matchOutcome = match.playerScore >= POINTS_TO_WIN_MATCH ? 'jogador' : 'bot';
+      match.matchOutcome = match.playerScore >= target ? 'jogador' : 'bot';
       if (match.matchOutcome === 'jogador') {
         this.walletService.credit(userId, match.buyIn * MATCH_WIN_TOTAL_MULTIPLIER, 'premio');
       }
@@ -257,15 +307,21 @@ export class TrucoService {
 
   private dealNewHand(match: TrucoMatch) {
     const deck = shuffle(buildDeck());
-    const vira = deck.pop()!;
-    match.vira = vira;
-    match.manilhaRank = manilhaRankFor(vira);
+    if (VARIANT_RULES[match.variant].hasVira) {
+      const vira = deck.pop()!;
+      match.vira = vira;
+      match.manilhaRank = manilhaRankFor(vira);
+    } else {
+      // Mineiro não tem vira: as manilhas são as quatro cartas fixas da config.
+      match.vira = null;
+      match.manilhaRank = null;
+    }
     match.playerHand = deck.splice(0, 3);
     match.botHand = deck.splice(0, 3);
     match.roundResults = [];
     match.playerCardsPlayed = [];
     match.botCardsPlayed = [];
-    match.handValue = BASE_HAND_VALUE;
+    match.handValue = VARIANT_RULES[match.variant].baseHandValue;
     match.pendingTruco = null;
     match.pendingHandValue = null;
     match.lastRaiseBy = null;
@@ -284,10 +340,15 @@ export class TrucoService {
       buyIn: match.buyIn,
       playerScore: match.playerScore,
       botScore: match.botScore,
+      variant: match.variant,
+      style: match.style,
+      pointsToWinMatch: VARIANT_RULES[match.variant].pointsToWinMatch,
       handValue: match.handValue,
       pendingHandValue: match.pendingHandValue,
       /** Quanto o jogador pode pedir agora (null = não pode aumentar nesse momento). */
-      nextRaiseValue: match.lastRaiseBy === 'jogador' || match.pendingTruco ? null : nextHandValue(match.handValue),
+      nextRaiseValue:
+        match.lastRaiseBy === 'jogador' || match.pendingTruco ? null : nextHandValue(match.variant, match.handValue),
+      /** Nome do próximo pedido, já na linguagem da variante ("truco", "seis"...). */
       vira: match.vira,
       playerHand: match.playerHand,
       playerCardsPlayed: match.playerCardsPlayed,
