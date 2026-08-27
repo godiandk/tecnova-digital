@@ -24,17 +24,16 @@ export class StoreService {
   }
 
   /**
-   * Simula o que acontece depois que a RevenueCat confirma um recibo de compra real
-   * na App Store / Play Store — falta só plugar o webhook de verdade quando a Fase 0
-   * ganhar persistência de verdade. Por enquanto credita direto na carteira em memória,
-   * o que já deixa o fluxo carteira → loja → carteira testável de ponta a ponta.
+   * Credita as fichas de um pacote. É o passo que acontece DEPOIS de alguém confirmar
+   * que o dinheiro entrou — nunca deve ser chamado a partir de um pedido do app sem
+   * essa confirmação (ver store.controller.ts, que é onde essa porta é trancada).
    */
-  fulfillPurchase(userId: string, packageId: string) {
+  async fulfillPurchase(userId: string, packageId: string) {
     const chipPackage = this.packages.find((item) => item.id === packageId);
     if (!chipPackage) {
       throw new NotFoundException('Pacote de fichas não encontrado.');
     }
-    const ledgerEntry = this.walletService.credit(userId, chipPackage.chips, 'compra');
-    return { package: chipPackage, ledgerEntry, newBalance: this.walletService.balanceOf(userId) };
+    const ledgerEntry = await this.walletService.credit(userId, chipPackage.chips, 'compra', packageId);
+    return { package: chipPackage, ledgerEntry, newBalance: await this.walletService.balanceOf(userId) };
   }
 }

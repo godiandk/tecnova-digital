@@ -28,19 +28,19 @@ export class SlotsService {
    * prêmio se houver, e devolve o resultado inteiro — cliente não decide nada disso,
    * só mostra o que o servidor sorteou.
    */
-  playSpin(userId: string, bet: number) {
+  async playSpin(userId: string, bet: number) {
     if (!Number.isFinite(bet) || bet < MIN_BET || bet > MAX_BET) {
       throw new BadRequestException(`A aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
     }
 
-    this.walletService.debit(userId, bet, 'aposta', GAME_ID);
+    await this.walletService.debit(userId, bet, 'aposta', GAME_ID);
     const result = spin(bet);
 
     if (result.totalWin > 0) {
-      this.walletService.credit(userId, result.totalWin, 'premio', GAME_ID);
+      await this.walletService.credit(userId, result.totalWin, 'premio', GAME_ID);
     }
-    this.tournaments.recordRound(userId, GAME_ID, bet, result.totalWin);
+    await this.tournaments.recordRound(userId, GAME_ID, bet, result.totalWin);
 
-    return { ...result, bet, newBalance: this.walletService.balanceOf(userId) };
+    return { ...result, bet, newBalance: await this.walletService.balanceOf(userId) };
   }
 }

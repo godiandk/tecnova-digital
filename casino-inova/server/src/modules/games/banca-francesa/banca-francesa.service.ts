@@ -60,20 +60,20 @@ export class BancaFrancesaService {
     }
   }
 
-  playRound(userId: string, bets: BancaFrancesaBet[]) {
+  async playRound(userId: string, bets: BancaFrancesaBet[]) {
     this.validateBets(bets);
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
-    this.walletService.debit(userId, totalStake, 'aposta', GAME_ID);
+    await this.walletService.debit(userId, totalStake, 'aposta', GAME_ID);
 
     const { dice, sum, outcome, rerolls } = rollUntilDecisive();
     const results = resolveBets(outcome, bets);
     const totalReturn = results.reduce((total, result) => total + result.totalReturn, 0);
 
     if (totalReturn > 0) {
-      this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
+      await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
     }
-    this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn);
+    await this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn);
 
     this.history.push({
       outcome: outcome === 'grande' ? 'banca' : outcome === 'pequeno' ? 'jogador' : 'empate',
@@ -88,7 +88,7 @@ export class BancaFrancesaService {
       results,
       totalStake,
       totalReturn,
-      newBalance: this.walletService.balanceOf(userId),
+      newBalance: await this.walletService.balanceOf(userId),
       roadmap: this.getRoadmap(),
     };
   }

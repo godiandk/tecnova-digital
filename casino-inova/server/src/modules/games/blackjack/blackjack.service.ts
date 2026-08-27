@@ -37,7 +37,7 @@ export class BlackjackService {
     };
   }
 
-  startHand(userId: string, bet: number) {
+  async startHand(userId: string, bet: number) {
     const existing = this.hands.get(userId);
     if (existing && !existing.finished) {
       throw new BadRequestException('Você já tem uma mão em andamento — pare ou espere ela terminar antes de apostar de novo.');
@@ -46,7 +46,7 @@ export class BlackjackService {
       throw new BadRequestException(`A aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
     }
 
-    this.walletService.debit(userId, bet, 'aposta', GAME_ID);
+    await this.walletService.debit(userId, bet, 'aposta', GAME_ID);
     const hand: HandState = { bet, playerCards: [drawCard(), drawCard()], dealerCards: [drawCard(), drawCard()], finished: false };
     this.hands.set(userId, hand);
 
@@ -79,18 +79,18 @@ export class BlackjackService {
     return hand;
   }
 
-  private finish(userId: string, hand: HandState) {
+  private async finish(userId: string, hand: HandState) {
     hand.finished = true;
     const resolution = resolve(hand.playerCards, hand.dealerCards, hand.bet);
     if (resolution.totalReturn > 0) {
-      this.walletService.credit(userId, resolution.totalReturn, 'premio', GAME_ID);
+      await this.walletService.credit(userId, resolution.totalReturn, 'premio', GAME_ID);
     }
     // A rodada de torneio é a mão inteira, contada só quando ela fecha.
-    this.tournaments.recordRound(userId, GAME_ID, hand.bet, resolution.totalReturn);
+    await this.tournaments.recordRound(userId, GAME_ID, hand.bet, resolution.totalReturn);
     return this.publicView(userId, hand, resolution);
   }
 
-  private publicView(userId: string, hand: HandState, resolution?: Resolution) {
+  private async publicView(userId: string, hand: HandState, resolution?: Resolution) {
     const dealerCards: (Rank | null)[] = hand.finished ? hand.dealerCards : [hand.dealerCards[0], null];
     return {
       playerCards: hand.playerCards,
@@ -101,7 +101,7 @@ export class BlackjackService {
       finished: hand.finished,
       outcome: resolution?.outcome,
       totalReturn: resolution?.totalReturn,
-      newBalance: this.walletService.balanceOf(userId),
+      newBalance: await this.walletService.balanceOf(userId),
     };
   }
 }

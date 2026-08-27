@@ -35,7 +35,7 @@ export class StockMarketService {
     return { closes: [...this.recentCloses] };
   }
 
-  playRound(userId: string, bet: StockBet) {
+  async playRound(userId: string, bet: StockBet) {
     if (!DIRECTIONS.includes(bet?.direction)) {
       throw new BadRequestException('Aposte em "alta" ou "baixa".');
     }
@@ -43,15 +43,15 @@ export class StockMarketService {
       throw new BadRequestException(`A aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
     }
 
-    this.walletService.debit(userId, bet.amount, 'aposta', GAME_ID);
+    await this.walletService.debit(userId, bet.amount, 'aposta', GAME_ID);
 
     const round = runRound();
     const result = resolveBet(round, bet);
 
     if (result.totalReturn > 0) {
-      this.walletService.credit(userId, result.totalReturn, 'premio', GAME_ID);
+      await this.walletService.credit(userId, result.totalReturn, 'premio', GAME_ID);
     }
-    this.tournaments.recordRound(userId, GAME_ID, bet.amount, result.totalReturn);
+    await this.tournaments.recordRound(userId, GAME_ID, bet.amount, result.totalReturn);
 
     this.recentCloses.push(round.closePercent);
     if (this.recentCloses.length > 30) this.recentCloses.shift();
@@ -60,7 +60,7 @@ export class StockMarketService {
     return {
       path: round.path,
       ...result,
-      newBalance: this.walletService.balanceOf(userId),
+      newBalance: await this.walletService.balanceOf(userId),
     };
   }
 }

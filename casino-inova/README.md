@@ -41,7 +41,7 @@ A regra aparece escrita na tela de torneios, do mesmo jeito que o RTP aparece na
 
 **`app/`** — o app mobile (Expo + React Native + TypeScript). Sistema de design próprio, navegação entre as 5 áreas (Lobby, Torneios, Loja, Amigos, Perfil), tela de cada jogo, tela de escolha de variante/modo pros jogos que têm mais de um jeito de jogar, chat de mesa em todas as mesas online (com aba separada pra falar só com o parceiro no truco e no dominó 2x2), painel de placar de histórico e tutorial "como jogar" por jogo escrito pra quem nunca jogou. As imagens já integradas vivem em `app/assets/images/` (263 arquivos, otimizados) — incluindo o cartaz vertical de cada jogo no lobby, os cartazes de variante e as peças de HUD (cápsula de fichas, barra de nível, selo de jogo travado).
 
-**`server/`** — o backend (NestJS + TypeScript): usuários, carteira de fichas com ledger append-only, loja, cupons, papéis e permissões, amigos, os 10 motores de jogo, o placar de histórico, o chat, os torneios e o gateway WebSocket das mesas online. Todos os sorteios acontecem no servidor — o app nunca decide resultado. Ver `server/README.md` pra rota por rota, evento por evento e a matriz de permissões.
+**`server/`** — o backend (NestJS + TypeScript) com **PostgreSQL**: usuários, carteira de fichas com ledger append-only, loja, cupons, papéis e permissões, amigos, os 10 motores de jogo, o placar de histórico, o chat, os torneios e o gateway WebSocket das mesas online. Saldo, extrato, amizades, cupons e ranking sobrevivem ao servidor reiniciar; mesa em andamento e chat não, de propósito. Todos os sorteios acontecem no servidor — o app nunca decide resultado. Ver `server/README.md` pra rota por rota, evento por evento e a matriz de permissões.
 
 **`docs/`** — os pedidos de imagem escritos imagem por imagem pra gerar no ChatGPT, e `como-testar-no-iphone.md`, que explica passo a passo como abrir o app num iPhone de verdade pelo Expo Go.
 
@@ -50,10 +50,15 @@ A regra aparece escrita na tela de torneios, do mesmo jeito que o RTP aparece na
 Suba o servidor primeiro — as telas dos jogos falam com ele de verdade:
 
 ```
+createdb casino_inova
 cd server
 npm install
-npm run start:dev   # http://localhost:3000
+DATABASE_URL=postgres://postgres@localhost:5432/casino_inova npm run start:dev
 ```
+
+O servidor cria as tabelas sozinho e, só na primeira vez (base vazia), quatro contas de
+teste. `DATABASE_URL` é obrigatória — sem ela o servidor não sobe, em vez de subir
+gravando num banco que ninguém escolheu.
 
 Em outro terminal:
 
@@ -70,11 +75,10 @@ O app **descobre o endereço do servidor sozinho** — em celular físico ele l�
 
 Nada disto é esquecimento — é o que ficou de fora do escopo construído até aqui, em ordem de importância:
 
-1. **Persistência.** Está tudo em memória: reiniciar o servidor apaga saldo, mesas, histórico e amizades. Trocar os arrays por PostgreSQL é o item número um antes de qualquer pessoa de verdade usar isso.
-2. **Autenticação de verdade.** Hoje o `userId` viaja explícito em cada chamada e `GET /users/me` devolve um usuário fixo. Precisa de Firebase Auth (Google, Facebook, Apple, e-mail/senha).
-3. **Compra de verdade.** `POST /store/comprar` credita fichas sem validar recibo nenhum — serve pra testar o resto do fluxo e **não pode ir pra produção assim**. O caminho é RevenueCat validando o recibo da App Store/Play Store e chamando um webhook.
-4. **Poker multiplayer.** O único jogo de mesa que continua só contra bot — mesa de 2 a 9 lugares com side pot é bem mais trabalho que o 2x2 de assento fixo.
-5. **Planilha de economia** (curva de nível, preço dos pacotes) — documento de negócio, não código.
+1. **Autenticação de verdade.** Hoje o `userId` viaja explícito em cada chamada e `GET /users/me` devolve um usuário fixo. Precisa de Firebase Auth (Google, Facebook, Apple, e-mail/senha).
+2. **Compra de verdade.** `POST /store/comprar` credita fichas sem validar recibo nenhum — serve pra testar o resto do fluxo e **não pode ir pra produção assim**. O caminho é RevenueCat validando o recibo da App Store/Play Store e chamando um webhook.
+3. **Poker multiplayer.** O único jogo de mesa que continua só contra bot — mesa de 2 a 9 lugares com side pot é bem mais trabalho que o 2x2 de assento fixo.
+4. **Planilha de economia** (curva de nível, preço dos pacotes) — documento de negócio, não código.
 
 Duas regras de jogo continuam marcadas no código como **a confirmar com quem joga na região**, porque as fontes divergem entre si: o topo da escada do truco mineiro e o critério de desempate do dominó quando a mesa trava.
 

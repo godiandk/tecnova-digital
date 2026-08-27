@@ -58,20 +58,20 @@ export class BacBoService {
     }
   }
 
-  playRound(userId: string, bets: BacBoBet[]) {
+  async playRound(userId: string, bets: BacBoBet[]) {
     this.validateBets(bets);
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
-    this.walletService.debit(userId, totalStake, 'aposta', GAME_ID);
+    await this.walletService.debit(userId, totalStake, 'aposta', GAME_ID);
 
     const result = roll();
     const results = resolveBets(result, bets);
     const totalReturn = results.reduce((sum, item) => sum + item.totalReturn, 0);
 
     if (totalReturn > 0) {
-      this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
+      await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
     }
-    this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn);
+    await this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn);
 
     this.history.push({ outcome: result.outcome });
     if (this.history.length > HISTORY_LIMIT) this.history.shift();
@@ -81,7 +81,7 @@ export class BacBoService {
       results,
       totalStake,
       totalReturn,
-      newBalance: this.walletService.balanceOf(userId),
+      newBalance: await this.walletService.balanceOf(userId),
       roadmap: this.getRoadmap(),
     };
   }

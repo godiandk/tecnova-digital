@@ -1,18 +1,42 @@
-# Casino Inova — API (Fase 0, esqueleto)
+# Casino Inova — API
 
-Backend em NestJS + TypeScript. Nesta etapa, **tudo roda em memória** — reiniciar o
-servidor apaga os dados. É o suficiente pra validar o formato dos endpoints e o
-comportamento do ledger antes de conectar um banco de verdade.
+Backend em NestJS + TypeScript, com **PostgreSQL de verdade**. Reiniciar o servidor não
+apaga mais nada: saldo, extrato, amizades, cupons e ranking de torneio sobrevivem.
 
 ## Rodando
 
+Precisa de um PostgreSQL acessível. O endereço vem de `DATABASE_URL` — não existe valor
+padrão de propósito, pra o servidor nunca subir gravando num banco que ninguém escolheu.
+
 ```
+createdb casino_inova
 cd server
 npm install
-npm run start:dev
+DATABASE_URL=postgres://postgres@localhost:5432/casino_inova npm run start:dev
 ```
 
-API sobe em `http://localhost:3000`.
+API sobe em `http://localhost:3000`. O esquema (`src/database/schema.sql`) é aplicado
+sozinho na subida — tudo é `CREATE ... IF NOT EXISTS`, então subir de novo não mexe em
+nada.
+
+Na primeira subida, com a base vazia, quatro contas de teste são criadas (`u1` a `u4` —
+ver `users.service.ts` pra o motivo de serem quatro). Depois disso a semente nunca mais
+roda: o banco manda.
+
+### O que persiste e o que não
+
+| Persiste no banco | Vive só em memória, de propósito |
+|---|---|
+| Usuários e papéis | Mesas em andamento (o socket de todo mundo cai no restart de qualquer jeito) |
+| Ledger de fichas (saldo e extrato) | Chat da mesa (são as últimas 50 mensagens de uma conversa) |
+| Amizades e pedidos | Placar de histórico de cada jogo |
+| Cupons e quem resgatou | Partidas single-player em andamento |
+| Rodadas e prêmios de torneio | |
+
+**Uma ressalva honesta sobre a última linha:** uma partida single-player (truco, dominó,
+poker, blackjack) debita o buy-in quando começa e guarda o estado em memória. Se o
+servidor reiniciar no meio, o jogador fica sem o buy-in e sem a partida. É raro, mas é
+ficha de verdade — fica anotado aqui como pendência conhecida, não como decisão.
 
 ## Endpoints disponíveis
 
@@ -119,7 +143,7 @@ Cada torneio exige um **mínimo de rodadas** pra entrar no ranking — sem isso,
 
 A janela nunca é guardada, é sempre calculada a partir do relógio (dia = meia-noite a meia-noite, semana = segunda a segunda, mês = dia 1 ao dia 1, tudo em UTC por enquanto). Assim ela nunca fica desalinhada e não precisa de ninguém rodando um cron pra virar o dia.
 
-O pagamento é **preguiçoso e idempotente**: qualquer leitura de torneio confere se a janela anterior fechou sem ter sido paga e, se for o caso, credita os prêmios ali mesmo. A janela paga fica marcada e nunca é paga de novo — `npm run verify:torneios` prova isso lendo o ranking quatro vezes seguidas e conferindo que o saldo só subiu uma. Quando existir persistência de verdade, isso vira tarefa agendada; a regra de quem ganha o quê continua a mesma.
+O pagamento é **preguiçoso e idempotente**: qualquer leitura de torneio confere se a janela anterior fechou sem ter sido paga e, se for o caso, credita os prêmios ali mesmo. A marca de "já paguei" fica no BANCO — chave primária de `tournament_settlements` + `ON CONFLICT DO NOTHING` —, não num Set em memória. É o que faz o prêmio não ser pago de novo quando o servidor reinicia, que é justamente o que a versão anterior errava. `npm run verify:torneios` prova os dois casos: quatro leituras seguidas na mesma sessão, e uma leitura feita por um serviço novo (que é o que um restart produz).
 
 ### Onde a rodada é contada
 
@@ -252,7 +276,7 @@ curl http://localhost:3000/games/roleta/historico
 
 ## Verificação
 
-Cada jogo tem um roteiro que **roda de verdade** e confere a matemática — não é comentário no código dizendo qual é o RTP, é o número saindo do próprio motor. `npm run verify:tudo` roda os oito de uma vez:
+Cada jogo tem um roteiro que **roda de verdade** e confere a matemática — não é comentário no código dizendo qual é o RTP, é o número saindo do próprio motor. `npm run verify:tudo` roda os dez de uma vez:
 
 | Comando | O que confere |
 |---|---|
@@ -263,20 +287,41 @@ Cada jogo tem um roteiro que **roda de verdade** e confere a matemática — nã
 | `npm run verify:bacara` | Bacará: RTP de jogador, banca e empate por simulação de 1 milhão de rodadas. |
 | `npm run verify:blackjack` | Blackjack: simula uma estratégia simples só como referência de sanidade. |
 | `npm run verify:poker-hands` | Poker: o avaliador de mão contra casos conhecidos (flush vs. full house, sequência do bebê A-2-3-4-5, empates). |
+| `npm run verify:persistencia` | Persistência: o saldo, o extrato e a origem de cada entrada sobrevivem a um processo novo; 20 apostas simultâneas com saldo pra 10 resultam em exatamente 10 aprovadas e saldo zero (nunca negativo); e jogadores diferentes não travam um ao outro. |
 | `npm run verify:placar` | Placar de histórico: 14 casos montados à mão pras cinco estradas do bacará (empate virando contador, cauda do dragão, quando cada estrada derivada começa). |
-| `npm run verify:torneios` | Torneios: 24 casos — a pontuação proporcional (aposta de 50 e de 10.000 dando o mesmo ponto), o mínimo de rodadas barrando uma sorte grande isolada, o filtro por jogo, o desempate, as janelas de dia/semana/mês (inclusive domingo e virada de ano) e o prêmio pago uma vez só. |
+| `npm run verify:torneios` | Torneios (contra Postgres): 25 casos — a pontuação proporcional (aposta de 50 e de 10.000 dando o mesmo ponto), o mínimo de rodadas barrando uma sorte grande isolada, o filtro por jogo, o desempate, as janelas de dia/semana/mês (inclusive domingo e virada de ano) e o prêmio pago uma vez só. |
 
 Blackjack não tem RTP fixo — depende da estratégia de quem joga. `npm run verify:blackjack` simula uma estratégia simples (pedir carta até 17) só como referência de que o jogo não está nem generoso nem apertado demais; com estratégia básica ótima de verdade, essas regras (dealer para em todos os 17, blackjack paga 3:2, baralho infinito) ficam perto de ~99,5%.
 
 Bacará não tem decisão de jogador nenhuma, então o RTP de cada aposta é mesmo um número fixo — só complexo demais pra fórmula fechada por causa da tabela de compra da 3ª carta. `npm run verify:bacara` mede por simulação (1 milhão de rodadas) o RTP de jogador, banca e empate.
 
+## A carteira, e por que o débito é atômico
+
+O ledger é append-only: nenhuma entrada é editada ou apagada, e o saldo é sempre a SOMA
+das entradas, nunca um campo guardado. É o que permite auditar de onde veio cada ficha.
+
+O débito merece atenção. Conferir o saldo e gravar a retirada precisam ser uma operação
+só. Ler o saldo, decidir, e só depois gravar deixa uma janela em que duas apostas
+simultâneas do mesmo jogador leem o mesmo saldo, cada uma se acha aprovada, e as duas
+gravam — o jogador aposta mais fichas do que tem. Enquanto tudo vivia em memória num
+processo só isso não acontecia; com banco de verdade e requisições concorrentes,
+acontece.
+
+A trava é o `SELECT ... FOR UPDATE` na linha do usuário: qualquer outro débito do MESMO
+jogador espera a transação terminar antes de ler o saldo. Débitos de jogadores
+diferentes não se atrapalham, porque cada um trava a sua própria linha.
+
+`npm run verify:persistencia` prova as duas coisas: dispara 20 apostas de 100 fichas ao
+mesmo tempo com saldo pra exatamente 10, e confere que exatamente 10 passam, 10 são
+recusadas e o saldo termina em 0 — nunca negativo. E confere que o saldo, o extrato e a
+origem de cada entrada sobrevivem a um processo novo.
+
 ## O que falta para isto ser a Fase 0 de verdade
 
 Nesta ordem:
 
-1. **Persistência real** — trocar os arrays em memória por PostgreSQL (as tabelas já estão desenhadas no plano de produto: `users`, `ledger_entries`, `purchases`).
-2. **Autenticação** — Firebase Auth com Google, Facebook, Apple e e-mail/senha; `GET /users/me` passa a ler o usuário do token, não um valor fixo.
-3. **Compra real** — integrar RevenueCat: o app faz a compra na App Store/Play Store, a RevenueCat valida o recibo e chama um webhook aqui, que só então chama `walletService.credit(...)`. O endpoint `POST /store/comprar` atual serve pra testar o resto do fluxo enquanto isso não existe — ele não deve ir para produção como está, porque hoje qualquer um pode chamá-lo e "comprar" fichas de graça.
+1. **Autenticação** — Firebase Auth com Google, Facebook, Apple e e-mail/senha; `GET /users/me` passa a ler o usuário do token, não um valor fixo.
+2. **Compra real** — integrar RevenueCat: o app faz a compra na App Store/Play Store, a RevenueCat valida o recibo e chama um webhook aqui, que só então chama `walletService.credit(...)`. O endpoint `POST /store/comprar` atual serve pra testar o resto do fluxo enquanto isso não existe — ele não deve ir para produção como está, porque hoje qualquer um pode chamá-lo e "comprar" fichas de graça.
 4. **Poker multiplayer** — o único jogo de mesa que continua só contra bot.
 
 O módulo de **amigos** já existe e funciona (pedir/aceitar/recusar/listar); o que falta nele é só a persistência do item 1, junto com todo o resto.

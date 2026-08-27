@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './modules/users/users.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { StoreModule } from './modules/store/store.module';
@@ -22,6 +23,7 @@ import { TournamentsModule } from './modules/tournaments/tournaments.module';
 
 @Module({
   imports: [
+    DatabaseModule,
     UsersModule,
     WalletModule,
     StoreModule,

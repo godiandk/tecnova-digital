@@ -57,7 +57,7 @@ export class RouletteService {
     };
   }
 
-  playSpin(userId: string, bet: RouletteBet, amount: number) {
+  async playSpin(userId: string, bet: RouletteBet, amount: number) {
     if (!Number.isFinite(amount) || amount < MIN_BET || amount > MAX_BET) {
       throw new BadRequestException(`A aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
     }
@@ -68,17 +68,17 @@ export class RouletteService {
       throw new BadRequestException('Aposta em número exato precisa de um número entre 0 e 36.');
     }
 
-    this.walletService.debit(userId, amount, 'aposta', GAME_ID);
+    await this.walletService.debit(userId, amount, 'aposta', GAME_ID);
     const result = spin(bet, amount);
 
     if (result.totalReturn > 0) {
-      this.walletService.credit(userId, result.totalReturn, 'premio', GAME_ID);
+      await this.walletService.credit(userId, result.totalReturn, 'premio', GAME_ID);
     }
-    this.tournaments.recordRound(userId, GAME_ID, amount, result.totalReturn);
+    await this.tournaments.recordRound(userId, GAME_ID, amount, result.totalReturn);
 
     this.history.push(result.pocket);
     if (this.history.length > HISTORY_LIMIT) this.history.shift();
 
-    return { ...result, amount, newBalance: this.walletService.balanceOf(userId), history: this.getHistory() };
+    return { ...result, amount, newBalance: await this.walletService.balanceOf(userId), history: this.getHistory() };
   }
 }

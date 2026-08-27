@@ -39,7 +39,7 @@ export class BaccaratService {
    * eventual 3ª carta de cada lado, comparação, prêmio) acontece numa chamada só,
    * igual a slots e roleta, diferente do blackjack.
    */
-  playRound(userId: string, betType: BaccaratBetType, amount: number) {
+  async playRound(userId: string, betType: BaccaratBetType, amount: number) {
     if (!Number.isFinite(amount) || amount < MIN_BET || amount > MAX_BET) {
       throw new BadRequestException(`A aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
     }
@@ -47,14 +47,14 @@ export class BaccaratService {
       throw new BadRequestException('Tipo de aposta inválido — use jogador, banca ou empate.');
     }
 
-    this.walletService.debit(userId, amount, 'aposta', GAME_ID);
+    await this.walletService.debit(userId, amount, 'aposta', GAME_ID);
     const round = playBaccaratRound();
     const totalReturn = resolveBet(betType, round.winner, amount);
 
     if (totalReturn > 0) {
-      this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
+      await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
     }
-    this.tournaments.recordRound(userId, GAME_ID, amount, totalReturn);
+    await this.tournaments.recordRound(userId, GAME_ID, amount, totalReturn);
 
     this.history.push({ outcome: round.winner });
     if (this.history.length > HISTORY_LIMIT) this.history.shift();
@@ -64,7 +64,7 @@ export class BaccaratService {
       betType,
       amount,
       totalReturn,
-      newBalance: this.walletService.balanceOf(userId),
+      newBalance: await this.walletService.balanceOf(userId),
       roadmap: this.getRoadmap(),
     };
   }

@@ -101,10 +101,10 @@ export class TrucoTableService {
     private readonly tournaments: TournamentsService,
   ) {}
 
-  createTable(
+  async createTable(
     hostUserId: string,
     options: { visibility: TableVisibility; variant?: TrucoVariant; style?: TrucoStyle; buyIn: number },
-  ): TrucoOnlineTable {
+  ): Promise<TrucoOnlineTable> {
     const { visibility, variant = 'paulista', style = 'sujo', buyIn } = options;
 
     if (!VARIANT_RULES[variant]) throw new BadRequestException('Variante inválida.');
@@ -113,7 +113,7 @@ export class TrucoTableService {
       throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
     }
 
-    const host = this.requireUser(hostUserId);
+    const host = (await this.requireUser(hostUserId));
     const table: TrucoOnlineTable = {
       id: `truco-${this.nextId}`,
       code: generateTableCode(),
@@ -141,29 +141,31 @@ export class TrucoTableService {
     return table;
   }
 
-  listPublicTables() {
-    return [...this.tables.values()]
+  async listPublicTables() {
+    return Promise.all(
+      [...this.tables.values()]
       .filter((table) => table.visibility === 'publica' && !table.started && table.seats.length < SEATS)
-      .map((table) => ({
+      .map(async (table) => ({
         id: table.id,
-        hostName: this.usersService.findById(table.hostUserId)?.name ?? table.hostUserId,
+        hostName: (await this.usersService.findById(table.hostUserId))?.name ?? table.hostUserId,
         seatedCount: table.seats.length,
         maxSeats: SEATS,
         variant: table.variant,
         style: table.style,
         buyIn: table.buyIn,
-      }));
+      })),
+    );
   }
 
-  joinByCode(userId: string, code: string): TrucoOnlineTable {
+  async joinByCode(userId: string, code: string): Promise<TrucoOnlineTable> {
     const normalized = code.trim().toUpperCase();
     const table = [...this.tables.values()].find((item) => item.code === normalized);
     if (!table) throw new NotFoundException('Mesa não encontrada — confira o código.');
-    return this.seatPlayer(table, userId);
+    return await this.seatPlayer(table, userId);
   }
 
-  joinById(userId: string, tableId: string): TrucoOnlineTable {
-    return this.seatPlayer(this.requireTable(tableId), userId);
+  async joinById(userId: string, tableId: string): Promise<TrucoOnlineTable> {
+    return await this.seatPlayer(this.requireTable(tableId), userId);
   }
 
   addBot(hostUserId: string, tableId: string): TrucoOnlineTable {
@@ -184,7 +186,7 @@ export class TrucoTableService {
   }
 
   /** Só o anfitrião começa, e só com os 4 assentos ocupados. Cobra o buy-in de cada humano. */
-  start(hostUserId: string, tableId: string): TrucoOnlineTable {
+  async start(hostUserId: string, tableId: string): Promise<TrucoOnlineTable> {
     const table = this.requireTable(tableId);
     this.requireHost(table, hostUserId);
     if (table.started) throw new BadRequestException('A partida já começou.');
@@ -194,12 +196,12 @@ export class TrucoTableService {
 
     for (const seat of table.seats) {
       if (seat.isBot) continue;
-      if (this.walletService.balanceOf(seat.userId) < table.buyIn) {
+      if (await this.walletService.balanceOf(seat.userId) < table.buyIn) {
         throw new BadRequestException(`${seat.name} não tem fichas suficientes pro buy-in.`);
       }
     }
     for (const seat of table.seats) {
-      if (!seat.isBot) this.walletService.debit(seat.userId, table.buyIn, 'aposta', GAME_ID);
+      if (!seat.isBot) await this.walletService.debit(seat.userId, table.buyIn, 'aposta', GAME_ID);
     }
 
     table.started = true;
@@ -432,7 +434,7 @@ export class TrucoTableService {
     this.autoPlayBots(table);
   }
 
-  private awardHand(table: TrucoOnlineTable, winner: Team | null) {
+  private async awardHand(table: TrucoOnlineTable, winner: Team | null) {
     if (winner) {
       table.score[winner] += table.handValue;
       table.lastEvent = `${table.lastEvent ?? ''} Dupla ${winner} fez ${table.handValue} ponto(s).`.trim();
@@ -448,13 +450,13 @@ export class TrucoTableService {
       const pot = table.buyIn * SEATS;
       const winners = table.seats.filter((seat) => seat.team === table.winnerTeam && !seat.isBot);
       const share = winners.length > 0 ? Math.floor(pot / winners.length) : 0;
-      for (const seat of winners) this.walletService.credit(seat.userId, share, 'premio', GAME_ID);
+      for (const seat of winners) await this.walletService.credit(seat.userId, share, 'premio', GAME_ID);
       // Todo mundo que pagou buy-in disputou a rodada de torneio — quem perdeu
       // entra com retorno 0, que é o que vai puxar a pontuação dele pra baixo.
       for (const seat of table.seats) {
         if (seat.isBot) continue;
         const retorno = seat.team === table.winnerTeam ? share : 0;
-        this.tournaments.recordRound(seat.userId, GAME_ID, table.buyIn, retorno);
+        await this.tournaments.recordRound(seat.userId, GAME_ID, table.buyIn, retorno);
       }
       table.lastEvent = `Dupla ${table.winnerTeam} venceu a partida!`;
       return;
@@ -517,12 +519,12 @@ export class TrucoTableService {
     }
   }
 
-  private seatPlayer(table: TrucoOnlineTable, userId: string): TrucoOnlineTable {
+  private async seatPlayer(table: TrucoOnlineTable, userId: string): Promise<TrucoOnlineTable> {
     if (table.seats.some((seat) => seat.userId === userId)) return table;
     if (table.started) throw new BadRequestException('A partida já começou.');
     if (table.seats.length >= SEATS) throw new BadRequestException('Mesa cheia.');
 
-    const user = this.requireUser(userId);
+    const user = (await this.requireUser(userId));
     const seatIndex = this.nextFreeSeat(table);
     table.seats.push({
       seatIndex,
@@ -559,8 +561,8 @@ export class TrucoTableService {
     if (table.hostUserId !== userId) throw new ForbiddenException('Só quem criou a mesa pode fazer isso.');
   }
 
-  private requireUser(userId: string) {
-    const user = this.usersService.findById(userId);
+  private async requireUser(userId: string) {
+    const user = await this.usersService.findById(userId);
     if (!user) throw new NotFoundException('Usuário não encontrado.');
     return user;
   }

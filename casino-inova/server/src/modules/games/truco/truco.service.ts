@@ -87,7 +87,7 @@ export class TrucoService {
     };
   }
 
-  newMatch(userId: string, buyIn: number, variant: TrucoVariant = 'paulista', style: TrucoStyle = 'sujo') {
+  async newMatch(userId: string, buyIn: number, variant: TrucoVariant = 'paulista', style: TrucoStyle = 'sujo') {
     const existing = this.matches.get(userId);
     if (existing && !existing.finished) {
       throw new BadRequestException('Você já tem uma partida de truco em andamento.');
@@ -102,7 +102,7 @@ export class TrucoService {
       throw new BadRequestException('Estilo inválido — use "sujo" ou "limpo".');
     }
 
-    this.walletService.debit(userId, buyIn, 'aposta', GAME_ID);
+    await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID);
     const match: TrucoMatch = {
       buyIn,
       variant,
@@ -288,7 +288,7 @@ export class TrucoService {
     this.awardHand(userId, match, outcome === 'ninguem' ? null : outcome);
   }
 
-  private awardHand(userId: string, match: TrucoMatch, winner: 'jogador' | 'bot' | null) {
+  private async awardHand(userId: string, match: TrucoMatch, winner: 'jogador' | 'bot' | null) {
     if (winner === 'jogador') match.playerScore += match.handValue;
     if (winner === 'bot') match.botScore += match.handValue;
 
@@ -305,10 +305,10 @@ export class TrucoService {
       match.matchOutcome = match.playerScore >= target ? 'jogador' : 'bot';
       const retorno = match.matchOutcome === 'jogador' ? match.buyIn * MATCH_WIN_TOTAL_MULTIPLIER : 0;
       if (retorno > 0) {
-        this.walletService.credit(userId, retorno, 'premio', GAME_ID);
+        await this.walletService.credit(userId, retorno, 'premio', GAME_ID);
       }
       // No truco a rodada de torneio é a partida inteira: o buy-in é a aposta.
-      this.tournaments.recordRound(userId, GAME_ID, match.buyIn, retorno);
+      await this.tournaments.recordRound(userId, GAME_ID, match.buyIn, retorno);
       return;
     }
 
@@ -345,7 +345,7 @@ export class TrucoService {
     return match;
   }
 
-  private publicView(userId: string, match: TrucoMatch) {
+  private async publicView(userId: string, match: TrucoMatch) {
     return {
       buyIn: match.buyIn,
       playerScore: match.playerScore,
@@ -368,7 +368,7 @@ export class TrucoService {
       finished: match.finished,
       matchOutcome: match.matchOutcome,
       lastEvent: match.lastEvent,
-      newBalance: this.walletService.balanceOf(userId),
+      newBalance: await this.walletService.balanceOf(userId),
     };
   }
 }

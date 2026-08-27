@@ -38,7 +38,7 @@ export class DominoService {
     return { minBuyIn: MIN_BUY_IN, maxBuyIn: MAX_BUY_IN, handSize: HAND_SIZE };
   }
 
-  newMatch(userId: string, buyIn: number) {
+  async newMatch(userId: string, buyIn: number) {
     const existing = this.matches.get(userId);
     if (existing && !existing.finished) {
       throw new BadRequestException('Você já tem uma partida de dominó em andamento.');
@@ -47,7 +47,7 @@ export class DominoService {
       throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
     }
 
-    this.walletService.debit(userId, buyIn, 'aposta', GAME_ID);
+    await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID);
     const deck = shuffle(buildTileSet());
     const match: DominoMatch = {
       buyIn,
@@ -158,18 +158,18 @@ export class DominoService {
     else this.awardMatch(userId, match, 'empate');
   }
 
-  private awardMatch(userId: string, match: DominoMatch, winner: 'jogador' | 'bot' | 'empate') {
+  private async awardMatch(userId: string, match: DominoMatch, winner: 'jogador' | 'bot' | 'empate') {
     match.finished = true;
     match.matchOutcome = winner;
     // Empate devolve o buy-in: 0 ponto de torneio, que é exatamente o certo.
     const retorno =
       winner === 'jogador' ? match.buyIn * MATCH_WIN_TOTAL_MULTIPLIER : winner === 'empate' ? match.buyIn : 0;
     if (winner === 'jogador') {
-      this.walletService.credit(userId, retorno, 'premio', GAME_ID);
+      await this.walletService.credit(userId, retorno, 'premio', GAME_ID);
     } else if (winner === 'empate') {
-      this.walletService.credit(userId, match.buyIn, 'ajuste', GAME_ID);
+      await this.walletService.credit(userId, match.buyIn, 'ajuste', GAME_ID);
     }
-    this.tournaments.recordRound(userId, GAME_ID, match.buyIn, retorno);
+    await this.tournaments.recordRound(userId, GAME_ID, match.buyIn, retorno);
   }
 
   private requireMatch(userId: string): DominoMatch {
@@ -180,7 +180,7 @@ export class DominoService {
     return match;
   }
 
-  private publicView(userId: string, match: DominoMatch) {
+  private async publicView(userId: string, match: DominoMatch) {
     return {
       buyIn: match.buyIn,
       playerHand: match.playerHand,
@@ -192,7 +192,7 @@ export class DominoService {
       finished: match.finished,
       matchOutcome: match.matchOutcome,
       lastEvent: match.lastEvent,
-      newBalance: this.walletService.balanceOf(userId),
+      newBalance: await this.walletService.balanceOf(userId),
     };
   }
 }

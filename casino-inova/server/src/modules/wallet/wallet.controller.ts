@@ -6,8 +6,8 @@ export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   @Get(':userId/saldo')
-  getBalance(@Param('userId') userId: string) {
-    return { userId, balance: this.walletService.balanceOf(userId) };
+  async getBalance(@Param('userId') userId: string) {
+    return { userId, balance: await this.walletService.balanceOf(userId) };
   }
 
   @Get(':userId/historico')

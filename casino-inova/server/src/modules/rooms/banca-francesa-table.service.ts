@@ -54,8 +54,8 @@ export class BancaFrancesaTableService {
     private readonly usersService: UsersService,
   ) {}
 
-  createTable(hostUserId: string, visibility: TableVisibility): BancaFrancesaTable {
-    const host = this.requireUser(hostUserId);
+  async createTable(hostUserId: string, visibility: TableVisibility): Promise<BancaFrancesaTable> {
+    const host = (await this.requireUser(hostUserId));
     const table: BancaFrancesaTable = {
       id: `mesa-${this.nextId}`,
       code: generateTableCode(),
@@ -69,26 +69,28 @@ export class BancaFrancesaTableService {
     return table;
   }
 
-  listPublicTables() {
-    return [...this.tables.values()]
+  async listPublicTables() {
+    return Promise.all(
+      [...this.tables.values()]
       .filter((table) => table.visibility === 'publica' && table.seats.length < MAX_SEATS)
-      .map((table) => ({
+      .map(async (table) => ({
         id: table.id,
-        hostName: this.usersService.findById(table.hostUserId)?.name ?? table.hostUserId,
+        hostName: (await this.usersService.findById(table.hostUserId))?.name ?? table.hostUserId,
         seatedCount: table.seats.length,
         maxSeats: MAX_SEATS,
-      }));
+      })),
+    );
   }
 
-  joinByCode(userId: string, code: string): BancaFrancesaTable {
+  async joinByCode(userId: string, code: string): Promise<BancaFrancesaTable> {
     const normalized = code.trim().toUpperCase();
     const table = [...this.tables.values()].find((item) => item.code === normalized);
     if (!table) throw new NotFoundException('Mesa não encontrada — confira o código.');
-    return this.seatPlayer(table, userId);
+    return await this.seatPlayer(table, userId);
   }
 
-  joinById(userId: string, tableId: string): BancaFrancesaTable {
-    return this.seatPlayer(this.requireTable(tableId), userId);
+  async joinById(userId: string, tableId: string): Promise<BancaFrancesaTable> {
+    return await this.seatPlayer(this.requireTable(tableId), userId);
   }
 
   addBot(hostUserId: string, tableId: string): BancaFrancesaTable {
@@ -128,13 +130,13 @@ export class BancaFrancesaTableService {
     return table;
   }
 
-  placeBets(userId: string, tableId: string, bets: BancaFrancesaBet[]): BancaFrancesaTable {
+  async placeBets(userId: string, tableId: string, bets: BancaFrancesaBet[]): Promise<BancaFrancesaTable> {
     const table = this.requireTable(tableId);
     const seat = this.requireSeat(table, userId);
     this.validateBets(bets);
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
-    if (this.walletService.balanceOf(userId) < totalStake) {
+    if (await this.walletService.balanceOf(userId) < totalStake) {
       throw new BadRequestException('Saldo de fichas insuficiente pra essa aposta.');
     }
 
@@ -149,7 +151,7 @@ export class BancaFrancesaTableService {
    * existe trava de "uma mesa por vez" pro saldo), a aposta dessa pessoa é anulada em
    * vez de travar a rodada de todo mundo.
    */
-  roll(hostUserId: string, tableId: string): BancaFrancesaTable {
+  async roll(hostUserId: string, tableId: string): Promise<BancaFrancesaTable> {
     const table = this.requireTable(tableId);
     this.requireHost(table, hostUserId);
 
@@ -168,7 +170,7 @@ export class BancaFrancesaTableService {
 
       const totalStake = seat.pendingBets.reduce((sum, bet) => sum + bet.amount, 0);
 
-      if (!seat.isBot && this.walletService.balanceOf(seat.userId) < totalStake) {
+      if (!seat.isBot && await this.walletService.balanceOf(seat.userId) < totalStake) {
         seat.pendingBets = [];
         continue;
       }
@@ -177,11 +179,11 @@ export class BancaFrancesaTableService {
       const totalReturn = results.reduce((sum, result) => sum + result.totalReturn, 0);
 
       if (!seat.isBot) {
-        this.walletService.debit(seat.userId, totalStake, 'aposta', GAME_ID);
+        await this.walletService.debit(seat.userId, totalStake, 'aposta', GAME_ID);
         if (totalReturn > 0) {
-          this.walletService.credit(seat.userId, totalReturn, 'premio', GAME_ID);
+          await this.walletService.credit(seat.userId, totalReturn, 'premio', GAME_ID);
         }
-        this.tournaments.recordRound(seat.userId, GAME_ID, totalStake, totalReturn);
+        await this.tournaments.recordRound(seat.userId, GAME_ID, totalStake, totalReturn);
       }
 
       bySeat[seat.userId] = { results, totalStake, totalReturn };
@@ -192,8 +194,8 @@ export class BancaFrancesaTableService {
     return table;
   }
 
-  balanceOf(userId: string): number {
-    return this.walletService.balanceOf(userId);
+  async balanceOf(userId: string): Promise<number> {
+    return await this.walletService.balanceOf(userId);
   }
 
   /** Assento de alguém numa mesa, se existir — usado pelo chat pra pegar a cor da ficha. */
@@ -201,14 +203,14 @@ export class BancaFrancesaTableService {
     return this.tables.get(tableId)?.seats.find((seat) => seat.userId === userId);
   }
 
-  private seatPlayer(table: BancaFrancesaTable, userId: string): BancaFrancesaTable {
+  private async seatPlayer(table: BancaFrancesaTable, userId: string): Promise<BancaFrancesaTable> {
     if (table.seats.some((seat) => seat.userId === userId)) {
       return table;
     }
     if (table.seats.length >= MAX_SEATS) {
       throw new BadRequestException('Mesa cheia.');
     }
-    const user = this.requireUser(userId);
+    const user = (await this.requireUser(userId));
     table.seats.push({ userId, name: user.name, isBot: false, color: this.nextFreeColor(table), pendingBets: [] });
     return table;
   }
@@ -263,8 +265,8 @@ export class BancaFrancesaTableService {
     }
   }
 
-  private requireUser(userId: string) {
-    const user = this.usersService.findById(userId);
+  private async requireUser(userId: string) {
+    const user = await this.usersService.findById(userId);
     if (!user) {
       throw new NotFoundException('Usuário não encontrado.');
     }

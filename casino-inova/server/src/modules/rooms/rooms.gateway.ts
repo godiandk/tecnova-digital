@@ -56,8 +56,8 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('banca-francesa:criar-mesa')
   handleCreateTable(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; visibility: TableVisibility }) {
-    return this.safe(() => {
-      const table = this.tables.createTable(body.userId, body.visibility);
+    return this.safe(async () => {
+      const table = await this.tables.createTable(body.userId, body.visibility);
       socket.join(table.id);
       return this.view(table);
     });
@@ -65,13 +65,13 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('banca-francesa:mesas-publicas')
   handleListPublic() {
-    return this.safe(() => this.tables.listPublicTables());
+    return this.safe(async () => this.tables.listPublicTables());
   }
 
   @SubscribeMessage('banca-francesa:entrar-por-codigo')
   handleJoinByCode(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; code: string }) {
-    return this.safe(() => {
-      const table = this.tables.joinByCode(body.userId, body.code);
+    return this.safe(async () => {
+      const table = await this.tables.joinByCode(body.userId, body.code);
       socket.join(table.id);
       return this.broadcastAndReturn(table);
     });
@@ -79,17 +79,17 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('banca-francesa:entrar-por-id')
   handleJoinById(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => {
-      const table = this.tables.joinById(body.userId, body.tableId);
+    return this.safe(async () => {
+      const table = await this.tables.joinById(body.userId, body.tableId);
       socket.join(table.id);
       return this.broadcastAndReturn(table);
     });
   }
 
   @SubscribeMessage('banca-francesa:convidar-amigo')
-  handleInviteFriend(@MessageBody() body: { userId: string; tableId: string; friendUserId: string }) {
-    return this.safe(() => {
-      const isFriend = this.friends.listFriends(body.userId).some((friend) => friend.userId === body.friendUserId);
+  async handleInviteFriend(@MessageBody() body: { userId: string; tableId: string; friendUserId: string }) {
+    return this.safe(async () => {
+      const isFriend = await this.friends.areFriends(body.userId, body.friendUserId);
       if (!isFriend) {
         return { enviado: false, motivo: 'Só dá pra convidar quem já é seu amigo.' };
       }
@@ -105,22 +105,22 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('banca-francesa:completar-com-bot')
   handleAddBot(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => this.broadcastAndReturn(this.tables.addBot(body.userId, body.tableId)));
+    return this.safe(async () => this.broadcastAndReturn(this.tables.addBot(body.userId, body.tableId)));
   }
 
   @SubscribeMessage('banca-francesa:apostar')
-  handleBet(@MessageBody() body: { userId: string; tableId: string; bets: BancaFrancesaBet[] }) {
-    return this.safe(() => this.broadcastAndReturn(this.tables.placeBets(body.userId, body.tableId, body.bets)));
+  async handleBet(@MessageBody() body: { userId: string; tableId: string; bets: BancaFrancesaBet[] }) {
+    return this.safe(async () => this.broadcastAndReturn(await this.tables.placeBets(body.userId, body.tableId, body.bets)));
   }
 
   @SubscribeMessage('banca-francesa:girar')
-  handleRoll(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => this.broadcastAndReturn(this.tables.roll(body.userId, body.tableId)));
+  async handleRoll(@MessageBody() body: { userId: string; tableId: string }) {
+    return this.safe(async () => this.broadcastAndReturn(await this.tables.roll(body.userId, body.tableId)));
   }
 
   @SubscribeMessage('banca-francesa:sair')
   handleLeave(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => {
+    return this.safe(async () => {
       const result = this.tables.leaveTable(body.userId, body.tableId);
       if ('removed' in result) {
         this.server.to(body.tableId).emit('banca-francesa:mesa-fechada');
@@ -134,7 +134,7 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('chat:enviar')
   handleChatSend(@MessageBody() body: { userId: string; roomId: string; scope?: ChatScope; text: string }) {
-    return this.safe(() => {
+    return this.safe(async () => {
       const scope: ChatScope = body.scope === 'dupla' ? 'dupla' : 'mesa';
 
       // Falar com o parceiro só faz sentido em mesa de dupla (truco/dominó 2x2). Se
@@ -147,7 +147,7 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
       // A cor da ficha vem do assento, pra mensagem aparecer identificada na mesa.
       const seat = this.tables.findSeat(body.roomId, body.userId);
-      const message = this.chat.postMessage({
+      const message = await this.chat.postMessage({
         roomId: body.roomId,
         scope,
         userId: body.userId,
@@ -169,11 +169,11 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('chat:historico')
   handleChatHistory(@MessageBody() body: { userId: string; roomId: string }) {
-    return this.safe(() =>
+    return this.safe(async () =>
       // Quem é o parceiro é o servidor que decide, olhando o assento. Se viesse do
       // cliente, bastava mandar o userId do adversário pra ler a conversa da outra
       // dupla.
-      this.chat.historyFor(body.roomId, body.userId, this.partnerUserIdOf(body.roomId, body.userId)),
+      await this.chat.historyFor(body.roomId, body.userId, this.partnerUserIdOf(body.roomId, body.userId)),
     );
   }
 
@@ -190,8 +190,8 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('chat:silenciar')
   handleChatMute(@MessageBody() body: { actingUserId: string; targetUserId: string; seconds: number }) {
-    return this.safe(() => {
-      const result = this.chat.muteUser(body.actingUserId, body.targetUserId, body.seconds);
+    return this.safe(async () => {
+      const result = await this.chat.muteUser(body.actingUserId, body.targetUserId, body.seconds);
       this.emitToUser(body.targetUserId, 'chat:silenciado', result);
       return result;
     });
@@ -199,7 +199,7 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('chat:remover-silencio')
   handleChatUnmute(@MessageBody() body: { actingUserId: string; targetUserId: string }) {
-    return this.safe(() => this.chat.unmuteUser(body.actingUserId, body.targetUserId));
+    return this.safe(async () => await this.chat.unmuteUser(body.actingUserId, body.targetUserId));
   }
 
   private emitToUser(userId: string, event: string, payload: unknown) {
@@ -220,8 +220,8 @@ export class RoomsGateway implements OnGatewayDisconnect {
     @MessageBody()
     body: { userId: string; visibility: TableVisibility; variant?: TrucoVariant; style?: TrucoStyle; buyIn: number },
   ) {
-    return this.safe(() => {
-      const table = this.trucoTables.createTable(body.userId, {
+    return this.safe(async () => {
+      const table = await this.trucoTables.createTable(body.userId, {
         visibility: body.visibility,
         variant: body.variant,
         style: body.style,
@@ -234,13 +234,13 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('truco:mesas-publicas')
   handleTrucoListPublic() {
-    return this.safe(() => this.trucoTables.listPublicTables());
+    return this.safe(async () => this.trucoTables.listPublicTables());
   }
 
   @SubscribeMessage('truco:entrar-por-codigo')
   handleTrucoJoinByCode(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; code: string }) {
-    return this.safe(() => {
-      const table = this.trucoTables.joinByCode(body.userId, body.code);
+    return this.safe(async () => {
+      const table = await this.trucoTables.joinByCode(body.userId, body.code);
       socket.join(table.id);
       return this.broadcastTruco(table, body.userId);
     });
@@ -248,8 +248,8 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('truco:entrar-por-id')
   handleTrucoJoinById(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => {
-      const table = this.trucoTables.joinById(body.userId, body.tableId);
+    return this.safe(async () => {
+      const table = await this.trucoTables.joinById(body.userId, body.tableId);
       socket.join(table.id);
       return this.broadcastTruco(table, body.userId);
     });
@@ -257,31 +257,31 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('truco:completar-com-bot')
   handleTrucoAddBot(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => this.broadcastTruco(this.trucoTables.addBot(body.userId, body.tableId), body.userId));
+    return this.safe(async () => this.broadcastTruco(this.trucoTables.addBot(body.userId, body.tableId), body.userId));
   }
 
   @SubscribeMessage('truco:comecar')
-  handleTrucoStart(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => this.broadcastTruco(this.trucoTables.start(body.userId, body.tableId), body.userId));
+  async handleTrucoStart(@MessageBody() body: { userId: string; tableId: string }) {
+    return this.safe(async () => this.broadcastTruco(await this.trucoTables.start(body.userId, body.tableId), body.userId));
   }
 
   @SubscribeMessage('truco:jogar-carta')
   handleTrucoPlayCard(@MessageBody() body: { userId: string; tableId: string; card: Card }) {
-    return this.safe(() =>
+    return this.safe(async () =>
       this.broadcastTruco(this.trucoTables.playCard(body.userId, body.tableId, body.card), body.userId),
     );
   }
 
   @SubscribeMessage('truco:pedir')
   handleTrucoCallRaise(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => this.broadcastTruco(this.trucoTables.callRaise(body.userId, body.tableId), body.userId));
+    return this.safe(async () => this.broadcastTruco(this.trucoTables.callRaise(body.userId, body.tableId), body.userId));
   }
 
   @SubscribeMessage('truco:responder')
   handleTrucoRespond(
     @MessageBody() body: { userId: string; tableId: string; response: 'aceitar' | 'correr' | 'aumentar' },
   ) {
-    return this.safe(() =>
+    return this.safe(async () =>
       this.broadcastTruco(this.trucoTables.respondRaise(body.userId, body.tableId, body.response), body.userId),
     );
   }
@@ -292,7 +292,7 @@ export class RoomsGateway implements OnGatewayDisconnect {
    */
   @SubscribeMessage('truco:sinal')
   handleTrucoSignal(@MessageBody() body: { userId: string; tableId: string; signalId: TrucoSignalId }) {
-    return this.safe(() => {
+    return this.safe(async () => {
       const result = this.trucoTables.makeSignal(body.userId, body.tableId, body.signalId);
       if (result.partnerUserId) {
         this.emitToUser(result.partnerUserId, 'truco:sinal-recebido', {
@@ -306,7 +306,7 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('truco:sair')
   handleTrucoLeave(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => {
+    return this.safe(async () => {
       const result = this.trucoTables.leaveTable(body.userId, body.tableId);
       socket.leave(body.tableId);
       if ('removed' in result) {
@@ -339,8 +339,8 @@ export class RoomsGateway implements OnGatewayDisconnect {
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: { userId: string; visibility: TableVisibility; buyIn: number },
   ) {
-    return this.safe(() => {
-      const table = this.dominoTables.createTable(body.userId, { visibility: body.visibility, buyIn: body.buyIn });
+    return this.safe(async () => {
+      const table = await this.dominoTables.createTable(body.userId, { visibility: body.visibility, buyIn: body.buyIn });
       socket.join(table.id);
       return this.dominoTables.viewFor(table, body.userId);
     });
@@ -348,13 +348,13 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('domino:mesas-publicas')
   handleDominoListPublic() {
-    return this.safe(() => this.dominoTables.listPublicTables());
+    return this.safe(async () => this.dominoTables.listPublicTables());
   }
 
   @SubscribeMessage('domino:entrar-por-codigo')
   handleDominoJoinByCode(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; code: string }) {
-    return this.safe(() => {
-      const table = this.dominoTables.joinByCode(body.userId, body.code);
+    return this.safe(async () => {
+      const table = await this.dominoTables.joinByCode(body.userId, body.code);
       socket.join(table.id);
       return this.broadcastDomino(table, body.userId);
     });
@@ -362,8 +362,8 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('domino:entrar-por-id')
   handleDominoJoinById(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => {
-      const table = this.dominoTables.joinById(body.userId, body.tableId);
+    return this.safe(async () => {
+      const table = await this.dominoTables.joinById(body.userId, body.tableId);
       socket.join(table.id);
       return this.broadcastDomino(table, body.userId);
     });
@@ -371,29 +371,29 @@ export class RoomsGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('domino:completar-com-bot')
   handleDominoAddBot(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => this.broadcastDomino(this.dominoTables.addBot(body.userId, body.tableId), body.userId));
+    return this.safe(async () => this.broadcastDomino(this.dominoTables.addBot(body.userId, body.tableId), body.userId));
   }
 
   @SubscribeMessage('domino:comecar')
-  handleDominoStart(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => this.broadcastDomino(this.dominoTables.start(body.userId, body.tableId), body.userId));
+  async handleDominoStart(@MessageBody() body: { userId: string; tableId: string }) {
+    return this.safe(async () => this.broadcastDomino(await this.dominoTables.start(body.userId, body.tableId), body.userId));
   }
 
   @SubscribeMessage('domino:jogar-peca')
   handleDominoPlay(@MessageBody() body: { userId: string; tableId: string; tile: Tile; end: BoardEnd }) {
-    return this.safe(() =>
+    return this.safe(async () =>
       this.broadcastDomino(this.dominoTables.playTile(body.userId, body.tableId, body.tile, body.end), body.userId),
     );
   }
 
   @SubscribeMessage('domino:passar')
   handleDominoPass(@MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => this.broadcastDomino(this.dominoTables.pass(body.userId, body.tableId), body.userId));
+    return this.safe(async () => this.broadcastDomino(this.dominoTables.pass(body.userId, body.tableId), body.userId));
   }
 
   @SubscribeMessage('domino:sair')
   handleDominoLeave(@ConnectedSocket() socket: Socket, @MessageBody() body: { userId: string; tableId: string }) {
-    return this.safe(() => {
+    return this.safe(async () => {
       const result = this.dominoTables.leaveTable(body.userId, body.tableId);
       socket.leave(body.tableId);
       if ('removed' in result) {
@@ -419,9 +419,20 @@ export class RoomsGateway implements OnGatewayDisconnect {
    * devolve o erro dentro do próprio ack, como `{ error: true, message }`. Assim
    * quem chama sempre recebe uma resposta pela mesma Promise, sucesso ou erro.
    */
-  private safe<T>(fn: () => T): T | { error: true; message: string } {
+  /**
+   * Traduz exceção em resposta.
+   *
+   * Sem isso, um erro dentro de um handler vira um evento `exception` genérico do
+   * Socket.IO com a mensagem trocada por "Internal server error" — e o ack nunca
+   * chega, deixando a promessa do app pendurada pra sempre. Aqui o erro volta como
+   * `{ error: true, message }` no próprio ack, que é o que a tela sabe mostrar.
+   *
+   * O `await` importa: agora todo handler toca o banco, e sem esperar o resultado a
+   * exceção escaparia DEPOIS do try já ter terminado, virando unhandled rejection.
+   */
+  private async safe<T>(fn: () => T | Promise<T>): Promise<T | { error: true; message: string }> {
     try {
-      return fn();
+      return await fn();
     } catch (error) {
       return { error: true, message: error instanceof Error ? error.message : 'Erro inesperado.' };
     }
@@ -433,20 +444,22 @@ export class RoomsGateway implements OnGatewayDisconnect {
     return payload;
   }
 
-  private view(table: BancaFrancesaTable) {
+  private async view(table: BancaFrancesaTable) {
     return {
       id: table.id,
       code: table.code,
       visibility: table.visibility,
       hostUserId: table.hostUserId,
-      seats: table.seats.map((seat) => ({
-        userId: seat.userId,
-        name: seat.name,
-        isBot: seat.isBot,
-        color: seat.color,
-        pendingBets: seat.pendingBets,
-        balance: seat.isBot ? undefined : this.tables.balanceOf(seat.userId),
-      })),
+      seats: await Promise.all(
+        table.seats.map(async (seat) => ({
+          userId: seat.userId,
+          name: seat.name,
+          isBot: seat.isBot,
+          color: seat.color,
+          pendingBets: seat.pendingBets,
+          balance: seat.isBot ? undefined : await this.tables.balanceOf(seat.userId),
+        })),
+      ),
       lastRound: table.lastRound,
     };
   }

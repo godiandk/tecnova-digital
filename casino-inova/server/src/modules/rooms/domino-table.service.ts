@@ -87,13 +87,13 @@ export class DominoTableService {
     private readonly tournaments: TournamentsService,
   ) {}
 
-  createTable(hostUserId: string, options: { visibility: TableVisibility; buyIn: number }): DominoOnlineTable {
+  async createTable(hostUserId: string, options: { visibility: TableVisibility; buyIn: number }): Promise<DominoOnlineTable> {
     const { visibility, buyIn } = options;
     if (!Number.isFinite(buyIn) || buyIn < MIN_BUY_IN || buyIn > MAX_BUY_IN) {
       throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
     }
 
-    const host = this.requireUser(hostUserId);
+    const host = (await this.requireUser(hostUserId));
     const table: DominoOnlineTable = {
       id: `domino-${this.nextId}`,
       code: generateTableCode(),
@@ -116,27 +116,29 @@ export class DominoTableService {
     return table;
   }
 
-  listPublicTables() {
-    return [...this.tables.values()]
+  async listPublicTables() {
+    return Promise.all(
+      [...this.tables.values()]
       .filter((table) => table.visibility === 'publica' && !table.started && table.seats.length < SEATS)
-      .map((table) => ({
+      .map(async (table) => ({
         id: table.id,
-        hostName: this.usersService.findById(table.hostUserId)?.name ?? table.hostUserId,
+        hostName: (await this.usersService.findById(table.hostUserId))?.name ?? table.hostUserId,
         seatedCount: table.seats.length,
         maxSeats: SEATS,
         buyIn: table.buyIn,
-      }));
+      })),
+    );
   }
 
-  joinByCode(userId: string, code: string): DominoOnlineTable {
+  async joinByCode(userId: string, code: string): Promise<DominoOnlineTable> {
     const normalized = code.trim().toUpperCase();
     const table = [...this.tables.values()].find((item) => item.code === normalized);
     if (!table) throw new NotFoundException('Mesa não encontrada — confira o código.');
-    return this.seatPlayer(table, userId);
+    return await this.seatPlayer(table, userId);
   }
 
-  joinById(userId: string, tableId: string): DominoOnlineTable {
-    return this.seatPlayer(this.requireTable(tableId), userId);
+  async joinById(userId: string, tableId: string): Promise<DominoOnlineTable> {
+    return await this.seatPlayer(this.requireTable(tableId), userId);
   }
 
   addBot(hostUserId: string, tableId: string): DominoOnlineTable {
@@ -156,7 +158,7 @@ export class DominoTableService {
     return table;
   }
 
-  start(hostUserId: string, tableId: string): DominoOnlineTable {
+  async start(hostUserId: string, tableId: string): Promise<DominoOnlineTable> {
     const table = this.requireTable(tableId);
     this.requireHost(table, hostUserId);
     if (table.started) throw new BadRequestException('A partida já começou.');
@@ -165,12 +167,12 @@ export class DominoTableService {
     }
 
     for (const seat of table.seats) {
-      if (!seat.isBot && this.walletService.balanceOf(seat.userId) < table.buyIn) {
+      if (!seat.isBot && await this.walletService.balanceOf(seat.userId) < table.buyIn) {
         throw new BadRequestException(`${seat.name} não tem fichas suficientes pro buy-in.`);
       }
     }
     for (const seat of table.seats) {
-      if (!seat.isBot) this.walletService.debit(seat.userId, table.buyIn, 'aposta', GAME_ID);
+      if (!seat.isBot) await this.walletService.debit(seat.userId, table.buyIn, 'aposta', GAME_ID);
     }
 
     table.started = true;
@@ -366,7 +368,7 @@ export class DominoTableService {
     this.awardHand(table, winner, 1);
   }
 
-  private awardHand(table: DominoOnlineTable, winner: Team, points: number) {
+  private async awardHand(table: DominoOnlineTable, winner: Team, points: number) {
     table.score[winner] += points;
 
     if (table.score[winner] >= POINTS_TO_WIN) {
@@ -375,10 +377,10 @@ export class DominoTableService {
       const pot = table.buyIn * SEATS;
       const winners = table.seats.filter((seat) => seat.team === winner && !seat.isBot);
       const share = winners.length > 0 ? Math.floor(pot / winners.length) : 0;
-      for (const seat of winners) this.walletService.credit(seat.userId, share, 'premio', GAME_ID);
+      for (const seat of winners) await this.walletService.credit(seat.userId, share, 'premio', GAME_ID);
       for (const seat of table.seats) {
         if (seat.isBot) continue;
-        this.tournaments.recordRound(seat.userId, GAME_ID, table.buyIn, seat.team === winner ? share : 0);
+        await this.tournaments.recordRound(seat.userId, GAME_ID, table.buyIn, seat.team === winner ? share : 0);
       }
       table.lastEvent = `${table.lastEvent ?? ''} Dupla ${winner} venceu a partida!`.trim();
       return;
@@ -481,12 +483,12 @@ export class DominoTableService {
     }
   }
 
-  private seatPlayer(table: DominoOnlineTable, userId: string): DominoOnlineTable {
+  private async seatPlayer(table: DominoOnlineTable, userId: string): Promise<DominoOnlineTable> {
     if (table.seats.some((seat) => seat.userId === userId)) return table;
     if (table.started) throw new BadRequestException('A partida já começou.');
     if (table.seats.length >= SEATS) throw new BadRequestException('Mesa cheia.');
 
-    const user = this.requireUser(userId);
+    const user = (await this.requireUser(userId));
     const seatIndex = this.nextFreeSeat(table);
     table.seats.push({ seatIndex, userId, name: user.name, isBot: false, team: teamOfSeat(seatIndex), hand: [] });
     return table;
@@ -516,8 +518,8 @@ export class DominoTableService {
     if (table.hostUserId !== userId) throw new ForbiddenException('Só quem criou a mesa pode fazer isso.');
   }
 
-  private requireUser(userId: string) {
-    const user = this.usersService.findById(userId);
+  private async requireUser(userId: string) {
+    const user = await this.usersService.findById(userId);
     if (!user) throw new NotFoundException('Usuário não encontrado.');
     return user;
   }

@@ -45,13 +45,13 @@ export class ChatService {
     private readonly rolesService: RolesService,
   ) {}
 
-  postMessage(params: {
+  async postMessage(params: {
     roomId: string;
     scope: ChatScope;
     userId: string;
     text: string;
     color?: string;
-  }): ChatMessage {
+  }): Promise<ChatMessage> {
     const { roomId, scope, userId, text, color } = params;
 
     const mutedUntil = this.mutedUntil.get(userId);
@@ -69,7 +69,7 @@ export class ChatService {
     }
     this.enforceRateLimit(userId);
 
-    const user = this.usersService.findById(userId);
+    const user = await this.usersService.findById(userId);
     if (!user) {
       throw new BadRequestException('Usuário não encontrado.');
     }
@@ -112,8 +112,8 @@ export class ChatService {
   }
 
   /** Silenciar reusa a permissão `silenciar_usuario` que o módulo de papéis já define. */
-  muteUser(actingUserId: string, targetUserId: string, seconds: number) {
-    this.rolesService.requirePermission(actingUserId, 'silenciar_usuario');
+  async muteUser(actingUserId: string, targetUserId: string, seconds: number) {
+    await this.rolesService.requirePermission(actingUserId, 'silenciar_usuario');
     if (!Number.isFinite(seconds) || seconds <= 0 || seconds > 24 * 60 * 60) {
       throw new BadRequestException('Tempo de silenciamento inválido.');
     }
@@ -122,8 +122,8 @@ export class ChatService {
     return { targetUserId, mutedUntilIso: new Date(until).toISOString() };
   }
 
-  unmuteUser(actingUserId: string, targetUserId: string) {
-    this.rolesService.requirePermission(actingUserId, 'silenciar_usuario');
+  async unmuteUser(actingUserId: string, targetUserId: string) {
+    await this.rolesService.requirePermission(actingUserId, 'silenciar_usuario');
     this.mutedUntil.delete(targetUserId);
     return { targetUserId, muted: false };
   }

@@ -57,7 +57,7 @@ export class PokerService {
     return { minBuyIn: MIN_BUY_IN, maxBuyIn: MAX_BUY_IN, smallBlind: SMALL_BLIND, bigBlind: BIG_BLIND, smallBet: SMALL_BET, bigBet: BIG_BET };
   }
 
-  newHand(userId: string, buyIn: number) {
+  async newHand(userId: string, buyIn: number) {
     const existing = this.hands.get(userId);
     if (existing && !existing.finished) {
       throw new BadRequestException('Você já tem uma mão de poker em andamento.');
@@ -66,7 +66,7 @@ export class PokerService {
       throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
     }
 
-    this.walletService.debit(userId, buyIn, 'aposta', GAME_ID);
+    await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID);
     const deck = shuffle(buildDeck());
     const match: PokerHand = {
       userId,
@@ -200,7 +200,7 @@ export class PokerService {
     this.settleHand(match, winner, handLabel(playerValue), handLabel(botValue));
   }
 
-  private settleHand(match: PokerHand, winner: 'jogador' | 'bot' | 'empate', playerHandLabel?: string, botHandLabel?: string) {
+  private async settleHand(match: PokerHand, winner: 'jogador' | 'bot' | 'empate', playerHandLabel?: string, botHandLabel?: string) {
     match.finished = true;
     let potWon = 0;
 
@@ -228,10 +228,10 @@ export class PokerService {
     };
 
     if (match.playerStack > 0) {
-      this.walletService.credit(match.userId, match.playerStack, 'premio', GAME_ID);
+      await this.walletService.credit(match.userId, match.playerStack, 'premio', GAME_ID);
     }
     // O buy-in virou o stack da mão; o que sobrou dele é o retorno.
-    this.tournaments.recordRound(match.userId, GAME_ID, match.buyIn, match.playerStack);
+    await this.tournaments.recordRound(match.userId, GAME_ID, match.buyIn, match.playerStack);
   }
 
   private runBotIfNeeded(match: PokerHand, depth = 0) {
@@ -257,7 +257,7 @@ export class PokerService {
     return match;
   }
 
-  private publicView(match: PokerHand) {
+  private async publicView(match: PokerHand) {
     return {
       buyIn: match.buyIn,
       playerStack: match.playerStack,
@@ -273,7 +273,7 @@ export class PokerService {
       finished: match.finished,
       outcome: match.outcome,
       lastEvent: match.lastEvent,
-      newBalance: this.walletService.balanceOf(match.userId),
+      newBalance: await this.walletService.balanceOf(match.userId),
     };
   }
 }
