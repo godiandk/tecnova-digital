@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts, Poppins_600SemiBold, Poppins_700Bold, Poppins_800ExtraBold } from '@expo-google-fonts/poppins';
@@ -64,20 +65,30 @@ export default function App() {
     return null;
   }
 
+  /*
+   * O SafeAreaProvider precisa envolver TUDO, não só a parte navegada.
+   *
+   * Toda tela usa SafeAreaView do react-native-safe-area-context, e ele exige esse
+   * provedor acima na árvore. A tela de login fica fora do NavigationContainer, então
+   * sem isto ela renderiza sem provedor nenhum — o que estoura com "No safe area value
+   * available" antes de desenhar qualquer coisa.
+   */
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }} onLayout={onLayoutRootView}>
-      <StatusBar style="light" />
-      {logado === null ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={colors.goldBright} />
-        </View>
-      ) : logado ? (
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
-      ) : (
-        <LoginScreen aoEntrar={() => setLogado(true)} />
-      )}
-    </View>
+    <SafeAreaProvider>
+      <View style={{ flex: 1, backgroundColor: colors.background }} onLayout={onLayoutRootView}>
+        <StatusBar style="light" />
+        {logado === null ? (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <ActivityIndicator color={colors.goldBright} />
+          </View>
+        ) : logado ? (
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+        ) : (
+          <LoginScreen aoEntrar={() => setLogado(true)} />
+        )}
+      </View>
+    </SafeAreaProvider>
   );
 }

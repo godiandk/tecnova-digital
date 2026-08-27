@@ -27,7 +27,15 @@ function formatChips(amount: number): string {
   return amount.toLocaleString('pt-BR');
 }
 
-export function ChipStack({ amount, onPressAdd, width = 170 }: ChipStackProps) {
+/** Encolhe a letra conforme o número cresce, pra sempre caber inteiro no vão. */
+function tamanhoDaFonte(altura: number, digitos: number): number {
+  const base = altura * 0.36;
+  if (digitos <= 6) return Math.round(base);
+  if (digitos <= 9) return Math.round(base * 0.82);
+  return Math.round(base * 0.68);
+}
+
+export function ChipStack({ amount, onPressAdd, width = 200 }: ChipStackProps) {
   const height = Math.round(width * PROPORCAO);
 
   return (
@@ -40,7 +48,12 @@ export function ChipStack({ amount, onPressAdd, width = 170 }: ChipStackProps) {
         ]}
         pointerEvents="none"
       >
-        <Text style={[styles.amount, { fontSize: Math.round(height * 0.36) }]} numberOfLines={1} adjustsFontSizeToFit>
+        {/*
+          `adjustsFontSizeToFit` não funciona na web, então o tamanho da fonte é
+          calculado pelo número de dígitos: saldo de 6 ou 7 casas encolhe a letra em vez
+          de virar "132.5...". Sem isso, o jogador não enxerga o próprio saldo.
+        */}
+        <Text style={[styles.amount, { fontSize: tamanhoDaFonte(height, formatChips(amount).length) }]} numberOfLines={1}>
           {formatChips(amount)}
         </Text>
       </View>
