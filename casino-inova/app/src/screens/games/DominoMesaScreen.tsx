@@ -9,6 +9,8 @@ import { TABLE_IMAGES } from '../../data/tableImages';
 import { DOMINO_TILE_IMAGES } from '../../data/gameAssets';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { CasinoCard } from '../../components/CasinoCard';
+import { MesaComLugares } from '../../components/MesaComLugares';
+import { CorrenteDeDomino } from '../../components/CorrenteDeDomino';
 import { ChatPanel } from '../../components/ChatPanel';
 import { ApiError } from '../../api/client';
 import { SocketError } from '../../api/socket';
@@ -56,6 +58,28 @@ export function DominoMesaScreen({ navigation }: Props) {
   const me = table?.seats.find((seat) => seat.isYou);
   const isHost = table?.hostUserId === me?.userId;
   const isMyTurn = Boolean(table?.started && me && me.seatIndex === table.turnSeat);
+
+  /*
+   * Os assentos do servidor viram lugares em volta da mesa. A cor do time vem junto
+   * porque no dominó de dupla saber quem é seu parceiro muda a jogada.
+   */
+  const lugaresDaMesa = (table?.seats ?? [])
+    .slice()
+    .sort((a, b) => a.seatIndex - b.seatIndex)
+    .map((seat) => ({
+      indice: seat.seatIndex,
+      nome: seat.name,
+      ehVoce: seat.isYou,
+      ehVez: Boolean(table?.started) && seat.seatIndex === table?.turnSeat,
+      ehBot: seat.isBot,
+      naMao: seat.tilesInHand,
+      corDoTime: seat.team === 'A' ? colors.gold : colors.ruby,
+      detalhe: table?.started
+        ? `${seat.tilesInHand} peça${seat.tilesInHand === 1 ? '' : 's'}`
+        : seat.isPartner
+          ? 'seu parceiro'
+          : 'aguardando',
+    }));
 
   const refreshPublic = useCallback(async () => {
     try {
@@ -241,24 +265,6 @@ export function DominoMesaScreen({ navigation }: Props) {
 
                 {table.lastEvent && <Text style={styles.eventText}>{table.lastEvent}</Text>}
 
-                <Text style={styles.sectionLabel}>Na mesa</Text>
-                {table.seats
-                  .slice()
-                  .sort((a, b) => a.seatIndex - b.seatIndex)
-                  .map((seat) => (
-                    <View key={seat.userId} style={styles.seatRow}>
-                      <View style={[styles.teamDot, { backgroundColor: seat.team === 'A' ? colors.gold : colors.ruby }]} />
-                      <Text style={styles.seatName}>
-                        {seat.name}
-                        {seat.isYou ? ' (você)' : seat.isPartner ? ' · seu parceiro' : ''}
-                        {seat.isBot ? ' · bot' : ''}
-                      </Text>
-                      <Text style={styles.seatMeta}>
-                        {table.started ? `${seat.tilesInHand} peça(s)` : 'aguardando'}
-                        {table.started && seat.seatIndex === table.turnSeat ? ' · vez dele' : ''}
-                      </Text>
-                    </View>
-                  ))}
               </CasinoCard>
 
               {!table.started ? (
@@ -287,17 +293,25 @@ export function DominoMesaScreen({ navigation }: Props) {
                 </CasinoCard>
               ) : (
                 <>
-                  <CasinoCard style={styles.card}>
-                    <Text style={styles.sectionLabel}>
-                      Mesa {table.board.length > 0 ? `· pontas ${table.leftEnd} e ${table.rightEnd}` : ''}
+                  {/*
+                    A mesa de verdade, com as pessoas em volta: você sempre embaixo, a
+                    corrente no miolo e a mão dos outros de costas. Antes isto era uma
+                    LISTA de nomes com o tabuleiro numa tira que rolava de lado — dava
+                    pra jogar, mas não dava pra ver a mesa.
+                  */}
+                  <MesaComLugares lugares={lugaresDaMesa} altura={330}>
+                    {table.board.length === 0 ? (
+                      <Text style={styles.cardHint}>Mesa vazia — a primeira peça abre o jogo.</Text>
+                    ) : (
+                      <CorrenteDeDomino pecas={table.board} />
+                    )}
+                  </MesaComLugares>
+
+                  {table.board.length > 0 && (
+                    <Text style={styles.pontasLabel}>
+                      Pontas · {table.leftEnd} e {table.rightEnd}
                     </Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.boardRow}>
-                      {table.board.length === 0 && <Text style={styles.cardHint}>Mesa vazia — a primeira peça abre o jogo.</Text>}
-                      {table.board.map((tile, index) => (
-                        <Image key={index} source={tileImage(tile)} style={styles.boardTile} resizeMode="contain" />
-                      ))}
-                    </ScrollView>
-                  </CasinoCard>
+                  )}
 
                   <CasinoCard style={styles.card}>
                     <Text style={styles.cardTitle}>
@@ -469,6 +483,13 @@ const styles = StyleSheet.create({
   scoreLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
   scoreValue: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.lg, color: colors.textPrimary },
   eventText: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textSecondary, textAlign: 'center' },
+  pontasLabel: {
+    fontFamily: fontFamily.bodySemiBold,
+    fontSize: fontSize.xs,
+    color: colors.gold,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+  },
   sectionLabel: {
     fontFamily: fontFamily.bodySemiBold,
     fontSize: fontSize.xs,
