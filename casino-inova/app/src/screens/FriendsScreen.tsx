@@ -20,8 +20,18 @@ export function FriendsScreen() {
   const reload = useCallback(async () => {
     try {
       const [friendsData, pendingData] = await Promise.all([fetchFriends(), fetchPendingFriendRequests()]);
-      setFriends(friendsData);
-      setPending(pendingData);
+      /*
+       * Guarda contra resposta fora do formato. O motivo é concreto: quando o curinga
+       * do site engoliu /amigos/pendentes, o servidor respondeu 200 com HTML, o corpo
+       * virou undefined e a tela quebrou em "Cannot read properties of undefined" —
+       * derrubando a navegação inteira, não só esta aba. A causa foi corrigida no
+       * servidor; isto aqui é pra que uma resposta estranha nunca mais derrube o app.
+       */
+      setFriends(Array.isArray(friendsData) ? friendsData : []);
+      setPending({
+        recebidos: pendingData?.recebidos ?? [],
+        enviados: pendingData?.enviados ?? [],
+      });
       setLoadError(null);
     } catch (error) {
       setLoadError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');

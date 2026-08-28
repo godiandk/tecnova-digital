@@ -49,10 +49,22 @@ import { TournamentsModule } from './modules/tournaments/tournaments.module';
     TrucoModule,
     DominoModule,
     PokerModule,
-    // Por último de propósito — ver o comentário em site.controller.ts.
-    SiteModule,
     FriendsModule,
     RoomsModule,
+    /*
+     * SiteModule TEM que ser o último da lista.
+     *
+     * Ele registra um curinga `@Get('*')` que devolve o index.html, e o Nest casa rota
+     * na ordem em que foi registrada. Qualquer módulo abaixo dele fica inalcançável: o
+     * servidor responde a página do site no lugar da API, com status 200, e o app diz
+     * coisas como "não foi possível carregar" sem nenhum erro no log.
+     *
+     * Já aconteceu: numa versão anterior o SiteModule ficou antes de FriendsModule e
+     * RoomsModule, e a tela de Amigos quebrava com "Cannot read properties of
+     * undefined" porque /amigos/pendentes devolvia HTML. É o que
+     * verificacao/verifica-rotas.ts existe pra pegar.
+     */
+    SiteModule,
   ],
   /*
    * Guard global: toda rota exige token, MENOS as marcadas com @Publico(). O padrão
