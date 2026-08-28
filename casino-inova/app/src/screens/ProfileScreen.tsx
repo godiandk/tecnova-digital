@@ -75,7 +75,7 @@ export function ProfileScreen() {
           width={LARGURA_BARRA}
         />
         <Text style={styles.levelLabel}>
-          {jogador?.xp ?? 0} de {jogador?.xpToNextLevel ?? 500} XP pro nível {jogador?.level ?? 1 + 1}
+          {jogador?.xp ?? 0} de {jogador?.xpToNextLevel ?? 500} XP pro nível {(jogador?.level ?? 1) + 1}
         </Text>
       </CasinoCard>
 
