@@ -1,16 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import Animated, {
+  Easing,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
 import { CARD_BACK_IMAGE, CARD_IMAGES, TRUCO_CARD_IMAGES } from '../data/gameAssets';
-import { CURVA, MOLA, TEMPO } from '../animation';
+import { CURVA, TEMPO } from '../animation';
+import { lancar } from '../animation/fisica';
 import { colors, radius } from '../theme';
 
 interface CartaProps {
@@ -27,72 +28,150 @@ interface CartaProps {
 const PROPORCAO = 1.5;
 
 /** Quanto tempo entre uma carta e a próxima da mesma mão. */
-const ATRASO_ENTRE_CARTAS = 110;
+const ATRASO_ENTRE_CARTAS = 150;
+
+/** Quanto tempo a carta leva do baralho até pousar. */
+const VOO_EM_MS = 620;
 
 /**
- * Uma carta na mesa.
+ * Uma carta em cima da mesa.
  *
- * Faz duas coisas que carta de verdade faz: chega deslizando do monte, uma depois da
- * outra, e vira quando é revelada. A virada é uma rotação no eixo Y com o verso e a
- * frente ocupando o mesmo lugar — a metade de trás fica escondida, então o que se vê é
- * a carta girando, e não duas imagens trocando.
+ * Ela é DISTRIBUÍDA, não posicionada: sai de fora do quadro, do lado de onde ficaria o
+ * baralho, cruza o pano girando, desliza um pouco ao encostar e para no lugar. A sombra
+ * embaixo acompanha e some quando ela assenta — é o que faz a carta ter altura em vez
+ * de simplesmente aparecer maior.
  *
- * A carta virada pra baixo (`carta === null`) é a do dealer que ainda não abriu. Quando
- * o servidor manda o valor, ela vira ali mesmo, sem sumir e voltar.
+ * Carta não quica como dado: pousa e escorrega. Por isso um quique só, baixo, e giro
+ * bem menor — o exagero aqui lê como papel voando, não como carta dada.
+ *
+ * A viragem é "levanta, vira, pousa": a carta sobe do pano, estreita até sumir de
+ * perfil, e volta a abrir já com a outra face, descendo. Quem vira carta de verdade
+ * levanta ela primeiro — girando colada na mesa, o papel atravessa o pano e o efeito
+ * denuncia que é desenho.
+ *
+ * A troca da imagem acontece no meio do giro, quando a carta está de perfil e não dá
+ * pra ver qual face é. Uma tentativa anterior usava duas faces sobrepostas com
+ * `backfaceVisibility`, e some quando o contêiner também gira: o navegador passa a
+ * esconder as DUAS, e a carta virava um retângulo escuro.
  */
 export function Carta({ carta, indice = 0, largura = 62, truco = false }: CartaProps) {
   const altura = Math.round(largura * PROPORCAO);
   const baralho = truco ? TRUCO_CARD_IMAGES : CARD_IMAGES;
   const frente = carta ? baralho[carta] : undefined;
 
-  const chegada = useSharedValue(0);
-  const viragem = useSharedValue(carta ? 1 : 0);
-
-  // Distribuição: entra deslizando de cima, com uma inclinação que se desfaz.
-  useEffect(() => {
-    chegada.value = withDelay(indice * ATRASO_ENTRE_CARTAS, withSpring(1, MOLA));
-  }, [chegada, indice]);
-
-  // Viragem: só acontece quando a carta ganha valor.
-  useEffect(() => {
-    viragem.value = withTiming(carta ? 1 : 0, { duration: TEMPO.entrada, easing: CURVA.suave });
-  }, [carta, viragem]);
-
-  const entrada = useAnimatedStyle(() => ({
-    opacity: chegada.value,
-    transform: [
-      { translateY: interpolate(chegada.value, [0, 1], [-34, 0]) },
-      { translateX: interpolate(chegada.value, [0, 1], [26, 0]) },
-      { rotate: `${interpolate(chegada.value, [0, 1], [12, 0])}deg` },
-    ],
-  }));
+  const voo = useSharedValue(0);
+  /** 0 = parada; vai até 1 durante uma virada, e volta a 0 no fim. */
+  const viragem = useSharedValue(0);
+  const [mostrandoFrente, setMostrandoFrente] = useState(Boolean(carta));
 
   /*
-   * As duas faces giram juntas, meia volta uma da outra. `backfaceVisibility` esconde a
-   * que está de costas — sem isso as duas apareceriam espelhadas ao mesmo tempo.
+   * O baralho fica acima e à direita da mesa, que é de onde o crupiê distribui. A
+   * distância é curta o bastante pra a carta continuar visível o voo inteiro.
    */
-  const ladoDaFrente = useAnimatedStyle(() => ({
-    transform: [{ perspective: 700 }, { rotateY: `${interpolate(viragem.value, [0, 1], [180, 360])}deg` }],
-  }));
-  const ladoDeTras = useAnimatedStyle(() => ({
-    transform: [{ perspective: 700 }, { rotateY: `${interpolate(viragem.value, [0, 1], [0, 180])}deg` }],
-  }));
+  const caminho = useMemo(
+    () =>
+      lancar({
+        deX: largura * 2.4,
+        deY: -altura * 1.1,
+        giros: 0.75,
+        // Carta pousa em pé: o giro tem que fechar uma volta inteira.
+        passoDoGiro: 360,
+        quantosQuiques: 1,
+        alturaInicial: 0.55,
+      }),
+    [largura, altura],
+  );
+
+  useEffect(() => {
+    voo.value = 0;
+    voo.value = withDelay(
+      indice * ATRASO_ENTRE_CARTAS,
+      withTiming(1, { duration: VOO_EM_MS, easing: Easing.linear }),
+    );
+  }, [voo, indice]);
+
+  // Viragem: só acontece quando a carta TROCA de face — não na chegada.
+  useEffect(() => {
+    const alvo = Boolean(carta);
+    if (alvo === mostrandoFrente) return;
+    viragem.value = 0;
+    viragem.value = withTiming(1, { duration: TEMPO.entrada, easing: CURVA.suave });
+    const meio = setTimeout(() => setMostrandoFrente(alvo), TEMPO.entrada / 2);
+    return () => clearTimeout(meio);
+  }, [carta, mostrandoFrente, viragem]);
+
+  const entrada = useAnimatedStyle(() => {
+    const t = voo.value;
+    const x = interpolate(t, caminho.tempos, caminho.x);
+    const y = interpolate(t, caminho.tempos, caminho.y);
+    const alto = interpolate(t, caminho.tempos, caminho.altura);
+    const giro = interpolate(t, caminho.tempos, caminho.giro);
+    return {
+      // Antes de o voo começar (atraso da vez), a carta ainda não existe na mesa.
+      opacity: t > 0 ? 1 : 0,
+      transform: [
+        { translateX: x },
+        { translateY: y - alto * altura * 0.5 },
+        { scale: 1 + alto * 0.16 },
+        { rotate: `${giro}deg` },
+      ],
+    };
+  });
+
+  const sombra = useAnimatedStyle(() => {
+    const t = voo.value;
+    const x = interpolate(t, caminho.tempos, caminho.x);
+    const y = interpolate(t, caminho.tempos, caminho.y);
+    const alto = interpolate(t, caminho.tempos, caminho.altura);
+    return {
+      opacity: t > 0 ? 0.38 - alto * 0.22 : 0,
+      transform: [
+        { translateX: x + alto * 6 },
+        { translateY: y + alto * 8 + altura * 0.06 },
+        { scale: 1 - alto * 0.1 },
+      ],
+    };
+  });
+
+  const virada = useAnimatedStyle(() => {
+    const v = viragem.value;
+    // Meia volta: a largura vai a zero no meio, que é a carta vista de perfil.
+    const perfil = Math.abs(Math.cos(Math.PI * v));
+    // O quanto ela sobe do pano. É o que impede a carta de atravessar a mesa ao girar.
+    const levantada = Math.sin(Math.PI * v);
+    return {
+      transform: [
+        { perspective: 800 },
+        { translateY: -levantada * altura * 0.16 },
+        { scale: 1 + levantada * 0.08 },
+        { scaleX: Math.max(perfil, 0.02) },
+      ],
+    };
+  });
 
   return (
-    <Animated.View style={[{ width: largura, height: altura }, entrada]}>
-      <Animated.View style={[styles.face, styles.moldura, ladoDeTras]}>
-        <Image source={CARD_BACK_IMAGE} style={styles.imagem} resizeMode="cover" />
+    <View style={{ width: largura, height: altura }}>
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.sombra, { width: largura, height: altura, borderRadius: radius.sm }, sombra]}
+      />
+      <Animated.View style={[styles.carta, { width: largura, height: altura }, entrada]}>
+        <Animated.View style={[styles.moldura, styles.face, virada]}>
+          <Image
+            source={mostrandoFrente && frente ? frente : CARD_BACK_IMAGE}
+            style={styles.imagem}
+            resizeMode={mostrandoFrente && frente ? 'contain' : 'cover'}
+          />
+        </Animated.View>
       </Animated.View>
-
-      <Animated.View style={[styles.face, styles.moldura, ladoDaFrente]}>
-        {frente && <Image source={frente} style={styles.imagem} resizeMode="contain" />}
-      </Animated.View>
-    </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  face: { ...StyleSheet.absoluteFillObject, backfaceVisibility: 'hidden' },
+  carta: { position: 'absolute', top: 0, left: 0 },
+  sombra: { position: 'absolute', top: 0, left: 0, backgroundColor: '#000' },
+  face: { ...StyleSheet.absoluteFillObject },
   moldura: {
     borderRadius: radius.sm,
     overflow: 'hidden',
