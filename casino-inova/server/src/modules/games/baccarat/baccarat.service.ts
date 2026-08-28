@@ -2,8 +2,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { playRound as playBaccaratRound, resolveBet } from './baccarat.engine';
-import { BaccaratBetType, MAX_BET, MIN_BET } from './baccarat.config';
+import { BaccaratBetType, MAX_BET, MIN_BET, Rank } from './baccarat.config';
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
+import { CartaComNaipe, nomeDaCarta, vestirDeNaipe } from '../shared/naipes';
 
 const VALID_BET_TYPES: BaccaratBetType[] = ['jogador', 'banca', 'empate'];
 /** 24 colunas de 6 no painel — 144 rodadas enchem a tela inteira. */
@@ -59,8 +60,19 @@ export class BaccaratService {
     this.history.push({ outcome: round.winner });
     if (this.history.length > HISTORY_LIMIT) this.history.shift();
 
+    /*
+     * As cartas saem do motor só com valor — o baralho é infinito e naipe não vale
+     * nada no bacará. O naipe é sorteado aqui pra a tela poder desenhar a carta que
+     * saiu, em vez de o app escolher uma parecida. Ver shared/naipes.ts.
+     */
+    const cartasNaMesa: CartaComNaipe<Rank>[] = [];
+    const playerCards = vestirDeNaipe(round.playerCards, cartasNaMesa).map(guardarEnomear(cartasNaMesa));
+    const bankerCards = vestirDeNaipe(round.bankerCards, cartasNaMesa).map(guardarEnomear(cartasNaMesa));
+
     return {
       ...round,
+      playerCards,
+      bankerCards,
       betType,
       amount,
       totalReturn,
@@ -68,4 +80,17 @@ export class BaccaratService {
       roadmap: this.getRoadmap(),
     };
   }
+}
+
+/**
+ * Anota a carta na mesa e devolve o nome da imagem dela.
+ *
+ * A anotação importa: é ela que faz o segundo lado enxergar o que o primeiro já usou, e
+ * é o que impede a mesma carta de aparecer nos dois lados da mesma rodada.
+ */
+function guardarEnomear(mesa: CartaComNaipe<Rank>[]) {
+  return (carta: CartaComNaipe<Rank>) => {
+    mesa.push(carta);
+    return nomeDaCarta(carta);
+  };
 }

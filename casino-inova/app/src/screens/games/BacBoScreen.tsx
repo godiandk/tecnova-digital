@@ -11,7 +11,7 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { ChipStack } from '../../components/ChipStack';
 import { RoadmapPanel } from '../../components/RoadmapPanel';
-import { BACBO_DIE_IMAGES } from '../../data/gameAssets';
+import { Dado, DadoVazio } from '../../components/Dado';
 import { ApiError } from '../../api/client';
 import { Roadmap } from '../../api/roadmap';
 import {
@@ -26,6 +26,9 @@ import { usePlayer } from '../../data/usePlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BacBo'>;
+
+/** Lado do dado na mesa. Dois cabem folgados na coluna de cada lado. */
+const TAMANHO_DO_DADO = 52;
 
 const BET_STEP = 50;
 
@@ -145,6 +148,7 @@ export function BacBoScreen({ navigation }: Props) {
                 <DiceSide
                   label="Player"
                   dice={round?.playerDice}
+                  rolando={playing}
                   total={round?.playerTotal}
                   won={round?.outcome === 'jogador'}
                   accent={colors.sapphire}
@@ -152,6 +156,7 @@ export function BacBoScreen({ navigation }: Props) {
                 <DiceSide
                   label="Banker"
                   dice={round?.bankerDice}
+                  rolando={playing}
                   total={round?.bankerTotal}
                   won={round?.outcome === 'banca'}
                   accent={colors.ruby}
@@ -233,12 +238,14 @@ export function BacBoScreen({ navigation }: Props) {
 function DiceSide({
   label,
   dice,
+  rolando,
   total,
   won,
   accent,
 }: {
   label: string;
   dice?: number[];
+  rolando: boolean;
   total?: number;
   won?: boolean;
   accent: string;
@@ -248,10 +255,10 @@ function DiceSide({
       <Text style={[styles.sideLabel, { color: accent }]}>{label}</Text>
       <View style={styles.diceRow}>
         {(dice ?? [null, null]).map((die, index) =>
-          die ? (
-            <Image key={index} source={BACBO_DIE_IMAGES[die]} style={styles.die} resizeMode="contain" />
+          die || rolando ? (
+            <Dado key={index} face={die ?? null} rolando={rolando} indice={index} tamanho={TAMANHO_DO_DADO} bacBo />
           ) : (
-            <View key={index} style={[styles.die, styles.dieEmpty]} />
+            <DadoVazio key={index} tamanho={TAMANHO_DO_DADO} />
           ),
         )}
       </View>

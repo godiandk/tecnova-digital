@@ -34,10 +34,15 @@ function resolveApiBaseUrl(): string {
   if (host) return `http://${host}:${SERVER_PORT}`;
 
   /*
-   * Sem hostUri e rodando no navegador: é o site publicado, servido pelo próprio
-   * servidor. A API está na mesma origem da página.
+   * Publicado no navegador: o site é servido pelo próprio servidor, então a API está na
+   * mesma origem da página.
+   *
+   * O `!__DEV__` é o que separa isso do desenvolvimento, e não é detalhe: rodando
+   * `expo start --web`, quem serve a página é o Metro na 8081 e o servidor está na
+   * 3000. Sem essa condição, o app em desenvolvimento passava a chamar a própria 8081 e
+   * toda tela dizia "não deu pra falar com o servidor".
    */
-  if (typeof window !== 'undefined' && window.location?.origin) {
+  if (!__DEV__ && typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin;
   }
 

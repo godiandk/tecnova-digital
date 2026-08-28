@@ -12,6 +12,7 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
+import { Carta } from '../../components/Carta';
 import { RoadmapPanel } from '../../components/RoadmapPanel';
 import { ApiError } from '../../api/client';
 import { Roadmap } from '../../api/roadmap';
@@ -20,6 +21,9 @@ import { usePlayer } from '../../data/usePlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Baccarat'>;
+
+/** Largura da carta. Três por lado, que é o máximo no bacará. */
+const LARGURA_DA_CARTA = 58;
 
 const BET_STEP = 50;
 
@@ -43,9 +47,7 @@ function Hand({ label, cards, total }: { label: string; cards: string[]; total: 
       </Text>
       <View style={styles.cardRow}>
         {cards.map((card, index) => (
-          <View key={index} style={styles.card}>
-            <Text style={styles.cardLabel}>{card}</Text>
-          </View>
+          <Carta key={index} carta={card} indice={index} largura={LARGURA_DA_CARTA} />
         ))}
       </View>
     </View>
@@ -233,17 +235,6 @@ const styles = StyleSheet.create({
   handBlock: { gap: spacing.sm, alignItems: 'center' },
   handLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textSecondary },
   cardRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
-  card: {
-    width: 52,
-    height: 72,
-    borderRadius: radius.sm,
-    backgroundColor: colors.textPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.goldBright,
-  },
-  cardLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.md, color: colors.background },
   resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, marginTop: spacing.lg, textAlign: 'center' },
   resultWin: { color: colors.goldBright },
   resultLoss: { color: colors.textFaint },

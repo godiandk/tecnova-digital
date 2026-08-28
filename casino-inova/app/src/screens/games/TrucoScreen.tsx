@@ -12,6 +12,7 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
+import { Carta } from '../../components/Carta';
 import { ApiError } from '../../api/client';
 import {
   fetchTrucoConfig,
@@ -30,7 +31,11 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Truco'>;
 
 const BUY_IN_STEP = 100;
 
-const SUIT_SYMBOL: Record<string, string> = { ouros: '♦', espadas: '♠', copas: '♥', paus: '♣' };
+/** Largura da carta. Três na mão e duas na mesa, num celular estreito. */
+const LARGURA_DA_CARTA = 62;
+
+/** A vira é referência, não carta de jogar: entra menor pra não competir com a mão. */
+const LARGURA_DA_VIRA = 40;
 
 /** Nome de cada degrau da escada de aumento — espelha RAISE_LABEL do servidor. */
 const RAISE_LABEL: Record<number, string> = { 3: 'truco', 6: 'seis', 9: 'nove', 12: 'doze' };
@@ -42,8 +47,9 @@ function nextRung(value: number): number {
   return index === -1 || index === LADDER.length - 1 ? 0 : LADDER[index + 1];
 }
 
-function cardLabel(card: TrucoCard): string {
-  return `${card.rank}${SUIT_SYMBOL[card.suit]}`;
+/** O nome da imagem da carta — 'espadas-A', 'copas-7'. */
+function nomeDaCarta(card: TrucoCard): string {
+  return `${card.suit}-${card.rank}`;
 }
 
 export function TrucoScreen({ navigation, route }: Props) {
@@ -163,9 +169,14 @@ export function TrucoScreen({ navigation, route }: Props) {
               Você {match.playerScore} × {match.botScore} Bot · mão vale {match.handValue}
             </Text>
             {/* Paulista mostra a vira; mineiro não tem vira, as manilhas são fixas. */}
-            <Text style={styles.vira}>
-              {match.vira ? `Vira: ${cardLabel(match.vira)}` : 'Mineiro · manilhas fixas: 4♣ 7♥ A♠ 7♦'}
-            </Text>
+            {match.vira ? (
+              <View style={styles.viraLinha}>
+                <Text style={styles.vira}>Vira</Text>
+                <Carta carta={nomeDaCarta(match.vira)} largura={LARGURA_DA_VIRA} truco />
+              </View>
+            ) : (
+              <Text style={styles.vira}>Mineiro · manilhas fixas: 4♣ 7♥ A♠ 7♦</Text>
+            )}
 
             {match.lastEvent && <Text style={styles.eventText}>{match.lastEvent}</Text>}
 
@@ -173,21 +184,25 @@ export function TrucoScreen({ navigation, route }: Props) {
               <View style={styles.playedSlot}>
                 <Text style={styles.playedLabel}>Bot</Text>
                 {match.botCardsPlayed.length > 0 ? (
-                  <View style={styles.card}>
-                    <Text style={styles.cardLabel}>{cardLabel(match.botCardsPlayed[match.botCardsPlayed.length - 1])}</Text>
-                  </View>
+                  <Carta
+                    carta={nomeDaCarta(match.botCardsPlayed[match.botCardsPlayed.length - 1])}
+                    largura={LARGURA_DA_CARTA}
+                    truco
+                  />
                 ) : (
-                  <View style={[styles.card, styles.cardEmpty]} />
+                  <View style={styles.vagaVazia} />
                 )}
               </View>
               <View style={styles.playedSlot}>
                 <Text style={styles.playedLabel}>Você</Text>
                 {match.playerCardsPlayed.length > 0 ? (
-                  <View style={styles.card}>
-                    <Text style={styles.cardLabel}>{cardLabel(match.playerCardsPlayed[match.playerCardsPlayed.length - 1])}</Text>
-                  </View>
+                  <Carta
+                    carta={nomeDaCarta(match.playerCardsPlayed[match.playerCardsPlayed.length - 1])}
+                    largura={LARGURA_DA_CARTA}
+                    truco
+                  />
                 ) : (
-                  <View style={[styles.card, styles.cardEmpty]} />
+                  <View style={styles.vagaVazia} />
                 )}
               </View>
             </View>
@@ -218,9 +233,8 @@ export function TrucoScreen({ navigation, route }: Props) {
                       key={`${card.rank}-${card.suit}-${index}`}
                       onPress={() => run(() => playTrucoCard(card))}
                       disabled={busy}
-                      style={[styles.card, styles.handCard]}
                     >
-                      <Text style={styles.cardLabel}>{cardLabel(card)}</Text>
+                      <Carta carta={nomeDaCarta(card)} indice={index} largura={LARGURA_DA_CARTA} truco />
                     </Pressable>
                   ))}
                 </View>
@@ -288,6 +302,7 @@ const styles = StyleSheet.create({
   betAmount: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
   matchBlock: { width: '100%', alignItems: 'center', gap: spacing.md, marginTop: spacing.lg },
   score: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, color: colors.textPrimary },
+  viraLinha: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   vira: { fontFamily: fontFamily.body, fontSize: fontSize.sm, color: colors.textSecondary },
   eventText: {
     fontFamily: fontFamily.bodyMedium,
@@ -297,22 +312,18 @@ const styles = StyleSheet.create({
     maxWidth: 300,
   },
   playedRow: { flexDirection: 'row', gap: spacing.xxxl, marginTop: spacing.sm },
+  /* A vaga da carta ainda não jogada: o mesmo tamanho da carta, só que vazia. */
+  vagaVazia: {
+    width: LARGURA_DA_CARTA,
+    height: Math.round(LARGURA_DA_CARTA * 1.5),
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.feltLine,
+  },
   playedSlot: { alignItems: 'center', gap: spacing.xs },
   playedLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
-  card: {
-    width: 52,
-    height: 72,
-    borderRadius: radius.sm,
-    backgroundColor: colors.textPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.goldBright,
-  },
-  cardEmpty: { backgroundColor: 'transparent', borderStyle: 'dashed', borderColor: colors.feltLine },
-  cardLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.md, color: colors.background },
   handRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
-  handCard: { borderColor: colors.goldBright },
   actionRow: { flexDirection: 'row', gap: spacing.lg, marginTop: spacing.lg },
   primaryButton: {
     backgroundColor: colors.goldBright,

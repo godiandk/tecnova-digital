@@ -2,42 +2,15 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { drawCard, handValue, isBust, isNatural, playDealer, resolve, Resolution } from './blackjack.engine';
-import { BLACKJACK_PAYOUT_MULTIPLIER, DEALER_STANDS_ON, MAX_BET, MIN_BET, Naipe, NAIPES, Rank } from './blackjack.config';
+import { BLACKJACK_PAYOUT_MULTIPLIER, DEALER_STANDS_ON, MAX_BET, MIN_BET, Rank } from './blackjack.config';
+import { CartaComNaipe, naipeLivre, nomeDaCarta } from '../shared/naipes';
 
-/** Uma carta na mesa: o valor, que decide tudo, e o naipe, que só decide o desenho. */
-interface Carta {
-  rank: Rank;
-  naipe: Naipe;
-}
+type Carta = CartaComNaipe<Rank>;
 
-/** O nome da imagem no app — 'copas-A', 'espadas-10'. */
-function nomeDaCarta(carta: Carta): string {
-  return `${carta.naipe}-${carta.rank}`;
-}
-
-/**
- * Compra uma carta: o valor sai do motor, o naipe é sorteado aqui.
- *
- * `naMesa` existe só pra evitar que a mesma carta apareça duas vezes na mesma mão. O
- * baralho é infinito de propósito (cada valor sorteado com reposição, sem contagem
- * possível), então repetir valor é normal e continua acontecendo — mas ver dois K de
- * ouros idênticos lado a lado parece defeito, e não regra. Quando o valor repete, o
- * naipe escolhido é um dos que ainda não saíram naquele valor.
- *
- * Isso NÃO mexe em probabilidade nenhuma: o valor já foi sorteado antes desta linha, e
- * naipe não vale nada no blackjack. É escolha de desenho, não de jogo.
- */
+/** Compra uma carta: o valor sai do motor, o naipe vem de shared/naipes.ts. */
 function comprarCarta(naMesa: Carta[] = []): Carta {
   const rank = drawCard();
   return { rank, naipe: naipeLivre(rank, naMesa) };
-}
-
-/** Um naipe que ainda não saiu com esse valor na mesa; qualquer um se todos já saíram. */
-function naipeLivre(rank: Rank, naMesa: Carta[]): Naipe {
-  const usados = new Set(naMesa.filter((c) => c.rank === rank).map((c) => c.naipe));
-  const livres = NAIPES.filter((naipe) => !usados.has(naipe));
-  const opcoes = livres.length > 0 ? livres : NAIPES;
-  return opcoes[Math.floor(Math.random() * opcoes.length)];
 }
 
 /** O motor só entende valor; o naipe fica de fora das contas de propósito. */

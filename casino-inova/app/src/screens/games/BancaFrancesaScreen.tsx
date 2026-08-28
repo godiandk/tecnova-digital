@@ -12,6 +12,7 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
+import { Dado, DadoVazio } from '../../components/Dado';
 import { RoadmapPanel } from '../../components/RoadmapPanel';
 import { DIE_FACE_IMAGES } from '../../data/gameAssets';
 import { ApiError } from '../../api/client';
@@ -28,6 +29,9 @@ import { usePlayer } from '../../data/usePlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BancaFrancesa'>;
+
+/** Lado do dado na mesa. Três lado a lado num celular estreito. */
+const TAMANHO_DO_DADO = 62;
 
 const BET_STEP = 50;
 
@@ -163,10 +167,10 @@ export function BancaFrancesaScreen({ navigation }: Props) {
 
             <View style={styles.diceRow}>
               {(round?.dice ?? [null, null, null]).map((die, index) =>
-                die ? (
-                  <Image key={index} source={DIE_FACE_IMAGES[die]} style={styles.die} resizeMode="contain" />
+                die || playing ? (
+                  <Dado key={index} face={die ?? null} rolando={playing} indice={index} tamanho={TAMANHO_DO_DADO} />
                 ) : (
-                  <View key={index} style={[styles.die, styles.dieEmpty]} />
+                  <DadoVazio key={index} tamanho={TAMANHO_DO_DADO} />
                 ),
               )}
             </View>

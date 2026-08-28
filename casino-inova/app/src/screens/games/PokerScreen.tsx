@@ -12,6 +12,7 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
+import { Carta } from '../../components/Carta';
 import { ApiError } from '../../api/client';
 import { fetchPokerConfig, newPokerHand, actPoker, PokerConfig, PokerHandState, PokerCard, PokerAction } from '../../api/poker';
 import { usePlayer } from '../../data/usePlayer';
@@ -20,7 +21,9 @@ import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 type Props = NativeStackScreenProps<RootStackParamList, 'Poker'>;
 
 const BUY_IN_STEP = 100;
-const SUIT_SYMBOL: Record<string, string> = { ouros: '♦', espadas: '♠', copas: '♥', paus: '♣' };
+
+/** Largura da carta. Cinco do board cabem lado a lado num celular estreito. */
+const LARGURA_DA_CARTA = 54;
 const STREET_LABEL: Record<string, string> = { preflop: 'Pré-flop', flop: 'Flop', turn: 'Turn', river: 'River', showdown: 'Showdown' };
 const ACTION_LABEL: Record<PokerAction, string> = { desistir: 'Desistir', passar: 'Passar', pagar: 'Pagar', aumentar: 'Aumentar' };
 
@@ -32,17 +35,21 @@ function rankLabel(rank: number): string {
   return String(rank);
 }
 
-function cardLabel(card: PokerCard): string {
-  return `${rankLabel(card.rank)}${SUIT_SYMBOL[card.suit]}`;
+/**
+ * O nome da imagem da carta — 'espadas-A', 'copas-10'.
+ *
+ * O pôquer já trabalha com naipe de verdade (precisa, pra flush), então aqui é só
+ * juntar o que o servidor mandou com o nome do arquivo.
+ */
+function nomeDaCarta(card: PokerCard): string {
+  return `${card.suit}-${rankLabel(card.rank)}`;
 }
 
 function Hand({ cards }: { cards: PokerCard[] }) {
   return (
     <View style={styles.cardRow}>
       {cards.map((card, index) => (
-        <View key={index} style={styles.card}>
-          <Text style={styles.cardLabel}>{cardLabel(card)}</Text>
-        </View>
+        <Carta key={index} carta={nomeDaCarta(card)} indice={index} largura={LARGURA_DA_CARTA} />
       ))}
     </View>
   );
@@ -266,17 +273,6 @@ const styles = StyleSheet.create({
   placeholderText: { fontFamily: fontFamily.body, fontSize: fontSize.sm, color: colors.textFaint },
   playedLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, marginTop: spacing.sm },
   cardRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', justifyContent: 'center', marginTop: spacing.xs },
-  card: {
-    width: 48,
-    height: 68,
-    borderRadius: radius.sm,
-    backgroundColor: colors.textPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.goldBright,
-  },
-  cardLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.sm, color: colors.background },
   eventText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.goldBright, textAlign: 'center', maxWidth: 300, marginTop: spacing.sm },
   actionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, justifyContent: 'center', marginTop: spacing.lg },
   primaryButton: {
