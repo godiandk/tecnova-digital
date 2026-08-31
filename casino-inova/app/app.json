@@ -3,10 +3,10 @@
     "name": "Casino Inova",
     "slug": "casino-inova",
     "version": "0.1.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0B0F0D",
-    "icon": "./assets/images/branding/app-icon.png",
+    "icon": "./assets/images/branding/app-icon-oficial.png",
     "scheme": "casinoinova",
     "splash": {
       "image": "./assets/images/backgrounds/splash.png",

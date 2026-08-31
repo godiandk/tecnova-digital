@@ -1,18 +1,15 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../../navigation/types';
 import { getTutorialByGameId } from '../../data/tutorials';
-import { TABLE_IMAGES } from '../../data/tableImages';
-import { DEALER_IMAGES } from '../../data/dealerImages';
+import { BLACKJACK, MESAS_ONLINE } from '../../data/mesasOnline';
 import { TutorialModal } from '../../components/TutorialModal';
-import { GameBackdrop } from '../../components/GameBackdrop';
-import { DealerBadge } from '../../components/DealerBadge';
-import { ChipStack } from '../../components/ChipStack';
+import { MesaDeJogo, NaMesa, Regua } from '../../components/MesaDeJogo';
 import { Carta } from '../../components/Carta';
+import { PilhaDeFichas } from '../../components/PilhaDeFichas';
 import { ApiError } from '../../api/client';
 import {
   fetchBlackjackConfig,
@@ -23,14 +20,27 @@ import {
   BlackjackHandResponse,
 } from '../../api/blackjack';
 import { usePlayer } from '../../data/usePlayer';
-import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
+import { colors, fontFamily, fontSize, radius, spacing, useDeitado, useJanela } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Blackjack'>;
 
-/** Largura da carta na mesa. Cinco cabem lado a lado num celular estreito. */
-const LARGURA_DA_CARTA = 60;
-
 const BET_STEP = 50;
+
+/** Largura da carta MEDIDA NA ARTE. A régua converte pra tela. */
+const CARTA_NA_ARTE = 92;
+
+/**
+ * Quanto cada carta seguinte anda pra direita.
+ *
+ * Medido na arte de demonstração do próprio projeto: no blackjack as cartas ficam LADO
+ * A LADO, encostadas, com uma sobreposição pequena — e EM PÉ, sem inclinação. Não é
+ * leque: leque é mão que a pessoa segura na mão (truco, pôquer). Carta de blackjack
+ * fica aberta no pano pra todo mundo ler.
+ *
+ * Uma versão anterior espalhava as cartas em leque inclinado, o que fica bonito e é o
+ * jogo errado.
+ */
+const PASSO_DA_MAO = 70;
 
 const OUTCOME_LABEL: Record<NonNullable<BlackjackHandResponse['outcome']>, string> = {
   'jogador-ganhou': 'Você ganhou!',
@@ -38,24 +48,62 @@ const OUTCOME_LABEL: Record<NonNullable<BlackjackHandResponse['outcome']>, strin
   empate: 'Empate — sua aposta voltou.',
 };
 
-function Hand({ label, cards, total, hidden }: { label: string; cards: (string | null)[]; total?: number; hidden?: boolean }) {
+/**
+ * Uma mão aberta no pano: cartas em pé, encostadas, ligeiramente sobrepostas.
+ *
+ * Devolve também a largura que a mão ocupou, porque o selo do total encosta à direita
+ * dela — e a mão cresce quando o jogador pede carta.
+ */
+function MaoNaMesa({ cartas, regua }: { cartas: (string | null)[]; regua: Regua }) {
+  const meio = ((cartas.length - 1) * PASSO_DA_MAO) / 2;
+  const larguraDaCarta = CARTA_NA_ARTE * regua.escala;
+  const alturaDaCarta = larguraDaCarta * 1.5;
   return (
-    <View style={styles.handBlock}>
-      <Text style={styles.handLabel}>
-        {label}
-        {total !== undefined ? ` · ${total}` : hidden ? ' · ?' : ''}
-      </Text>
-      <View style={styles.cardRow}>
-        {cards.map((card, index) => (
-          <Carta key={index} carta={card} indice={index} largura={LARGURA_DA_CARTA} />
-        ))}
-      </View>
+    <View>
+      {cartas.map((carta, indice) => (
+        <View
+          key={indice}
+          style={{
+            position: 'absolute',
+            /*
+             * `left` posiciona a BORDA da carta, e o ponto medido é o MEIO da mão —
+             * por isso desconta meia carta. Sem isso a mão inteira fica deslocada meia
+             * carta pra direita do círculo.
+             */
+            left: (indice * PASSO_DA_MAO - meio) * regua.escala - larguraDaCarta / 2,
+            top: -alturaDaCarta / 2,
+          }}
+        >
+          <Carta carta={carta} indice={indice} largura={CARTA_NA_ARTE * regua.escala} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** Onde o selo do total encosta, à direita da mão — que cresce a cada carta pedida. */
+function bordaDireitaDaMao(quantas: number): number {
+  return ((quantas - 1) * PASSO_DA_MAO) / 2 + CARTA_NA_ARTE * 0.5 + 46;
+}
+
+/** O selo redondo do total, como o que está pintado ao lado das cartas na arte. */
+function SeloDoTotal({ total, escala }: { total: number; escala: number }) {
+  return (
+    <View
+      style={[
+        styles.selo,
+        { width: 68 * escala, height: 46 * escala, borderRadius: 23 * escala, borderWidth: Math.max(1, 2 * escala) },
+      ]}
+    >
+      <Text style={[styles.seloTexto, { fontSize: Math.max(11, 26 * escala) }]}>{total}</Text>
     </View>
   );
 }
 
 export function BlackjackScreen({ navigation }: Props) {
   const tutorial = getTutorialByGameId('blackjack');
+  useDeitado();
+  const janela = useJanela();
 
   const [tutorialVisible, setTutorialVisible] = useState(true);
   const [config, setConfig] = useState<BlackjackConfig | null>(null);
@@ -63,11 +111,10 @@ export function BlackjackScreen({ navigation }: Props) {
   const [balance, setBalance] = useState(0);
   const { jogador } = usePlayer();
 
-  // Semeia o saldo com a carteira de verdade; a partir da primeira aposta quem manda é
-  // o `newBalance` que o servidor devolve.
   useEffect(() => {
     if (jogador) setBalance(jogador.chipBalance);
   }, [jogador]);
+
   const [bet, setBet] = useState(100);
   const [hand, setHand] = useState<BlackjackHandResponse | null>(null);
   const [busy, setBusy] = useState(false);
@@ -85,6 +132,7 @@ export function BlackjackScreen({ navigation }: Props) {
   }, []);
 
   const inProgress = Boolean(hand && !hand.finished);
+  const minhaCasa = BLACKJACK.casas[BLACKJACK.minhaCasa];
 
   const adjustBet = (delta: number) => {
     if (!config) return;
@@ -106,86 +154,124 @@ export function BlackjackScreen({ navigation }: Props) {
   };
 
   return (
-    <GameBackdrop source={TABLE_IMAGES.blackjack}>
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.iconButton} hitSlop={12}>
-            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-          </Pressable>
-          <ChipStack amount={balance} />
-          <Pressable onPress={() => setTutorialVisible(true)} style={styles.iconButton} hitSlop={12}>
-            <Ionicons name="help-circle" size={24} color={colors.goldBright} />
-          </Pressable>
-        </View>
-
-        <View style={styles.titleRow}>
-          <DealerBadge source={DEALER_IMAGES.blackjack} />
-          <Text style={styles.title}>Blackjack</Text>
-        </View>
-
-        {!config && !configError && <ActivityIndicator color={colors.goldBright} style={styles.loading} />}
-        {configError && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{configError}</Text>
-            <Text style={styles.errorHint}>Confira se o servidor (server/) está rodando em npm run start:dev.</Text>
-          </View>
-        )}
-
-        {config && (
+    <View style={styles.tela}>
+      <MesaDeJogo arte={MESAS_ONLINE.blackjack} largura={janela.width} altura={janela.height}>
+        {(regua) => (
           <>
-            <View style={styles.table}>
-              {hand ? (
-                <>
-                  <Hand label="Dealer" cards={hand.dealerCards} total={hand.dealerTotal} hidden={!hand.finished} />
-                  <Hand label="Você" cards={hand.playerCards} total={hand.playerTotal} />
-                </>
-              ) : (
-                <Text style={styles.placeholderText}>Aposte pra começar a mão.</Text>
-              )}
-            </View>
-
-            {hand?.finished && hand.outcome && (
-              <Text style={[styles.resultLabel, hand.outcome === 'jogador-ganhou' ? styles.resultWin : styles.resultLoss]}>
-                {OUTCOME_LABEL[hand.outcome]}
-                {hand.totalReturn ? ` +${hand.totalReturn.toLocaleString('pt-BR')} fichas` : ''}
-              </Text>
-            )}
-
-            {actionError && <Text style={styles.errorText}>{actionError}</Text>}
-
-            {!inProgress && (
+            {/* A mão do dealer, no ponto onde a arte já desenha as cartas. */}
+            {hand && (
               <>
-                <View style={styles.betRow}>
-                  <Pressable onPress={() => adjustBet(-BET_STEP)} style={styles.betButton} disabled={busy}>
-                    <Ionicons name="remove" size={20} color={colors.textPrimary} />
-                  </Pressable>
-                  <View style={styles.betValue}>
-                    <Text style={styles.betLabel}>Aposta</Text>
-                    <Text style={styles.betAmount}>{bet.toLocaleString('pt-BR')}</Text>
-                  </View>
-                  <Pressable onPress={() => adjustBet(BET_STEP)} style={styles.betButton} disabled={busy}>
-                    <Ionicons name="add" size={20} color={colors.textPrimary} />
-                  </Pressable>
-                </View>
-                <Pressable onPress={() => runAction(() => startBlackjackHand(bet))} disabled={busy} style={[styles.primaryButton, busy && styles.buttonDisabled]}>
-                  {busy ? <ActivityIndicator color={colors.background} /> : <Text style={styles.primaryButtonLabel}>Apostar</Text>}
-                </Pressable>
+                <NaMesa ponto={regua.ponto(BLACKJACK.cartasDoDealer.x, BLACKJACK.cartasDoDealer.y)}>
+                  <MaoNaMesa cartas={hand.dealerCards} regua={regua} />
+                </NaMesa>
+                {hand.dealerTotal !== undefined && (
+                  <NaMesa
+                    ponto={regua.ponto(
+                      BLACKJACK.cartasDoDealer.x + bordaDireitaDaMao(hand.dealerCards.length),
+                      BLACKJACK.totalDoDealer.y,
+                    )}
+                  >
+                    <SeloDoTotal total={hand.dealerTotal} escala={regua.escala} />
+                  </NaMesa>
+                )}
               </>
             )}
 
-            {inProgress && (
-              <View style={styles.actionRow}>
-                <Pressable onPress={() => runAction(hitBlackjack)} disabled={busy} style={[styles.secondaryButton, busy && styles.buttonDisabled]}>
-                  <Text style={styles.secondaryButtonLabel}>Pedir carta</Text>
-                </Pressable>
-                <Pressable onPress={() => runAction(standBlackjack)} disabled={busy} style={[styles.primaryButton, busy && styles.buttonDisabled]}>
-                  {busy ? <ActivityIndicator color={colors.background} /> : <Text style={styles.primaryButtonLabel}>Parar</Text>}
-                </Pressable>
+            {/* A sua mão, acima da casa; a ficha, dentro dela. */}
+            {hand && (
+              <>
+                <NaMesa ponto={regua.ponto(minhaCasa.x, minhaCasa.y + BLACKJACK.recuoDasCartas)}>
+                  <MaoNaMesa cartas={hand.playerCards} regua={regua} />
+                </NaMesa>
+                <NaMesa
+                  ponto={regua.ponto(
+                    minhaCasa.x + bordaDireitaDaMao(hand.playerCards.length),
+                    minhaCasa.y + BLACKJACK.recuoDasCartas + 34,
+                  )}
+                >
+                  <SeloDoTotal total={hand.playerTotal} escala={regua.escala} />
+                </NaMesa>
+              </>
+            )}
+
+            {(hand || bet > 0) && (
+              <NaMesa ponto={regua.ponto(minhaCasa.x, minhaCasa.y)}>
+                <PilhaDeFichas valor={hand ? hand.bet : bet} escala={regua.escala} />
+              </NaMesa>
+            )}
+
+            {/* A barra de controles cobre a que está pintada na arte, com valores de verdade. */}
+            <View style={[styles.barra, { height: (900 - BLACKJACK.alturaDoPano) * regua.escala }]}>
+              <Pressable onPress={() => navigation.goBack()} style={styles.botaoRedondo} hitSlop={10}>
+                <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
+              </Pressable>
+
+              <View style={styles.mostrador}>
+                <Text style={styles.mostradorRotulo}>SALDO</Text>
+                <Text style={styles.mostradorValor}>{balance.toLocaleString('pt-BR')}</Text>
+              </View>
+              <View style={styles.mostrador}>
+                <Text style={styles.mostradorRotulo}>APOSTA</Text>
+                <Text style={styles.mostradorValor}>{(hand ? hand.bet : bet).toLocaleString('pt-BR')}</Text>
+              </View>
+
+              <View style={styles.acoes}>
+                {configError && <Text style={styles.erro} numberOfLines={2}>{configError}</Text>}
+                {actionError && <Text style={styles.erro} numberOfLines={2}>{actionError}</Text>}
+
+                {hand?.finished && hand.outcome && (
+                  <Text
+                    style={[styles.resultado, hand.outcome === 'jogador-ganhou' ? styles.ganhou : styles.perdeu]}
+                    numberOfLines={1}
+                  >
+                    {OUTCOME_LABEL[hand.outcome]}
+                    {hand.totalReturn ? ` +${hand.totalReturn.toLocaleString('pt-BR')}` : ''}
+                  </Text>
+                )}
+
+                {!inProgress && config && (
+                  <>
+                    <Pressable onPress={() => adjustBet(-BET_STEP)} style={styles.botaoRedondo} disabled={busy}>
+                      <Ionicons name="remove" size={18} color={colors.textPrimary} />
+                    </Pressable>
+                    <Pressable onPress={() => adjustBet(BET_STEP)} style={styles.botaoRedondo} disabled={busy}>
+                      <Ionicons name="add" size={18} color={colors.textPrimary} />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => runAction(() => startBlackjackHand(bet))}
+                      disabled={busy}
+                      style={[styles.botaoPrincipal, busy && styles.desabilitado]}
+                    >
+                      {busy ? <ActivityIndicator color={colors.background} /> : <Text style={styles.botaoPrincipalTexto}>Distribuir</Text>}
+                    </Pressable>
+                  </>
+                )}
+
+                {inProgress && (
+                  <>
+                    <Pressable onPress={() => runAction(hitBlackjack)} disabled={busy} style={[styles.botaoSecundario, busy && styles.desabilitado]}>
+                      <Text style={styles.botaoSecundarioTexto}>Pedir</Text>
+                    </Pressable>
+                    <Pressable onPress={() => runAction(standBlackjack)} disabled={busy} style={[styles.botaoPrincipal, busy && styles.desabilitado]}>
+                      {busy ? <ActivityIndicator color={colors.background} /> : <Text style={styles.botaoPrincipalTexto}>Parar</Text>}
+                    </Pressable>
+                  </>
+                )}
+              </View>
+
+              <Pressable onPress={() => setTutorialVisible(true)} style={styles.botaoRedondo} hitSlop={10}>
+                <Ionicons name="help-circle" size={20} color={colors.goldBright} />
+              </Pressable>
+            </View>
+
+            {!config && !configError && (
+              <View style={styles.carregando}>
+                <ActivityIndicator color={colors.goldBright} />
               </View>
             )}
           </>
         )}
-      </SafeAreaView>
+      </MesaDeJogo>
 
       <TutorialModal
         visible={tutorialVisible}
@@ -193,77 +279,79 @@ export function BlackjackScreen({ navigation }: Props) {
         tutorial={tutorial}
         onClose={() => setTutorialVisible(false)}
       />
-    </GameBackdrop>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, paddingHorizontal: spacing.xl, alignItems: 'center' },
-  topBar: {
+  tela: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
+  selo: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderColor: colors.gold,
+    backgroundColor: 'rgba(11,15,13,0.82)',
+  },
+  seloTexto: { fontFamily: fontFamily.displayBold, color: colors.textPrimary },
+
+  barra: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: spacing.sm,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: '#080B09',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(229,181,103,0.3)',
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.overlay,
+  mostrador: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(229,181,103,0.28)',
+    minWidth: 78,
+  },
+  mostradorRotulo: { fontFamily: fontFamily.body, fontSize: 8, letterSpacing: 1, color: colors.textFaint },
+  mostradorValor: { fontFamily: fontFamily.displayBold, fontSize: fontSize.sm, color: colors.textPrimary },
+
+  acoes: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.sm },
+  botaoRedondo: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.lg },
-  title: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xl, color: colors.textPrimary },
-  loading: { marginTop: spacing.xxxl },
-  errorBox: { marginTop: spacing.xxxl, alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg },
-  errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
-  errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  table: { width: '100%', marginTop: spacing.xl, gap: spacing.xl, minHeight: 220, justifyContent: 'center' },
-  placeholderText: { fontFamily: fontFamily.body, fontSize: fontSize.base, color: colors.textFaint, textAlign: 'center' },
-  handBlock: { gap: spacing.sm, alignItems: 'center' },
-  handLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textSecondary },
-  cardRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
-  resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, marginTop: spacing.lg, textAlign: 'center' },
-  resultWin: { color: colors.goldBright },
-  resultLoss: { color: colors.textFaint },
-  betRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: spacing.xl },
-  betButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
+    backgroundColor: 'rgba(22,33,27,0.9)',
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  betValue: { alignItems: 'center', minWidth: 100 },
-  betLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
-  betAmount: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
-  actionRow: { flexDirection: 'row', gap: spacing.lg, marginTop: spacing.xl },
-  primaryButton: {
+  botaoPrincipal: {
     backgroundColor: colors.goldBright,
     borderRadius: radius.pill,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xxxl,
-    marginTop: spacing.xl,
-    minWidth: 160,
+    paddingVertical: 8,
+    paddingHorizontal: spacing.lg,
+    minWidth: 96,
     alignItems: 'center',
   },
-  secondaryButton: {
-    backgroundColor: colors.backgroundElevated,
+  botaoPrincipalTexto: { fontFamily: fontFamily.displaySemiBold, fontSize: fontSize.sm, color: colors.background },
+  botaoSecundario: {
     borderRadius: radius.pill,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    marginTop: spacing.xl,
-    minWidth: 140,
-    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: spacing.lg,
     borderWidth: 1,
     borderColor: colors.feltLine,
+    backgroundColor: 'rgba(22,33,27,0.9)',
   },
-  buttonDisabled: { opacity: 0.6 },
-  primaryButtonLabel: { fontFamily: fontFamily.displaySemiBold, fontSize: fontSize.md, color: colors.background },
-  secondaryButtonLabel: { fontFamily: fontFamily.displaySemiBold, fontSize: fontSize.md, color: colors.textPrimary },
+  botaoSecundarioTexto: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textPrimary },
+  desabilitado: { opacity: 0.5 },
+
+  resultado: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, maxWidth: 220 },
+  ganhou: { color: colors.goldBright },
+  perdeu: { color: colors.textSecondary },
+  erro: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.danger, maxWidth: 200 },
+
+  carregando: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
 });
