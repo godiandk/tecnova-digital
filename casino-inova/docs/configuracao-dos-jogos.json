@@ -1,0 +1,18 @@
+{
+  "blackjack": {
+    "seats": 7,
+    "blackjackPays": "3:2",
+    "dealerStandsOn": 17,
+    "sideBets": {"perfectPairs": true, "twentyOnePlusThree": true, "hotThree": false, "bustIt": false, "luckyLadies": false},
+    "actions": {"hit": true, "stand": true, "double": true, "split": true, "insurance": true, "surrender": false}
+  },
+  "baccarat": {
+    "mainBets": ["PLAYER", "BANKER", "TIE"],
+    "sideBets": ["PLAYER_PAIR", "BANKER_PAIR", "PERFECT_PAIR", "EITHER_PAIR"],
+    "roads": ["BEAD", "BIG", "BIG_EYE", "SMALL", "COCKROACH"],
+    "variant": "CLASSIC"
+  },
+  "roulette": {"variant": "EUROPEAN_SINGLE_ZERO", "racetrack": true, "favouriteBetsMax": 15},
+  "truco": {"variant": "PAULISTA", "players": 4, "teams": 2},
+  "domino": {"variant": "PARTNERSHIP_DOUBLE_SIX", "players": 4, "tilesPerPlayer": 7, "boneyard": false}
+}

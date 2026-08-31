@@ -20,7 +20,7 @@ import {
   BlackjackHandResponse,
 } from '../../api/blackjack';
 import { usePlayer } from '../../data/usePlayer';
-import { colors, fontFamily, fontSize, radius, spacing, useDeitado, useJanela } from '../../theme';
+import { colors, fontFamily, fontSize, radius, spacing, useOrientacaoLivre, useJanela } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Blackjack'>;
 
@@ -102,7 +102,7 @@ function SeloDoTotal({ total, escala }: { total: number; escala: number }) {
 
 export function BlackjackScreen({ navigation }: Props) {
   const tutorial = getTutorialByGameId('blackjack');
-  useDeitado();
+  useOrientacaoLivre();
   const janela = useJanela();
 
   const [tutorialVisible, setTutorialVisible] = useState(true);

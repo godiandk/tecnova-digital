@@ -1,0 +1,21 @@
+{
+  "colors": {
+    "background": "#030605",
+    "surface": "#08120F",
+    "surfaceElevated": "#0D1C17",
+    "felt": "#07503A",
+    "feltBright": "#0B7955",
+    "gold": "#D8AC4C",
+    "goldHighlight": "#FFE0A0",
+    "text": "#FFF8E7",
+    "textMuted": "#A8B8B0",
+    "danger": "#BF3042",
+    "player": "#2374C6"
+  },
+  "radius": {"sm": 12, "md": 18, "lg": 28, "pill": 999},
+  "spacing": {"xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 32},
+  "touchTargetMin": 48,
+  "breakpoints": {"mobileMax": 767, "tabletMax": 1439, "desktopMin": 1440},
+  "motion": {"fastMs": 140, "normalMs": 240, "resultMs": 700}
+}
+
