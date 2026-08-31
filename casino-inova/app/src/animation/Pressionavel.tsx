@@ -1,10 +1,15 @@
 import { ReactNode } from 'react';
-import { Pressable, StyleProp, ViewStyle } from 'react-native';
+import { AccessibilityProps, Pressable, StyleProp, ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { MOLA, TEMPO } from './movimento';
 
-interface PressionavelProps {
+/**
+ * Herda AccessibilityProps porque este componente é o botão de verdade da maior parte
+ * do app: se ele não repassar accessibilityLabel e companhia, todo alvo de toque fica
+ * mudo pro leitor de tela e não tem como consertar de fora.
+ */
+interface PressionavelProps extends AccessibilityProps {
   children: ReactNode;
   onPress?: () => void;
   disabled?: boolean;
@@ -24,7 +29,7 @@ interface PressionavelProps {
  * A escala usa mola (reação a toque tem que ser instantânea) e a opacidade usa tempo
  * (o olho não estranha).
  */
-export function Pressionavel({ children, onPress, disabled, escala = 0.96, style }: PressionavelProps) {
+export function Pressionavel({ children, onPress, disabled, escala = 0.96, style, ...acessibilidade }: PressionavelProps) {
   const escalaAtual = useSharedValue(1);
   const opacidade = useSharedValue(1);
 
@@ -35,6 +40,7 @@ export function Pressionavel({ children, onPress, disabled, escala = 0.96, style
 
   return (
     <Pressable
+      {...acessibilidade}
       onPress={disabled ? undefined : onPress}
       disabled={disabled}
       onPressIn={() => {

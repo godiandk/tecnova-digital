@@ -21,6 +21,11 @@ interface GameTileProps {
  * O cartaz já traz o nome do jogo escrito na arte, então aqui embaixo não repete o
  * nome — só a informação que a arte não tem (se é contra a casa ou mesa com gente, e o
  * nível que falta quando ainda está travado).
+ *
+ * Só que nome dentro de imagem não existe pra leitor de tela, nem pra busca, nem pra
+ * tradução: sem o rótulo abaixo, o cartão inteiro se anuncia como "Contra a casa" e os
+ * nove jogos ficam indistinguíveis pra quem não enxerga a arte. Por isso o nome vai no
+ * accessibilityLabel mesmo não aparecendo escrito.
  */
 export function GameTile({ game, playerLevel, largura, altura, indice, onPress }: GameTileProps) {
   const locked = playerLevel < game.minLevel;
@@ -28,7 +33,17 @@ export function GameTile({ game, playerLevel, largura, altura, indice, onPress }
 
   return (
     <Entrada indice={indice}>
-      <Pressionavel onPress={onPress} disabled={locked} style={{ width: largura }}>
+      <Pressionavel
+        onPress={onPress}
+        disabled={locked}
+        accessibilityRole="button"
+        accessibilityLabel={
+          locked
+            ? `${game.name} — abre no nível ${game.minLevel}`
+            : `${game.name} — ${game.format === 'vs-casa' ? 'contra a casa' : 'mesa com gente'}`
+        }
+        style={{ width: largura }}
+      >
       <View style={[styles.posterFrame, { width: largura, height: altura }]}>
         {poster ? (
           <Image source={poster} style={styles.poster} resizeMode="cover" />
@@ -63,7 +78,7 @@ export function GameTile({ game, playerLevel, largura, altura, indice, onPress }
         <Text style={styles.format} numberOfLines={1}>
           {game.format === 'vs-casa' ? 'Contra a casa' : 'Mesa com gente'}
         </Text>
-        )}
+      )}
       </Pressionavel>
     </Entrada>
   );

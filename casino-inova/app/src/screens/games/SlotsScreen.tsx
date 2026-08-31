@@ -20,30 +20,31 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Slots'>;
 
 const BET_STEP = 50;
 
-/** Espelha PAYLINES de server/src/modules/games/slots/slots.config.ts — só para destacar as células vencedoras. */
-const PAYLINE_CELLS: Record<string, [number, number, number]> = {
-  'linha-superior': [0, 1, 2],
-  'linha-central': [3, 4, 5],
-  'linha-inferior': [6, 7, 8],
-  'diagonal-descendente': [0, 4, 8],
-  'diagonal-ascendente': [6, 4, 2],
-};
-
-/** Tamanho de uma célula do gabinete, em pixel. Três delas formam a janela do rolo. */
-const CELULA = 92;
+/**
+ * Tamanho de uma célula do gabinete, em pixel. Cinco rolos cabem numa tela de celular
+ * só com a célula menor do que era na grade 3x3 — daí o valor mais apertado.
+ */
+const CELULA = 58;
 
 /**
- * A grade vem do servidor em linha (0..8, da esquerda pra direita, de cima pra baixo),
- * mas o rolo é uma COLUNA. Aqui a leitura é virada de lado.
+ * A grade vem do servidor em linha (da esquerda pra direita, de cima pra baixo), mas o
+ * rolo é uma COLUNA. Aqui a leitura é virada de lado. O passo entre as fileiras é a
+ * quantidade de rolos, que o servidor informa — nada de número mágico.
  */
-function colunaDoResultado(grade: string[] | null, coluna: number): string[] | null {
+function colunaDoResultado(grade: string[] | null, coluna: number, rolos: number, fileiras: number): string[] | null {
   if (!grade) return null;
-  return [grade[coluna], grade[coluna + 3], grade[coluna + 6]];
+  return Array.from({ length: fileiras }, (_, fileira) => grade[fileira * rolos + coluna]);
 }
 
+/**
+ * As células a acender já vêm prontas do servidor, em `line.cells` — ele é quem sabe
+ * onde a combinação começou e onde quebrou. Antes a tela tinha uma cópia das paylines
+ * e recalculava por conta própria: duas fontes da mesma verdade, e a tela acendendo
+ * célula que não pagou era só questão de tempo.
+ */
 function winningCellSet(winningLines: WinningLineDto[]): Set<number> {
   const cells = new Set<number>();
-  winningLines.forEach((line) => PAYLINE_CELLS[line.payline]?.forEach((cell) => cells.add(cell)));
+  winningLines.forEach((line) => line.cells.forEach((cell) => cells.add(cell)));
   return cells;
 }
 
@@ -133,12 +134,13 @@ export function SlotsScreen({ navigation }: Props) {
 
             <View style={styles.gabinete}>
               <View style={styles.rolos}>
-                {[0, 1, 2].map((coluna) => (
+                {Array.from({ length: config.reels }, (_, coluna) => (
                   <Rolo
                     key={coluna}
                     coluna={coluna}
                     girando={spinning}
-                    resultado={colunaDoResultado(grid, coluna)}
+                    resultado={colunaDoResultado(grid, coluna, config.reels, config.rows)}
+                    fileiras={config.rows}
                     largura={CELULA}
                     altura={CELULA}
                   />
@@ -151,8 +153,11 @@ export function SlotsScreen({ navigation }: Props) {
                 célula premiada nem existe como caixa própria.
               */}
               {!spinning && highlighted.size > 0 && (
-                <View pointerEvents="none" style={styles.marcacoes}>
-                  {Array.from({ length: 9 }).map((_, indice) => (
+                <View
+                  pointerEvents="none"
+                  style={[styles.marcacoes, { width: config.reels * CELULA + (config.reels - 1) * spacing.xs }]}
+                >
+                  {Array.from({ length: config.reels * config.rows }).map((_, indice) => (
                     <View
                       key={indice}
                       style={[
@@ -226,7 +231,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xl, color: colors.textPrimary, marginTop: spacing.lg },
-  rtpLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, marginTop: spacing.xs },
+  /*
+   * O RTP é a informação mais importante da tela: é o que diz quanto o jogo devolve.
+   * Estava em textFaint por cima da arte escura do gabinete e sumia. Número que o
+   * jogador precisa pra decidir não pode depender da luz do ambiente — daí a tarja
+   * escura por trás e o texto claro.
+   */
+  rtpLabel: {
+    fontFamily: fontFamily.bodyMedium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    backgroundColor: 'rgba(11,15,13,0.72)',
+    overflow: 'hidden',
+  },
   loading: { marginTop: spacing.xxxl },
   errorBox: { marginTop: spacing.xxxl, alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
@@ -243,14 +264,15 @@ const styles = StyleSheet.create({
   /*
    * A grade de marcação tem que cair EXATAMENTE em cima dos rolos: vão entre colunas,
    * nenhum entre linhas (o rolo é uma tira contínua de três células, sem respiro no
-   * meio). Por isso columnGap/rowGap separados, e a largura fixada pra a quebra de
-   * linha acontecer de três em três.
+   * meio). Por isso columnGap/rowGap separados, e a largura calculada em cima da
+   * quantidade de rolos, pra a quebra de linha cair no fim de cada fileira.
    */
   marcacoes: {
     position: 'absolute',
     top: spacing.sm,
     left: spacing.sm,
-    width: 3 * CELULA + 2 * spacing.xs,
+    // A largura vem de fora (depende de quantos rolos o servidor manda) — é ela que
+    // faz o flex-wrap quebrar a linha na coluna certa.
     flexDirection: 'row',
     flexWrap: 'wrap',
     columnGap: spacing.xs,

@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { spin, theoreticalRtp } from './slots.engine';
-import { MAX_BET, MIN_BET, SLOT_SYMBOLS } from './slots.config';
+import { MAX_BET, MIN_BET, MIN_MATCH, PAYLINES, REELS, ROWS, SLOT_SYMBOLS } from './slots.config';
 
 /** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
 const GAME_ID = 'slots';
@@ -17,6 +17,11 @@ export class SlotsService {
   getConfig() {
     return {
       symbols: SLOT_SYMBOLS,
+      /** Formato da grade e linhas vão junto: a tela desenha a partir daqui, sem cópia própria. */
+      reels: REELS,
+      rows: ROWS,
+      paylines: PAYLINES,
+      minMatch: MIN_MATCH,
       minBet: MIN_BET,
       maxBet: MAX_BET,
       theoreticalRtp: theoreticalRtp(),

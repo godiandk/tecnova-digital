@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "verify:bac-bo": "ts-node src/modules/games/bac-bo/verify-rtp.ts",
     "verify:bacara": "ts-node src/modules/games/baccarat/verify-rtp.ts",
+    "verify:slots": "ts-node src/modules/games/slots/verify-rtp.ts",
+    "verify:slots-pagamento": "node verificacao/verifica-slots.mjs",
     "verify:banca-francesa": "ts-node src/modules/games/banca-francesa/verify-rtp.ts",
     "verify:blackjack": "ts-node src/modules/games/blackjack/verify-strategy.ts",
     "verify:firebase": "ts-node src/modules/auth/verify-firebase.ts",

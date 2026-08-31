@@ -19,15 +19,17 @@ export interface GameTutorial {
 export const tutorials: Record<string, GameTutorial> = {
   slots: {
     gameId: 'slots',
-    whatIsIt: 'Você aposta um valor, aperta um botão e três ou mais rolos giram sozinhos.',
-    goal: 'Quando os rolos param, se os desenhos formarem uma combinação premiada numa das linhas, você ganha.',
+    whatIsIt: 'Você aposta um valor, aperta um botão e cinco rolos giram sozinhos.',
+    goal: 'Quando os rolos param, se saírem desenhos iguais seguidos numa das 5 linhas, você ganha.',
     steps: [
       'Escolha quanto quer apostar usando os botões de + e -.',
       'Aperte o botão de girar (o círculo grande).',
-      'Espere os rolos pararem de girar sozinhos.',
-      'O jogo mostra automaticamente se formou uma combinação premiada e quanto você ganhou.',
+      'Espere os rolos pararem, um de cada vez, da esquerda pra direita.',
+      'O jogo acende as células que formaram a combinação e mostra quanto você ganhou.',
     ],
     tips: [
+      'A combinação conta SEMPRE a partir do primeiro rolo, da esquerda pra direita. Três sinos nos rolos 2, 3 e 4 não pagam nada — os iguais precisam começar no rolo 1.',
+      'Quanto mais iguais seguidos, maior o prêmio: 4 iguais pagam bem mais que 3, e 5 iguais bem mais que 4.',
       'Não existe estratégia para caça-níqueis — cada giro é sorte pura e independente do giro anterior.',
       'Comece apostando o valor mínimo até entender como os prêmios aparecem na tela.',
     ],
