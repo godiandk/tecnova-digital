@@ -210,17 +210,39 @@ export function DominoScreen({ navigation }: Props) {
               </Pressable>
             )}
 
+            {/*
+              Quem tem a maior dupla abre, e abre com ela. Em vez de deixar tocar em
+              qualquer peça pra o servidor recusar, a mão inteira menos essa fica apagada
+              — a regra fica visível antes do erro, não depois.
+            */}
+            {match.aberturaObrigatoria && (
+              <Text style={styles.aviso}>
+                Você tem a maior peça: abra com o {tileLabel(match.aberturaObrigatoria)}.
+              </Text>
+            )}
+
             <View style={styles.handRow}>
-              {match.playerHand.map((tile, index) => (
-                <Pressable
-                  key={index}
-                  onPress={() => setSelectedIndex(index === selectedIndex ? null : index)}
-                  disabled={busy}
-                  style={[styles.card, index === selectedIndex && styles.cardSelected]}
-                >
-                  <Text style={styles.cardLabel}>{tileLabel(tile)}</Text>
-                </Pressable>
-              ))}
+              {match.playerHand.map((tile, index) => {
+                const ehAbertura =
+                  !match.aberturaObrigatoria ||
+                  (tile.a === match.aberturaObrigatoria.a && tile.b === match.aberturaObrigatoria.b);
+                return (
+                  <Pressable
+                    key={index}
+                    onPress={() => setSelectedIndex(index === selectedIndex ? null : index)}
+                    disabled={busy || !ehAbertura}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Peça ${tile.a} ${tile.b}${ehAbertura ? '' : ' — não é a peça de abertura'}`}
+                    style={[
+                      styles.card,
+                      index === selectedIndex && styles.cardSelected,
+                      !ehAbertura && styles.cardApagada,
+                    ]}
+                  >
+                    <Text style={styles.cardLabel}>{tileLabel(tile)}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
 
             <Pressable
@@ -264,6 +286,14 @@ const styles = StyleSheet.create({
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
   errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
   startBlock: { alignItems: 'center', gap: spacing.md, marginTop: spacing.xxxl },
+  aviso: {
+    fontFamily: fontFamily.bodySemiBold,
+    fontSize: fontSize.sm,
+    color: colors.goldBright,
+    textAlign: 'center',
+  },
+  /* Peça que não pode abrir: apagada, mas ainda legível — some do toque, não da vista. */
+  cardApagada: { opacity: 0.35 },
   resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, textAlign: 'center', maxWidth: 280 },
   resultWin: { color: colors.goldBright },
   resultLoss: { color: colors.textFaint },

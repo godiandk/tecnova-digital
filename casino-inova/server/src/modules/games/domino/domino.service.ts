@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
-import { BoardEnd, canPlay, chooseBotMove, otherEnd, shuffle, tileMatches, tileSum } from './domino.engine';
+import { BoardEnd, canPlay, chooseBotMove, otherEnd, quemAbre, shuffle, tileMatches, tileSum } from './domino.engine';
 import { buildTileSet, HAND_SIZE, MATCH_WIN_TOTAL_MULTIPLIER, MAX_BUY_IN, MIN_BUY_IN, Tile } from './domino.config';
 
 interface DominoMatch {
@@ -12,6 +12,8 @@ interface DominoMatch {
   leftEnd: number | null;
   rightEnd: number | null;
   consecutivePasses: number;
+  /** A peça com que a partida tem que abrir, quando é o jogador quem abre. */
+  aberturaObrigatoria?: Tile;
   finished: boolean;
   matchOutcome?: 'jogador' | 'bot' | 'empate';
   lastEvent?: string;
@@ -60,6 +62,24 @@ export class DominoService {
       finished: false,
     };
     this.matches.set(userId, match);
+
+    /*
+     * Abre quem tem a maior dupla — e é obrigado a abrir com ela. Se calhar do bot, ele
+     * já joga a peça aqui e a vez volta pro jogador; se for do jogador, a peça fica
+     * anotada em `aberturaObrigatoria` e a tela só deixa jogar aquela.
+     */
+    const abertura = quemAbre([match.playerHand, match.botHand]);
+    if (abertura.indice === 1) {
+      match.botHand = match.botHand.filter((t) => !(t.a === abertura.peca.a && t.b === abertura.peca.b));
+      match.boardTiles.push(abertura.peca);
+      match.leftEnd = abertura.peca.a;
+      match.rightEnd = abertura.peca.b;
+      match.lastEvent = `O bot tinha a maior peça (${abertura.peca.a}-${abertura.peca.b}) e abriu com ela.`;
+    } else {
+      match.aberturaObrigatoria = abertura.peca;
+      match.lastEvent = `Você tem a maior peça (${abertura.peca.a}-${abertura.peca.b}) — a partida abre com ela.`;
+    }
+
     return this.publicView(userId, match);
   }
 
@@ -71,6 +91,13 @@ export class DominoService {
     }
 
     if (match.leftEnd === null) {
+      const obrigatoria = match.aberturaObrigatoria;
+      if (obrigatoria && !(tile.a === obrigatoria.a && tile.b === obrigatoria.b)) {
+        throw new BadRequestException(
+          `A partida abre com a maior peça: ${obrigatoria.a}-${obrigatoria.b}.`,
+        );
+      }
+      match.aberturaObrigatoria = undefined;
       match.leftEnd = tile.a;
       match.rightEnd = tile.b;
     } else {
@@ -189,6 +216,8 @@ export class DominoService {
       rightEnd: match.rightEnd,
       botTileCount: match.botHand.length,
       canPlay: canPlay(match.playerHand, match.leftEnd, match.rightEnd),
+      /** Quando é o jogador quem abre, é com esta peça — a tela destaca só ela. */
+      aberturaObrigatoria: match.aberturaObrigatoria,
       finished: match.finished,
       matchOutcome: match.matchOutcome,
       lastEvent: match.lastEvent,

@@ -21,6 +21,11 @@ export interface DominoMatchState {
   rightEnd: number | null;
   botTileCount: number;
   canPlay: boolean;
+  /**
+   * Quando é você quem abre, é com esta peça — quem tem a maior dupla abre, e é
+   * obrigado a abrir com ela. Vem só na primeira jogada da partida.
+   */
+  aberturaObrigatoria?: DominoTile;
   finished: boolean;
   matchOutcome?: 'jogador' | 'bot' | 'empate';
   lastEvent?: string;

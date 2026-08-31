@@ -121,14 +121,16 @@ export const tutorials: Record<string, GameTutorial> = {
     whatIsIt: 'Um jogo de peças retangulares com pontinhos desenhados, divididas ao meio.',
     goal: 'Ser o primeiro jogador a ficar sem nenhuma peça na mão.',
     steps: [
-      'Cada jogador recebe um conjunto de peças no início.',
+      'Cada jogador recebe 7 peças das 28 do jogo. O que sobra fica no dorme e ninguém compra — este é o dominó "block".',
+      'Abre quem tem a maior dupla (6-6, depois 5-5, e assim por diante), e é obrigado a abrir com ela. Se ninguém tiver dupla, abre quem tem a peça de maior soma.',
       'Na sua vez, você encaixa uma peça sua numa das pontas da mesa, desde que o número bata com o número que já está ali.',
-      'Se você não tiver nenhuma peça que encaixe, sua vez passa direto para o próximo jogador.',
+      'Se você não tiver nenhuma peça que encaixe, sua vez passa direto — não dá pra comprar.',
       'Quem ficar sem peças primeiro, vence a rodada.',
     ],
     tips: [
       'Preste atenção em quais números já apareceram bastante na mesa — ajuda a imaginar o que os outros jogadores ainda têm na mão.',
-      'Se ninguém mais conseguir jogar, vence quem tiver a menor soma de pontos nas peças que sobraram.',
+      'Se ninguém mais conseguir jogar, o jogo travou: vence quem tiver a MENOR soma de pontos nas peças que sobraram.',
+      'A mesa mostra quantas peças estão no dorme. São 28 no total: o que não está numa mão nem na mesa está lá, e não entra mais na partida.',
     ],
   },
   poker: {
