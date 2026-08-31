@@ -30,12 +30,24 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Domino'>;
 
 const BUY_IN_STEP = 100;
 
+/** Dominó double-six: todas as combinações de 0 a 6, sem repetir — 28 peças. */
+const TOTAL_DE_PECAS = 28;
+
 function tileLabel(tile: DominoTile): string {
   return `${tile.a}|${tile.b}`;
 }
 
 function tileMatches(tile: DominoTile, value: number): boolean {
   return tile.a === value || tile.b === value;
+}
+
+/**
+ * Quantas peças ficaram no dorme. O dominó double-six tem 28 peças e o jogo é "block"
+ * (não se compra), então tudo que não está numa mão nem na mesa está dormindo — dá pra
+ * contar de fora, sem o servidor precisar contar por nós.
+ */
+function pecasDormindo(match: DominoMatchState): number {
+  return TOTAL_DE_PECAS - match.playerHand.length - match.botTileCount - match.boardTiles.length;
 }
 
 export function DominoScreen({ navigation }: Props) {
@@ -164,7 +176,9 @@ export function DominoScreen({ navigation }: Props) {
 
         {inMatch && match && (
           <View style={styles.matchBlock}>
-            <Text style={styles.score}>Peças do bot: {match.botTileCount}</Text>
+            <Text style={styles.score}>
+              Peças do bot: {match.botTileCount} · Dorme: {pecasDormindo(match)}
+            </Text>
             <Text style={styles.boardEnds}>
               {boardEmpty ? 'Mesa vazia — escolha uma peça pra abrir' : `Pontas: ${match.leftEnd} — ${match.rightEnd}`}
             </Text>

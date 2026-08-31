@@ -358,7 +358,6 @@ export class TrucoService {
       /** Quanto o jogador pode pedir agora (null = não pode aumentar nesse momento). */
       nextRaiseValue:
         match.lastRaiseBy === 'jogador' || match.pendingTruco ? null : nextHandValue(match.variant, match.handValue),
-      /** Nome do próximo pedido, já na linguagem da variante ("truco", "seis"...). */
       vira: match.vira,
       playerHand: match.playerHand,
       playerCardsPlayed: match.playerCardsPlayed,

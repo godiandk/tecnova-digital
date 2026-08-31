@@ -23,6 +23,7 @@ import {
   TrucoConfig,
   TrucoMatchState,
   TrucoCard,
+  TrucoVariantRules,
 } from '../../api/truco';
 import { usePlayer } from '../../data/usePlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
@@ -37,14 +38,21 @@ const LARGURA_DA_CARTA = 62;
 /** A vira é referência, não carta de jogar: entra menor pra não competir com a mão. */
 const LARGURA_DA_VIRA = 40;
 
-/** Nome de cada degrau da escada de aumento — espelha RAISE_LABEL do servidor. */
-const RAISE_LABEL: Record<number, string> = { 3: 'truco', 6: 'seis', 9: 'nove', 12: 'doze' };
-const LADDER = [1, 3, 6, 9, 12];
+/**
+ * A escada de aumento vem da variante, nunca fixa aqui. Paulista sobe 1 → 3 → 6 → 9 → 12
+ * e mineiro sobe 2 → 4 → 6 → 10 → 12, com nomes diferentes no mesmo degrau — uma escada
+ * chumbada na tela deixava o mineiro sem o botão de aumentar.
+ */
+function nomeDoPedido(regras: TrucoVariantRules | undefined, valor: number | null): string {
+  if (valor === null) return '';
+  return regras?.raiseLabel[String(valor)] ?? String(valor);
+}
 
-/** Próximo degrau depois de `value` — 0 quando já está no topo (12), pra cair no `&&` do JSX. */
-function nextRung(value: number): number {
-  const index = LADDER.indexOf(value);
-  return index === -1 || index === LADDER.length - 1 ? 0 : LADDER[index + 1];
+/** Próximo degrau depois de `valor` — 0 quando já está no topo, pra cair no `&&` do JSX. */
+function proximoDegrau(regras: TrucoVariantRules | undefined, valor: number): number {
+  const escada = regras?.handValueLadder ?? [];
+  const posicao = escada.indexOf(valor);
+  return posicao === -1 || posicao === escada.length - 1 ? 0 : escada[posicao + 1];
 }
 
 /** O nome da imagem da carta — 'espadas-A', 'copas-7'. */
@@ -105,6 +113,8 @@ export function TrucoScreen({ navigation, route }: Props) {
 
   const inMatch = Boolean(match && !match.finished);
   const awaitingBotTruco = match?.pendingTruco === 'bot';
+  /** A variante que está valendo agora: a da partida em andamento, ou a escolhida na tela anterior. */
+  const regrasDaVariante = config?.variants[match?.variant ?? variante];
 
   return (
     <GameBackdrop source={TABLE_IMAGES.truco}>
@@ -210,21 +220,41 @@ export function TrucoScreen({ navigation, route }: Props) {
             {actionError && <Text style={styles.errorText}>{actionError}</Text>}
 
             {awaitingBotTruco ? (
-              <View style={styles.actionRow}>
-                <Pressable onPress={() => run(() => respondTruco('correr'))} disabled={busy} style={[styles.secondaryButton, busy && styles.buttonDisabled]}>
-                  <Text style={styles.secondaryButtonLabel}>Correr</Text>
-                </Pressable>
-                <Pressable onPress={() => run(() => respondTruco('aceitar'))} disabled={busy} style={[styles.primaryButton, busy && styles.buttonDisabled]}>
-                  <Text style={styles.primaryButtonLabel}>
-                    Aceitar {match.pendingHandValue ? RAISE_LABEL[match.pendingHandValue] ?? match.pendingHandValue : ''}
-                  </Text>
-                </Pressable>
-                {match.pendingHandValue !== null && RAISE_LABEL[nextRung(match.pendingHandValue)] && (
-                  <Pressable onPress={() => run(() => respondTruco('aumentar'))} disabled={busy} style={[styles.primaryButton, busy && styles.buttonDisabled]}>
-                    <Text style={styles.primaryButtonLabel}>Pedir {RAISE_LABEL[nextRung(match.pendingHandValue)]}</Text>
+              <>
+                {/* Na mesa o pedido é cantado antes da resposta — quem responde precisa
+                    saber por quanto está respondendo, não só que existe um pedido. */}
+                <Text style={styles.pedidoDaMesa}>
+                  Bot pediu {nomeDoPedido(regrasDaVariante, match.pendingHandValue).toUpperCase()}! · a mão passa a
+                  valer {match.pendingHandValue}
+                </Text>
+                <View style={styles.actionRow}>
+                  <Pressable
+                    onPress={() => run(() => respondTruco('correr'))}
+                    disabled={busy}
+                    style={[styles.secondaryButton, busy && styles.buttonDisabled]}
+                  >
+                    <Text style={styles.secondaryButtonLabel}>Não quero</Text>
                   </Pressable>
-                )}
-              </View>
+                  <Pressable
+                    onPress={() => run(() => respondTruco('aceitar'))}
+                    disabled={busy}
+                    style={[styles.primaryButton, busy && styles.buttonDisabled]}
+                  >
+                    <Text style={styles.primaryButtonLabel}>Quero</Text>
+                  </Pressable>
+                  {match.pendingHandValue !== null && proximoDegrau(regrasDaVariante, match.pendingHandValue) > 0 && (
+                    <Pressable
+                      onPress={() => run(() => respondTruco('aumentar'))}
+                      disabled={busy}
+                      style={[styles.primaryButton, busy && styles.buttonDisabled]}
+                    >
+                      <Text style={styles.primaryButtonLabel}>
+                        {nomeDoPedido(regrasDaVariante, proximoDegrau(regrasDaVariante, match.pendingHandValue)).toUpperCase()}!
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              </>
             ) : (
               <>
                 <View style={styles.handRow}>
@@ -244,7 +274,7 @@ export function TrucoScreen({ navigation, route }: Props) {
                   style={[styles.secondaryButton, (busy || match.nextRaiseValue === null) && styles.buttonDisabled]}
                 >
                   <Text style={styles.secondaryButtonLabel}>
-                    {match.nextRaiseValue ? `Pedir ${RAISE_LABEL[match.nextRaiseValue] ?? match.nextRaiseValue}` : 'Não dá pra aumentar'}
+                    {match.nextRaiseValue ? `${nomeDoPedido(regrasDaVariante, match.nextRaiseValue).toUpperCase()}!` : 'Não dá pra aumentar'}
                   </Text>
                 </Pressable>
               </>
@@ -259,6 +289,13 @@ export function TrucoScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
+  pedidoDaMesa: {
+    fontFamily: fontFamily.bodySemiBold,
+    fontSize: fontSize.base,
+    color: colors.gold,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
   safe: { flex: 1, paddingHorizontal: spacing.xl, alignItems: 'center' },
   topBar: {
     flexDirection: 'row',
