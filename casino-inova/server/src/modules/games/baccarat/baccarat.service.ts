@@ -2,9 +2,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { playRound as playBaccaratRound, resolveBet } from './baccarat.engine';
-import { BaccaratBetType, MAX_BET, MIN_BET, Rank } from './baccarat.config';
+import { BaccaratBetType, MAX_BET, MIN_BET, RANKS, Rank } from './baccarat.config';
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
-import { CartaComNaipe, nomeDaCarta, vestirDeNaipe } from '../shared/naipes';
+import { CartaComNaipe, nomeDaCarta } from '../shared/naipes';
+import { Sapata } from '../shared/sapata';
 
 const VALID_BET_TYPES: BaccaratBetType[] = ['jogador', 'banca', 'empate'];
 /** 24 colunas de 6 no painel — 144 rodadas enchem a tela inteira. */
@@ -16,6 +17,12 @@ const GAME_ID = 'bacara';
 @Injectable()
 export class BaccaratService {
   private readonly history: RoundRecord[] = [];
+  /**
+   * Uma sapata só pra mesa inteira. No bacará todo mundo na mesa joga das mesmas cartas
+   * — é o que faz o placar (as "estradas") ter sentido: ele conta a história de UMA
+   * sapata, não de sapatas diferentes por jogador.
+   */
+  private readonly sapata = new Sapata<Rank>(RANKS);
 
   constructor(
     private readonly walletService: WalletService,
@@ -49,7 +56,21 @@ export class BaccaratService {
     }
 
     await this.walletService.debit(userId, amount, 'aposta', GAME_ID);
-    const round = playBaccaratRound();
+
+    // Embaralhar acontece ENTRE rodadas, nunca no meio de uma.
+    const embaralhou = this.sapata.embaralharSePassouDoCorte();
+
+    /*
+     * As cartas saem da sapata JÁ com naipe — o naipe agora é o da carta que saiu de
+     * verdade, não um sorteado à parte pra tela ter o que desenhar. `sorteadas` guarda
+     * a ordem de saída, que é o que permite devolver cada carta pro lado certo depois.
+     */
+    const sorteadas: CartaComNaipe<Rank>[] = [];
+    const round = playBaccaratRound(() => {
+      const carta = this.sapata.comprar();
+      sorteadas.push(carta);
+      return carta.rank;
+    });
     const totalReturn = resolveBet(betType, round.winner, amount);
 
     if (totalReturn > 0) {
@@ -61,36 +82,36 @@ export class BaccaratService {
     if (this.history.length > HISTORY_LIMIT) this.history.shift();
 
     /*
-     * As cartas saem do motor só com valor — o baralho é infinito e naipe não vale
-     * nada no bacará. O naipe é sorteado aqui pra a tela poder desenhar a carta que
-     * saiu, em vez de o app escolher uma parecida. Ver shared/naipes.ts.
+     * A ordem de saída do bacará é fixa: jogador, banca, jogador, banca, e só então as
+     * terceiras cartas — primeiro a do jogador, depois a da banca. Por isso dá pra
+     * devolver cada carta pro seu lado sem adivinhação.
      */
-    const cartasNaMesa: CartaComNaipe<Rank>[] = [];
-    const playerCards = vestirDeNaipe(round.playerCards, cartasNaMesa).map(guardarEnomear(cartasNaMesa));
-    const bankerCards = vestirDeNaipe(round.bankerCards, cartasNaMesa).map(guardarEnomear(cartasNaMesa));
+    const doJogador = [sorteadas[0], sorteadas[2]];
+    const daBanca = [sorteadas[1], sorteadas[3]];
+    let proxima = 4;
+    if (round.playerCards.length === 3) doJogador.push(sorteadas[proxima++]);
+    if (round.bankerCards.length === 3) daBanca.push(sorteadas[proxima++]);
+
+    // Rede de segurança: se a ordem acima não bater com o que o motor jogou, a tela
+    // mostraria uma carta que não saiu. Melhor estourar aqui do que mentir na mesa.
+    const bate = (cartas: CartaComNaipe<Rank>[], valores: Rank[]) =>
+      cartas.length === valores.length && cartas.every((c, i) => c.rank === valores[i]);
+    if (!bate(doJogador, round.playerCards) || !bate(daBanca, round.bankerCards)) {
+      throw new Error('As cartas da sapata não bateram com a rodada do motor.');
+    }
 
     return {
       ...round,
-      playerCards,
-      bankerCards,
+      playerCards: doJogador.map(nomeDaCarta),
+      bankerCards: daBanca.map(nomeDaCarta),
       betType,
       amount,
       totalReturn,
+      embaralhouAgora: embaralhou,
+      cartasAteOCorte: this.sapata.cartasAteOCorte,
       newBalance: await this.walletService.balanceOf(userId),
       roadmap: this.getRoadmap(),
     };
   }
 }
 
-/**
- * Anota a carta na mesa e devolve o nome da imagem dela.
- *
- * A anotação importa: é ela que faz o segundo lado enxergar o que o primeiro já usou, e
- * é o que impede a mesma carta de aparecer nos dois lados da mesma rodada.
- */
-function guardarEnomear(mesa: CartaComNaipe<Rank>[]) {
-  return (carta: CartaComNaipe<Rank>) => {
-    mesa.push(carta);
-    return nomeDaCarta(carta);
-  };
-}

@@ -4,15 +4,16 @@ import {
   PLAYER_TOTAL_MULTIPLIER,
   PUSH_TOTAL_MULTIPLIER,
   Rank,
-  RANKS,
   TIE_TOTAL_MULTIPLIER,
 } from './baccarat.config';
 
 export type Winner = 'jogador' | 'banca' | 'empate';
 
-export function drawCard(random: () => number = Math.random): Rank {
-  return RANKS[Math.floor(random() * RANKS.length)];
-}
+/**
+ * De onde as cartas saem. Numa mesa é a sapata de 8 baralhos; os testes passam a sua
+ * pra poder forçar situações. O motor não sabe (nem precisa saber) qual das duas é.
+ */
+export type FonteDeCartas = () => Rank;
 
 /** A=1, 2-9 valem o próprio número, 10/J/Q/K valem 0 — regra do bacará, não do blackjack. */
 function cardValue(rank: Rank): number {
@@ -38,9 +39,14 @@ export interface RoundResult {
  * Tabela de compra da 3ª carta do Punto Banco — o jogador nunca decide nada aqui,
  * é toda regra fixa. Ver server/README.md para a tabela por extenso.
  */
-export function playRound(random: () => number = Math.random): RoundResult {
-  const playerCards: Rank[] = [drawCard(random), drawCard(random)];
-  const bankerCards: Rank[] = [drawCard(random), drawCard(random)];
+export function playRound(comprar: FonteDeCartas): RoundResult {
+  // Na mesa as cartas saem alternadas: jogador, banca, jogador, banca.
+  const p1 = comprar();
+  const b1 = comprar();
+  const p2 = comprar();
+  const b2 = comprar();
+  const playerCards: Rank[] = [p1, p2];
+  const bankerCards: Rank[] = [b1, b2];
 
   const playerTotalBeforeDraw = handTotal(playerCards);
   const bankerTotalBeforeDraw = handTotal(bankerCards);
@@ -50,7 +56,7 @@ export function playRound(random: () => number = Math.random): RoundResult {
     let playerThirdCardValue: number | undefined;
 
     if (playerTotalBeforeDraw <= 5) {
-      const thirdCard = drawCard(random);
+      const thirdCard = comprar();
       playerCards.push(thirdCard);
       playerThirdCardValue = cardValue(thirdCard);
     }
@@ -69,7 +75,7 @@ export function playRound(random: () => number = Math.random): RoundResult {
     };
 
     if (bankerShouldDraw()) {
-      bankerCards.push(drawCard(random));
+      bankerCards.push(comprar());
     }
   }
 

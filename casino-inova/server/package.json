@@ -10,10 +10,13 @@
     "typecheck": "tsc --noEmit",
     "verify:bac-bo": "ts-node src/modules/games/bac-bo/verify-rtp.ts",
     "verify:bacara": "ts-node src/modules/games/baccarat/verify-rtp.ts",
+    "verify:bacara-regras": "ts-node src/modules/games/baccarat/verify-regras.ts",
     "verify:slots": "ts-node src/modules/games/slots/verify-rtp.ts",
     "verify:slots-pagamento": "node verificacao/verifica-slots.mjs",
     "verify:banca-francesa": "ts-node src/modules/games/banca-francesa/verify-rtp.ts",
     "verify:blackjack": "ts-node src/modules/games/blackjack/verify-strategy.ts",
+    "verify:blackjack-mesa": "node verificacao/verifica-blackjack.mjs",
+    "verify:sapata": "ts-node src/modules/games/shared/verifica-sapata.ts",
     "verify:firebase": "ts-node src/modules/auth/verify-firebase.ts",
     "verify:persistencia": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" ts-node src/database/verify-persistencia.ts",
     "verify:placar": "ts-node src/modules/roadmap/verify-roadmap.ts",
@@ -22,7 +25,7 @@
     "verify:stock-market": "ts-node src/modules/games/stock-market/verify-rtp.ts",
     "verify:rotas": "ts-node verificacao/verifica-rotas.ts",
     "verify:torneios": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" ts-node src/modules/tournaments/verify-tournaments.ts",
-    "verify:tudo": "npm run verify:bac-bo && npm run verify:bacara && npm run verify:banca-francesa && npm run verify:blackjack && npm run verify:persistencia && npm run verify:placar && npm run verify:poker-hands && npm run verify:rtp && npm run verify:stock-market && npm run verify:torneios"
+    "verify:tudo": "npm run verify:bac-bo && npm run verify:bacara && npm run verify:bacara-regras && npm run verify:banca-francesa && npm run verify:blackjack && npm run verify:sapata && npm run verify:slots && npm run verify:persistencia && npm run verify:placar && npm run verify:poker-hands && npm run verify:rtp && npm run verify:stock-market && npm run verify:torneios"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

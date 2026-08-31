@@ -16,8 +16,12 @@ import {
   startBlackjackHand,
   hitBlackjack,
   standBlackjack,
+  doubleBlackjack,
+  splitBlackjack,
+  insureBlackjack,
   BlackjackConfig,
   BlackjackHandResponse,
+  MaoDeBlackjack,
 } from '../../api/blackjack';
 import { usePlayer } from '../../data/usePlayer';
 import { colors, fontFamily, fontSize, radius, spacing, useOrientacaoLivre, useJanela } from '../../theme';
@@ -42,7 +46,18 @@ const CARTA_NA_ARTE = 92;
  */
 const PASSO_DA_MAO = 70;
 
-const OUTCOME_LABEL: Record<NonNullable<BlackjackHandResponse['outcome']>, string> = {
+/**
+ * Quanto uma mão dividida se afasta da outra, MEDIDO NA ARTE. Precisa caber quatro
+ * mãos (o limite da mesa) sem que a última encoste na casa do vizinho.
+ */
+const ESPACO_ENTRE_MAOS = 200;
+
+/** Tudo que está na mesa agora: cada mão mais o seguro, se foi feito. */
+function apostaTotal(hand: BlackjackHandResponse): number {
+  return hand.maos.reduce((soma, mao) => soma + mao.aposta, 0) + hand.seguro;
+}
+
+const OUTCOME_LABEL: Record<NonNullable<MaoDeBlackjack['outcome']>, string> = {
   'jogador-ganhou': 'Você ganhou!',
   'dealer-ganhou': 'A casa ganhou.',
   empate: 'Empate — sua aposta voltou.',
@@ -87,12 +102,13 @@ function bordaDireitaDaMao(quantas: number): number {
 }
 
 /** O selo redondo do total, como o que está pintado ao lado das cartas na arte. */
-function SeloDoTotal({ total, escala }: { total: number; escala: number }) {
+function SeloDoTotal({ total, escala, emJogo = false }: { total: number; escala: number; emJogo?: boolean }) {
   return (
     <View
       style={[
         styles.selo,
         { width: 68 * escala, height: 46 * escala, borderRadius: 23 * escala, borderWidth: Math.max(1, 2 * escala) },
+        emJogo && styles.seloEmJogo,
       ]}
     >
       <Text style={[styles.seloTexto, { fontSize: Math.max(11, 26 * escala) }]}>{total}</Text>
@@ -132,6 +148,7 @@ export function BlackjackScreen({ navigation }: Props) {
   }, []);
 
   const inProgress = Boolean(hand && !hand.finished);
+  // Com seguro pendente a mesa está parada esperando resposta, não aceitando aposta nova.
   const minhaCasa = BLACKJACK.casas[BLACKJACK.minhaCasa];
 
   const adjustBet = (delta: number) => {
@@ -162,41 +179,53 @@ export function BlackjackScreen({ navigation }: Props) {
             {hand && (
               <>
                 <NaMesa ponto={regua.ponto(BLACKJACK.cartasDoDealer.x, BLACKJACK.cartasDoDealer.y)}>
-                  <MaoNaMesa cartas={hand.dealerCards} regua={regua} />
+                  <MaoNaMesa cartas={hand.cartasDoDealer} regua={regua} />
                 </NaMesa>
-                {hand.dealerTotal !== undefined && (
+                {hand.totalDoDealer !== undefined && (
                   <NaMesa
                     ponto={regua.ponto(
-                      BLACKJACK.cartasDoDealer.x + bordaDireitaDaMao(hand.dealerCards.length),
+                      BLACKJACK.cartasDoDealer.x + bordaDireitaDaMao(hand.cartasDoDealer.length),
                       BLACKJACK.totalDoDealer.y,
                     )}
                   >
-                    <SeloDoTotal total={hand.dealerTotal} escala={regua.escala} />
+                    <SeloDoTotal total={hand.totalDoDealer} escala={regua.escala} />
                   </NaMesa>
                 )}
               </>
             )}
 
-            {/* A sua mão, acima da casa; a ficha, dentro dela. */}
-            {hand && (
-              <>
-                <NaMesa ponto={regua.ponto(minhaCasa.x, minhaCasa.y + BLACKJACK.recuoDasCartas)}>
-                  <MaoNaMesa cartas={hand.playerCards} regua={regua} />
-                </NaMesa>
-                <NaMesa
-                  ponto={regua.ponto(
-                    minhaCasa.x + bordaDireitaDaMao(hand.playerCards.length),
-                    minhaCasa.y + BLACKJACK.recuoDasCartas + 34,
+            {/*
+              As suas mãos. Sem dividir é uma só, na casa de sempre. Dividindo, elas se
+              espalham pros lados a partir dali — cada uma com as suas cartas, a sua
+              aposta e o seu total, porque cada uma ganha ou perde sozinha.
+            */}
+            {hand?.maos.map((mao, indice) => {
+              const desvio = (indice - (hand.maos.length - 1) / 2) * ESPACO_ENTRE_MAOS;
+              return (
+                <View key={indice}>
+                  <NaMesa ponto={regua.ponto(minhaCasa.x + desvio, minhaCasa.y + BLACKJACK.recuoDasCartas)}>
+                    <MaoNaMesa cartas={mao.cartas} regua={regua} />
+                  </NaMesa>
+                  <NaMesa
+                    ponto={regua.ponto(
+                      minhaCasa.x + desvio + bordaDireitaDaMao(mao.cartas.length),
+                      minhaCasa.y + BLACKJACK.recuoDasCartas + 34,
+                    )}
+                  >
+                    <SeloDoTotal total={mao.total} escala={regua.escala} emJogo={mao.emJogo} />
+                  </NaMesa>
+                  {hand.maos.length > 1 && (
+                    <NaMesa ponto={regua.ponto(minhaCasa.x + desvio, minhaCasa.y)}>
+                      <PilhaDeFichas valor={mao.aposta} escala={regua.escala} />
+                    </NaMesa>
                   )}
-                >
-                  <SeloDoTotal total={hand.playerTotal} escala={regua.escala} />
-                </NaMesa>
-              </>
-            )}
+                </View>
+              );
+            })}
 
-            {(hand || bet > 0) && (
+            {(!hand || hand.maos.length === 1) && (hand || bet > 0) && (
               <NaMesa ponto={regua.ponto(minhaCasa.x, minhaCasa.y)}>
-                <PilhaDeFichas valor={hand ? hand.bet : bet} escala={regua.escala} />
+                <PilhaDeFichas valor={hand ? hand.maos[0].aposta : bet} escala={regua.escala} />
               </NaMesa>
             )}
 
@@ -212,22 +241,27 @@ export function BlackjackScreen({ navigation }: Props) {
               </View>
               <View style={styles.mostrador}>
                 <Text style={styles.mostradorRotulo}>APOSTA</Text>
-                <Text style={styles.mostradorValor}>{(hand ? hand.bet : bet).toLocaleString('pt-BR')}</Text>
+                <Text style={styles.mostradorValor}>{(hand ? apostaTotal(hand) : bet).toLocaleString('pt-BR')}</Text>
               </View>
 
               <View style={styles.acoes}>
                 {configError && <Text style={styles.erro} numberOfLines={2}>{configError}</Text>}
                 {actionError && <Text style={styles.erro} numberOfLines={2}>{actionError}</Text>}
 
-                {hand?.finished && hand.outcome && (
-                  <Text
-                    style={[styles.resultado, hand.outcome === 'jogador-ganhou' ? styles.ganhou : styles.perdeu]}
-                    numberOfLines={1}
-                  >
-                    {OUTCOME_LABEL[hand.outcome]}
-                    {hand.totalReturn ? ` +${hand.totalReturn.toLocaleString('pt-BR')}` : ''}
-                  </Text>
-                )}
+                {hand?.finished &&
+                  hand.maos.map((mao, indice) =>
+                    mao.outcome ? (
+                      <Text
+                        key={indice}
+                        style={[styles.resultado, mao.outcome === 'jogador-ganhou' ? styles.ganhou : styles.perdeu]}
+                        numberOfLines={1}
+                      >
+                        {hand.maos.length > 1 ? `${indice + 1}ª: ` : ''}
+                        {OUTCOME_LABEL[mao.outcome]}
+                        {mao.totalReturn ? ` +${mao.totalReturn.toLocaleString('pt-BR')}` : ''}
+                      </Text>
+                    ) : null,
+                  )}
 
                 {!inProgress && config && (
                   <>
@@ -247,12 +281,66 @@ export function BlackjackScreen({ navigation }: Props) {
                   </>
                 )}
 
-                {inProgress && (
+                {/*
+                  O seguro trava a mesa até ser respondido — é a ordem da mesa de
+                  verdade. E a tela diz o que ele é: a pior aposta do blackjack. Não
+                  esconder isso é o mínimo, já que a mesa é obrigada a oferecer.
+                */}
+                {hand?.esperandoSeguro && (
                   <>
-                    <Pressable onPress={() => runAction(hitBlackjack)} disabled={busy} style={[styles.botaoSecundario, busy && styles.desabilitado]}>
+                    <Text style={styles.avisoSeguro} numberOfLines={2}>
+                      Dealer com Ás. Seguro custa {hand.seguroMaximo} e paga 2:1 — mas perde mais do que ganha a longo prazo.
+                    </Text>
+                    <Pressable
+                      onPress={() => runAction(() => insureBlackjack(false))}
+                      disabled={busy}
+                      style={[styles.botaoPrincipal, busy && styles.desabilitado]}
+                    >
+                      <Text style={styles.botaoPrincipalTexto}>Não quero seguro</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => runAction(() => insureBlackjack(true))}
+                      disabled={busy}
+                      style={[styles.botaoSecundario, busy && styles.desabilitado]}
+                    >
+                      <Text style={styles.botaoSecundarioTexto}>Fazer seguro</Text>
+                    </Pressable>
+                  </>
+                )}
+
+                {inProgress && !hand?.esperandoSeguro && (
+                  <>
+                    <Pressable
+                      onPress={() => runAction(hitBlackjack)}
+                      disabled={busy || !hand?.podeComprar}
+                      style={[styles.botaoSecundario, (busy || !hand?.podeComprar) && styles.desabilitado]}
+                    >
                       <Text style={styles.botaoSecundarioTexto}>Pedir</Text>
                     </Pressable>
-                    <Pressable onPress={() => runAction(standBlackjack)} disabled={busy} style={[styles.botaoPrincipal, busy && styles.desabilitado]}>
+                    {/* Dobrar e dividir só aparecem quando cabem — quem decide é o servidor. */}
+                    {hand?.podeDobrar && (
+                      <Pressable
+                        onPress={() => runAction(doubleBlackjack)}
+                        disabled={busy}
+                        style={[styles.botaoSecundario, busy && styles.desabilitado]}
+                      >
+                        <Text style={styles.botaoSecundarioTexto}>Dobrar</Text>
+                      </Pressable>
+                    )}
+                    {hand?.podeDividir && (
+                      <Pressable
+                        onPress={() => runAction(splitBlackjack)}
+                        disabled={busy}
+                        style={[styles.botaoSecundario, busy && styles.desabilitado]}
+                      >
+                        <Text style={styles.botaoSecundarioTexto}>Dividir</Text>
+                      </Pressable>
+                    )}
+                    <Pressable
+                      onPress={() => runAction(standBlackjack)}
+                      disabled={busy || !hand?.podeParar}
+                      style={[styles.botaoPrincipal, (busy || !hand?.podeParar) && styles.desabilitado]}
+                    >
                       {busy ? <ActivityIndicator color={colors.background} /> : <Text style={styles.botaoPrincipalTexto}>Parar</Text>}
                     </Pressable>
                   </>
@@ -292,6 +380,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(11,15,13,0.82)',
   },
   seloTexto: { fontFamily: fontFamily.displayBold, color: colors.textPrimary },
+  /* A mão da vez fica acesa: dividindo, é o que diz de qual mão são os botões. */
+  seloEmJogo: { borderColor: colors.goldBright, backgroundColor: 'rgba(255,217,138,0.20)' },
+  avisoSeguro: {
+    fontFamily: fontFamily.bodyMedium,
+    fontSize: fontSize.xs,
+    color: colors.goldBright,
+    flexShrink: 1,
+    maxWidth: 260,
+  },
 
   barra: {
     position: 'absolute',

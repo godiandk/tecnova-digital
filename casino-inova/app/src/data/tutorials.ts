@@ -56,14 +56,17 @@ export const tutorials: Record<string, GameTutorial> = {
     goal: 'Ter na mão um total de pontos mais perto de 21 do que a casa, sem ultrapassar 21.',
     steps: [
       'Você recebe 2 cartas viradas para cima; a casa também recebe 2 cartas (uma delas fica escondida).',
-      'Você decide: "pedir carta" (recebe mais uma) ou "parar" (fica com o total que já tem).',
-      'Se o seu total passar de 21, você perde a rodada na hora, sem precisar esperar a casa jogar.',
-      'Quando você decide parar, a casa revela a carta escondida e é obrigada a seguir uma regra fixa (por exemplo, sempre pedir carta até chegar em 17).',
-      'Quem ficar mais perto de 21 sem passar, ganha.',
+      'Você decide: PEDIR (mais uma carta), PARAR (fica com o total), DOBRAR (dobra a aposta e recebe uma carta só) ou DIVIDIR (se as duas cartas forem iguais, viram duas mãos).',
+      'Se o seu total passar de 21, você perde aquela mão na hora, sem esperar a casa jogar.',
+      'Quando você para, a casa revela a carta escondida e segue uma regra fixa: compra até chegar em 17, e aí para — inclusive no 17 com Ás.',
+      'Quem ficar mais perto de 21 sem passar, ganha. Blackjack (21 nas duas primeiras cartas) paga 3 pra 2.',
     ],
     tips: [
       'Cartas numéricas valem o próprio número, J/Q/K valem 10, e o Ás vale 1 ou 11 — o que for melhor pra você naquele momento.',
-      'Com 12 pontos ou mais, pedir carta já é arriscado, porque muitas cartas podem fazer você passar de 21.',
+      'DOBRAR e DIVIDIR são metade do jogo. Sem usá-las, a casa ganha mais de 5% do que você aposta; usando nas horas certas, cai pra menos de 0,5%. Dobrar é forte com 10 ou 11; dividir é quase sempre certo com dois Ases ou dois 8.',
+      'O SEGURO, oferecido quando a casa mostra Ás, é a pior aposta da mesa: paga 2:1 numa carta que aparece menos de 1 vez em 3. A recomendação matemática é sempre recusar.',
+      'Vinte e um depois de dividir vale 21, não blackjack — não paga 3 pra 2.',
+      'As cartas saem de uma sapata de 8 baralhos que embaralha sozinha perto do fim, igual à mesa de cassino.',
     ],
   },
   bacara: {

@@ -1,5 +1,6 @@
 import { playRound, resolveBet } from './baccarat.engine';
-import { BaccaratBetType } from './baccarat.config';
+import { BaccaratBetType, RANKS, Rank } from './baccarat.config';
+import { Sapata } from '../shared/sapata';
 
 /**
  * Diferente do blackjack, bacará não tem nenhuma decisão do jogador — a regra de
@@ -9,6 +10,10 @@ import { BaccaratBetType } from './baccarat.config';
  * Por isso aqui é simulação, não fórmula — mas ainda é o RTP real, não uma
  * aproximação sob uma estratégia, porque não existe estratégia possível no bacará.
  *
+ * A simulação usa a MESMA sapata de 8 baralhos da mesa, com o mesmo cartão de corte.
+ * Isso importa: com baralho infinito os números davam perto mas não iguais aos de
+ * mercado, justamente porque faltava a remoção de carta.
+ *
  *   npx ts-node src/modules/games/baccarat/verify-rtp.ts
  */
 const ROUNDS = 1_000_000;
@@ -17,8 +22,11 @@ const BET_TYPES: BaccaratBetType[] = ['jogador', 'banca', 'empate'];
 
 const totalReturned: Record<BaccaratBetType, number> = { jogador: 0, banca: 0, empate: 0 };
 
+const sapata = new Sapata<Rank>(RANKS);
+
 for (let i = 0; i < ROUNDS; i += 1) {
-  const round = playRound();
+  sapata.embaralharSePassouDoCorte();
+  const round = playRound(() => sapata.comprar().rank);
   for (const betType of BET_TYPES) {
     totalReturned[betType] += resolveBet(betType, round.winner, BET);
   }
@@ -29,5 +37,4 @@ for (const betType of BET_TYPES) {
   const rtp = (totalReturned[betType] / totalBet) * 100;
   console.log(`RTP em "${betType}": ${rtp.toFixed(2)}%`);
 }
-console.log('Referência de mercado (sapata de 8 baralhos, sem reposição): jogador ~98,76%, banca ~98,94%, empate ~85,64%.');
-console.log('Aqui o baralho é "infinito" (com reposição), então os números ficam próximos, mas não idênticos.');
+console.log('Referência de mercado (sapata de 8 baralhos): jogador ~98,76%, banca ~98,94%, empate ~85,64%.');
