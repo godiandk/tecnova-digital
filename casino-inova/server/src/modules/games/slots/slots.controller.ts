@@ -2,8 +2,9 @@ import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common
 import { SlotsService } from './slots.service';
 import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
 import { Publico } from '../../auth/auth.guard';
+import { AcaoDto } from '../shared/acao.dto';
 
-class SpinDto {
+class SpinDto extends AcaoDto {
   bet!: number;
 }
 
@@ -22,6 +23,6 @@ export class SlotsController {
     if (typeof body.bet !== 'number') {
       throw new BadRequestException('Informe bet.');
     }
-    return this.slotsService.playSpin(usuarioLogado, body.bet);
+    return this.slotsService.playSpin(usuarioLogado, body.bet, body.actionId);
   }
 }

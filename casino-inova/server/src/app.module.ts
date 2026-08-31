@@ -25,10 +25,13 @@ import { StockMarketModule } from './modules/games/stock-market/stock-market.mod
 import { ChatModule } from './modules/chat/chat.module';
 import { RoadmapModule } from './modules/roadmap/roadmap.module';
 import { TournamentsModule } from './modules/tournaments/tournaments.module';
+import { SharedGamesModule } from './modules/games/shared/shared-games.module';
 
 @Module({
   imports: [
     DatabaseModule,
+    // Global: os dez jogos compartilham o mesmo registro de ações já executadas.
+    SharedGamesModule,
     AuthModule,
     UsersModule,
     WalletModule,

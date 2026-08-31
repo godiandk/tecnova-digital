@@ -1,4 +1,5 @@
 import { CELLS, MIN_MATCH, PAYLINES, REELS, SLOT_SYMBOLS, SlotSymbol } from './slots.config';
+import { fracao } from '../shared/rng';
 
 export interface WinningLine {
   payline: string;
@@ -25,7 +26,7 @@ function totalWeight(symbols: readonly SlotSymbol[] = SLOT_SYMBOLS): number {
  * Sorteia um símbolo respeitando o peso de cada um. Todas as células usam a mesma
  * distribuição — não há strip de reel com peso próprio por coluna (ver `spin`).
  */
-export function drawSymbol(random: () => number = Math.random): SlotSymbol {
+export function drawSymbol(random: () => number = fracao): SlotSymbol {
   const total = totalWeight();
   let roll = random() * total;
   for (const symbol of SLOT_SYMBOLS) {
@@ -53,11 +54,11 @@ function matchFromLeft(grid: string[], cells: readonly number[]): number {
 
 /**
  * `random` é injetável só para os testes (mock determinístico) — em produção sempre usa
- * `Math.random`. Cada célula é sorteada de forma independente; um motor "de verdade"
+ * o sorteio seguro de shared/rng.ts. Cada célula é sorteada de forma independente; um motor "de verdade"
  * usaria strips de reel com repetição controlada por coluna, mas o modelo independente
  * já é auditável, e é o que torna o RTP calculável em fórmula fechada abaixo.
  */
-export function spin(bet: number, random: () => number = Math.random): SpinResult {
+export function spin(bet: number, random: () => number = fracao): SpinResult {
   const grid = Array.from({ length: CELLS }, () => drawSymbol(random).id);
 
   const winningLines: WinningLine[] = [];

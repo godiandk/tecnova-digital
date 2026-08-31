@@ -6,6 +6,7 @@ import { BaccaratBetType, MAX_BET, MIN_BET, RANKS, Rank } from './baccarat.confi
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
 import { CartaComNaipe, nomeDaCarta } from '../shared/naipes';
 import { Sapata } from '../shared/sapata';
+import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 
 const VALID_BET_TYPES: BaccaratBetType[] = ['jogador', 'banca', 'empate'];
 /** 24 colunas de 6 no painel — 144 rodadas enchem a tela inteira. */
@@ -28,6 +29,7 @@ export class BaccaratService {
     private readonly walletService: WalletService,
     private readonly tournaments: TournamentsService,
     private readonly roadmapService: RoadmapService,
+    private readonly acoes: AcoesRepetidas,
   ) {}
 
   getConfig() {
@@ -47,7 +49,7 @@ export class BaccaratService {
    * eventual 3ª carta de cada lado, comparação, prêmio) acontece numa chamada só,
    * igual a slots e roleta, diferente do blackjack.
    */
-  async playRound(userId: string, betType: BaccaratBetType, amount: number) {
+  async playRound(userId: string, betType: BaccaratBetType, amount: number, actionId?: string) {
     if (!Number.isFinite(amount) || amount < MIN_BET || amount > MAX_BET) {
       throw new BadRequestException(`A aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
     }
@@ -55,63 +57,70 @@ export class BaccaratService {
       throw new BadRequestException('Tipo de aposta inválido — use jogador, banca ou empate.');
     }
 
-    await this.walletService.debit(userId, amount, 'aposta', GAME_ID);
-
-    // Embaralhar acontece ENTRE rodadas, nunca no meio de uma.
-    const embaralhou = this.sapata.embaralharSePassouDoCorte();
-
     /*
-     * As cartas saem da sapata JÁ com naipe — o naipe agora é o da carta que saiu de
-     * verdade, não um sorteado à parte pra tela ter o que desenhar. `sorteadas` guarda
-     * a ordem de saída, que é o que permite devolver cada carta pro lado certo depois.
+     * Daqui pra baixo é a rodada em si: debitar, sortear, pagar. Vai dentro de
+     * `umaVezSo` porque repetir a mesma ação não pode gerar rodada nova — só a
+     * carteira ser idempotente deixava o jogador pagar uma rodada e ganhar várias.
      */
-    const sorteadas: CartaComNaipe<Rank>[] = [];
-    const round = playBaccaratRound(() => {
-      const carta = this.sapata.comprar();
-      sorteadas.push(carta);
-      return carta.rank;
+    return this.acoes.umaVezSo(userId, actionId, async () => {
+      await this.walletService.debit(userId, amount, 'aposta', GAME_ID, actionId);
+
+      // Embaralhar acontece ENTRE rodadas, nunca no meio de uma.
+      const embaralhou = this.sapata.embaralharSePassouDoCorte();
+
+      /*
+       * As cartas saem da sapata JÁ com naipe — o naipe agora é o da carta que saiu de
+       * verdade, não um sorteado à parte pra tela ter o que desenhar. `sorteadas` guarda
+       * a ordem de saída, que é o que permite devolver cada carta pro lado certo depois.
+       */
+      const sorteadas: CartaComNaipe<Rank>[] = [];
+      const round = playBaccaratRound(() => {
+        const carta = this.sapata.comprar();
+        sorteadas.push(carta);
+        return carta.rank;
+      });
+      const totalReturn = resolveBet(betType, round.winner, amount);
+
+      if (totalReturn > 0) {
+        await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
+      }
+      await this.tournaments.recordRound(userId, GAME_ID, amount, totalReturn);
+
+      this.history.push({ outcome: round.winner });
+      if (this.history.length > HISTORY_LIMIT) this.history.shift();
+
+      /*
+       * A ordem de saída do bacará é fixa: jogador, banca, jogador, banca, e só então as
+       * terceiras cartas — primeiro a do jogador, depois a da banca. Por isso dá pra
+       * devolver cada carta pro seu lado sem adivinhação.
+       */
+      const doJogador = [sorteadas[0], sorteadas[2]];
+      const daBanca = [sorteadas[1], sorteadas[3]];
+      let proxima = 4;
+      if (round.playerCards.length === 3) doJogador.push(sorteadas[proxima++]);
+      if (round.bankerCards.length === 3) daBanca.push(sorteadas[proxima++]);
+
+      // Rede de segurança: se a ordem acima não bater com o que o motor jogou, a tela
+      // mostraria uma carta que não saiu. Melhor estourar aqui do que mentir na mesa.
+      const bate = (cartas: CartaComNaipe<Rank>[], valores: Rank[]) =>
+        cartas.length === valores.length && cartas.every((c, i) => c.rank === valores[i]);
+      if (!bate(doJogador, round.playerCards) || !bate(daBanca, round.bankerCards)) {
+        throw new Error('As cartas da sapata não bateram com a rodada do motor.');
+      }
+
+      return {
+        ...round,
+        playerCards: doJogador.map(nomeDaCarta),
+        bankerCards: daBanca.map(nomeDaCarta),
+        betType,
+        amount,
+        totalReturn,
+        embaralhouAgora: embaralhou,
+        cartasAteOCorte: this.sapata.cartasAteOCorte,
+        newBalance: await this.walletService.balanceOf(userId),
+        roadmap: this.getRoadmap(),
+      };
     });
-    const totalReturn = resolveBet(betType, round.winner, amount);
-
-    if (totalReturn > 0) {
-      await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
-    }
-    await this.tournaments.recordRound(userId, GAME_ID, amount, totalReturn);
-
-    this.history.push({ outcome: round.winner });
-    if (this.history.length > HISTORY_LIMIT) this.history.shift();
-
-    /*
-     * A ordem de saída do bacará é fixa: jogador, banca, jogador, banca, e só então as
-     * terceiras cartas — primeiro a do jogador, depois a da banca. Por isso dá pra
-     * devolver cada carta pro seu lado sem adivinhação.
-     */
-    const doJogador = [sorteadas[0], sorteadas[2]];
-    const daBanca = [sorteadas[1], sorteadas[3]];
-    let proxima = 4;
-    if (round.playerCards.length === 3) doJogador.push(sorteadas[proxima++]);
-    if (round.bankerCards.length === 3) daBanca.push(sorteadas[proxima++]);
-
-    // Rede de segurança: se a ordem acima não bater com o que o motor jogou, a tela
-    // mostraria uma carta que não saiu. Melhor estourar aqui do que mentir na mesa.
-    const bate = (cartas: CartaComNaipe<Rank>[], valores: Rank[]) =>
-      cartas.length === valores.length && cartas.every((c, i) => c.rank === valores[i]);
-    if (!bate(doJogador, round.playerCards) || !bate(daBanca, round.bankerCards)) {
-      throw new Error('As cartas da sapata não bateram com a rodada do motor.');
-    }
-
-    return {
-      ...round,
-      playerCards: doJogador.map(nomeDaCarta),
-      bankerCards: daBanca.map(nomeDaCarta),
-      betType,
-      amount,
-      totalReturn,
-      embaralhouAgora: embaralhou,
-      cartasAteOCorte: this.sapata.cartasAteOCorte,
-      newBalance: await this.walletService.balanceOf(userId),
-      roadmap: this.getRoadmap(),
-    };
   }
 }
 

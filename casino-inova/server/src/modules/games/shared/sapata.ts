@@ -1,4 +1,5 @@
 import { CartaComNaipe, Naipe, NAIPES } from './naipes';
+import { fracao } from './rng';
 
 /**
  * A sapata: oito baralhos de 52 cartas embaralhados juntos, distribuídos SEM reposição,
@@ -33,7 +34,7 @@ export class Sapata<R extends string> {
 
   constructor(
     private readonly valores: readonly R[],
-    private readonly random: () => number = Math.random,
+    private readonly random: () => number = fracao,
     private readonly baralhos: number = BARALHOS_NA_SAPATA,
   ) {
     this.embaralhar();

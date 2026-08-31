@@ -25,10 +25,11 @@ export function fetchBaccaratConfig(): Promise<BaccaratConfig> {
   return apiRequest<BaccaratConfig>('/games/bacara/config');
 }
 
-export function playBaccaratRound(betType: BaccaratBetType, amount: number): Promise<BaccaratRoundResponse> {
+export function playBaccaratRound(betType: BaccaratBetType, amount: number, actionId?: string): Promise<BaccaratRoundResponse> {
   return apiRequest<BaccaratRoundResponse>('/games/bacara/apostar', {
     method: 'POST',
     body: { betType, amount },
+    actionId,
   });
 }
 

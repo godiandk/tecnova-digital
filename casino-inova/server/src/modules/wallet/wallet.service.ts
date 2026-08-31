@@ -10,6 +10,13 @@ export interface LedgerEntry {
   type: LedgerEntryType;
   /** Positivo = crédito, negativo = débito. */
   amount: number;
+  /** A chave da intenção do cliente, quando a operação veio de uma ação dele. */
+  actionId?: string;
+  /**
+   * Verdadeiro quando esta entrada JÁ EXISTIA e foi devolvida em vez de criada — a
+   * mesma ação chegou duas vezes. Quem chamou precisa saber pra não pagar de novo.
+   */
+  repetida?: boolean;
   /**
    * De onde veio a entrada: o id do jogo numa aposta ou prêmio de jogo, o id do
    * torneio num prêmio de torneio, o id do pacote numa compra. Serve pra pessoa
@@ -26,6 +33,7 @@ interface LinhaLedger {
   type: LedgerEntryType;
   amount: number;
   origin: string | null;
+  action_id: string | null;
   created_at: Date;
 }
 
@@ -52,19 +60,53 @@ export class WalletService {
       'SELECT * FROM ledger_entries WHERE user_id = $1 ORDER BY id',
       [userId],
     );
-    return linhas.map(paraEntrada);
+    return linhas.map((linha) => paraEntrada(linha));
   }
 
-  async credit(userId: string, amount: number, type: LedgerEntryType, origin?: string): Promise<LedgerEntry> {
+  /**
+   * Credita. Com `actionId`, creditar duas vezes a mesma ação é impossível — a segunda
+   * chamada devolve a entrada que já existe, marcada como repetida.
+   *
+   * `ON CONFLICT DO NOTHING` + releitura, em vez de "consultar antes e depois inserir":
+   * quem decide se já existe é o índice único do banco, então duas requisições
+   * simultâneas não conseguem as duas achar que são a primeira.
+   */
+  async credit(
+    userId: string,
+    amount: number,
+    type: LedgerEntryType,
+    origin?: string,
+    actionId?: string,
+  ): Promise<LedgerEntry> {
     if (amount <= 0) {
       throw new BadRequestException('O valor de um crédito precisa ser maior que zero.');
     }
-    const linha = await this.db.queryOne<LinhaLedger>(
-      `INSERT INTO ledger_entries (user_id, type, amount, origin)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [userId, type, Math.round(amount), origin ?? null],
+    const valor = Math.round(amount);
+
+    if (!actionId) {
+      const linha = await this.db.queryOne<LinhaLedger>(
+        `INSERT INTO ledger_entries (user_id, type, amount, origin)
+         VALUES ($1, $2, $3, $4) RETURNING *`,
+        [userId, type, valor, origin ?? null],
+      );
+      return paraEntrada(linha!);
+    }
+
+    const inserido = await this.db.queryOne<LinhaLedger>(
+      `INSERT INTO ledger_entries (user_id, type, amount, origin, action_id)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (user_id, action_id) WHERE action_id IS NOT NULL DO NOTHING
+       RETURNING *`,
+      [userId, type, valor, origin ?? null, actionId],
     );
-    return paraEntrada(linha!);
+    if (inserido) return paraEntrada(inserido);
+
+    // Não inseriu porque já existia: devolve a de antes, marcada como repetida.
+    const anterior = await this.db.queryOne<LinhaLedger>(
+      'SELECT * FROM ledger_entries WHERE user_id = $1 AND action_id = $2',
+      [userId, actionId],
+    );
+    return paraEntrada(anterior!, true);
   }
 
   /**
@@ -81,7 +123,13 @@ export class WalletService {
    * MESMO jogador espera esta transação terminar antes de ler o saldo. Débitos de
    * jogadores diferentes não se atrapalham, porque cada um trava a sua própria linha.
    */
-  async debit(userId: string, amount: number, type: LedgerEntryType, origin?: string): Promise<LedgerEntry> {
+  async debit(
+    userId: string,
+    amount: number,
+    type: LedgerEntryType,
+    origin?: string,
+    actionId?: string,
+  ): Promise<LedgerEntry> {
     if (amount <= 0) {
       throw new BadRequestException('O valor de um débito precisa ser maior que zero.');
     }
@@ -93,6 +141,22 @@ export class WalletService {
         throw new BadRequestException('Usuário não encontrado.');
       }
 
+      /*
+       * Idempotência: se esta ação já foi debitada, devolve a entrada que já existe em
+       * vez de criar outra. A leitura acontece DEPOIS do FOR UPDATE de propósito — com
+       * a linha do usuário travada, duas requisições simultâneas do mesmo jogador não
+       * conseguem ler "não existe" ao mesmo tempo.
+       */
+      if (actionId) {
+        const { rows: jaFeito } = await client.query<LinhaLedger>(
+          'SELECT * FROM ledger_entries WHERE user_id = $1 AND action_id = $2',
+          [userId, actionId],
+        );
+        if (jaFeito.length > 0) {
+          return paraEntrada(jaFeito[0], true);
+        }
+      }
+
       const { rows } = await client.query<{ saldo: number }>(
         'SELECT COALESCE(SUM(amount), 0)::bigint AS saldo FROM ledger_entries WHERE user_id = $1',
         [userId],
@@ -102,9 +166,9 @@ export class WalletService {
       }
 
       const inserido = await client.query<LinhaLedger>(
-        `INSERT INTO ledger_entries (user_id, type, amount, origin)
-         VALUES ($1, $2, $3, $4) RETURNING *`,
-        [userId, type, -valor, origin ?? null],
+        `INSERT INTO ledger_entries (user_id, type, amount, origin, action_id)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [userId, type, -valor, origin ?? null, actionId ?? null],
       );
       return paraEntrada(inserido.rows[0]);
     });
@@ -131,13 +195,15 @@ export class WalletService {
   }
 }
 
-function paraEntrada(linha: LinhaLedger): LedgerEntry {
+function paraEntrada(linha: LinhaLedger, repetida = false): LedgerEntry {
   return {
     id: String(linha.id),
     userId: linha.user_id,
     type: linha.type,
     amount: linha.amount,
     origin: linha.origin ?? undefined,
+    actionId: linha.action_id ?? undefined,
     createdAt: linha.created_at.toISOString(),
+    ...(repetida ? { repetida: true } : {}),
   };
 }

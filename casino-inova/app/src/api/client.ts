@@ -58,7 +58,24 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiRequest<T>(path: string, options?: { method?: 'GET' | 'POST'; body?: unknown }): Promise<T> {
+/**
+ * Um id novo pra UMA intenção do jogador.
+ *
+ * Gere no momento do toque, e REUSE o mesmo id se a chamada precisar ser repetida. É
+ * isso que deixa o servidor distinguir "apostou duas vezes" de "a mesma aposta chegou
+ * duas vezes" — sem o id ele debita as duas, porque as duas requisições são idênticas.
+ *
+ * Não precisa ser imprevisível, só único por jogador: quem manda a chave já está
+ * autenticado, e adivinhar a própria chave não dá acesso a nada.
+ */
+export function novaAcao(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export async function apiRequest<T>(
+  path: string,
+  options?: { method?: 'GET' | 'POST'; body?: unknown; actionId?: string },
+): Promise<T> {
   const token = tokenAtual();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options?.method ?? 'GET',
@@ -67,7 +84,13 @@ export async function apiRequest<T>(path: string, options?: { method?: 'GET' | '
       // Quem você é vai no cabeçalho, assinado. Nenhuma rota lê identidade do corpo.
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: options?.body ? JSON.stringify(options.body) : undefined,
+    /*
+     * A chave de idempotência entra no corpo junto com o resto. Fica aqui, num lugar
+     * só, pra nenhuma tela precisar lembrar de montar o campo na mão.
+     */
+    body: options?.body
+      ? JSON.stringify(options.actionId ? { ...(options.body as object), actionId: options.actionId } : options.body)
+      : undefined,
   });
 
   // Token expirado ou revogado: derruba a sessão pra o app voltar pro login em vez de

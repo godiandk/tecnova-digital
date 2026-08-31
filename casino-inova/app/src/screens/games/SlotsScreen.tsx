@@ -11,7 +11,7 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { ChipStack } from '../../components/ChipStack';
 import { Rolo } from '../../components/Rolo';
-import { ApiError } from '../../api/client';
+import { ApiError, novaAcao } from '../../api/client';
 import { fetchSlotsConfig, spinSlots, SlotsConfig, WinningLineDto } from '../../api/slots';
 import { usePlayer } from '../../data/usePlayer';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
@@ -89,8 +89,14 @@ export function SlotsScreen({ navigation }: Props) {
     if (!config || spinning) return;
     setSpinning(true);
     setSpinError(null);
+    /*
+     * Um id por TOQUE. Se este giro precisar ser reenviado (rede caiu depois de a
+     * requisição chegar, por exemplo), o mesmo id vai junto e o servidor devolve o
+     * resultado que já existe em vez de debitar de novo.
+     */
+    const acao = novaAcao();
     try {
-      const result = await spinSlots(bet);
+      const result = await spinSlots(bet, acao);
       setGrid(result.grid);
       setWinningLines(result.winningLines);
       setLastWin(result.totalWin);

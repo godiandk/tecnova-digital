@@ -5,6 +5,7 @@ import {
   TOTAL_RETURN_MULTIPLIER,
   WINNING_SUMS,
 } from './banca-francesa.config';
+import { fracao } from '../shared/rng';
 
 export interface BancaFrancesaBet {
   type: BancaFrancesaBetType;
@@ -45,7 +46,7 @@ function classify(sum: number): DecisiveOutcome | null {
  * rápido (216/63 ≈ 3,4 lançamentos em média), mas o limite evita loop infinito em
  * teoria (praticamente impossível de bater: chance de 1000 nulos seguidos é ~0).
  */
-export function rollUntilDecisive(random: () => number = Math.random): RollOutcome {
+export function rollUntilDecisive(random: () => number = fracao): RollOutcome {
   let rerolls = 0;
   for (let attempt = 0; attempt < 1000; attempt += 1) {
     const dice = rollOnce(random);

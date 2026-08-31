@@ -1,4 +1,5 @@
 import { colorOf, POCKET_COUNT, RouletteBet, TOTAL_MULTIPLIER } from './roulette.config';
+import { fracao } from '../shared/rng';
 
 export interface SpinResult {
   pocket: number;
@@ -7,7 +8,7 @@ export interface SpinResult {
   totalReturn: number;
 }
 
-export function spinWheel(random: () => number = Math.random): number {
+export function spinWheel(random: () => number = fracao): number {
   return Math.floor(random() * POCKET_COUNT);
 }
 
@@ -43,7 +44,7 @@ export function isWinningBet(bet: RouletteBet, pocket: number): boolean {
   }
 }
 
-export function spin(bet: RouletteBet, amount: number, random: () => number = Math.random): SpinResult {
+export function spin(bet: RouletteBet, amount: number, random: () => number = fracao): SpinResult {
   const pocket = spinWheel(random);
   const win = isWinningBet(bet, pocket);
   const totalReturn = win ? amount * TOTAL_MULTIPLIER[bet.type] : 0;

@@ -4,8 +4,9 @@ import { BoardEnd } from './domino.engine';
 import { Tile } from './domino.config';
 import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
 import { Publico } from '../../auth/auth.guard';
+import { AcaoDto } from '../shared/acao.dto';
 
-class NewMatchDto {
+class NewMatchDto extends AcaoDto {
   buyIn!: number;
 }
 
@@ -32,7 +33,7 @@ export class DominoController {
     if (typeof body.buyIn !== 'number') {
       throw new BadRequestException('Informe buyIn.');
     }
-    return this.dominoService.newMatch(usuarioLogado, body.buyIn);
+    return this.dominoService.newMatch(usuarioLogado, body.buyIn, body.actionId);
   }
 
   @Post('jogar-peca')

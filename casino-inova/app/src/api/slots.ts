@@ -47,6 +47,6 @@ export function fetchSlotsConfig(): Promise<SlotsConfig> {
   return apiRequest<SlotsConfig>('/games/slots/config');
 }
 
-export function spinSlots(bet: number): Promise<SpinResponse> {
-  return apiRequest<SpinResponse>('/games/slots/girar', { method: 'POST', body: { bet } });
+export function spinSlots(bet: number, actionId?: string): Promise<SpinResponse> {
+  return apiRequest<SpinResponse>('/games/slots/girar', { method: 'POST', body: { bet }, actionId });
 }

@@ -4,6 +4,7 @@ import { TournamentsService } from '../../tournaments/tournaments.service';
 import { BacBoBet, resolveBets, roll, theoreticalRtp } from './bac-bo.engine';
 import { MAX_BET, MIN_BET, SIDE_TOTAL_MULTIPLIER, TIE_PROFIT_ODDS, TIE_REFUND_MULTIPLIER } from './bac-bo.config';
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
+import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 
 const BET_TYPES: BacBoBet['type'][] = ['jogador', 'banca', 'empate'];
 /** Quantas rodadas o placar guarda — o painel mostra 24 colunas de 6, então 144 cobre a tela cheia. */
@@ -20,6 +21,7 @@ export class BacBoService {
     private readonly walletService: WalletService,
     private readonly tournaments: TournamentsService,
     private readonly roadmapService: RoadmapService,
+    private readonly acoes: AcoesRepetidas,
   ) {}
 
   /** As cinco estradas do placar, calculadas a partir do histórico da mesa. */
@@ -58,31 +60,39 @@ export class BacBoService {
     }
   }
 
-  async playRound(userId: string, bets: BacBoBet[]) {
+  async playRound(userId: string, bets: BacBoBet[], actionId?: string) {
     this.validateBets(bets);
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
-    await this.walletService.debit(userId, totalStake, 'aposta', GAME_ID);
 
-    const result = roll();
-    const results = resolveBets(result, bets);
-    const totalReturn = results.reduce((sum, item) => sum + item.totalReturn, 0);
+    /*
+     * Daqui pra baixo é a rodada em si: debitar, sortear, pagar. Vai dentro de
+     * `umaVezSo` porque repetir a mesma ação não pode gerar rodada nova — só a
+     * carteira ser idempotente deixava o jogador pagar uma rodada e ganhar várias.
+     */
+    return this.acoes.umaVezSo(userId, actionId, async () => {
+      await this.walletService.debit(userId, totalStake, 'aposta', GAME_ID, actionId);
 
-    if (totalReturn > 0) {
-      await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
-    }
-    await this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn);
+      const result = roll();
+      const results = resolveBets(result, bets);
+      const totalReturn = results.reduce((sum, item) => sum + item.totalReturn, 0);
 
-    this.history.push({ outcome: result.outcome });
-    if (this.history.length > HISTORY_LIMIT) this.history.shift();
+      if (totalReturn > 0) {
+        await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
+      }
+      await this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn);
 
-    return {
-      ...result,
-      results,
-      totalStake,
-      totalReturn,
-      newBalance: await this.walletService.balanceOf(userId),
-      roadmap: this.getRoadmap(),
-    };
+      this.history.push({ outcome: result.outcome });
+      if (this.history.length > HISTORY_LIMIT) this.history.shift();
+
+      return {
+        ...result,
+        results,
+        totalStake,
+        totalReturn,
+        newBalance: await this.walletService.balanceOf(userId),
+        roadmap: this.getRoadmap(),
+      };
+    });
   }
 }

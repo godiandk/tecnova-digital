@@ -3,10 +3,11 @@ import { TrucoResponse, TrucoService } from './truco.service';
 import { Card, TrucoSignalId, TrucoStyle, TrucoVariant } from './truco.config';
 import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
 import { Publico } from '../../auth/auth.guard';
+import { AcaoDto } from '../shared/acao.dto';
 
 const VALID_RESPONSES: TrucoResponse[] = ['aceitar', 'correr', 'aumentar'];
 
-class NewMatchDto {
+class NewMatchDto extends AcaoDto {
   buyIn!: number;
   /** "paulista" (padrão) ou "mineiro". */
   variant?: TrucoVariant;
@@ -44,7 +45,7 @@ export class TrucoController {
     if (typeof body.buyIn !== 'number') {
       throw new BadRequestException('Informe buyIn.');
     }
-    return this.trucoService.newMatch(usuarioLogado, body.buyIn, body.variant, body.style);
+    return this.trucoService.newMatch(usuarioLogado, body.buyIn, body.variant, body.style, body.actionId);
   }
 
   @Post('jogar-carta')

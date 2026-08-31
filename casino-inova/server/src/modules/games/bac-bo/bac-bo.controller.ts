@@ -3,8 +3,9 @@ import { BacBoService } from './bac-bo.service';
 import { BacBoBet } from './bac-bo.engine';
 import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
 import { Publico } from '../../auth/auth.guard';
+import { AcaoDto } from '../shared/acao.dto';
 
-class PlayDto {
+class PlayDto extends AcaoDto {
   bets!: BacBoBet[];
 }
 
@@ -29,6 +30,6 @@ export class BacBoController {
     if (!Array.isArray(body?.bets)) {
       throw new BadRequestException('Informe bets.');
     }
-    return this.bacBoService.playRound(usuarioLogado, body.bets);
+    return this.bacBoService.playRound(usuarioLogado, body.bets, body.actionId);
   }
 }

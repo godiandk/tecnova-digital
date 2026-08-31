@@ -87,7 +87,7 @@ export class TrucoService {
     };
   }
 
-  async newMatch(userId: string, buyIn: number, variant: TrucoVariant = 'paulista', style: TrucoStyle = 'sujo') {
+  async newMatch(userId: string, buyIn: number, variant: TrucoVariant = 'paulista', style: TrucoStyle = 'sujo', actionId?: string) {
     const existing = this.matches.get(userId);
     if (existing && !existing.finished) {
       throw new BadRequestException('Você já tem uma partida de truco em andamento.');
@@ -102,7 +102,7 @@ export class TrucoService {
       throw new BadRequestException('Estilo inválido — use "sujo" ou "limpo".');
     }
 
-    await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID);
+    await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID, actionId);
     const match: TrucoMatch = {
       buyIn,
       variant,

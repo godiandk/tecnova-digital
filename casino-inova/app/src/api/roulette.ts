@@ -40,10 +40,11 @@ export function fetchRouletteConfig(): Promise<RouletteConfig> {
   return apiRequest<RouletteConfig>('/games/roleta/config');
 }
 
-export function spinRoulette(bet: RouletteBet, amount: number): Promise<RouletteSpinResponse> {
+export function spinRoulette(bet: RouletteBet, amount: number, actionId?: string): Promise<RouletteSpinResponse> {
   return apiRequest<RouletteSpinResponse>('/games/roleta/girar', {
     method: 'POST',
     body: { bet, amount },
+    actionId,
   });
 }
 

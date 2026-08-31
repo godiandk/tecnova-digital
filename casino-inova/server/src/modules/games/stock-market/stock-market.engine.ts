@@ -1,4 +1,5 @@
 import { COMMISSION, MAX_CHANGE_PERCENT, StockDirection, TICKS_PER_ROUND } from './stock-market.config';
+import { fracao } from '../shared/rng';
 
 export interface StockBet {
   direction: StockDirection;
@@ -29,7 +30,7 @@ export interface StockBetResult extends StockBet {
  * o pagamento é linear e simétrico no movimento (ver verify-rtp.ts). Nada aqui está
  * calibrado pra fazer o jogador perder — a única vantagem da casa é a comissão.
  */
-export function runRound(random: () => number = Math.random): StockRound {
+export function runRound(random: () => number = fracao): StockRound {
   const path: number[] = [0];
   let current = 0;
 

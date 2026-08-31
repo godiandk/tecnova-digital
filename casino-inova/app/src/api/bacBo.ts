@@ -45,9 +45,10 @@ export function fetchBacBoRoadmap(): Promise<Roadmap> {
   return apiRequest<Roadmap>('/games/bac-bo/placar');
 }
 
-export function playBacBoRound(bets: BacBoBet[]): Promise<BacBoRoundResponse> {
+export function playBacBoRound(bets: BacBoBet[], actionId?: string): Promise<BacBoRoundResponse> {
   return apiRequest<BacBoRoundResponse>('/games/bac-bo/apostar', {
     method: 'POST',
     body: { bets },
+    actionId,
   });
 }

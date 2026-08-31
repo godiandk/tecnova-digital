@@ -40,10 +40,11 @@ export function fetchBancaFrancesaConfig(): Promise<BancaFrancesaConfig> {
   return apiRequest<BancaFrancesaConfig>('/games/banca-francesa/config');
 }
 
-export function playBancaFrancesaRound(bets: BancaFrancesaBet[]): Promise<BancaFrancesaRoundResponse> {
+export function playBancaFrancesaRound(bets: BancaFrancesaBet[], actionId?: string): Promise<BancaFrancesaRoundResponse> {
   return apiRequest<BancaFrancesaRoundResponse>('/games/banca-francesa/apostar', {
     method: 'POST',
     body: { bets },
+    actionId,
   });
 }
 

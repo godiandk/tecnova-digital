@@ -3,8 +3,9 @@ import { RouletteService } from './roulette.service';
 import { RouletteBet } from './roulette.config';
 import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
 import { Publico } from '../../auth/auth.guard';
+import { AcaoDto } from '../shared/acao.dto';
 
-class SpinDto {
+class SpinDto extends AcaoDto {
   bet!: RouletteBet;
   amount!: number;
 }
@@ -30,6 +31,6 @@ export class RouletteController {
     if (!body?.bet?.type || typeof body.amount !== 'number') {
       throw new BadRequestException('Informe bet e amount.');
     }
-    return this.rouletteService.playSpin(usuarioLogado, body.bet, body.amount);
+    return this.rouletteService.playSpin(usuarioLogado, body.bet, body.amount, body.actionId);
   }
 }

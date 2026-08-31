@@ -1,4 +1,5 @@
 import { Card, HAND_CATEGORY_LABEL, Rank, SUITS } from './poker.config';
+import { fracao } from '../shared/rng';
 
 export function buildDeck(): Card[] {
   const deck: Card[] = [];
@@ -10,7 +11,7 @@ export function buildDeck(): Card[] {
   return deck;
 }
 
-export function shuffle<T>(items: T[], random: () => number = Math.random): T[] {
+export function shuffle<T>(items: T[], random: () => number = fracao): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i -= 1) {
     const j = Math.floor(random() * (i + 1));
@@ -108,7 +109,7 @@ export type PokerAction = 'desistir' | 'passar' | 'pagar' | 'aumentar';
  * cartas na mão, depois pela categoria da melhor mão possível) e decide com uma
  * pitada de aleatoriedade — inclusive blefando às vezes — em vez de jogar "perfeito".
  */
-export function botDecision(botHole: Card[], board: Card[], betToCall: number, random: () => number = Math.random): PokerAction {
+export function botDecision(botHole: Card[], board: Card[], betToCall: number, random: () => number = fracao): PokerAction {
   const strength = board.length === 0 ? preflopStrength(botHole) : bestHandOf([...botHole, ...board]).category / 8;
   const bluff = random() < 0.08;
 

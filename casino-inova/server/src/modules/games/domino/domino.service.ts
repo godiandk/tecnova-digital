@@ -40,7 +40,7 @@ export class DominoService {
     return { minBuyIn: MIN_BUY_IN, maxBuyIn: MAX_BUY_IN, handSize: HAND_SIZE };
   }
 
-  async newMatch(userId: string, buyIn: number) {
+  async newMatch(userId: string, buyIn: number, actionId?: string) {
     const existing = this.matches.get(userId);
     if (existing && !existing.finished) {
       throw new BadRequestException('Você já tem uma partida de dominó em andamento.');
@@ -49,7 +49,7 @@ export class DominoService {
       throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
     }
 
-    await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID);
+    await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID, actionId);
     const deck = shuffle(buildTileSet());
     const match: DominoMatch = {
       buyIn,

@@ -6,6 +6,7 @@ import {
   TIE_PROFIT_ODDS,
   TIE_REFUND_MULTIPLIER,
 } from './bac-bo.config';
+import { fracao } from '../shared/rng';
 
 export interface BacBoRoll {
   playerDice: number[];
@@ -29,7 +30,7 @@ function rollPair(random: () => number): number[] {
   return Array.from({ length: DICE_PER_SIDE }, () => Math.floor(random() * FACES) + 1);
 }
 
-export function roll(random: () => number = Math.random): BacBoRoll {
+export function roll(random: () => number = fracao): BacBoRoll {
   const playerDice = rollPair(random);
   const bankerDice = rollPair(random);
   const playerTotal = playerDice.reduce((sum, die) => sum + die, 0);

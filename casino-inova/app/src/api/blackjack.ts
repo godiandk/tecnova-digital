@@ -58,8 +58,8 @@ export function fetchBlackjackConfig(): Promise<BlackjackConfig> {
   return apiRequest<BlackjackConfig>('/games/blackjack/config');
 }
 
-export function startBlackjackHand(bet: number): Promise<BlackjackHandResponse> {
-  return apiRequest<BlackjackHandResponse>('/games/blackjack/apostar', { method: 'POST', body: { bet } });
+export function startBlackjackHand(bet: number, actionId?: string): Promise<BlackjackHandResponse> {
+  return apiRequest<BlackjackHandResponse>('/games/blackjack/apostar', { method: 'POST', body: { bet }, actionId });
 }
 
 export function hitBlackjack(): Promise<BlackjackHandResponse> {

@@ -1,3 +1,4 @@
+import { fracao } from './rng';
 /**
  * Naipe pra desenhar a carta na tela.
  *
@@ -28,7 +29,7 @@ export function naipeLivre<R extends string>(rank: R, naMesa: CartaComNaipe<R>[]
   const usados = new Set(naMesa.filter((carta) => carta.rank === rank).map((carta) => carta.naipe));
   const livres = NAIPES.filter((naipe) => !usados.has(naipe));
   const opcoes = livres.length > 0 ? livres : NAIPES;
-  return opcoes[Math.floor(Math.random() * opcoes.length)];
+  return opcoes[Math.floor(fracao() * opcoes.length)];
 }
 
 /** O nome da imagem no app — 'copas-A', 'espadas-10'. */

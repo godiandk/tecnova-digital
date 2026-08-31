@@ -4,6 +4,7 @@ import { TournamentsService } from '../../tournaments/tournaments.service';
 import { BancaFrancesaBet, resolveBets, rollUntilDecisive, theoreticalRtp } from './banca-francesa.engine';
 import { BET_TYPES, MAX_BET, MAX_SIMULTANEOUS_BETS, MIN_BET, TOTAL_RETURN_MULTIPLIER, WINNING_SUMS } from './banca-francesa.config';
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
+import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 
 const HISTORY_LIMIT = 144;
 
@@ -18,6 +19,7 @@ export class BancaFrancesaService {
     private readonly walletService: WalletService,
     private readonly tournaments: TournamentsService,
     private readonly roadmapService: RoadmapService,
+    private readonly acoes: AcoesRepetidas,
   ) {}
 
   /**
@@ -60,36 +62,44 @@ export class BancaFrancesaService {
     }
   }
 
-  async playRound(userId: string, bets: BancaFrancesaBet[]) {
+  async playRound(userId: string, bets: BancaFrancesaBet[], actionId?: string) {
     this.validateBets(bets);
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
-    await this.walletService.debit(userId, totalStake, 'aposta', GAME_ID);
 
-    const { dice, sum, outcome, rerolls } = rollUntilDecisive();
-    const results = resolveBets(outcome, bets);
-    const totalReturn = results.reduce((total, result) => total + result.totalReturn, 0);
+    /*
+     * Daqui pra baixo é a rodada em si: debitar, sortear, pagar. Vai dentro de
+     * `umaVezSo` porque repetir a mesma ação não pode gerar rodada nova — só a
+     * carteira ser idempotente deixava o jogador pagar uma rodada e ganhar várias.
+     */
+    return this.acoes.umaVezSo(userId, actionId, async () => {
+      await this.walletService.debit(userId, totalStake, 'aposta', GAME_ID, actionId);
 
-    if (totalReturn > 0) {
-      await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
-    }
-    await this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn);
+      const { dice, sum, outcome, rerolls } = rollUntilDecisive();
+      const results = resolveBets(outcome, bets);
+      const totalReturn = results.reduce((total, result) => total + result.totalReturn, 0);
 
-    this.history.push({
-      outcome: outcome === 'grande' ? 'banca' : outcome === 'pequeno' ? 'jogador' : 'empate',
+      if (totalReturn > 0) {
+        await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
+      }
+      await this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn);
+
+      this.history.push({
+        outcome: outcome === 'grande' ? 'banca' : outcome === 'pequeno' ? 'jogador' : 'empate',
+      });
+      if (this.history.length > HISTORY_LIMIT) this.history.shift();
+
+      return {
+        dice,
+        sum,
+        outcome,
+        rerolls,
+        results,
+        totalStake,
+        totalReturn,
+        newBalance: await this.walletService.balanceOf(userId),
+        roadmap: this.getRoadmap(),
+      };
     });
-    if (this.history.length > HISTORY_LIMIT) this.history.shift();
-
-    return {
-      dice,
-      sum,
-      outcome,
-      rerolls,
-      results,
-      totalStake,
-      totalReturn,
-      newBalance: await this.walletService.balanceOf(userId),
-      roadmap: this.getRoadmap(),
-    };
   }
 }

@@ -3,6 +3,7 @@ import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { spin, theoreticalRtp } from './roulette.engine';
 import { colorOf, MAX_BET, MIN_BET, RED_NUMBERS, RouletteBet, TOTAL_MULTIPLIER } from './roulette.config';
+import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 
 /** Quantos números o painel da mesa guarda — mesa real costuma mostrar os últimos ~20. */
 const HISTORY_LIMIT = 40;
@@ -17,6 +18,7 @@ export class RouletteService {
   constructor(
     private readonly walletService: WalletService,
     private readonly tournaments: TournamentsService,
+    private readonly acoes: AcoesRepetidas,
   ) {}
 
   /**
@@ -57,7 +59,7 @@ export class RouletteService {
     };
   }
 
-  async playSpin(userId: string, bet: RouletteBet, amount: number) {
+  async playSpin(userId: string, bet: RouletteBet, amount: number, actionId?: string) {
     if (!Number.isFinite(amount) || amount < MIN_BET || amount > MAX_BET) {
       throw new BadRequestException(`A aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
     }
@@ -68,17 +70,24 @@ export class RouletteService {
       throw new BadRequestException('Aposta em número exato precisa de um número entre 0 e 36.');
     }
 
-    await this.walletService.debit(userId, amount, 'aposta', GAME_ID);
-    const result = spin(bet, amount);
+    /*
+     * Daqui pra baixo é a rodada em si: debitar, sortear, pagar. Vai dentro de
+     * `umaVezSo` porque repetir a mesma ação não pode gerar rodada nova — só a
+     * carteira ser idempotente deixava o jogador pagar uma rodada e ganhar várias.
+     */
+    return this.acoes.umaVezSo(userId, actionId, async () => {
+      await this.walletService.debit(userId, amount, 'aposta', GAME_ID, actionId);
+      const result = spin(bet, amount);
 
-    if (result.totalReturn > 0) {
-      await this.walletService.credit(userId, result.totalReturn, 'premio', GAME_ID);
-    }
-    await this.tournaments.recordRound(userId, GAME_ID, amount, result.totalReturn);
+      if (result.totalReturn > 0) {
+        await this.walletService.credit(userId, result.totalReturn, 'premio', GAME_ID);
+      }
+      await this.tournaments.recordRound(userId, GAME_ID, amount, result.totalReturn);
 
-    this.history.push(result.pocket);
-    if (this.history.length > HISTORY_LIMIT) this.history.shift();
+      this.history.push(result.pocket);
+      if (this.history.length > HISTORY_LIMIT) this.history.shift();
 
-    return { ...result, amount, newBalance: await this.walletService.balanceOf(userId), history: this.getHistory() };
+      return { ...result, amount, newBalance: await this.walletService.balanceOf(userId), history: this.getHistory() };
+    });
   }
 }

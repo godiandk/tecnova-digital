@@ -39,12 +39,30 @@ CREATE TABLE IF NOT EXISTS ledger_entries (
   amount      BIGINT      NOT NULL CHECK (amount <> 0),
   -- De onde veio: id do jogo, do torneio ou do pacote. Deixa o extrato legível.
   origin      TEXT,
+  -- Chave de idempotência: identifica a INTENÇÃO do cliente, não a linha.
+  -- Duas requisições com a mesma chave são a mesma aposta tentada duas vezes (dedo
+  -- duplo, retry depois de timeout, dois aparelhos), e só a primeira pode valer.
+  -- Nula nas entradas que o servidor cria por conta própria (prêmio, ajuste, bônus).
+  action_id   TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- O saldo é lido somando as entradas do usuário, então esse índice é o caminho quente
 -- do sistema inteiro: toda aposta passa por ele.
 CREATE INDEX IF NOT EXISTS ledger_entries_user_idx ON ledger_entries (user_id, id);
+
+-- Colunas novas em bancos que já existiam antes delas.
+ALTER TABLE ledger_entries ADD COLUMN IF NOT EXISTS action_id TEXT;
+
+-- É ESTE índice que impede o débito duplo, e é ele que faz o trabalho de verdade:
+-- não é o código que decide se já viu a ação, é o banco que recusa a segunda. Assim
+-- vale mesmo com duas requisições simultâneas em processos diferentes, que é
+-- exatamente o caso em que uma checagem em código falharia.
+-- Parcial (WHERE action_id IS NOT NULL) porque as entradas do servidor não têm chave
+-- e não devem colidir entre si.
+CREATE UNIQUE INDEX IF NOT EXISTS ledger_entries_action_idx
+  ON ledger_entries (user_id, action_id)
+  WHERE action_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS friend_requests (
   id          BIGSERIAL   PRIMARY KEY,

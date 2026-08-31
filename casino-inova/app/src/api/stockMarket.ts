@@ -32,9 +32,10 @@ export function fetchStockMarketHistory(): Promise<{ closes: number[] }> {
   return apiRequest<{ closes: number[] }>('/games/stock-market/historico');
 }
 
-export function playStockMarketRound(direction: StockDirection, amount: number): Promise<StockMarketRoundResponse> {
+export function playStockMarketRound(direction: StockDirection, amount: number, actionId?: string): Promise<StockMarketRoundResponse> {
   return apiRequest<StockMarketRoundResponse>('/games/stock-market/apostar', {
     method: 'POST',
     body: { direction, amount },
+    actionId,
   });
 }

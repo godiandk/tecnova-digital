@@ -3,8 +3,9 @@ import { BaccaratService } from './baccarat.service';
 import { BaccaratBetType } from './baccarat.config';
 import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
 import { Publico } from '../../auth/auth.guard';
+import { AcaoDto } from '../shared/acao.dto';
 
-class BetDto {
+class BetDto extends AcaoDto {
   betType!: BaccaratBetType;
   amount!: number;
 }
@@ -30,6 +31,6 @@ export class BaccaratController {
     if (!body?.betType || typeof body.amount !== 'number') {
       throw new BadRequestException('Informe betType e amount.');
     }
-    return this.baccaratService.playRound(usuarioLogado, body.betType, body.amount);
+    return this.baccaratService.playRound(usuarioLogado, body.betType, body.amount, body.actionId);
   }
 }

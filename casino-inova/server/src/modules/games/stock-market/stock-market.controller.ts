@@ -3,8 +3,9 @@ import { StockMarketService } from './stock-market.service';
 import { StockDirection } from './stock-market.config';
 import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
 import { Publico } from '../../auth/auth.guard';
+import { AcaoDto } from '../shared/acao.dto';
 
-class PlayDto {
+class PlayDto extends AcaoDto {
   direction!: StockDirection;
   amount!: number;
 }
@@ -27,6 +28,6 @@ export class StockMarketController {
 
   @Post('apostar')
   playRound(@UsuarioAtual() usuarioLogado: string, @Body() body: PlayDto) {
-    return this.stockMarketService.playRound(usuarioLogado, { direction: body.direction, amount: body.amount });
+    return this.stockMarketService.playRound(usuarioLogado, { direction: body.direction, amount: body.amount }, body.actionId);
   }
 }

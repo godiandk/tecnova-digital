@@ -1,4 +1,5 @@
 import { Card, MINEIRO_FIXED_MANILHAS, RANKS, SUITS, TrucoRank, TrucoVariant, VARIANT_RULES } from './truco.config';
+import { fracao } from '../shared/rng';
 
 export function buildDeck(): Card[] {
   const deck: Card[] = [];
@@ -10,7 +11,7 @@ export function buildDeck(): Card[] {
   return deck;
 }
 
-export function shuffle<T>(items: T[], random: () => number = Math.random): T[] {
+export function shuffle<T>(items: T[], random: () => number = fracao): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i -= 1) {
     const j = Math.floor(random() * (i + 1));
@@ -117,14 +118,14 @@ export function chooseBotCard(botHand: Card[], opponentCard: Card | undefined, c
 }
 
 /** Aceita se a mão ainda tem uma manilha ou uma carta ≥ Ás — só blefa aceitando fraco 1 em cada 5 vezes. */
-export function botTrucoDecision(botHand: Card[], context: ManilhaContext, random: () => number = Math.random): boolean {
+export function botTrucoDecision(botHand: Card[], context: ManilhaContext, random: () => number = fracao): boolean {
   const strong = botHand.some((card) => cardStrength(card, context) >= RANKS.indexOf('A'));
   if (strong) return true;
   return random() < 0.2;
 }
 
 /** Chance de o bot pedir truco antes de jogar, só quando a mão tá mesmo forte. */
-export function botShouldCallTruco(botHand: Card[], context: ManilhaContext, random: () => number = Math.random): boolean {
+export function botShouldCallTruco(botHand: Card[], context: ManilhaContext, random: () => number = fracao): boolean {
   const manilhaCount = botHand.filter((card) => isManilha(card, context)).length;
   const avgStrength = handStrengthScore(botHand, context) / Math.max(botHand.length, 1);
   if (manilhaCount >= 1 && avgStrength >= 9) return random() < 0.6;

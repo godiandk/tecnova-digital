@@ -3,8 +3,9 @@ import { PokerService } from './poker.service';
 import { PokerAction } from './poker.engine';
 import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
 import { Publico } from '../../auth/auth.guard';
+import { AcaoDto } from '../shared/acao.dto';
 
-class NewHandDto {
+class NewHandDto extends AcaoDto {
   buyIn!: number;
 }
 
@@ -27,7 +28,7 @@ export class PokerController {
     if (typeof body.buyIn !== 'number') {
       throw new BadRequestException('Informe buyIn.');
     }
-    return this.pokerService.newHand(usuarioLogado, body.buyIn);
+    return this.pokerService.newHand(usuarioLogado, body.buyIn, body.actionId);
   }
 
   @Post('agir')

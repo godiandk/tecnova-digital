@@ -6,6 +6,7 @@ import { BancaFrancesaBet, BetResult, resolveBets, rollUntilDecisive } from '../
 import { BET_TYPES, MAX_BET, MAX_SIMULTANEOUS_BETS, MIN_BET } from '../games/banca-francesa/banca-francesa.config';
 import { MAX_SEATS, PLAYER_COLORS, PlayerColor } from './player-colors';
 import { generateTableCode } from './table-code';
+import { umDe } from '../games/shared/rng';
 
 export type TableVisibility = 'publica' | 'privada';
 
@@ -157,7 +158,7 @@ export class BancaFrancesaTableService {
 
     for (const seat of table.seats) {
       if (seat.isBot && seat.pendingBets.length === 0) {
-        const type = BET_TYPES[Math.floor(Math.random() * BET_TYPES.length)];
+        const type = umDe(BET_TYPES);
         seat.pendingBets = [{ type, amount: MIN_BET }];
       }
     }

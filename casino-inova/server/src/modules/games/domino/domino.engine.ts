@@ -1,6 +1,7 @@
 import { Tile } from './domino.config';
+import { fracao } from '../shared/rng';
 
-export function shuffle<T>(items: T[], random: () => number = Math.random): T[] {
+export function shuffle<T>(items: T[], random: () => number = fracao): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i -= 1) {
     const j = Math.floor(random() * (i + 1));
