@@ -1,0 +1,48 @@
+# Casino Inova rodando na sua máquina, com um comando.
+#
+#     docker compose up
+#
+# Depois abra http://localhost:3000 no navegador. Pra jogar no celular na mesma
+# rede de casa, use o IP do computador no lugar de "localhost" — por exemplo
+# http://192.168.0.10:3000 (no Windows o IP sai em `ipconfig`, no Mac/Linux em
+# `ifconfig` ou `ip addr`).
+#
+# Por que compose e não "npm start": o servidor precisa de um Postgres. Instalar e
+# configurar Postgres à mão é o passo em que a maioria das tentativas de testar morre.
+# Aqui o banco sobe junto, já ligado, e some quando você derruba tudo.
+services:
+  banco:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: casino
+      POSTGRES_USER: casino
+      POSTGRES_DB: casino_inova
+    # O servidor só sobe depois que o banco responde de verdade — sem isto ele tenta
+    # conectar num Postgres que ainda está iniciando e morre na primeira tentativa.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U casino -d casino_inova']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      # As fichas e contas sobrevivem a `docker compose down`. Pra começar do zero,
+      # use `docker compose down -v` (o -v apaga o volume).
+      - dados-do-banco:/var/lib/postgresql/data
+
+  casino:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgres://casino:casino@banco:5432/casino_inova
+      # Só pra testar na sua máquina. Na hospedagem o segredo é sorteado lá (ver
+      # render.yaml) e nunca fica escrito no projeto.
+      JWT_SECRET: segredo-so-de-teste-local
+    depends_on:
+      banco:
+        condition: service_healthy
+
+volumes:
+  dados-do-banco:

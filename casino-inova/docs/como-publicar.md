@@ -10,6 +10,32 @@ Até agora o jogo só rodava na máquina onde o servidor estava ligado. Um ender
 endereço passa a existir pra todo mundo, e é ele também que a RevenueCat precisa pra
 avisar de uma compra.
 
+## Testar na SUA máquina primeiro (um comando)
+
+Se você só quer abrir o jogo e ver como está, sem publicar nada, este é o caminho mais
+rápido. Precisa do **Docker Desktop** instalado — é a única coisa a instalar.
+
+```
+cd casino-inova
+docker compose up
+```
+
+Espere a construção (uns 5 minutos na primeira vez) e abra **http://localhost:3000**.
+
+Pra jogar no celular na mesma rede de casa, troque `localhost` pelo IP do computador —
+algo como `http://192.168.0.10:3000`. No Windows o IP sai em `ipconfig`; no Mac e no
+Linux, em `ifconfig` ou `ip addr`.
+
+Pra parar: `Ctrl+C`. Pra apagar as contas e fichas de teste e começar do zero:
+`docker compose down -v`.
+
+O que o compose faz que você não precisa fazer: sobe o Postgres já ligado ao servidor e
+espera ele responder antes de subir o jogo. Instalar e configurar Postgres à mão é o
+passo em que a maioria das tentativas de testar morre.
+
+**Limite deste caminho:** só funciona na sua rede. Pra mandar um link pra outra pessoa,
+siga a publicação abaixo.
+
 ## O jeito mais curto: Render, um serviço só
 
 O app e o servidor viram **um processo só**: o servidor Node entrega o site e responde a
