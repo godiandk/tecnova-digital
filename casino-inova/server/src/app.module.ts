@@ -26,12 +26,15 @@ import { ChatModule } from './modules/chat/chat.module';
 import { RoadmapModule } from './modules/roadmap/roadmap.module';
 import { TournamentsModule } from './modules/tournaments/tournaments.module';
 import { SharedGamesModule } from './modules/games/shared/shared-games.module';
+import { CoreDeSalasModule } from './modules/games/core/core.module';
 
 @Module({
   imports: [
     DatabaseModule,
     // Global: os dez jogos compartilham o mesmo registro de ações já executadas.
     SharedGamesModule,
+    // Global: log de eventos e janela de reconexão, compartilhados pelas mesas.
+    CoreDeSalasModule,
     AuthModule,
     UsersModule,
     WalletModule,

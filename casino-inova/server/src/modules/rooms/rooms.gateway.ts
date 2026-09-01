@@ -17,13 +17,17 @@ import { BoardEnd } from '../games/domino/domino.engine';
 import { Tile } from '../games/domino/domino.config';
 import { Card, TrucoSignalId, TrucoStyle, TrucoVariant } from '../games/truco/truco.config';
 import { AuthService } from '../auth/auth.service';
+import { ReconexaoService } from '../games/core/reconexao.service';
+import { RegistroDeEventos } from '../games/core/registro-de-eventos';
 
 /**
  * Uma mesa compartilhada não precisa esconder nada de ninguém (todo mundo vê a
  * aposta de todo mundo, igual mesa física) — por isso cada evento devolve o estado
  * inteiro da mesa pra quem chamou (via ack) *e* transmite pra sala inteira (todo
- * mundo sentado recebe a atualização). Sem autenticação real ainda: `userId` viaja
- * explícito em cada mensagem, igual ao resto da API.
+ * mundo sentado recebe a atualização).
+ *
+ * Quem o socket é fica decidido uma vez, no `identificar`, a partir do token assinado.
+ * Nenhum evento depois disso lê identidade do corpo — ver `comUsuario`.
  */
 @WebSocketGateway({ cors: { origin: '*' } })
 export class RoomsGateway implements OnGatewayDisconnect {
@@ -40,14 +44,77 @@ export class RoomsGateway implements OnGatewayDisconnect {
     private readonly trucoTables: TrucoTableService,
     private readonly dominoTables: DominoTableService,
     private readonly auth: AuthService,
+    private readonly reconexao: ReconexaoService,
+    private readonly eventos: RegistroDeEventos,
   ) {}
 
+  /**
+   * Cair não é sair.
+   *
+   * Antes daqui, perder sinal no meio de uma rodada apagava a pessoa da mesa — e as
+   * fichas que ela já tinha apostado iam junto. Agora a queda abre uma janela: o assento
+   * fica guardado, e voltar dentro dela recupera assento, rodada e o que aconteceu no
+   * meio. Sair de propósito continua sendo definitivo, por outro evento.
+   *
+   * Só marca queda quando a pessoa não tem MAIS NENHUM socket aberto: fechar uma aba
+   * com o jogo aberto em outra não é queda.
+   */
   handleDisconnect(socket: Socket) {
+    const userId = this.userIdBySocket.get(socket.id);
     this.userIdBySocket.delete(socket.id);
-    for (const [userId, socketIds] of this.socketsByUser) {
+
+    for (const [dono, socketIds] of this.socketsByUser) {
       socketIds.delete(socket.id);
-      if (socketIds.size === 0) this.socketsByUser.delete(userId);
+      if (socketIds.size === 0) this.socketsByUser.delete(dono);
     }
+
+    if (!userId || this.socketsByUser.has(userId)) return;
+
+    for (const mesaId of this.tables.mesasDoJogador(userId)) {
+      this.reconexao.registrarQueda(mesaId, userId, 0, this.eventos.seqAtual(mesaId));
+      this.server.to(mesaId).emit('mesa:jogador-caiu', { userId, mesaId });
+    }
+  }
+
+  /**
+   * Volta pra mesa depois de cair.
+   *
+   * O cliente diz até qual evento ele viu. Se o log ainda tem o pedaço que faltou, vem
+   * só ele — a mesa continua de onde parou, sem piscar. Se não tem mais (ficou fora
+   * tempo demais), vem o estado inteiro e o cliente remonta a mesa do zero. O que não
+   * pode é mandar um pedaço do meio: a mesa ficaria montada errada sem dar erro.
+   */
+  @SubscribeMessage('reconectar')
+  handleReconnect(@ConnectedSocket() socket: Socket, @MessageBody() body: { mesaId: string; ultimoEventoVisto: number }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const mesaId = body?.mesaId ?? '';
+      const ausencia = this.reconexao.reassumir(mesaId, usuario);
+      const mesa = this.tables.buscarMesa(mesaId);
+      if (!mesa) {
+        return { ok: false, codigo: 'MESA_NAO_ENCONTRADA' as const };
+      }
+      if (!mesa.seats.some((assento: { userId: string }) => assento.userId === usuario)) {
+        return { ok: false, codigo: 'SEM_ASSENTO' as const };
+      }
+
+      socket.join(mesaId);
+      const desde = body?.ultimoEventoVisto ?? -1;
+      const faltando = this.eventos.desde(mesaId, desde);
+
+      this.server.to(mesaId).emit('mesa:jogador-voltou', { userId: usuario, mesaId });
+
+      return {
+        ok: true,
+        /** Verdadeiro quando a pessoa voltou dentro da janela e não perdeu o assento. */
+        dentroDaJanela: Boolean(ausencia),
+        // `view` é async: sem o await, `estado` seria uma Promise e chegaria vazio no
+        // cliente — sem erro nenhum, só uma mesa sem assentos.
+        estado: await this.view(mesa),
+        fase: this.tables.faseDaMesa(mesa),
+        /** Null quando o pedaço pedido já saiu do log: use `estado` e remonte. */
+        eventosPerdidos: faltando,
+      };
+    });
   }
 
   /**
@@ -475,8 +542,16 @@ export class RoomsGateway implements OnGatewayDisconnect {
     }
   }
 
-  private broadcastAndReturn(table: BancaFrancesaTable) {
-    const payload = this.view(table);
+  /**
+   * Manda o estado novo pra mesa inteira e devolve pra quem pediu.
+   *
+   * O `await` não é detalhe: `view` é async, e sem ele o que ia pro `emit` era a
+   * Promise, não o estado. O ack de quem chamou funcionava (o Nest resolve o retorno),
+   * então quem apostou via a mesa certa — e todos os OUTROS da mesa recebiam `{}`. Um
+   * bug que só aparece com duas pessoas sentadas, e mesmo assim parece "não atualizou".
+   */
+  private async broadcastAndReturn(table: BancaFrancesaTable) {
+    const payload = await this.view(table);
     this.server.to(table.id).emit('banca-francesa:mesa-atualizada', payload);
     return payload;
   }
@@ -498,6 +573,12 @@ export class RoomsGateway implements OnGatewayDisconnect {
         })),
       ),
       lastRound: table.lastRound,
+      /*
+       * A fase vai junto do estado, sempre. É o que a tela usa pra decidir se o botão de
+       * apostar está ligado — e é o servidor quem diz, não a tela adivinhando pelo que
+       * viu por último.
+       */
+      fase: this.tables.faseDaMesa(table),
     };
   }
 }

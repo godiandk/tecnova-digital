@@ -7,6 +7,9 @@ import { BET_TYPES, MAX_BET, MAX_SIMULTANEOUS_BETS, MIN_BET } from '../games/ban
 import { MAX_SEATS, PLAYER_COLORS, PlayerColor } from './player-colors';
 import { generateTableCode } from './table-code';
 import { umDe } from '../games/shared/rng';
+import { RelogioDaSala } from '../games/core/relogio-da-sala';
+import { RegistroDeEventos } from '../games/core/registro-de-eventos';
+import { aceitaAposta } from '../games/core/fases';
 
 export type TableVisibility = 'publica' | 'privada';
 
@@ -33,6 +36,15 @@ export interface BancaFrancesaTable {
   hostUserId: string;
   seats: TableSeat[];
   lastRound?: RoundResult;
+  /**
+   * A fase da mesa agora é de verdade, não implícita. Antes dava pra apostar a qualquer
+   * momento, inclusive enquanto o anfitrião girava — a aposta entrava no `pendingBets`
+   * no meio da apuração e ninguém percebia.
+   */
+  relogio: RelogioDaSala;
+  /** Identifica a rodada no log de eventos e no extrato. */
+  rodadaId: string;
+  rodadasJogadas: number;
 }
 
 /**
@@ -53,6 +65,7 @@ export class BancaFrancesaTableService {
     private readonly walletService: WalletService,
     private readonly tournaments: TournamentsService,
     private readonly usersService: UsersService,
+    private readonly eventos: RegistroDeEventos,
   ) {}
 
   async createTable(hostUserId: string, visibility: TableVisibility): Promise<BancaFrancesaTable> {
@@ -63,10 +76,14 @@ export class BancaFrancesaTableService {
       visibility,
       hostUserId,
       seats: [],
+      relogio: new RelogioDaSala(),
+      rodadaId: '',
+      rodadasJogadas: 0,
     };
     this.nextId += 1;
     table.seats.push({ userId: hostUserId, name: host.name, isBot: false, color: this.nextFreeColor(table), pendingBets: [] });
     this.tables.set(table.id, table);
+    this.abrirRodada(table);
     return table;
   }
 
@@ -134,11 +151,33 @@ export class BancaFrancesaTableService {
   async placeBets(userId: string, tableId: string, bets: BancaFrancesaBet[]): Promise<BancaFrancesaTable> {
     const table = this.requireTable(tableId);
     const seat = this.requireSeat(table, userId);
+
+    /*
+     * Antes daqui não existia fase, e uma aposta que chegasse no meio da apuração
+     * entrava no `pendingBets` caladamente — pra ser cobrada na rodada seguinte, que a
+     * pessoa não pediu.
+     */
+    if (!aceitaAposta(table.relogio.fase)) {
+      throw new BadRequestException('As apostas desta rodada já fecharam.');
+    }
     this.validateBets(bets);
+
+    /*
+     * Guarda em QUAL rodada esta aposta está entrando, porque a linha seguinte cede o
+     * controle (é `await`) e o anfitrião pode girar nesse intervalo. Conferir a fase só
+     * aqui em cima não bastava: quando a execução voltasse, a rodada podia já ser outra
+     * — e como a rodada nova também está em APOSTAS_ABERTAS, reconferir a fase não
+     * pegaria nada. Quem denuncia é o id da rodada, não a fase.
+     */
+    const rodadaPretendida = table.rodadaId;
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
     if (await this.walletService.balanceOf(userId) < totalStake) {
       throw new BadRequestException('Saldo de fichas insuficiente pra essa aposta.');
+    }
+
+    if (table.rodadaId !== rodadaPretendida) {
+      throw new BadRequestException('A rodada virou enquanto a aposta ia — aposte de novo.');
     }
 
     seat.pendingBets = bets;
@@ -156,6 +195,18 @@ export class BancaFrancesaTableService {
     const table = this.requireTable(tableId);
     this.requireHost(table, hostUserId);
 
+    if (!aceitaAposta(table.relogio.fase)) {
+      throw new BadRequestException('Esta rodada já foi girada.');
+    }
+
+    /*
+     * Daqui pra baixo a rodada anda pelas fases na ordem, e cada uma é anotada no log.
+     * Fechar as apostas é a PRIMEIRA coisa: a partir desta linha, aposta que chegar é
+     * recusada, inclusive a que estiver na rede a caminho.
+     */
+    table.relogio.irPara('APOSTAS_FECHADAS');
+    this.anotar(table, 'APOSTAS_FECHADAS', {});
+
     for (const seat of table.seats) {
       if (seat.isBot && seat.pendingBets.length === 0) {
         const type = umDe(BET_TYPES);
@@ -163,7 +214,11 @@ export class BancaFrancesaTableService {
       }
     }
 
+    table.relogio.irPara('SORTEIO');
     const { dice, sum, outcome } = rollUntilDecisive();
+    this.anotar(table, 'DADOS', { dice, sum, outcome });
+
+    table.relogio.irPara('APURACAO');
     const bySeat: RoundResult['bySeat'] = {};
 
     for (const seat of table.seats) {
@@ -180,9 +235,14 @@ export class BancaFrancesaTableService {
       const totalReturn = results.reduce((sum, result) => sum + result.totalReturn, 0);
 
       if (!seat.isBot) {
-        await this.walletService.debit(seat.userId, totalStake, 'aposta', GAME_ID);
+        /*
+         * A chave de idempotência é (mesa, rodada, jogador): a mesma rodada não cobra a
+         * mesma pessoa duas vezes nem que este método seja chamado de novo.
+         */
+        const acao = `${table.id}:${table.rodadaId}:${seat.userId}`;
+        await this.walletService.debit(seat.userId, totalStake, 'aposta', GAME_ID, `${acao}:aposta`);
         if (totalReturn > 0) {
-          await this.walletService.credit(seat.userId, totalReturn, 'premio', GAME_ID);
+          await this.walletService.credit(seat.userId, totalReturn, 'premio', GAME_ID, `${acao}:premio`);
         }
         await this.tournaments.recordRound(seat.userId, GAME_ID, totalStake, totalReturn);
       }
@@ -191,8 +251,58 @@ export class BancaFrancesaTableService {
       seat.pendingBets = [];
     }
 
+    table.relogio.irPara('PAGAMENTO');
     table.lastRound = { dice, sum, outcome, bySeat, at: new Date().toISOString() };
+    // O log guarda só o que é público: quem apostou o quê e quanto levou já é visível
+    // nesta mesa (todo mundo aposta no mesmo resultado), então nada aqui é privado.
+    this.anotar(table, 'PAGAMENTO', { bySeat });
+
+    table.relogio.irPara('RODADA_FECHADA');
+    this.anotar(table, 'RODADA_FECHADA', {});
+
+    // A próxima já abre: a mesa fica pronta pra apostar de novo sem ninguém pedir.
+    this.abrirRodada(table);
     return table;
+  }
+
+  /**
+   * Começa uma rodada nova: id próprio, apostas abertas, evento anotado.
+   *
+   * O id da rodada é o que amarra o log de eventos, o extrato e a chave de idempotência
+   * — sem ele, "a aposta da rodada passada" e "a desta" seriam indistinguíveis.
+   */
+  private abrirRodada(table: BancaFrancesaTable) {
+    table.rodadasJogadas += 1;
+    table.rodadaId = `${table.id}-r${table.rodadasJogadas}`;
+    if (table.relogio.fase !== 'RODADA_ABERTA') table.relogio.irPara('RODADA_ABERTA');
+    table.relogio.irPara('APOSTAS_ABERTAS');
+    this.anotar(table, 'APOSTAS_ABERTAS', { rodadaId: table.rodadaId });
+  }
+
+  private anotar(table: BancaFrancesaTable, tipo: string, dados: unknown) {
+    return this.eventos.anotar(table.id, table.rodadaId, tipo, dados);
+  }
+
+  /** Em que mesas esta pessoa está sentada. Usado na queda, pra guardar os assentos. */
+  mesasDoJogador(userId: string): string[] {
+    return [...this.tables.values()]
+      .filter((mesa) => mesa.seats.some((assento) => assento.userId === userId))
+      .map((mesa) => mesa.id);
+  }
+
+  /** A mesa, ou undefined. Diferente de `requireTable`, não lança — quem volta de uma
+   *  queda pode estar voltando pra uma mesa que já fechou, e isso não é erro. */
+  buscarMesa(tableId: string): BancaFrancesaTable | undefined {
+    return this.tables.get(tableId);
+  }
+
+  /** A fase e a versão, pra tela saber o que pode fazer e o que já está velho. */
+  faseDaMesa(table: BancaFrancesaTable) {
+    return {
+      rodadaId: table.rodadaId,
+      ...table.relogio.paraEvento(),
+      seq: this.eventos.seqAtual(table.id),
+    };
   }
 
   async balanceOf(userId: string): Promise<number> {
