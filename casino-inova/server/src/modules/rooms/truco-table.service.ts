@@ -47,6 +47,12 @@ export interface TrucoSeat {
   isBot: boolean;
   team: Team;
   hand: Card[];
+  /**
+   * A pessoa caiu (ou saiu) no meio da partida. O assento CONTINUA sendo dela — só as
+   * jogadas passam a sair automáticas, pra a mesa não travar esperando quem não volta.
+   * Voltar limpa isto e ela retoma de onde parou.
+   */
+  ausente?: boolean;
 }
 
 export interface TrucoOnlineTable {
@@ -210,7 +216,7 @@ export class TrucoTableService {
     return table;
   }
 
-  playCard(userId: string, tableId: string, card: Card): TrucoOnlineTable {
+  async playCard(userId: string, tableId: string, card: Card): Promise<TrucoOnlineTable> {
     const table = this.requireTable(tableId);
     const seat = this.requireSeat(table, userId);
 
@@ -226,10 +232,10 @@ export class TrucoTableService {
     table.currentTrick.push({ seatIndex: seat.seatIndex, card: played });
 
     if (table.currentTrick.length === SEATS) {
-      this.resolveTrick(table);
+      await this.resolveTrick(table);
     } else {
       table.turnSeat = (table.turnSeat + 1) % SEATS;
-      this.autoPlayBots(table);
+      await this.autoPlayBots(table);
     }
 
     return table;
@@ -259,7 +265,7 @@ export class TrucoTableService {
    * Responder ao pedido. Só a dupla adversária responde — e qualquer um dos dois
    * pode, que é como funciona na mesa real.
    */
-  respondRaise(userId: string, tableId: string, response: 'aceitar' | 'correr' | 'aumentar'): TrucoOnlineTable {
+  async respondRaise(userId: string, tableId: string, response: 'aceitar' | 'correr' | 'aumentar'): Promise<TrucoOnlineTable> {
     const table = this.requireTable(tableId);
     const seat = this.requireSeat(table, userId);
 
@@ -284,7 +290,7 @@ export class TrucoTableService {
       table.handValue = asked;
       table.pendingRaise = null;
       table.lastEvent = `${seat.name} aceitou o ${label} — a mão vale ${asked}.`;
-      this.autoPlayBots(table);
+      await this.autoPlayBots(table);
       return table;
     }
 
@@ -329,12 +335,39 @@ export class TrucoTableService {
     return this.partnerOf(table, seat)?.userId;
   }
 
-  leaveTable(userId: string, tableId: string): TrucoOnlineTable | { removed: true } {
+  /**
+   * Sair da mesa.
+   *
+   * Antes da partida começar, sair é sair: o assento some e, se não sobrar humano
+   * nenhum, a mesa fecha.
+   *
+   * DEPOIS de começar é outra história. Os quatro buy-ins já foram debitados e o pote
+   * só é pago no fim — então apagar a mesa nesse ponto (que era o que acontecia aqui)
+   * destruía o dinheiro de QUATRO pessoas porque UMA saiu. Agora quem sai fica marcado
+   * como ausente: as jogadas dele saem automáticas, a partida termina, e o pote é pago
+   * a quem ganhou. Quem saiu perde a partida jogando mal, não a mesa inteira sumindo.
+   */
+  async leaveTable(userId: string, tableId: string): Promise<TrucoOnlineTable | { removed: true }> {
     const table = this.requireTable(tableId);
+
+    if (table.started && !table.finished) {
+      const seat = table.seats.find((item) => item.userId === userId);
+      if (seat) {
+        seat.ausente = true;
+        table.lastEvent = `${seat.name} saiu da mesa — as jogadas dele saem automáticas.`;
+        await this.autoPlayBots(table);
+      }
+      // Se TODO MUNDO saiu, não há mais o que jogar: a mesa some.
+      if (table.seats.every((item) => item.isBot || item.ausente)) {
+        this.tables.delete(table.id);
+        return { removed: true };
+      }
+      return table;
+    }
+
     table.seats = table.seats.filter((seat) => seat.userId !== userId);
 
-    // Truco 2x2 não funciona com menos de 4: se alguém sai no meio, a mesa acaba.
-    if (table.started || table.seats.filter((seat) => !seat.isBot).length === 0) {
+    if (table.seats.filter((seat) => !seat.isBot).length === 0) {
       this.tables.delete(table.id);
       return { removed: true };
     }
@@ -345,6 +378,48 @@ export class TrucoTableService {
         return { removed: true };
       }
       table.hostUserId = nextHost.userId;
+    }
+    return table;
+  }
+
+  /** Em que mesas esta pessoa está sentada. Usado na queda, pra marcar ausência. */
+  mesasDoJogador(userId: string): string[] {
+    return [...this.tables.values()]
+      .filter((mesa) => mesa.seats.some((assento) => assento.userId === userId))
+      .map((mesa) => mesa.id);
+  }
+
+  buscarMesa(tableId: string): TrucoOnlineTable | undefined {
+    return this.tables.get(tableId);
+  }
+
+  /**
+   * Marca a queda e destrava a mesa.
+   *
+   * Diferente de `leaveTable`, isto não é decisão da pessoa — é rede. O assento fica
+   * guardado pra ela voltar, mas as jogadas passam a sair automáticas na hora, senão a
+   * mesa fica parada esperando quem talvez não volte, com o pote preso.
+   */
+  async marcarQueda(userId: string, tableId: string): Promise<TrucoOnlineTable | undefined> {
+    const table = this.tables.get(tableId);
+    if (!table || !table.started || table.finished) return table;
+    const seat = table.seats.find((item) => item.userId === userId);
+    if (!seat || seat.ausente) return table;
+
+    seat.ausente = true;
+    table.lastEvent = `${seat.name} caiu — as jogadas dele saem automáticas até voltar.`;
+    await this.autoPlayBots(table);
+    return table;
+  }
+
+  /** Voltou: retoma o assento e volta a decidir as próprias jogadas. */
+  retomarAssento(userId: string, tableId: string): TrucoOnlineTable | undefined {
+    const table = this.tables.get(tableId);
+    const seat = table?.seats.find((item) => item.userId === userId);
+    if (!table || !seat) return undefined;
+    if (seat.ausente) {
+      seat.ausente = false;
+      table.lastEvent = `${seat.name} voltou pra mesa.`;
     }
     return table;
   }
@@ -381,6 +456,7 @@ export class TrucoTableService {
         userId: seat.userId,
         name: seat.name,
         isBot: seat.isBot,
+        ausente: Boolean(seat.ausente),
         team: seat.team,
         cardsInHand: seat.hand.length,
         // Só o dono vê as próprias cartas.
@@ -401,7 +477,16 @@ export class TrucoTableService {
     return { variant: table.variant, manilhaRank: table.manilhaRank };
   }
 
-  private resolveTrick(table: TrucoOnlineTable) {
+  /**
+   * Resolve a vaza e, quando a mão fecha, paga.
+   *
+   * É `async` porque `awardHand` credita o pote, e essa espera precisa subir por toda a
+   * cadeia até o handler. Antes ela era disparada e esquecida: o servidor respondia
+   * "partida encerrada, dupla X venceu" antes de o dinheiro se mover. Na maioria das
+   * vezes o crédito chegava logo depois e ninguém notava — em 2 de 6 partidas medidas,
+   * não chegava a tempo, e um erro no pagamento virava rejeição silenciosa.
+   */
+  private async resolveTrick(table: TrucoOnlineTable) {
     const context = this.contextOf(table);
     let best = table.currentTrick[0];
     let tied = false;
@@ -428,10 +513,10 @@ export class TrucoTableService {
 
     const outcome = resolveHand(table.roundResults);
     if (outcome !== 'pendente') {
-      this.awardHand(table, outcome === 'ninguem' ? null : outcome === 'jogador' ? 'A' : 'B');
+      await this.awardHand(table, outcome === 'ninguem' ? null : outcome === 'jogador' ? 'A' : 'B');
       return;
     }
-    this.autoPlayBots(table);
+    await this.autoPlayBots(table);
   }
 
   private async awardHand(table: TrucoOnlineTable, winner: Team | null) {
@@ -465,7 +550,7 @@ export class TrucoTableService {
     this.dealNewHand(table);
   }
 
-  private dealNewHand(table: TrucoOnlineTable) {
+  private async dealNewHand(table: TrucoOnlineTable) {
     const deck = shuffle(buildDeck());
     if (VARIANT_RULES[table.variant].hasVira) {
       const vira = deck.pop()!;
@@ -490,15 +575,22 @@ export class TrucoTableService {
     table.leadSeat = (table.leadSeat + 1) % SEATS;
     table.turnSeat = table.leadSeat;
 
-    this.autoPlayBots(table);
+    await this.autoPlayBots(table);
   }
 
-  /** Bots jogam sozinhos quando chega a vez deles, até parar num humano. */
-  private autoPlayBots(table: TrucoOnlineTable) {
+  /**
+   * Joga sozinho pelos assentos que não têm ninguém decidindo agora: os bots, e quem
+   * caiu ou saiu no meio da partida.
+   *
+   * Incluir os ausentes é o que impede a partida de travar. Os quatro buy-ins são
+   * debitados na largada e o pote só é pago no fim — então uma mesa parada na vez de
+   * quem não volta é dinheiro de quatro pessoas preso pra sempre.
+   */
+  private async autoPlayBots(table: TrucoOnlineTable) {
     let guard = 0;
     while (guard < SEATS * 3 && !table.finished && !table.pendingRaise) {
       const seat = table.seats.find((item) => item.seatIndex === table.turnSeat);
-      if (!seat || !seat.isBot || seat.hand.length === 0) return;
+      if (!seat || !(seat.isBot || seat.ausente) || seat.hand.length === 0) return;
 
       const context = this.contextOf(table);
       const opponentCard = table.currentTrick[table.currentTrick.length - 1]?.card;
@@ -511,7 +603,7 @@ export class TrucoTableService {
       table.currentTrick.push({ seatIndex: seat.seatIndex, card: chosen });
 
       if (table.currentTrick.length === SEATS) {
-        this.resolveTrick(table);
+        await this.resolveTrick(table);
         return;
       }
       table.turnSeat = (table.turnSeat + 1) % SEATS;

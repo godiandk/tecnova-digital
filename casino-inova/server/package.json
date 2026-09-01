@@ -21,6 +21,7 @@
     "verify:idempotencia": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" ts-node src/modules/wallet/verify-idempotencia.ts",
     "verify:idempotencia-http": "node verificacao/verifica-idempotencia.mjs",
     "verify:nucleo": "ts-node src/modules/games/core/verifica-nucleo.ts",
+    "verify:queda-truco": "node verificacao/verifica-queda-truco.mjs",
     "verify:reconexao": "node verificacao/verifica-reconexao.mjs",
     "verify:rng": "ts-node src/modules/games/shared/verifica-rng.ts",
     "verify:sapata": "ts-node src/modules/games/shared/verifica-sapata.ts",

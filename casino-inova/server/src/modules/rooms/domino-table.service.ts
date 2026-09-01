@@ -36,6 +36,11 @@ export interface DominoSeat {
   isBot: boolean;
   team: Team;
   hand: Tile[];
+  /**
+   * A pessoa caiu (ou saiu) no meio da partida. O assento CONTINUA sendo dela — só as
+   * jogadas passam a sair automáticas, pra a mesa não travar esperando quem não volta.
+   */
+  ausente?: boolean;
 }
 
 export interface DominoOnlineTable {
@@ -180,7 +185,7 @@ export class DominoTableService {
     return table;
   }
 
-  playTile(userId: string, tableId: string, tile: Tile, end: BoardEnd): DominoOnlineTable {
+  async playTile(userId: string, tableId: string, tile: Tile, end: BoardEnd): Promise<DominoOnlineTable> {
     const table = this.requireTable(tableId);
     const seat = this.requireSeat(table, userId);
 
@@ -195,11 +200,11 @@ export class DominoTableService {
     if (table.finished) return table;
 
     this.advanceTurn(table);
-    this.autoPlayBots(table);
+    await this.autoPlayBots(table);
     return table;
   }
 
-  pass(userId: string, tableId: string): DominoOnlineTable {
+  async pass(userId: string, tableId: string): Promise<DominoOnlineTable> {
     const table = this.requireTable(tableId);
     const seat = this.requireSeat(table, userId);
 
@@ -213,20 +218,43 @@ export class DominoTableService {
 
     // Quatro passes seguidos = ninguém consegue jogar = mesa travada.
     if (table.consecutivePasses >= SEATS) {
-      this.resolveBlockedHand(table);
+      await this.resolveBlockedHand(table);
       return table;
     }
 
     this.advanceTurn(table);
-    this.autoPlayBots(table);
+    await this.autoPlayBots(table);
     return table;
   }
 
-  leaveTable(userId: string, tableId: string): DominoOnlineTable | { removed: true } {
+  /**
+   * Sair da mesa.
+   *
+   * Depois de começar, apagar a mesa (que era o que acontecia aqui) destruía o buy-in de
+   * TODO MUNDO porque UM saiu — o dinheiro já tinha sido debitado e o pote nunca era
+   * pago. Agora quem sai vira ausente, as jogadas dele saem automáticas, a partida
+   * termina e o pote é pago a quem ganhou.
+   */
+  async leaveTable(userId: string, tableId: string): Promise<DominoOnlineTable | { removed: true }> {
     const table = this.requireTable(tableId);
+
+    if (table.started && !table.finished) {
+      const seat = table.seats.find((item) => item.userId === userId);
+      if (seat) {
+        seat.ausente = true;
+        table.lastEvent = `${seat.name} saiu da mesa — as jogadas dele saem automáticas.`;
+        await this.autoPlayBots(table);
+      }
+      if (table.seats.every((item) => item.isBot || item.ausente)) {
+        this.tables.delete(table.id);
+        return { removed: true };
+      }
+      return table;
+    }
+
     table.seats = table.seats.filter((seat) => seat.userId !== userId);
 
-    if (table.started || table.seats.filter((seat) => !seat.isBot).length === 0) {
+    if (table.seats.filter((seat) => !seat.isBot).length === 0) {
       this.tables.delete(table.id);
       return { removed: true };
     }
@@ -249,6 +277,42 @@ export class DominoTableService {
   }
 
   /** Cada um só recebe a própria mão; dos outros vai só a contagem de peças. */
+  /** Em que mesas esta pessoa está sentada. Usado na queda, pra marcar ausência. */
+  mesasDoJogador(userId: string): string[] {
+    return [...this.tables.values()]
+      .filter((mesa) => mesa.seats.some((assento) => assento.userId === userId))
+      .map((mesa) => mesa.id);
+  }
+
+  buscarMesa(tableId: string): DominoOnlineTable | undefined {
+    return this.tables.get(tableId);
+  }
+
+  /** Queda de rede: guarda o assento e destrava a mesa na hora. */
+  async marcarQueda(userId: string, tableId: string): Promise<DominoOnlineTable | undefined> {
+    const table = this.tables.get(tableId);
+    if (!table || !table.started || table.finished) return table;
+    const seat = table.seats.find((item) => item.userId === userId);
+    if (!seat || seat.ausente) return table;
+
+    seat.ausente = true;
+    table.lastEvent = `${seat.name} caiu — as jogadas dele saem automáticas até voltar.`;
+    await this.autoPlayBots(table);
+    return table;
+  }
+
+  /** Voltou: retoma o assento e volta a decidir as próprias jogadas. */
+  retomarAssento(userId: string, tableId: string): DominoOnlineTable | undefined {
+    const table = this.tables.get(tableId);
+    const seat = table?.seats.find((item) => item.userId === userId);
+    if (!table || !seat) return undefined;
+    if (seat.ausente) {
+      seat.ausente = false;
+      table.lastEvent = `${seat.name} voltou pra mesa.`;
+    }
+    return table;
+  }
+
   viewFor(table: DominoOnlineTable, userId: string) {
     const mySeat = table.seats.find((seat) => seat.userId === userId);
     return {
@@ -274,6 +338,7 @@ export class DominoTableService {
         userId: seat.userId,
         name: seat.name,
         isBot: seat.isBot,
+        ausente: Boolean(seat.ausente),
         team: seat.team,
         tilesInHand: seat.hand.length,
         hand: seat.userId === userId ? seat.hand : undefined,
@@ -293,7 +358,7 @@ export class DominoTableService {
    * Coloca a peça e, se foi a última da mão, pontua a batida. O valor depende de COMO
    * a peça fechou: nas duas pontas vale mais, e sendo carroça vale mais ainda.
    */
-  private placeTile(table: DominoOnlineTable, seat: DominoSeat, handIndex: number, end: BoardEnd) {
+  private async placeTile(table: DominoOnlineTable, seat: DominoSeat, handIndex: number, end: BoardEnd) {
     const [tile] = seat.hand.splice(handIndex, 1);
 
     if (table.board.length === 0) {
@@ -342,12 +407,19 @@ export class DominoTableService {
 
       table.lastEvent = `${seat.name} bateu de ${label} — ${points} ponto(s) pra dupla ${seat.team}.`;
       table.lastHandStarter = seat.seatIndex;
-      this.awardHand(table, seat.team, points);
+      await this.awardHand(table, seat.team, points);
     }
   }
 
   /** Mesa travada: vence a dupla com menor soma de pintas. Empate: perde quem travou. */
-  private resolveBlockedHand(table: DominoOnlineTable) {
+  /**
+   * Jogo travado: paga por quem tem menos pontos na mão.
+   *
+   * `async` porque `awardHand` credita o pote. Sem esperar por ela, o servidor
+   * respondia "partida encerrada" antes de o dinheiro se mover — e um erro no
+   * pagamento virava rejeição silenciosa, sem ninguém saber.
+   */
+  private async resolveBlockedHand(table: DominoOnlineTable) {
     const sumOf = (team: Team) =>
       table.seats.filter((seat) => seat.team === team).reduce((total, seat) => total + tileSum(seat.hand), 0);
 
@@ -365,7 +437,7 @@ export class DominoTableService {
     }
 
     table.lastHandStarter = table.seats.find((seat) => seat.team === winner)?.seatIndex ?? 0;
-    this.awardHand(table, winner, 1);
+    await this.awardHand(table, winner, 1);
   }
 
   private async awardHand(table: DominoOnlineTable, winner: Team, points: number) {
@@ -389,7 +461,7 @@ export class DominoTableService {
     this.dealNewHand(table);
   }
 
-  private dealNewHand(table: DominoOnlineTable) {
+  private async dealNewHand(table: DominoOnlineTable) {
     const tiles = shuffle(buildTileSet());
     for (const seat of table.seats) {
       seat.hand = tiles.splice(0, HAND_SIZE);
@@ -409,7 +481,7 @@ export class DominoTableService {
       table.turnSeat = this.seatWithHighestDouble(table);
     }
 
-    this.autoPlayBots(table);
+    await this.autoPlayBots(table);
   }
 
   private seatWithHighestDouble(table: DominoOnlineTable): number {
@@ -431,17 +503,24 @@ export class DominoTableService {
   }
 
   /** Bots jogam sozinhos até a vez cair num humano. */
-  private autoPlayBots(table: DominoOnlineTable) {
+  /**
+   * Joga sozinho pelos assentos sem ninguém decidindo: bots, e quem caiu ou saiu.
+   *
+   * Incluir os ausentes é o que impede a partida de travar. Os buy-ins são debitados na
+   * largada e o pote só é pago no fim — mesa parada na vez de quem não volta é dinheiro
+   * de todo mundo preso.
+   */
+  private async autoPlayBots(table: DominoOnlineTable) {
     let guard = 0;
     while (guard < SEATS * HAND_SIZE * 2 && !table.finished) {
       const seat = table.seats.find((item) => item.seatIndex === table.turnSeat);
-      if (!seat || !seat.isBot) return;
+      if (!seat || !(seat.isBot || seat.ausente)) return;
 
       if (!canPlay(seat.hand, table.leftEnd, table.rightEnd)) {
         table.consecutivePasses += 1;
         table.lastEvent = `${seat.name} passou a vez.`;
         if (table.consecutivePasses >= SEATS) {
-          this.resolveBlockedHand(table);
+          await this.resolveBlockedHand(table);
           return;
         }
         this.advanceTurn(table);

@@ -59,7 +59,7 @@ export class RoomsGateway implements OnGatewayDisconnect {
    * Só marca queda quando a pessoa não tem MAIS NENHUM socket aberto: fechar uma aba
    * com o jogo aberto em outra não é queda.
    */
-  handleDisconnect(socket: Socket) {
+  async handleDisconnect(socket: Socket) {
     const userId = this.userIdBySocket.get(socket.id);
     this.userIdBySocket.delete(socket.id);
 
@@ -74,6 +74,52 @@ export class RoomsGateway implements OnGatewayDisconnect {
       this.reconexao.registrarQueda(mesaId, userId, 0, this.eventos.seqAtual(mesaId));
       this.server.to(mesaId).emit('mesa:jogador-caiu', { userId, mesaId });
     }
+
+    /*
+     * No truco e no dominó a queda é mais séria: os buy-ins de todos já foram
+     * debitados e o pote só é pago no fim, então uma mesa parada na vez de quem caiu
+     * é dinheiro de quatro pessoas preso. Marcar a ausência destrava a partida na
+     * hora — as jogadas de quem caiu saem automáticas até ele voltar.
+     */
+    for (const mesaId of this.trucoTables.mesasDoJogador(userId)) {
+      this.reconexao.registrarQueda(mesaId, userId, 0, this.eventos.seqAtual(mesaId));
+      const mesa = await this.trucoTables.marcarQueda(userId, mesaId);
+      if (mesa) this.broadcastTruco(mesa, userId);
+    }
+
+    for (const mesaId of this.dominoTables.mesasDoJogador(userId)) {
+      this.reconexao.registrarQueda(mesaId, userId, 0, this.eventos.seqAtual(mesaId));
+      const mesa = await this.dominoTables.marcarQueda(userId, mesaId);
+      if (mesa) this.broadcastDomino(mesa, userId);
+    }
+  }
+
+  /**
+   * Volta pra uma mesa de truco depois de cair: retoma o assento e volta a decidir as
+   * próprias jogadas. O assento nunca foi de mais ninguém — só estava no automático.
+   */
+  @SubscribeMessage('truco:reconectar')
+  handleTrucoReconnect(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const mesa = this.trucoTables.retomarAssento(usuario, body?.tableId ?? '');
+      if (!mesa) return { ok: false, codigo: 'SEM_ASSENTO' as const };
+      this.reconexao.reassumir(body.tableId, usuario);
+      socket.join(body.tableId);
+      this.broadcastTruco(mesa, usuario);
+      return { ok: true, estado: this.trucoTables.viewFor(mesa, usuario) };
+    });
+  }
+
+  @SubscribeMessage('domino:reconectar')
+  handleDominoReconnect(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => {
+      const mesa = this.dominoTables.retomarAssento(usuario, body?.tableId ?? '');
+      if (!mesa) return { ok: false, codigo: 'SEM_ASSENTO' as const };
+      this.reconexao.reassumir(body.tableId, usuario);
+      socket.join(body.tableId);
+      this.broadcastDomino(mesa, usuario);
+      return { ok: true, estado: this.dominoTables.viewFor(mesa, usuario) };
+    });
   }
 
   /**
@@ -373,7 +419,7 @@ export class RoomsGateway implements OnGatewayDisconnect {
   @SubscribeMessage('truco:jogar-carta')
   handleTrucoPlayCard(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string; card: Card }) {
     return this.comUsuario(socket, async (usuario) =>
-      this.broadcastTruco(this.trucoTables.playCard(usuario, body.tableId, body.card), usuario),
+      this.broadcastTruco(await this.trucoTables.playCard(usuario, body.tableId, body.card), usuario),
     );
   }
 
@@ -386,7 +432,7 @@ export class RoomsGateway implements OnGatewayDisconnect {
   handleTrucoRespond(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string; response: 'aceitar' | 'correr' | 'aumentar' },
   ) {
     return this.comUsuario(socket, async (usuario) =>
-      this.broadcastTruco(this.trucoTables.respondRaise(usuario, body.tableId, body.response), usuario),
+      this.broadcastTruco(await this.trucoTables.respondRaise(usuario, body.tableId, body.response), usuario),
     );
   }
 
@@ -411,7 +457,7 @@ export class RoomsGateway implements OnGatewayDisconnect {
   @SubscribeMessage('truco:sair')
   handleTrucoLeave(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
     return this.comUsuario(socket, async (usuario) => {
-      const result = this.trucoTables.leaveTable(usuario, body.tableId);
+      const result = await this.trucoTables.leaveTable(usuario, body.tableId);
       socket.leave(body.tableId);
       if ('removed' in result) {
         this.server.to(body.tableId).emit('truco:mesa-fechada');
@@ -486,19 +532,19 @@ export class RoomsGateway implements OnGatewayDisconnect {
   @SubscribeMessage('domino:jogar-peca')
   handleDominoPlay(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string; tile: Tile; end: BoardEnd }) {
     return this.comUsuario(socket, async (usuario) =>
-      this.broadcastDomino(this.dominoTables.playTile(usuario, body.tableId, body.tile, body.end), usuario),
+      this.broadcastDomino(await this.dominoTables.playTile(usuario, body.tableId, body.tile, body.end), usuario),
     );
   }
 
   @SubscribeMessage('domino:passar')
   handleDominoPass(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
-    return this.comUsuario(socket, async (usuario) => this.broadcastDomino(this.dominoTables.pass(usuario, body.tableId), usuario));
+    return this.comUsuario(socket, async (usuario) => this.broadcastDomino(await this.dominoTables.pass(usuario, body.tableId), usuario));
   }
 
   @SubscribeMessage('domino:sair')
   handleDominoLeave(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
     return this.comUsuario(socket, async (usuario) => {
-      const result = this.dominoTables.leaveTable(usuario, body.tableId);
+      const result = await this.dominoTables.leaveTable(usuario, body.tableId);
       socket.leave(body.tableId);
       if ('removed' in result) {
         this.server.to(body.tableId).emit('domino:mesa-fechada');
