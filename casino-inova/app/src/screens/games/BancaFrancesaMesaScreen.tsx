@@ -182,7 +182,7 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
     <GameBackdrop source={TABLE_IMAGES['banca-francesa']}>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.iconButton} hitSlop={12}>
+          <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.iconButton} hitSlop={12}>
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </Pressable>
           <Text style={styles.title}>Mesa online</Text>

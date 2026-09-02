@@ -63,7 +63,7 @@ export function GameModeScreen({ navigation, route }: Props) {
       <View style={styles.veu} />
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.iconButton} hitSlop={12}>
+          <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.iconButton} hitSlop={12}>
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </Pressable>
           <Text style={styles.title}>{game?.name ?? 'Escolha o modo'}</Text>
@@ -84,6 +84,18 @@ export function GameModeScreen({ navigation, route }: Props) {
                       key={option.id}
                       onPress={() => escolher(grupo.title, option)}
                       disabled={option.comingSoon}
+                      accessibilityRole="button"
+                      /*
+                       * Mesma história dos cartazes do salão: o nome da opção está
+                       * DENTRO da arte, então sem este rótulo o leitor de tela anuncia
+                       * só "botão" e as opções ficam indistinguíveis.
+                       */
+                      accessibilityLabel={
+                        option.comingSoon
+                          ? `${option.label} — em breve`
+                          : `${option.label}${option.hint ? ` — ${option.hint}` : ''}`
+                      }
+                      accessibilityState={{ selected: selecionado, disabled: option.comingSoon }}
                       style={[
                         styles.option,
                         selecionado && styles.optionSelected,

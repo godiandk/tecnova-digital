@@ -127,7 +127,7 @@ export function BancaFrancesaScreen({ navigation }: Props) {
     <GameBackdrop source={TABLE_IMAGES['banca-francesa']}>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.iconButton} hitSlop={12}>
+          <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.iconButton} hitSlop={12}>
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </Pressable>
           <ChipStack amount={balance} />
@@ -135,7 +135,7 @@ export function BancaFrancesaScreen({ navigation }: Props) {
             <Pressable onPress={() => navigation.navigate('BancaFrancesaMesa')} style={styles.iconButton} hitSlop={12}>
               <Ionicons name="people" size={22} color={colors.goldBright} />
             </Pressable>
-            <Pressable onPress={() => setTutorialVisible(true)} style={styles.iconButton} hitSlop={12}>
+            <Pressable onPress={() => setTutorialVisible(true)} accessibilityRole="button" accessibilityLabel="Como jogar" style={styles.iconButton} hitSlop={12}>
               <Ionicons name="help-circle" size={24} color={colors.goldBright} />
             </Pressable>
           </View>

@@ -231,7 +231,7 @@ export function BlackjackScreen({ navigation }: Props) {
 
             {/* A barra de controles cobre a que está pintada na arte, com valores de verdade. */}
             <View style={[styles.barra, { height: (900 - BLACKJACK.alturaDoPano) * regua.escala }]}>
-              <Pressable onPress={() => navigation.goBack()} style={styles.botaoRedondo} hitSlop={10}>
+              <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.botaoRedondo} hitSlop={10}>
                 <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
               </Pressable>
 
@@ -347,7 +347,7 @@ export function BlackjackScreen({ navigation }: Props) {
                 )}
               </View>
 
-              <Pressable onPress={() => setTutorialVisible(true)} style={styles.botaoRedondo} hitSlop={10}>
+              <Pressable onPress={() => setTutorialVisible(true)} accessibilityRole="button" accessibilityLabel="Como jogar" style={styles.botaoRedondo} hitSlop={10}>
                 <Ionicons name="help-circle" size={20} color={colors.goldBright} />
               </Pressable>
             </View>

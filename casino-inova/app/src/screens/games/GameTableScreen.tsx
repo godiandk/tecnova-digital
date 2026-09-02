@@ -39,10 +39,10 @@ export function GameTableScreen({ route, navigation }: Props) {
       <LinearGradient colors={['rgba(11,15,13,0.25)', colors.background]} locations={[0, 0.8]} style={styles.overlay} />
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.iconButton} hitSlop={12}>
+          <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.iconButton} hitSlop={12}>
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </Pressable>
-          <Pressable onPress={() => setTutorialVisible(true)} style={styles.iconButton} hitSlop={12}>
+          <Pressable onPress={() => setTutorialVisible(true)} accessibilityRole="button" accessibilityLabel="Como jogar" style={styles.iconButton} hitSlop={12}>
             <Ionicons name="help-circle" size={24} color={colors.goldBright} />
           </Pressable>
         </View>

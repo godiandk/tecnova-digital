@@ -55,7 +55,17 @@ export function Destaque({ game, largura, onPress }: DestaqueProps) {
 
   return (
     <Entrada indice={0}>
-      <Pressionavel onPress={onPress}>
+      {/*
+        O destaque mostra o nome do jogo em texto grande, mas o alvo de toque é o cartão
+        inteiro — e o único texto dentro dele que parece botão é "Entrar na mesa", que
+        não diz em qual mesa. Sem este rótulo, o leitor de tela anuncia o cartão do
+        destaque sem dizer que jogo é.
+      */}
+      <Pressionavel
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${game.name} — ${game.format === 'vs-casa' ? 'contra a casa' : 'mesa com gente'}, em destaque`}
+      >
         <View style={[styles.moldura, { width: largura, height: altura }]}>
           {mesa && <Image source={mesa} style={styles.foto} resizeMode="cover" />}
 
