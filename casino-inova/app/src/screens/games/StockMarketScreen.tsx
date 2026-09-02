@@ -10,7 +10,7 @@ import { TABLE_IMAGES } from '../../data/tableImages';
 import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { ChipStack } from '../../components/ChipStack';
-import { ApiError } from '../../api/client';
+import { ApiError, novaAcao } from '../../api/client';
 import {
   fetchStockMarketConfig,
   fetchStockMarketHistory,
@@ -26,6 +26,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'StockMarket'>;
 
 const BET_STEP = 50;
 const CHART_HEIGHT = 160;
+
+/** Quanto cada tique da cotação demora a aparecer. 30 tiques × 45ms ≈ 1,4s de subida. */
+const MS_POR_TIQUE = 45;
 
 export function StockMarketScreen({ navigation }: Props) {
   const tutorial = getTutorialByGameId('stock-market');
@@ -47,6 +50,12 @@ export function StockMarketScreen({ navigation }: Props) {
   const [history, setHistory] = useState<number[]>([]);
   const [playing, setPlaying] = useState(false);
   const [playError, setPlayError] = useState<string | null>(null);
+  /**
+   * Até que ponto do caminho a linha já foi desenhada. O caminho INTEIRO chega do
+   * servidor antes disto começar — a animação percorre o que já aconteceu, nunca
+   * decide nada. É a mesma regra dos rolos e da roda.
+   */
+  const [tiqueVisivel, setTiqueVisivel] = useState(0);
 
   useEffect(() => {
     fetchStockMarketConfig()
@@ -70,10 +79,11 @@ export function StockMarketScreen({ navigation }: Props) {
     setPlaying(true);
     setPlayError(null);
     try {
-      const result = await playStockMarketRound(direction, amount);
+      const result = await playStockMarketRound(direction, amount, novaAcao());
       setRound(result);
       setBalance(result.newBalance);
       setHistory((current) => [...current, result.closePercent].slice(-30));
+      setTiqueVisivel(0);
     } catch (error) {
       setPlayError(error instanceof ApiError ? error.message : 'Não foi possível apostar agora.');
     } finally {
@@ -81,6 +91,27 @@ export function StockMarketScreen({ navigation }: Props) {
     }
   };
 
+  /*
+   * Anda um tique de cada vez até o fim do caminho. `round` na dependência: cada
+   * rodada nova reinicia o laço, e o `clearInterval` no retorno impede que dois laços
+   * corram juntos se a pessoa apostar de novo antes de terminar.
+   */
+  useEffect(() => {
+    if (!round) return;
+    const total = round.path.length;
+    const passo = setInterval(() => {
+      setTiqueVisivel((atual) => {
+        if (atual >= total) {
+          clearInterval(passo);
+          return total;
+        }
+        return atual + 1;
+      });
+    }, MS_POR_TIQUE);
+    return () => clearInterval(passo);
+  }, [round]);
+
+  const terminouDeDesenhar = !round || tiqueVisivel >= round.path.length;
   const won = round ? round.totalReturn > round.amount : false;
 
   return (
@@ -114,9 +145,33 @@ export function StockMarketScreen({ navigation }: Props) {
                 {(config.commission * 100).toFixed(0)}% sobre o que você recebe
               </Text>
 
-              <PriceChart path={round?.path} closePercent={round?.closePercent} />
+              {/*
+                Com rodada, mostra a cotação dela andando. Sem rodada, mostra os
+                FECHAMENTOS ANTERIORES — que são dados de verdade, não uma animação
+                inventada pra encher o espaço. Um gráfico que se mexe sozinho sem
+                nada por trás seria enfeite fingindo ser informação.
+              */}
+              {round ? (
+                <Cotacao
+                  caminho={round.path}
+                  ateOTique={tiqueVisivel}
+                  fechamento={terminouDeDesenhar ? round.closePercent : undefined}
+                  legenda=""
+                />
+              ) : (
+                <Cotacao
+                  caminho={history}
+                  legenda="Escolha um lado e invista pra ver a cotação andar."
+                />
+              )}
 
-              {round && (
+              {!round && history.length > 0 && (
+                <Text style={styles.legendaDoHistorico}>
+                  Fechamentos das últimas {history.length} rodadas desta mesa
+                </Text>
+              )}
+
+              {round && terminouDeDesenhar && (
                 <Text style={[styles.closeLabel, { color: round.closePercent >= 0 ? colors.success : colors.ruby }]}>
                   Fechou em {round.closePercent > 0 ? '+' : ''}
                   {round.closePercent.toFixed(2)}%
@@ -224,38 +279,73 @@ export function StockMarketScreen({ navigation }: Props) {
  * sai da linha do meio (o zero) pra cima ou pra baixo — dá pra ler a subida e a
  * descida sem precisar de biblioteca de gráfico.
  */
-function PriceChart({ path, closePercent }: { path?: number[]; closePercent?: number }) {
-  const points = path ?? [];
-  const half = CHART_HEIGHT / 2;
+/**
+ * A cotação, desenhada como ÁREA em volta da linha do zero.
+ *
+ * Cada tique é uma coluna fina que sai do zero pra cima (alta) ou pra baixo (baixa),
+ * encostadas umas nas outras — o que forma uma área contínua e lê como gráfico de
+ * cotação. Antes eram barras com folga e altura mínima de 2px, que faziam qualquer
+ * rodada parecer uma serrilha do mesmo tamanho.
+ *
+ * A direção é dada pela POSIÇÃO (acima ou abaixo do zero), não só pela cor: verde e
+ * vermelho são justamente o par que some pra quem tem daltonismo, e um gráfico que
+ * depende só dele não é legível pra todo mundo.
+ *
+ * `ateOTique` desenha só até um ponto — é o que faz a linha ANDAR durante a rodada, em
+ * vez de aparecer pronta. O caminho inteiro já veio do servidor antes da animação
+ * começar; ela só revela o que já aconteceu, nunca decide nada.
+ */
+function Cotacao({
+  caminho,
+  ateOTique,
+  fechamento,
+  legenda,
+}: {
+  caminho: number[];
+  ateOTique?: number;
+  fechamento?: number;
+  legenda: string;
+}) {
+  const pontos = ateOTique === undefined ? caminho : caminho.slice(0, Math.max(1, ateOTique));
+  const metade = CHART_HEIGHT / 2;
 
   return (
     <View style={styles.chart}>
+      {/* Grade discreta: só o zero e as metades da escala. O jogo vai de -100% a +100%. */}
+      <View style={[styles.linhaDaGrade, { top: metade * 0.5 }]} />
+      <View style={[styles.linhaDaGrade, { top: metade * 1.5 }]} />
       <View style={styles.chartZeroLine} />
+
+      <Text style={[styles.marcaDaEscala, { top: 2 }]}>+100%</Text>
+      <Text style={[styles.marcaDaEscala, { top: metade - 7 }]}>0</Text>
+      <Text style={[styles.marcaDaEscala, { bottom: 2 }]}>−100%</Text>
+
       <View style={styles.chartBars}>
-        {points.length === 0 ? (
-          <Text style={styles.chartEmpty}>Escolha um lado e invista pra ver a cotação andar.</Text>
+        {caminho.length === 0 ? (
+          <Text style={styles.chartEmpty}>{legenda}</Text>
         ) : (
-          points.map((value, index) => {
-            const magnitude = Math.min(Math.abs(value), 100) / 100;
-            const height = Math.max(2, magnitude * half);
-            const isUp = value >= 0;
+          pontos.map((valor, indice) => {
+            const altura = Math.max(1, (Math.min(Math.abs(valor), 100) / 100) * metade);
+            const subindo = valor >= 0;
             return (
-              <View key={index} style={styles.chartColumn}>
+              <View key={indice} style={styles.chartColumn}>
                 <View style={styles.chartHalf}>
-                  {isUp && <View style={[styles.bar, { height, backgroundColor: colors.success }]} />}
+                  {subindo && <View style={[styles.bar, { height: altura, backgroundColor: colors.success }]} />}
                 </View>
                 <View style={styles.chartHalfBottom}>
-                  {!isUp && <View style={[styles.bar, { height, backgroundColor: colors.ruby }]} />}
+                  {!subindo && <View style={[styles.bar, { height: altura, backgroundColor: colors.ruby }]} />}
                 </View>
               </View>
             );
           })
         )}
       </View>
-      {closePercent !== undefined && (
-        <Text style={styles.chartCaption}>
-          {closePercent > 0 ? '+' : ''}
-          {closePercent.toFixed(2)}%
+
+      {/* Um rótulo só, no fechamento — não um número em cima de cada ponto. */}
+      {fechamento !== undefined && (
+        <Text style={[styles.chartCaption, { color: fechamento >= 0 ? colors.success : colors.ruby }]}>
+          {fechamento > 0 ? '+' : ''}
+          {fechamento.toFixed(2)}%
         </Text>
       )}
     </View>
@@ -321,6 +411,28 @@ const styles = StyleSheet.create({
     backgroundColor: colors.overlay,
     overflow: 'hidden',
     justifyContent: 'center',
+  },
+  /* Grade recessiva: marca a escala sem competir com a cotação. */
+  linhaDaGrade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+  },
+  marcaDaEscala: {
+    position: 'absolute',
+    right: 6,
+    fontFamily: fontFamily.body,
+    fontSize: 10,
+    color: colors.textFaint,
+  },
+  legendaDoHistorico: {
+    fontFamily: fontFamily.body,
+    fontSize: fontSize.xs,
+    color: colors.textFaint,
+    textAlign: 'center',
+    marginTop: -4,
   },
   chartZeroLine: {
     position: 'absolute',
