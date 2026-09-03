@@ -80,9 +80,19 @@ const OPACO = {
   pequeno: { topo: 10 / 256, base: 243 / 256 },
 };
 
-/** Onde os quatro números entram na moldura da legenda (512x128), medido nela. */
-const CAIXAS_DA_LEGENDA = [0.1895, 0.4297, 0.6699, 0.9102];
-const LINHA_DA_LEGENDA = 0.4805;
+/**
+ * As quatro caixas de valor da moldura da legenda (512x128), medidas nela.
+ *
+ * São as caixas ESCURAS dentro de cada plaqueta, isoladas por alfa e brilho: x 72..122,
+ * 195..245, 318..368 e 441..491, todas em y 52..71. Guardo a caixa inteira, não só o
+ * centro: com a caixa dá pra pôr o número exatamente dentro dela, centrado nos dois
+ * eixos. Com só o centro, a conta da vertical vira estimativa a partir do corpo da
+ * letra — foi assim que os números saíram desalinhados.
+ */
+const CAIXAS_DA_LEGENDA = [72, 195, 318, 441].map((x) => x / 512);
+const LARGURA_DA_CAIXA = 50 / 512;
+const TOPO_DA_CAIXA = 52 / 128;
+const ALTURA_DA_CAIXA = 20 / 128;
 
 type Marcador = keyof typeof MARCADORES_DO_PLACAR;
 
@@ -168,23 +178,30 @@ function Legenda({ largura, totais, palavras }: { largura: number; totais: Roadm
         style={{ position: 'absolute', top: -deslocamento, width: largura, height: altura }}
         resizeMode="stretch"
       />
-      {valores.map((valor, i) => (
-        <Text
-          key={i}
-          accessibilityLabel={`${nomes[i]}: ${valor}`}
-          style={[
-            styles.numeroDaLegenda,
-            {
-              left: CAIXAS_DA_LEGENDA[i] * largura - largura * 0.05,
-              top: LINHA_DA_LEGENDA * altura - altura * 0.1 - deslocamento,
-              width: largura * 0.1,
-              fontSize: Math.max(10, altura * 0.2),
-            },
-          ]}
-        >
-          {valor}
-        </Text>
-      ))}
+      {valores.map((valor, i) => {
+        const alturaDaCaixa = ALTURA_DA_CAIXA * altura;
+        return (
+          <Text
+            key={i}
+            numberOfLines={1}
+            accessibilityLabel={`${nomes[i]}: ${valor}`}
+            style={[
+              styles.numeroDaLegenda,
+              {
+                left: CAIXAS_DA_LEGENDA[i] * largura,
+                top: TOPO_DA_CAIXA * altura - deslocamento,
+                width: LARGURA_DA_CAIXA * largura,
+                height: alturaDaCaixa,
+                // lineHeight igual à altura da caixa centra na vertical sem estimativa.
+                lineHeight: alturaDaCaixa,
+                fontSize: Math.max(10, alturaDaCaixa * 0.82),
+              },
+            ]}
+          >
+            {valor}
+          </Text>
+        );
+      })}
     </View>
   );
 }
