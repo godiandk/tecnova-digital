@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Image, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -13,7 +13,9 @@ import { ChatPanel } from '../../components/ChatPanel';
 import { ApiError } from '../../api/client';
 import { usuarioLogadoId } from '../../api/session';
 import { SocketError } from '../../api/socket';
-import { BancaFrancesaBetType } from '../../api/bancaFrancesa';
+import { BancaFrancesaBet, fetchBancaFrancesaConfig } from '../../api/bancaFrancesa';
+import { usePlayer } from '../../data/usePlayer';
+import { PanoDaBancaFrancesa } from './PanoDaBancaFrancesa';
 import { fetchFriends, Friend } from '../../api/friends';
 import {
   addBot,
@@ -34,18 +36,6 @@ import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BancaFrancesaMesa'>;
 
-const BET_STEP = 50;
-const DEFAULT_BET = 100;
-
-const BET_OPTIONS: { type: BancaFrancesaBetType; label: string; hint: string }[] = [
-  { type: 'pequeno', label: 'Pequeno', hint: '5, 6 ou 7' },
-  { type: 'grande', label: 'Grande', hint: '14, 15 ou 16' },
-  { type: 'ases', label: 'Ases', hint: 'soma 3' },
-  { type: 'linha', label: 'Linha', hint: 'meio a meio' },
-];
-
-const OUTCOME_LABEL: Record<string, string> = { ases: 'Ases', pequeno: 'Pequeno', grande: 'Grande' };
-
 function errorMessage(error: unknown): string {
   if (error instanceof SocketError || error instanceof ApiError) return error.message;
   return 'Não foi possível falar com o servidor.';
@@ -56,13 +46,20 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
   const [publicTables, setPublicTables] = useState<PublicTableSummary[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [codeInput, setCodeInput] = useState('');
-  const [amountPerBet, setAmountPerBet] = useState(DEFAULT_BET);
-  const [selected, setSelected] = useState<Set<BancaFrancesaBetType>>(new Set());
+  const [limites, setLimites] = useState({ minimo: 50, maximo: 5000 });
+  const [painelAberto, setPainelAberto] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const { jogador } = usePlayer();
   const isHost = table?.hostUserId === usuarioLogadoId();
+
+  useEffect(() => {
+    fetchBancaFrancesaConfig()
+      .then((config) => setLimites({ minimo: config.minBet, maximo: config.maxBet }))
+      .catch(() => undefined);
+  }, []);
 
   const refreshPublic = useCallback(async () => {
     try {
@@ -91,14 +88,25 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
     };
   }, []);
 
-  const run = async (action: () => Promise<void>) => {
-    if (busy) return;
+  /**
+   * Devolve se deu certo.
+   *
+   * Antes engolia o erro e devolvia `void`, então quem chamava não tinha como saber se
+   * a ação valeu. No pano isso virava um bug de verdade: a pessoa montava a aposta, o
+   * servidor recusava, e as fichas sumiam da mesa do mesmo jeito — porque a limpeza
+   * acontecia sempre. Agora a montagem só é desfeita quando ela realmente foi pro
+   * servidor.
+   */
+  const run = async (action: () => Promise<void>): Promise<boolean> => {
+    if (busy) return false;
     setBusy(true);
     setError(null);
     try {
       await action();
+      return true;
     } catch (caught) {
       setError(errorMessage(caught));
+      return false;
     } finally {
       setBusy(false);
     }
@@ -142,19 +150,17 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
       if (table) setTable(await addBot(table.id));
     });
 
-  const handlePlaceBets = () =>
+  const handlePlaceBets = (bets: BancaFrancesaBet[]) =>
     run(async () => {
-      if (!table || selected.size === 0) return;
-      const bets = Array.from(selected).map((type) => ({ type, amount: amountPerBet }));
+      if (!table || bets.length === 0) return;
       setTable(await placeBets(table.id, bets));
-      setNotice('Aposta registrada — esperando o anfitrião girar.');
+      setNotice('Aposta registrada — esperando o anfitrião lançar.');
     });
 
   const handleRoll = () =>
     run(async () => {
       if (table) {
         setTable(await roll(table.id));
-        setSelected(new Set());
         setNotice(null);
       }
     });
@@ -164,19 +170,108 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
       if (!table) return;
       await leaveTable(table.id);
       setTable(null);
-      setSelected(new Set());
+      setPainelAberto(false);
       setNotice(null);
       refreshPublic();
     });
 
-  const toggleBet = (type: BancaFrancesaBetType) => {
-    setSelected((current) => {
-      const next = new Set(current);
-      if (next.has(type)) next.delete(type);
-      else next.add(type);
-      return next;
-    });
-  };
+  /*
+   * Duas telas, não uma. Sem mesa, isto é um SALÃO: escolher onde sentar é ler uma
+   * lista, e lista é cartão mesmo. Com mesa, isto é a MESA — o pano ocupa tudo, e quem
+   * está sentado, o chat e os controles do anfitrião saem de cima do feltro pra um
+   * painel que abre por cima. Antes os dois estavam misturados numa rolagem só, e o
+   * resultado era jogar Banca Francesa lendo azulejos escritos "Pequeno · 5, 6 ou 7"
+   * com a foto da mesa de papel de parede atrás.
+   */
+  if (table) {
+    return (
+      <>
+        <PanoDaBancaFrancesa
+          mesa={table}
+          meuId={usuarioLogadoId()}
+          ehAnfitriao={isHost}
+          ocupado={busy}
+          saldo={jogador?.chipBalance ?? 0}
+          minimo={limites.minimo}
+          maximo={limites.maximo}
+          onApostar={handlePlaceBets}
+          onGirar={handleRoll}
+          onSair={handleLeave}
+          onAbrirPainel={() => setPainelAberto(true)}
+          erro={error}
+          aviso={notice}
+        />
+
+        <Modal visible={painelAberto} animationType="slide" transparent onRequestClose={() => setPainelAberto(false)}>
+          <View style={styles.painelFundo}>
+            <SafeAreaView style={styles.painel} edges={['bottom']}>
+              <View style={styles.painelTopo}>
+                <Text style={styles.cardTitle}>
+                  {table.visibility === 'privada' ? `Código: ${table.code}` : 'Mesa pública'}
+                </Text>
+                <Pressable onPress={() => setPainelAberto(false)} accessibilityRole="button" accessibilityLabel="Fechar" hitSlop={12}>
+                  <Ionicons name="close" size={24} color={colors.textPrimary} />
+                </Pressable>
+              </View>
+
+              <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+                <CasinoCard style={styles.card}>
+                  <Text style={styles.sectionLabel}>Na mesa ({table.seats.length}/15)</Text>
+                  {table.seats.map((seat) => {
+                    const round = table.lastRound?.bySeat[seat.userId];
+                    return (
+                      <View key={seat.userId} style={styles.seatRow}>
+                        <Image source={PLAYER_CHIP_IMAGES[seat.color]} style={styles.chip} resizeMode="contain" />
+                        <View style={styles.seatInfo}>
+                          <Text style={styles.seatName}>
+                            {seat.name}
+                            {seat.userId === usuarioLogadoId() ? ' (você)' : ''}
+                            {seat.userId === table.hostUserId ? ' · anfitrião' : ''}
+                          </Text>
+                          <Text style={styles.seatMeta}>
+                            {PLAYER_COLOR_LABELS[seat.color]}
+                            {seat.isBot ? ' · bot' : seat.balance !== undefined ? ` · ${seat.balance.toLocaleString('pt-BR')} fichas` : ''}
+                          </Text>
+                        </View>
+                        {round && (
+                          <Text style={[styles.seatResult, round.totalReturn > round.totalStake && styles.seatResultWin]}>
+                            {round.totalReturn > 0 ? `+${round.totalReturn.toLocaleString('pt-BR')}` : `−${round.totalStake.toLocaleString('pt-BR')}`}
+                          </Text>
+                        )}
+                        {!round && seat.pendingBets.length > 0 && <Text style={styles.seatPending}>apostou</Text>}
+                      </View>
+                    );
+                  })}
+                </CasinoCard>
+
+                {isHost && (
+                  <CasinoCard style={styles.card}>
+                    <Text style={styles.cardTitle}>Controles do anfitrião</Text>
+                    <Pressable onPress={handleAddBot} style={styles.secondaryButton} disabled={busy}>
+                      <Text style={styles.secondaryLabel}>Completar com bot</Text>
+                    </Pressable>
+                    {friends.length > 0 && (
+                      <>
+                        <Text style={styles.sectionLabel}>Convidar amigo</Text>
+                        {friends.map((friend) => (
+                          <Pressable key={friend.userId} onPress={() => handleInvite(friend.userId)} style={styles.publicRow} disabled={busy}>
+                            <Text style={styles.publicHost}>{friend.name}</Text>
+                            <Ionicons name="add-circle" size={22} color={colors.goldBright} />
+                          </Pressable>
+                        ))}
+                      </>
+                    )}
+                  </CasinoCard>
+                )}
+
+                <ChatPanel roomId={table.id} scope="mesa" />
+              </ScrollView>
+            </SafeAreaView>
+          </View>
+        </Modal>
+      </>
+    );
+  }
 
   return (
     <GameBackdrop source={TABLE_IMAGES['banca-francesa']}>
@@ -193,197 +288,60 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
         {notice && <Text style={styles.noticeText}>{notice}</Text>}
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          {!table ? (
-            <>
-              <CasinoCard style={styles.card}>
-                <Text style={styles.cardTitle}>Criar uma mesa</Text>
-                <Text style={styles.cardHint}>Até 15 pessoas na mesma mesa — cada uma com uma cor de ficha.</Text>
-                <View style={styles.buttonRow}>
-                  <Pressable onPress={() => handleCreate('publica')} style={styles.primaryButton} disabled={busy}>
-                    <Text style={styles.primaryLabel}>Mesa pública</Text>
-                  </Pressable>
-                  <Pressable onPress={() => handleCreate('privada')} style={styles.secondaryButton} disabled={busy}>
-                    <Text style={styles.secondaryLabel}>Mesa privada</Text>
-                  </Pressable>
-                </View>
-              </CasinoCard>
+          <CasinoCard style={styles.card}>
+            <Text style={styles.cardTitle}>Criar uma mesa</Text>
+            <Text style={styles.cardHint}>Até 15 pessoas na mesma mesa — cada uma com uma cor de ficha.</Text>
+            <View style={styles.buttonRow}>
+              <Pressable onPress={() => handleCreate('publica')} style={styles.primaryButton} disabled={busy}>
+                <Text style={styles.primaryLabel}>Mesa pública</Text>
+              </Pressable>
+              <Pressable onPress={() => handleCreate('privada')} style={styles.secondaryButton} disabled={busy}>
+                <Text style={styles.secondaryLabel}>Mesa privada</Text>
+              </Pressable>
+            </View>
+          </CasinoCard>
 
-              <CasinoCard style={styles.card}>
-                <Text style={styles.cardTitle}>Entrar com código</Text>
-                <Text style={styles.cardHint}>Peça o código de 6 caracteres pra quem criou a mesa privada.</Text>
-                <View style={styles.inputRow}>
-                  <TextInput
-                    value={codeInput}
-                    onChangeText={setCodeInput}
-                    placeholder="Ex: K7M2QP"
-                    placeholderTextColor={colors.textFaint}
-                    autoCapitalize="characters"
-                    autoCorrect={false}
-                    maxLength={6}
-                    style={styles.input}
-                    editable={!busy}
-                  />
-                  <Pressable onPress={handleJoinCode} style={styles.primaryButton} disabled={busy}>
-                    <Text style={styles.primaryLabel}>Entrar</Text>
-                  </Pressable>
-                </View>
-              </CasinoCard>
+          <CasinoCard style={styles.card}>
+            <Text style={styles.cardTitle}>Entrar com código</Text>
+            <Text style={styles.cardHint}>Peça o código de 6 caracteres pra quem criou a mesa privada.</Text>
+            <View style={styles.inputRow}>
+              <TextInput
+                value={codeInput}
+                onChangeText={setCodeInput}
+                placeholder="Ex: K7M2QP"
+                placeholderTextColor={colors.textFaint}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={6}
+                style={styles.input}
+                editable={!busy}
+              />
+              <Pressable onPress={handleJoinCode} style={styles.primaryButton} disabled={busy}>
+                <Text style={styles.primaryLabel}>Entrar</Text>
+              </Pressable>
+            </View>
+          </CasinoCard>
 
-              <CasinoCard style={styles.card}>
-                <View style={styles.cardHeaderRow}>
-                  <Text style={styles.cardTitle}>Mesas públicas</Text>
-                  <Pressable onPress={refreshPublic} hitSlop={12} disabled={busy}>
-                    <Ionicons name="refresh" size={20} color={colors.goldBright} />
-                  </Pressable>
-                </View>
-                {publicTables.length === 0 && <Text style={styles.cardHint}>Nenhuma mesa pública aberta agora.</Text>}
-                {publicTables.map((item) => (
-                  <Pressable key={item.id} onPress={() => handleJoinId(item.id)} style={styles.publicRow} disabled={busy}>
-                    <View>
-                      <Text style={styles.publicHost}>Mesa de {item.hostName}</Text>
-                      <Text style={styles.cardHint}>
-                        {item.seatedCount} de {item.maxSeats} lugares
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color={colors.textFaint} />
-                  </Pressable>
-                ))}
-              </CasinoCard>
-            </>
-          ) : (
-            <>
-              <CasinoCard style={styles.card}>
-                <View style={styles.cardHeaderRow}>
-                  <Text style={styles.cardTitle}>
-                    {table.visibility === 'privada' ? `Código: ${table.code}` : 'Mesa pública'}
+          <CasinoCard style={styles.card}>
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.cardTitle}>Mesas públicas</Text>
+              <Pressable onPress={refreshPublic} hitSlop={12} disabled={busy} accessibilityRole="button" accessibilityLabel="Atualizar a lista">
+                <Ionicons name="refresh" size={20} color={colors.goldBright} />
+              </Pressable>
+            </View>
+            {publicTables.length === 0 && <Text style={styles.cardHint}>Nenhuma mesa pública aberta agora.</Text>}
+            {publicTables.map((item) => (
+              <Pressable key={item.id} onPress={() => handleJoinId(item.id)} style={styles.publicRow} disabled={busy}>
+                <View>
+                  <Text style={styles.publicHost}>Mesa de {item.hostName}</Text>
+                  <Text style={styles.cardHint}>
+                    {item.seatedCount} de {item.maxSeats} lugares
                   </Text>
-                  <Pressable onPress={handleLeave} hitSlop={12} disabled={busy}>
-                    <Text style={styles.leaveLabel}>Sair</Text>
-                  </Pressable>
                 </View>
-
-                {table.lastRound && (
-                  <View style={styles.roundBox}>
-                    <View style={styles.diceRow}>
-                      {table.lastRound.dice.map((die, index) => (
-                        <View key={index} style={styles.die}>
-                          <Text style={styles.dieLabel}>{die}</Text>
-                        </View>
-                      ))}
-                    </View>
-                    <Text style={styles.outcomeLabel}>
-                      Soma {table.lastRound.sum} → {OUTCOME_LABEL[table.lastRound.outcome]}
-                    </Text>
-                  </View>
-                )}
-
-                <Text style={styles.sectionLabel}>Na mesa ({table.seats.length}/15)</Text>
-                {table.seats.map((seat) => {
-                  const round = table.lastRound?.bySeat[seat.userId];
-                  return (
-                    <View key={seat.userId} style={styles.seatRow}>
-                      <Image source={PLAYER_CHIP_IMAGES[seat.color]} style={styles.chip} resizeMode="contain" />
-                      <View style={styles.seatInfo}>
-                        <Text style={styles.seatName}>
-                          {seat.name}
-                          {seat.userId === usuarioLogadoId() ? ' (você)' : ''}
-                          {seat.userId === table.hostUserId ? ' · anfitrião' : ''}
-                        </Text>
-                        <Text style={styles.seatMeta}>
-                          {PLAYER_COLOR_LABELS[seat.color]}
-                          {seat.isBot ? ' · bot' : seat.balance !== undefined ? ` · ${seat.balance.toLocaleString('pt-BR')} fichas` : ''}
-                        </Text>
-                      </View>
-                      {round && (
-                        <Text style={[styles.seatResult, round.totalReturn > round.totalStake && styles.seatResultWin]}>
-                          {round.totalReturn > 0 ? `+${round.totalReturn.toLocaleString('pt-BR')}` : `−${round.totalStake.toLocaleString('pt-BR')}`}
-                        </Text>
-                      )}
-                      {!round && seat.pendingBets.length > 0 && <Text style={styles.seatPending}>apostou</Text>}
-                    </View>
-                  );
-                })}
-              </CasinoCard>
-
-              <CasinoCard style={styles.card}>
-                <Text style={styles.cardTitle}>Sua aposta</Text>
-                <View style={styles.betGrid}>
-                  {BET_OPTIONS.map((option) => (
-                    <Pressable
-                      key={option.type}
-                      onPress={() => toggleBet(option.type)}
-                      style={[styles.betTile, selected.has(option.type) && styles.betTileSelected]}
-                      disabled={busy}
-                    >
-                      <Text style={styles.betLabel}>{option.label}</Text>
-                      <Text style={styles.cardHint}>{option.hint}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-
-                <View style={styles.amountRow}>
-                  <Pressable
-                    onPress={() => setAmountPerBet((value) => Math.max(BET_STEP, value - BET_STEP))}
-                    style={styles.stepButton}
-                    disabled={busy}
-                  >
-                    <Ionicons name="remove" size={18} color={colors.textPrimary} />
-                  </Pressable>
-                  <Text style={styles.amountLabel}>{amountPerBet.toLocaleString('pt-BR')} por aposta</Text>
-                  <Pressable onPress={() => setAmountPerBet((value) => value + BET_STEP)} style={styles.stepButton} disabled={busy}>
-                    <Ionicons name="add" size={18} color={colors.textPrimary} />
-                  </Pressable>
-                </View>
-
-                <Pressable
-                  onPress={handlePlaceBets}
-                  style={[styles.primaryButton, (busy || selected.size === 0) && styles.buttonDisabled]}
-                  disabled={busy || selected.size === 0}
-                >
-                  {busy ? (
-                    <ActivityIndicator color={colors.background} />
-                  ) : (
-                    <Text style={styles.primaryLabel}>Apostar {(amountPerBet * selected.size).toLocaleString('pt-BR')}</Text>
-                  )}
-                </Pressable>
-              </CasinoCard>
-
-              {isHost && (
-                <CasinoCard style={styles.card}>
-                  <Text style={styles.cardTitle}>Controles do anfitrião</Text>
-                  <View style={styles.buttonRow}>
-                    <Pressable onPress={handleAddBot} style={styles.secondaryButton} disabled={busy}>
-                      <Text style={styles.secondaryLabel}>Completar com bot</Text>
-                    </Pressable>
-                    <Pressable onPress={handleRoll} style={styles.primaryButton} disabled={busy}>
-                      <Text style={styles.primaryLabel}>Girar</Text>
-                    </Pressable>
-                  </View>
-
-                  {/* Chat só aparece pra quem está sentado numa mesa. */}
-                  {friends.length > 0 && (
-                    <>
-                      <Text style={styles.sectionLabel}>Convidar amigo</Text>
-                      {friends.map((friend) => (
-                        <Pressable
-                          key={friend.userId}
-                          onPress={() => handleInvite(friend.userId)}
-                          style={styles.publicRow}
-                          disabled={busy}
-                        >
-                          <Text style={styles.publicHost}>{friend.name}</Text>
-                          <Ionicons name="add-circle" size={22} color={colors.goldBright} />
-                        </Pressable>
-                      ))}
-                    </>
-                  )}
-                </CasinoCard>
-              )}
-
-              {/* Chat da mesa — todo mundo sentado conversa aqui. */}
-              <ChatPanel roomId={table.id} scope="mesa" />
-            </>
-          )}
+                <Ionicons name="chevron-forward" size={20} color={colors.textFaint} />
+              </Pressable>
+            ))}
+          </CasinoCard>
         </ScrollView>
       </SafeAreaView>
     </GameBackdrop>
@@ -392,6 +350,17 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, paddingHorizontal: spacing.lg },
+  /* O painel cobre o pano por cima, sem tirar a mesa da tela. */
+  painelFundo: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(4,6,5,0.72)' },
+  painel: {
+    maxHeight: '82%',
+    backgroundColor: colors.background,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  painelTopo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },
   iconButton: {
     width: 40,
@@ -444,7 +413,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   secondaryLabel: { fontFamily: fontFamily.displaySemiBold, fontSize: fontSize.sm, color: colors.textPrimary },
-  buttonDisabled: { opacity: 0.6 },
   publicRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -454,21 +422,6 @@ const styles = StyleSheet.create({
     borderTopColor: colors.feltLine,
   },
   publicHost: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textPrimary },
-  leaveLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.danger },
-  roundBox: { alignItems: 'center', gap: spacing.xs, marginVertical: spacing.sm },
-  diceRow: { flexDirection: 'row', gap: spacing.sm },
-  die: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.sm,
-    backgroundColor: colors.textPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.goldBright,
-  },
-  dieLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.md, color: colors.background },
-  outcomeLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.goldBright },
   sectionLabel: {
     fontFamily: fontFamily.bodySemiBold,
     fontSize: fontSize.xs,
@@ -485,32 +438,7 @@ const styles = StyleSheet.create({
   seatResult: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.danger },
   seatResultWin: { color: colors.success },
   seatPending: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.goldBright },
-  betGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  betTile: {
-    flexBasis: '47%',
-    flexGrow: 1,
-    borderRadius: radius.md,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 2,
-    borderColor: colors.feltLine,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    gap: 2,
-  },
-  betTileSelected: { borderColor: colors.goldBright, backgroundColor: colors.felt },
   betLabel: { fontFamily: fontFamily.displaySemiBold, fontSize: fontSize.sm, color: colors.textPrimary },
-  amountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md, marginTop: spacing.sm },
-  stepButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  amountLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textPrimary, minWidth: 150, textAlign: 'center' },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.xs, color: colors.danger, textAlign: 'center', marginTop: spacing.sm },
   noticeText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.xs, color: colors.goldBright, textAlign: 'center', marginTop: spacing.sm },
 });

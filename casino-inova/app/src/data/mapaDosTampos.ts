@@ -130,6 +130,72 @@ export const FICHA_MAXIMA_NO_TRILHO = 84;
 export const PASSO_DA_PILHA = 0.2;
 
 /**
+ * Banca Francesa. Três casas impressas no feltro — a caixa "3 ASES" no canto, o arco
+ * GRANDE (14/15/16) e o arco PEQUENO (5/6/7) — mais a LINHA, que é a aposta feita em
+ * cima do traço que separa os dois arcos. Os dados são lançados na tigela de couro no
+ * alto da mesa.
+ *
+ * COMO ESTES NÚMEROS FORAM OBTIDOS. Máscara de dourado sobre o feltro verde
+ * (r>105, r>b+45, g>b+18, r>=g — calibrada por amostragem), fechamento morfológico pra
+ * o traço fino virar figura inteira, e componentes conectados. Cada figura abaixo é uma
+ * componente medida, exceto onde está dito o contrário:
+ *
+ *   tigela dos dados   x 0.3167..0.6823  y 0.1222..0.2722   (a maior figura da mesa)
+ *   caixa 3 ASES       x 0.1698..0.2531  y 0.2444..0.3269
+ *   arco GRANDE        x 0.2260..0.7714  y 0.3389..0.5056
+ *   arco PEQUENO       x 0.1177..0.8766  y 0.4806..0.6963   (duas componentes, o texto
+ *                                                            "PEQUENO" corta o arco)
+ *   spot do PEQUENO    centro (0.4964, 0.6699)  0.057 x 0.077
+ *   spot do GRANDE     centro (0.4990, 0.4710)  0.058 x 0.074  (medido no recorte: a
+ *                      elipse encosta no arco, então sai junto na componente)
+ *
+ * AS CAIXAS DE TOQUE SÃO MAIORES QUE O DESENHO, e de propósito. Os arcos são curvos e a
+ * área tocável é retangular; um retângulo colado no traço deixaria as pontas do arco de
+ * fora. Como a área não pinta nada (ver CasaDeAposta), ser generosa não custa aparência
+ * nenhuma — custa só não roubar toque da casa vizinha, e por isso GRANDE termina em
+ * 0.478 e PEQUENO começa em 0.482.
+ *
+ * A LINHA é o caso especial. Ela não tem casa impressa porque na mesa de verdade ela não
+ * é uma casa: é a ficha posta EM CIMA do traço entre Grande e Pequeno (o motor diz isso
+ * na letra — metade em cada). Então a faixa dela fica exatamente sobre esse traço, e ela
+ * é desenhada DEPOIS de Pequeno pra ganhar o toque na parte em que as duas se cruzam.
+ */
+export const MAPA_BANCA_FRANCESA = {
+  apostas: {
+    ases: {
+      caixa: [0.155, 0.23, 0.27, 0.345],
+      rotulo: 'Apostar em Ases, soma 3',
+      alvo: { x: 0.2115, y: 0.322 },
+    },
+    grande: {
+      caixa: [0.226, 0.3, 0.771, 0.478],
+      rotulo: 'Apostar em Grande, 14, 15 ou 16',
+      alvo: { x: 0.499, y: 0.5 },
+    },
+    pequeno: {
+      caixa: [0.118, 0.482, 0.877, 0.72],
+      rotulo: 'Apostar em Pequeno, 5, 6 ou 7',
+      alvo: { x: 0.4964, y: 0.7 },
+    },
+    linha: {
+      caixa: [0.35, 0.478, 0.65, 0.552],
+      rotulo: 'Apostar na Linha, metade Grande e metade Pequeno',
+      alvo: { x: 0.499, y: 0.548 },
+    },
+  } satisfies Record<string, AreaDaMesa>,
+  /**
+   * Os três dados dentro da tigela. A tigela mede 0.366 de largura por 0.150 de altura,
+   * centrada em (0.4995, 0.1972); três dados espalhados nela cabem com folga em 0.42,
+   * 0.50 e 0.58, um pouco abaixo do centro, que é onde o couro da tigela pega a luz.
+   */
+  dados: [
+    { x: 0.42, y: 0.208 },
+    { x: 0.5, y: 0.208 },
+    { x: 0.58, y: 0.208 },
+  ] as PontoDaMesa[],
+};
+
+/**
  * Quantas pilhas cabem lado a lado dentro de uma casa, e onde cada uma assenta.
  *
  * NUMA MESA CHEIA AS FICHAS NÃO PODEM SE MISTURAR. Se três pessoas apostam no JOGADOR e
@@ -149,26 +215,43 @@ export const PASSO_DA_PILHA = 0.2;
  * encostar na moldura, sobra o que está em LARGURA_UTIL.
  */
 export const LARGURA_UTIL: Record<string, number> = {
+  // Bac Bo
   jogador: 0.3,
   empate: 0.21,
   banca: 0.23,
+  /*
+   * Banca Francesa. Os arcos são largos, então cabe muita pilha lado a lado; a caixa
+   * dos Ases é pequena e a Linha é uma faixa estreita, e nessas duas as pilhas de mesa
+   * cheia encostam uma na outra — que é o que acontece no feltro de verdade.
+   */
+  ases: 0.07,
+  grande: 0.4,
+  pequeno: 0.5,
+  linha: 0.22,
 };
 
 /**
  * Onde a pilha de índice `indice`, de um total de `quantas`, assenta dentro da casa.
  *
- * Passando de cinco pilhas elas passam a se sobrepor um pouco em vez de sair da casa —
- * que é o que acontece numa mesa lotada de verdade, onde o dealer encosta uma pilha na
- * outra. A ordem nunca muda no meio da rodada, então a sua continua sendo a sua.
+ * As pilhas ficam LADO A LADO, encostadas no ponto da casa, e não espalhadas pela
+ * largura toda. A diferença importa: com duas pessoas apostando num arco largo,
+ * espalhar pela largura toda joga uma pilha em cada ponta do arco, longe do círculo
+ * onde a ficha deveria ir — parecia que ninguém tinha apostado no mesmo lugar. Do jeito
+ * certo, duas pilhas ficam encostadas uma na outra em cima do círculo, como na mesa.
+ *
+ * O grupo só começa a se comprimir quando não cabe mais: aí as pilhas se sobrepõem em
+ * vez de sair da casa, que é o que o dealer faz numa mesa lotada.
  */
 export function assentoDaPilha(
   area: AreaDaMesa,
   larguraUtil: number,
   indice: number,
   quantas: number,
+  espacamento = TAMANHO_DA_FICHA_NO_PANO * 1.15,
 ): PontoDaMesa {
   const alvo = area.alvo ?? centroDe(area);
   if (quantas <= 1) return alvo;
-  const passo = larguraUtil / (quantas - 1);
-  return { x: alvo.x - larguraUtil / 2 + indice * passo, y: alvo.y };
+  const passo = Math.min(espacamento, larguraUtil / (quantas - 1));
+  const larguraDoGrupo = passo * (quantas - 1);
+  return { x: alvo.x - larguraDoGrupo / 2 + indice * passo, y: alvo.y };
 }

@@ -25,6 +25,21 @@ export interface RoundResult {
   dice: number[];
   sum: number;
   outcome: 'ases' | 'pequeno' | 'grande';
+  /**
+   * Quantas vezes os dados voltaram pro copo antes de sair uma soma que decide.
+   *
+   * Das 216 combinações de três dados só 63 resolvem alguma coisa (1 de Ases, 31 de
+   * Pequeno, 31 de Grande); as outras — 4, 8 a 13, 17 e 18 — não decidem nada e o
+   * lançamento se repete com as apostas em pé. Isso é regra do jogo, não detalhe de
+   * implementação: é o que calibra o RTP.
+   *
+   * O motor já contava isso em `rollUntilDecisive()` e a tela de um jogador só já
+   * mostrava ("relançou 2x até decidir"), mas aqui o número era descartado na
+   * desestruturação e nunca chegava a quem joga na mesa. Quem estava na mesa via só a
+   * jogada final, mesmo quando os dados hesitaram três ou quatro vezes. Escondido não
+   * é neutro: é informação verdadeira do jogo que sumia no caminho.
+   */
+  rerolls: number;
   bySeat: Record<string, { results: BetResult[]; totalStake: number; totalReturn: number }>;
   at: string;
 }
@@ -215,8 +230,8 @@ export class BancaFrancesaTableService {
     }
 
     table.relogio.irPara('SORTEIO');
-    const { dice, sum, outcome } = rollUntilDecisive();
-    this.anotar(table, 'DADOS', { dice, sum, outcome });
+    const { dice, sum, outcome, rerolls } = rollUntilDecisive();
+    this.anotar(table, 'DADOS', { dice, sum, outcome, rerolls });
 
     table.relogio.irPara('APURACAO');
     const bySeat: RoundResult['bySeat'] = {};
@@ -252,7 +267,7 @@ export class BancaFrancesaTableService {
     }
 
     table.relogio.irPara('PAGAMENTO');
-    table.lastRound = { dice, sum, outcome, bySeat, at: new Date().toISOString() };
+    table.lastRound = { dice, sum, outcome, rerolls, bySeat, at: new Date().toISOString() };
     // O log guarda só o que é público: quem apostou o quê e quanto levou já é visível
     // nesta mesa (todo mundo aposta no mesmo resultado), então nada aqui é privado.
     this.anotar(table, 'PAGAMENTO', { bySeat });

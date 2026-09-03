@@ -102,7 +102,7 @@ export function CasaDeAposta({
       accessibilityHint={valor > 0 ? `${valor.toLocaleString('pt-BR')} apostados aqui: ${descricao ?? ''}`.trim() : undefined}
       style={[caixa, styles.casa]}
     >
-      {vencedora && <LuzDeVitoria alvo={assento} />}
+      {vencedora && <LuzDeVitoria alvo={assento} largura={palco.largura} />}
       {pilhas
         ? pilhas.map((pilha, i) => (
             <View key={pilha.chave} style={assentar(i, pilhas.length)} pointerEvents="none">
@@ -125,22 +125,27 @@ export function CasaDeAposta({
  * opacidade caindo chegam perto o bastante: a borda some antes de virar linha, então
  * lê como luz caindo no feltro e não como contorno de caixa.
  */
-function LuzDeVitoria({ alvo }: { alvo: { bottom: number } | null }) {
+function LuzDeVitoria({ alvo, largura }: { alvo: { bottom: number } | null; largura: number }) {
   const base = alvo?.bottom ?? 0;
+  /*
+   * A luz cresce com a mesa. Em pixel fixo ela ficava do tamanho de um prato numa mesa
+   * de 1600 e some — e o ponto dela é justamente ser vista sem ser um contorno.
+   */
+  const raio = Math.max(120, largura * 0.19);
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, styles.centroDaLuz, { paddingBottom: base }]}>
       {[
-        { tamanho: 230, opacidade: 0.05 },
-        { tamanho: 160, opacidade: 0.07 },
-        { tamanho: 100, opacidade: 0.09 },
+        { fracao: 1, opacidade: 0.07 },
+        { fracao: 0.68, opacidade: 0.1 },
+        { fracao: 0.42, opacidade: 0.13 },
       ].map((anel) => (
         <View
-          key={anel.tamanho}
+          key={anel.fracao}
           style={{
             position: 'absolute',
-            width: anel.tamanho,
-            height: anel.tamanho * 0.62,
-            borderRadius: anel.tamanho,
+            width: raio * anel.fracao,
+            height: raio * anel.fracao * 0.62,
+            borderRadius: raio,
             backgroundColor: colors.success,
             opacity: anel.opacidade,
           }}

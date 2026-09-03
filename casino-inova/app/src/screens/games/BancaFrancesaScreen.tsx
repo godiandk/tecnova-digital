@@ -132,7 +132,13 @@ export function BancaFrancesaScreen({ navigation }: Props) {
           </Pressable>
           <ChipStack amount={balance} />
           <View style={styles.topActions}>
-            <Pressable onPress={() => navigation.navigate('BancaFrancesaMesa')} style={styles.iconButton} hitSlop={12}>
+            <Pressable
+              onPress={() => navigation.navigate('BancaFrancesaMesa')}
+              accessibilityRole="button"
+              accessibilityLabel="Jogar numa mesa online"
+              style={styles.iconButton}
+              hitSlop={12}
+            >
               <Ionicons name="people" size={22} color={colors.goldBright} />
             </Pressable>
             <Pressable onPress={() => setTutorialVisible(true)} accessibilityRole="button" accessibilityLabel="Como jogar" style={styles.iconButton} hitSlop={12}>

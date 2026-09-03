@@ -92,3 +92,25 @@ export function corDoJogador(id: string | undefined): PlayerColor | undefined {
   for (let i = 0; i < id.length; i += 1) soma = (soma * 31 + id.charCodeAt(i)) >>> 0;
   return CORES_DE_JOGADOR[soma % CORES_DE_JOGADOR.length];
 }
+
+/**
+ * Um valor virado em fichas, da maior pra menor — do jeito que o caixa troca.
+ *
+ * Serve pra desenhar a pilha de quem a gente não viu apostar. As apostas que chegam do
+ * servidor vêm como um número só ("450 no Grande"), não como a lista de fichas que a
+ * pessoa encostou, então a pilha dela é reconstruída aqui. A da gente não passa por
+ * isto enquanto não é confirmada: essa a gente viu montar, e mostra as fichas que foram
+ * postas de verdade.
+ */
+export function decomporEmFichas(valor: number): number[] {
+  const fichas: number[] = [];
+  let resto = valor;
+  for (const { valor: unidade } of [...DENOMINACOES].reverse()) {
+    while (resto >= unidade) {
+      fichas.push(unidade);
+      resto -= unidade;
+    }
+  }
+  // A pilha é desenhada de baixo pra cima, e no feltro a maior fica embaixo.
+  return fichas.reverse();
+}

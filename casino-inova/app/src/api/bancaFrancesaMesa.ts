@@ -15,6 +15,8 @@ export interface TableRoundView {
   dice: number[];
   sum: number;
   outcome: BancaFrancesaOutcome;
+  /** Quantas vezes os dados voltaram pro copo antes de sair soma que decide. */
+  rerolls: number;
   bySeat: Record<string, { results: BetResult[]; totalStake: number; totalReturn: number }>;
   at: string;
 }
