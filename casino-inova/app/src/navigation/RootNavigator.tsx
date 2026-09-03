@@ -17,7 +17,7 @@ import { BlackjackScreen } from '../screens/games/BlackjackScreen';
 import { BaccaratScreen } from '../screens/games/BaccaratScreen';
 import { BancaFrancesaScreen } from '../screens/games/BancaFrancesaScreen';
 import { BancaFrancesaMesaScreen } from '../screens/games/BancaFrancesaMesaScreen';
-import { BacBoScreen } from '../screens/games/BacBoScreen';
+import { BacBoMesaScreen } from '../screens/games/BacBoMesaScreen';
 import { StockMarketScreen } from '../screens/games/StockMarketScreen';
 import { TrucoScreen } from '../screens/games/TrucoScreen';
 import { TrucoMesaScreen } from '../screens/games/TrucoMesaScreen';
@@ -55,7 +55,7 @@ export function RootNavigator() {
       <Stack.Screen name="Baccarat" component={BaccaratScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="BancaFrancesa" component={BancaFrancesaScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="BancaFrancesaMesa" component={BancaFrancesaMesaScreen} options={{ animation: 'fade' }} />
-      <Stack.Screen name="BacBo" component={BacBoScreen} options={{ animation: 'fade' }} />
+      <Stack.Screen name="BacBo" component={BacBoMesaScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="StockMarket" component={StockMarketScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Truco" component={TrucoScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="TrucoMesa" component={TrucoMesaScreen} options={{ animation: 'fade' }} />
