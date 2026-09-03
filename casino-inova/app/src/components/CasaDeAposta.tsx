@@ -16,6 +16,14 @@ interface CasaDeApostaProps {
   area: AreaDaMesa;
   /** Chave da casa no mapa, pra saber a largura útil dela. */
   nome: string;
+  /**
+   * Quanto de pano as pilhas podem ocupar, quando o tampo em uso não é o de sempre.
+   *
+   * A largura útil de uma casa muda com a composição: a mesma casa é larga e baixa no
+   * tampo deitado e estreita e alta no de celular. Sem isto, as pilhas de mesa cheia
+   * usariam a medida do tampo errado e sairiam pela borda.
+   */
+  larguraUtil?: number;
   /** Quanto VOCÊ já apostou aqui. Zero = você não pôs nada nesta casa. */
   valor: number;
   /** O que anunciar sobre as suas fichas daqui, pra quem usa leitor de tela. */
@@ -52,6 +60,7 @@ interface CasaDeApostaProps {
 export function CasaDeAposta({
   area,
   nome,
+  larguraUtil: larguraUtilDada,
   valor,
   descricao,
   pilhas,
@@ -78,7 +87,7 @@ export function CasaDeAposta({
    * largura da casa inteira em vez de largura zero, pro conteúdo centralizar dentro
    * dela sem transbordar pelos lados, que na web viraria corte.
    */
-  const larguraUtil = LARGURA_UTIL[nome] ?? 0;
+  const larguraUtil = larguraUtilDada ?? LARGURA_UTIL[nome] ?? 0;
   const assentar = (indice: number, quantas: number) => {
     const ponto = assentoDaPilha(area, larguraUtil, indice, quantas);
     return {

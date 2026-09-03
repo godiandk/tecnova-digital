@@ -5,13 +5,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useJanela } from '../theme/useJanela';
 import { colors } from '../theme';
 
-/** Proporção dos tampos 16:9 (1920x1080 e 1600x900 são a mesma composição). */
-const PROPORCAO = 16 / 9;
+/** Proporção dos tampos deitados (1920x1080 e 1600x900 são a mesma composição). */
+const PROPORCAO_DEITADA = 16 / 9;
+
+/** Proporção dos tampos em pé (1284x2778, o formato de celular). */
+const PROPORCAO_EM_PE = 1284 / 2778;
 
 /**
- * A partir desta largura vale a pena usar o tampo deitado. Abaixo disso o app segue
- * com a arte de retrato — esticar uma mesa 16:9 num celular em pé não deixa a mesa
- * maior, deixa ela minúscula no meio de duas tarjas pretas.
+ * A partir desta largura o tampo DEITADO cabe. Abaixo dela, num aparelho em pé, entra
+ * o tampo EM PÉ — que é arte própria, não o deitado espremido.
  */
 export const LARGURA_MINIMA_PRO_TAMPO = 700;
 
@@ -24,6 +26,15 @@ interface Palco {
   topo: number;
   largura: number;
   altura: number;
+  /**
+   * Qual tampo está na tela.
+   *
+   * Importa porque as duas artes são COMPOSIÇÕES DIFERENTES, não a mesma imagem
+   * recortada: no deitado as casas ficam lado a lado num arco largo, no em pé elas
+   * ficam numa fileira mais alta e estreita. Quem desenha por cima precisa saber qual
+   * mapa de frações usar, e é este campo que diz.
+   */
+  emPe: boolean;
 }
 
 const PalcoContext = createContext<Palco | null>(null);
@@ -53,9 +64,23 @@ export function naMesa(palco: Palco, fracaoX: number, fracaoY: number) {
 }
 
 interface TampoDaMesaProps {
-  /** As duas versões da mesma composição; a escolha é por largura de janela. */
+  /** As duas versões da composição deitada; a escolha é por largura de janela. */
   computador: ImageSourcePropType;
   tablet: ImageSourcePropType;
+  /**
+   * O tampo em pé, 9:16, pra celular. Sem ele a tela cai no deitado, que num aparelho
+   * em pé vira uma faixa de mesa entre duas tarjas pretas.
+   */
+  celular?: ImageSourcePropType;
+  /**
+   * Quanto de tela os controles ocupam em cima e embaixo, em pixels.
+   *
+   * A mesa é encaixada no que SOBRA, não na tela inteira. Sem isto, num celular
+   * deitado — que é largo e baixo — a mesa ocupava tudo e o trilho de fichas ficava
+   * em cima do feltro, tapando a tabela de prêmios do empate. Reservar o espaço antes
+   * é a diferença entre uma mesa numa sala e uma mesa com coisas jogadas por cima.
+   */
+  reserva?: { topo: number; base: number };
   children?: ReactNode;
 }
 
@@ -72,23 +97,38 @@ interface TampoDaMesaProps {
  * feltro e com metade da regra impressa. Quando sobra espaço, sobra escuro — que é o
  * salão, não um erro.
  */
-export function TampoDaMesa({ computador, tablet, children }: TampoDaMesaProps) {
+export function TampoDaMesa({ computador, tablet, celular, reserva, children }: TampoDaMesaProps) {
   const janela = useJanela();
+  const { topo: reservaTopo = 0, base: reservaBase = 0 } = reserva ?? {};
+
+  /*
+   * O tampo em pé entra quando o aparelho está em pé E é estreito — celular. Um tablet
+   * em pé tem largura de sobra pro tampo deitado, e usar o de celular nele desperdiçaria
+   * metade da tela.
+   */
+  const emPe = Boolean(celular) && janela.height > janela.width && janela.width < LARGURA_MINIMA_PRO_TAMPO;
 
   const palco = useMemo<Palco>(() => {
-    // `contain`: a mesa cresce até esbarrar no lado mais apertado da janela.
-    const proporcaoDaJanela = janela.width / janela.height;
-    const largura = proporcaoDaJanela > PROPORCAO ? janela.height * PROPORCAO : janela.width;
-    const altura = largura / PROPORCAO;
+    /*
+     * `contain` dentro do espaço LIVRE, não da janela inteira. O que sobra depois de
+     * reservar os controles é a sala; a mesa cresce até esbarrar no lado mais apertado
+     * dela e fica centrada nesse pedaço.
+     */
+    const proporcao = emPe ? PROPORCAO_EM_PE : PROPORCAO_DEITADA;
+    const alturaLivre = Math.max(1, janela.height - reservaTopo - reservaBase);
+    const proporcaoLivre = janela.width / alturaLivre;
+    const largura = proporcaoLivre > proporcao ? alturaLivre * proporcao : janela.width;
+    const altura = largura / proporcao;
     return {
       largura,
       altura,
       esquerda: (janela.width - largura) / 2,
-      topo: (janela.height - altura) / 2,
+      topo: reservaTopo + (alturaLivre - altura) / 2,
+      emPe,
     };
-  }, [janela.width, janela.height]);
+  }, [janela.width, janela.height, reservaTopo, reservaBase, emPe]);
 
-  const arte = janela.width >= LARGURA_DE_COMPUTADOR ? computador : tablet;
+  const arte = emPe ? celular! : janela.width >= LARGURA_DE_COMPUTADOR ? computador : tablet;
 
   return (
     <View style={styles.salao}>

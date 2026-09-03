@@ -12,7 +12,23 @@ import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
  * Vale lembrar o que está escrito no servidor: o placar não prevê nada. Cada rodada é
  * independente. Ele existe porque é parte da mesa real e o jogador quer ver o
  * histórico — não como ferramenta de aposta.
+ *
+ * AS MARCAS SÃO IGUAIS EM TODA MESA, AS PALAVRAS NÃO. O vermelho, o azul e o verde
+ * querem dizer a mesma coisa em qualquer jogo — o lado que paga como banca, o que paga
+ * como jogador, e o empate — e é isso que faz o placar ser lido de um jeito só. Mas o
+ * NOME de cada um muda com a mesa: no Bac Bo é Jogador e Banca, na Banca Francesa é
+ * Pequeno e Grande. Chamar Grande de "banca" na legenda seria padronizar a marca
+ * quebrando a palavra.
  */
+
+/** Como esta mesa chama cada lado. A marca é a mesma; a palavra é da casa. */
+export interface VocabularioDoPlacar {
+  banca: string;
+  jogador: string;
+  empate: string;
+}
+
+const VOCABULARIO_PADRAO: VocabularioDoPlacar = { banca: 'Banca', jogador: 'Jogador', empate: 'Empate' };
 
 const CELL = 18;
 const GAP = 2;
@@ -101,15 +117,22 @@ function DerivedRoad({ columns }: { columns: DerivedMark[][] }) {
   );
 }
 
-export function RoadmapPanel({ roadmap }: { roadmap: Roadmap }) {
+export function RoadmapPanel({
+  roadmap,
+  vocabulario,
+}: {
+  roadmap: Roadmap;
+  vocabulario?: VocabularioDoPlacar;
+}) {
   const { totals } = roadmap;
+  const palavras = vocabulario ?? VOCABULARIO_PADRAO;
 
   return (
     <View style={styles.panel}>
       <View style={styles.legend}>
-        <Legend label="Banca" value={totals.banca} color={OUTCOME_COLOR.banca} />
-        <Legend label="Jogador" value={totals.jogador} color={OUTCOME_COLOR.jogador} />
-        <Legend label="Empate" value={totals.empate} color={OUTCOME_COLOR.empate} />
+        <Legend label={palavras.banca} value={totals.banca} color={OUTCOME_COLOR.banca} />
+        <Legend label={palavras.jogador} value={totals.jogador} color={OUTCOME_COLOR.jogador} />
+        <Legend label={palavras.empate} value={totals.empate} color={OUTCOME_COLOR.empate} />
         <Legend label="Total" value={totals.total} color={colors.textFaint} />
       </View>
 

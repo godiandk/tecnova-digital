@@ -16,6 +16,7 @@ import {
   FICHA_MAXIMA_NO_TRILHO,
 } from '../../data/mapaDosTampos';
 import { TampoDaMesa, usePalco } from '../../components/TampoDaMesa';
+import { useJanela } from '../../theme/useJanela';
 import { CasaDeAposta, PilhaNaCasa } from '../../components/CasaDeAposta';
 import { TrilhoDeFichas } from '../../components/TrilhoDeFichas';
 import { PilhaDeFichas } from '../../components/Ficha';
@@ -106,6 +107,12 @@ export function PanoDaBancaFrancesa({
   const [anterior, setAnterior] = useState<Apostas | null>(null);
   const [recado, setRecado] = useState<string | null>(null);
   const [quadroAberto, setQuadroAberto] = useState(false);
+  /* A mesa se encaixa no que sobra depois dos controles, e eles se medem sozinhos. */
+  const [alturaDoAvental, setAlturaDoAvental] = useState(0);
+  const [alturaDaBarra, setAlturaDaBarra] = useState(0);
+  const janela = useJanela();
+  /* Tela baixa não comporta avental de duas linhas: tudo numa só. */
+  const apertado = janela.height < 520;
 
   useEffect(() => setFicha(minimo), [minimo]);
 
@@ -236,6 +243,7 @@ export function PanoDaBancaFrancesa({
     <TampoDaMesa
       computador={TAMPOS_16X9['banca-francesa'].computador}
       tablet={TAMPOS_16X9['banca-francesa'].tablet}
+      reserva={{ topo: alturaDaBarra, base: alturaDoAvental }}
     >
       {CASAS.map((casa) => (
         <CasaDeAposta
@@ -265,7 +273,11 @@ export function PanoDaBancaFrancesa({
         ))}
 
       <SafeAreaView style={styles.frente} edges={['top', 'bottom']} pointerEvents="box-none">
-        <View style={styles.barraDeCima} pointerEvents="box-none">
+        <View
+          style={styles.barraDeCima}
+          pointerEvents="box-none"
+          onLayout={(e) => setAlturaDaBarra(e.nativeEvent.layout.height)}
+        >
           <BotaoRedondo icone="chevron-back" rotulo="Sair da mesa" onPress={onSair} />
           <ChipStack amount={saldo} />
           <View style={styles.botoesDaDireita}>
@@ -278,7 +290,7 @@ export function PanoDaBancaFrancesa({
           </View>
         </View>
 
-        <Avental>
+        <Avental aoMedir={setAlturaDoAvental}>
           {erro && <Text style={styles.erro}>{erro}</Text>}
           {(recado || aviso) && <Text style={styles.aviso}>{recado ?? aviso}</Text>}
 
@@ -290,12 +302,13 @@ export function PanoDaBancaFrancesa({
             </Text>
           )}
 
-          <View style={styles.linhaDoTrilho}>
+          <View style={[styles.linhaDoTrilho, apertado && styles.linhaApertada]}>
             <View style={styles.ladoDoTrilho}>
               <BotaoRedondo icone="arrow-undo" rotulo="Desfazer a última ficha" onPress={desfazer} inativo={travado || ordem.length === 0} />
               <BotaoRedondo icone="trash-outline" rotulo="Limpar a mesa" onPress={limpar} inativo={travado || total === 0} />
             </View>
             <Trilho
+              apertado={apertado}
               cor={minhaCor}
               selecionada={ficha}
               onSelecionar={(v) => {
@@ -311,7 +324,7 @@ export function PanoDaBancaFrancesa({
             </View>
           </View>
 
-          <View style={styles.linhaDeBotoes}>
+          <View style={[styles.linhaDeBotoes, apertado && styles.linhaApertada]}>
             <Pressable
               onPress={apostar}
               disabled={!podeApostar}
@@ -551,7 +564,8 @@ function DadoNaTigela({
   );
 }
 
-function Trilho(props: {
+function Trilho({ apertado, ...resto }: {
+  apertado: boolean;
   selecionada: number;
   onSelecionar: (valor: number) => void;
   cor: PlayerColor | undefined;
@@ -560,12 +574,13 @@ function Trilho(props: {
   maximo: number;
 }) {
   const palco = usePalco();
-  return <TrilhoDeFichas {...props} tamanho={fichaNoTrilho(palco?.largura ?? 700)} />;
+  const tamanho = fichaNoTrilho(palco?.largura ?? 700);
+  return <TrilhoDeFichas {...resto} tamanho={apertado ? Math.min(tamanho, FICHA_MINIMA_NO_TRILHO) : tamanho} />;
 }
 
-function Avental({ children }: { children: ReactNode }) {
+function Avental({ children, aoMedir }: { children: ReactNode; aoMedir: (a: number) => void }) {
   return (
-    <View style={styles.avental} pointerEvents="box-none">
+    <View style={styles.avental} pointerEvents="box-none" onLayout={(e) => aoMedir(e.nativeEvent.layout.height)}>
       <LinearGradient
         colors={['rgba(6,9,8,0)', 'rgba(6,9,8,0.86)', 'rgba(6,9,8,0.97)']}
         locations={[0, 0.35, 1]}
@@ -640,6 +655,7 @@ const styles = StyleSheet.create({
   linhaDoTrilho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
   ladoDoTrilho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minWidth: 104 },
   linhaDeBotoes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md },
+  linhaApertada: { gap: spacing.sm, flexWrap: 'nowrap' },
   botaoPrincipal: {
     minWidth: 210,
     paddingHorizontal: spacing.lg,

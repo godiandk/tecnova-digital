@@ -1,12 +1,15 @@
 import { ReactNode, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { TAMPOS_16X9 } from '../../data/tamposDaMesa';
+import { TABLE_IMAGES } from '../../data/tableImages';
 import {
   MAPA_BAC_BO,
+  MAPA_BAC_BO_EM_PE,
+  LARGURA_UTIL_EM_PE,
   TAMANHO_DA_FICHA_NO_PANO,
   TAMANHO_DA_FICHA_NO_TRILHO,
   FICHA_MINIMA_NO_PANO,
@@ -14,15 +17,20 @@ import {
   FICHA_MAXIMA_NO_TRILHO,
 } from '../../data/mapaDosTampos';
 import { TampoDaMesa, usePalco } from '../../components/TampoDaMesa';
+import { useJanela } from '../../theme/useJanela';
 import { CasaDeAposta } from '../../components/CasaDeAposta';
 import { TrilhoDeFichas } from '../../components/TrilhoDeFichas';
 import { PilhaDeFichas } from '../../components/Ficha';
 import { DENOMINACOES, corDoJogador, pilhaEmPalavras } from '../../data/fichasDeValor';
 import { Dado } from '../../components/Dado';
 import { ChipStack } from '../../components/ChipStack';
+import { FaixaDeHistorico } from '../../components/FaixaDeHistorico';
+import { RoadmapPanel, VocabularioDoPlacar } from '../../components/RoadmapPanel';
 import { ApiError, novaAcao } from '../../api/client';
+import { Roadmap } from '../../api/roadmap';
 import {
   fetchBacBoConfig,
+  fetchBacBoRoadmap,
   playBacBoRound,
   BacBoBet,
   BacBoBetType,
@@ -57,6 +65,8 @@ const soma = (fichas: number[]) => fichas.reduce((t, f) => t + f, 0);
 export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => void } }) {
   const [config, setConfig] = useState<BacBoConfig | null>(null);
   const [erroDeConfig, setErroDeConfig] = useState<string | null>(null);
+  const [placar, setPlacar] = useState<Roadmap | null>(null);
+  const [placarAberto, setPlacarAberto] = useState(false);
   const [saldo, setSaldo] = useState(0);
   const { jogador } = usePlayer();
   /*
@@ -80,8 +90,27 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
   const [rolando, setRolando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  /*
+   * A mesa é encaixada no que sobra depois dos controles, e os controles se medem
+   * sozinhos: chutar a altura deles daria certo num tamanho de tela e errado nos
+   * outros, que é exatamente o problema que estamos consertando.
+   */
+  const [alturaDoAvental, setAlturaDoAvental] = useState(0);
+  const [alturaDaBarra, setAlturaDaBarra] = useState(0);
+  const janela = useJanela();
+  /*
+   * Tela baixa — celular deitado — não comporta avental de duas linhas. Reservar
+   * espaço pra ele espremia a mesa a menos da metade da tela: sem cobrir o feltro,
+   * mas desperdiçando a tela toda em tarja preta. Numa linha só, tudo cabe e a mesa
+   * fica grande.
+   */
+  const apertado = janela.height < 520;
 
   useEffect(() => {
+    // O placar da mesa já existe no servidor desde antes desta tela; o que faltava era
+    // alguém desenhar. Toda mesa de cassino tem o histórico ligado ao lado, o tempo
+    // todo — não é algo que se pede pra ver.
+    fetchBacBoRoadmap().then(setPlacar).catch(() => undefined);
     fetchBacBoConfig()
       .then(setConfig)
       .catch((e: unknown) =>
@@ -168,6 +197,7 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
        */
       setTimeout(() => {
         setRodada(resultado);
+        setPlacar(resultado.roadmap);
         setSaldo(resultado.newBalance);
         setAnterior(montagem);
         setRolando(false);
@@ -187,6 +217,23 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
    * "Apostar 250" deixava quatro alvos com nome quase igual, e quem navega de ouvido
    * não tinha como saber qual fecha a rodada.
    */
+  const BotaoJogar = () => (
+    <Pressable
+      onPress={jogar}
+      disabled={!podeJogar}
+      accessibilityRole="button"
+      accessibilityLabel={rotuloDoBotao()}
+      accessibilityState={{ disabled: !podeJogar }}
+      style={[styles.botaoJogar, apertado && styles.botaoJogarApertado, !podeJogar && styles.desabilitado]}
+    >
+      {rolando ? (
+        <ActivityIndicator color={colors.background} />
+      ) : (
+        <Text style={styles.botaoJogarTexto}>{rotuloDoBotao()}</Text>
+      )}
+    </Pressable>
+  );
+
   const rotuloDoBotao = () => {
     if (total === 0) return 'Encoste uma ficha no pano';
     if (abaixoDoMinimo.length > 0) return `Mínimo ${config?.minBet.toLocaleString('pt-BR')} por casa`;
@@ -194,36 +241,23 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
   };
 
   return (
-    <TampoDaMesa computador={TAMPOS_16X9['bac-bo'].computador} tablet={TAMPOS_16X9['bac-bo'].tablet}>
-      {/* --- As três casas do pano, com as fichas encostadas em cima --- */}
-      {CASAS.map((casa) => (
-        <CasaDeAposta
-          key={casa}
-          nome={casa}
-          area={MAPA_BAC_BO.apostas[casa]}
-          valor={soma(apostas[casa])}
-          descricao={pilhaEmPalavras(apostas[casa])}
-          travada={rolando}
-          vencedora={rodada?.outcome === casa}
-          onPress={() => encostar(casa)}
-        >
-          <PilhaNoPano fichas={apostas[casa]} cor={minhaCor} />
-        </CasaDeAposta>
-      ))}
-
-      {/*
-        --- Os quatro dados, cada um dentro do seu agitador ---
-        Antes da primeira rodada os copos ficam VAZIOS, que é como a máquina de verdade
-        fica enquanto a mesa aceita aposta. Dado parado no vidro sem rodada nenhuma é
-        cenário; dado que aparece quando a rodada começa é o jogo.
-      */}
-      {(rolando || rodada) &&
-        MAPA_BAC_BO.dados.map((ponto, indice) => (
-          <DadoNoAgitador key={indice} ponto={ponto} face={dados[indice]} rolando={rolando} indice={indice} />
-        ))}
-
+    <TampoDaMesa
+      computador={TAMPOS_16X9['bac-bo'].computador}
+      tablet={TAMPOS_16X9['bac-bo'].tablet}
+      celular={TABLE_IMAGES['bac-bo']}
+      reserva={{ topo: alturaDaBarra, base: alturaDoAvental }}
+    >
+      <MesaDoBacBo
+        apostas={apostas}
+        cor={minhaCor}
+        rolando={rolando}
+        rodada={rodada}
+        dados={dados}
+        onEncostar={encostar}
+      />
       {/* --- Os controles, fora do pano --- */}
       <SafeAreaView style={styles.frente} edges={['top', 'bottom']} pointerEvents="box-none">
+        <View pointerEvents="box-none" onLayout={(e) => setAlturaDaBarra(e.nativeEvent.layout.height)}>
         <View style={styles.barraDeCima} pointerEvents="box-none">
           <Pressable
             onPress={navigation.goBack}
@@ -238,7 +272,17 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
           <View style={styles.botaoRedondo} />
         </View>
 
-        <Apron>
+        {/* O histórico fica ligado, como o monitor ao lado de uma mesa de verdade. */}
+        <View style={styles.faixaDoPlacar} pointerEvents="box-none">
+          <FaixaDeHistorico
+            roadmap={placar}
+            vocabulario={VOCABULARIO_DO_BAC_BO}
+            onPress={() => setPlacarAberto(true)}
+          />
+        </View>
+        </View>
+
+        <Apron aoMedir={setAlturaDoAvental}>
           {erroDeConfig && <Text style={styles.erro}>{erroDeConfig}</Text>}
           {erro && <Text style={styles.erro}>{erro}</Text>}
           {aviso && <Text style={styles.aviso}>{aviso}</Text>}
@@ -254,7 +298,7 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
             </Text>
           )}
 
-          <View style={styles.linhaDoTrilho}>
+          <View style={[styles.linhaDoTrilho, apertado && styles.linhaApertada]}>
             <View style={styles.ladoDoTrilho}>
               <BotaoDeMesa
                 icone="arrow-undo"
@@ -271,6 +315,7 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
             </View>
 
             <Trilho
+              apertado={apertado}
               cor={minhaCor}
               selecionada={ficha}
               onSelecionar={(v) => {
@@ -289,25 +334,94 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
                 inativo={rolando || !anterior}
               />
             </View>
+
+            {/* Tela baixa: o botão entra nesta linha, em vez de abrir uma segunda. */}
+            {apertado && <BotaoJogar />}
           </View>
 
-          <Pressable
-            onPress={jogar}
-            disabled={!podeJogar}
-            accessibilityRole="button"
-            accessibilityLabel={rotuloDoBotao()}
-            accessibilityState={{ disabled: !podeJogar }}
-            style={[styles.botaoJogar, !podeJogar && styles.desabilitado]}
-          >
-            {rolando ? (
-              <ActivityIndicator color={colors.background} />
-            ) : (
-              <Text style={styles.botaoJogarTexto}>{rotuloDoBotao()}</Text>
-            )}
-          </Pressable>
+          {!apertado && <BotaoJogar />}
         </Apron>
       </SafeAreaView>
+
+      <Modal visible={placarAberto} animationType="slide" transparent onRequestClose={() => setPlacarAberto(false)}>
+        <View style={styles.fundoDoPlacar}>
+          <SafeAreaView style={styles.folhaDoPlacar} edges={['bottom']}>
+            <View style={styles.topoDoPlacar}>
+              <Text style={styles.tituloDoPlacar}>Histórico da mesa</Text>
+              <Pressable onPress={() => setPlacarAberto(false)} accessibilityRole="button" accessibilityLabel="Fechar" hitSlop={12}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </Pressable>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {placar && <RoadmapPanel roadmap={placar} vocabulario={VOCABULARIO_DO_BAC_BO} />}
+            </ScrollView>
+          </SafeAreaView>
+        </View>
+      </Modal>
     </TampoDaMesa>
+  );
+}
+
+/** As marcas são as mesmas de toda mesa; as palavras são as do Bac Bo. */
+const VOCABULARIO_DO_BAC_BO: VocabularioDoPlacar = { banca: 'Banca', jogador: 'Jogador', empate: 'Empate' };
+
+/**
+ * O pano do Bac Bo — as casas e os dados, no mapa do tampo que está na tela.
+ *
+ * Isto é um componente separado por um motivo de verdade, não por organização: quem
+ * escolhe o mapa precisa saber qual tampo o `TampoDaMesa` acabou usando, e isso só se
+ * sabe DE DENTRO dele, pelo `usePalco`. A tela que monta o tampo está por fora e não
+ * enxerga essa decisão.
+ */
+function MesaDoBacBo({
+  apostas,
+  cor,
+  rolando,
+  rodada,
+  dados,
+  onEncostar,
+}: {
+  apostas: ApostasNaMesa;
+  cor: PlayerColor | undefined;
+  rolando: boolean;
+  rodada: BacBoRoundResponse | null;
+  dados: (number | null)[];
+  onEncostar: (casa: BacBoBetType) => void;
+}) {
+  const palco = usePalco();
+  const mapa = palco?.emPe ? MAPA_BAC_BO_EM_PE : MAPA_BAC_BO;
+  const larguras = palco?.emPe ? LARGURA_UTIL_EM_PE : undefined;
+
+  return (
+    <>
+      {/* --- As três casas do pano, com as fichas encostadas em cima --- */}
+      {CASAS.map((casa) => (
+        <CasaDeAposta
+          key={casa}
+          nome={casa}
+          larguraUtil={larguras?.[casa]}
+          area={mapa.apostas[casa]}
+          valor={soma(apostas[casa])}
+          descricao={pilhaEmPalavras(apostas[casa])}
+          travada={rolando}
+          vencedora={rodada?.outcome === casa}
+          onPress={() => onEncostar(casa)}
+        >
+          <PilhaNoPano fichas={apostas[casa]} cor={cor} />
+        </CasaDeAposta>
+      ))}
+
+      {/*
+        --- Os quatro dados, cada um dentro do seu agitador ---
+        Antes da primeira rodada os copos ficam VAZIOS, que é como a máquina de verdade
+        fica enquanto a mesa aceita aposta. Dado parado no vidro sem rodada nenhuma é
+        cenário; dado que aparece quando a rodada começa é o jogo.
+      */}
+      {(rolando || rodada) &&
+        mapa.dados.map((ponto, indice) => (
+          <DadoNoAgitador key={indice} ponto={ponto} face={dados[indice]} rolando={rolando} indice={indice} />
+        ))}
+    </>
   );
 }
 
@@ -322,11 +436,13 @@ const TEMPO_DOS_DADOS = 1400;
  * metade no preto do salão, cortados pela beirada da arte no meio de uma ficha. Aqui o
  * avental começa exatamente onde o tampo termina, então a divisão é a da própria mesa.
  */
-function Apron({ children }: { children: ReactNode }) {
-  const palco = usePalco();
-  const fimDoTampo = palco ? palco.topo + palco.altura : undefined;
+function Apron({ children, aoMedir }: { children: ReactNode; aoMedir: (altura: number) => void }) {
   return (
-    <View style={[styles.avental, fimDoTampo !== undefined && { paddingTop: 0 }]} pointerEvents="box-none">
+    <View
+      style={styles.avental}
+      pointerEvents="box-none"
+      onLayout={(e) => aoMedir(e.nativeEvent.layout.height)}
+    >
       <LinearGradient
         colors={['rgba(6,9,8,0)', 'rgba(6,9,8,0.86)', 'rgba(6,9,8,0.97)']}
         locations={[0, 0.35, 1]}
@@ -339,7 +455,8 @@ function Apron({ children }: { children: ReactNode }) {
 }
 
 /** O trilho de fichas no tamanho medido pela mesa. */
-function Trilho(props: {
+function Trilho({ apertado, ...resto }: {
+  apertado: boolean;
   selecionada: number;
   onSelecionar: (valor: number) => void;
   cor: PlayerColor | undefined;
@@ -347,7 +464,9 @@ function Trilho(props: {
   travado: boolean;
 }) {
   const palco = usePalco();
-  return <TrilhoDeFichas {...props} tamanho={fichaNoTrilho(palco?.largura ?? 700)} />;
+  const tamanho = fichaNoTrilho(palco?.largura ?? 700);
+  // Em tela baixa a ficha encolhe até o mínimo confortável pro dedo, e não abaixo.
+  return <TrilhoDeFichas {...resto} tamanho={apertado ? Math.min(tamanho, FICHA_MINIMA_NO_TRILHO) : tamanho} />;
 }
 
 /** A pilha dentro da casa, no tamanho medido na arte (ver TAMANHO_DA_FICHA_NO_PANO). */
@@ -436,6 +555,18 @@ function BotaoDeMesa({
 const styles = StyleSheet.create({
   /* `box-none` deixa o toque atravessar pro pano onde não há controle. */
   frente: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between' },
+  faixaDoPlacar: { alignItems: 'center', paddingTop: spacing.xs },
+  fundoDoPlacar: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(4,6,5,0.72)' },
+  folhaDoPlacar: {
+    maxHeight: '82%',
+    backgroundColor: colors.background,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  topoDoPlacar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
+  tituloDoPlacar: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
   barraDeCima: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -475,6 +606,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   botaoJogarTexto: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, color: colors.background },
+  botaoJogarApertado: { minWidth: 150, paddingVertical: 8 },
+  linhaApertada: { gap: spacing.sm, flexWrap: 'nowrap' },
   desabilitado: { opacity: 0.45 },
   placar: {
     fontFamily: fontFamily.bodySemiBold,

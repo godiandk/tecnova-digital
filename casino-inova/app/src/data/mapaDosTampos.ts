@@ -360,3 +360,65 @@ function alturaNoArco(arco: PontoDaMesa[], x: number): number {
   }
   return ultimo.y;
 }
+
+/**
+ * Bac Bo NO TAMPO EM PÉ — a arte de celular (1284x2778), que é outra composição.
+ *
+ * Não é o tampo deitado recortado: as casas são três caixas de contorno dourado numa
+ * fileira alta e estreita, sem os painéis azul e vermelho, e os quatro agitadores ficam
+ * numa prateleira de vidro no alto em vez de recuados no fundo da mesa. Por isso o mapa
+ * é outro — reaproveitar as frações do deitado poria as fichas no lugar errado.
+ *
+ * COMO ESTES NÚMEROS FORAM OBTIDOS. As caixas são trapézios, porque a mesa abre em
+ * perspectiva do fundo pra frente, então as bordas foram medidas linha a linha na
+ * máscara de dourado:
+ *
+ *   y=0.36  bordas em 0.090  0.416  0.585  0.907
+ *   y=0.55  bordas em 0.037  0.400  0.599  0.960
+ *   y=0.62  bordas em 0.026  0.394  0.604  0.968
+ *
+ * e as duas linhas horizontais que fecham a fileira estão em y 0.331 e y 0.646. A ficha
+ * assenta embaixo (y 0.62), onde o feltro está limpo — em cima ficam o nome da casa e
+ * os dados desenhados.
+ *
+ * OS AGITADORES foram medidos no recorte da prateleira: quatro, centrados em x 0.225,
+ * 0.410, 0.590 e 0.775, com a base do vidro em y 0.268.
+ *
+ * UM AVISO SOBRE ESTA ARTE, que não é problema de código: ela diz PLAYER, TIE e BANKER
+ * em inglês, enquanto o tampo deitado diz JOGADOR, EMPATE e BANCA em português. O mesmo
+ * jogo fala duas línguas conforme o aparelho. Os rótulos abaixo estão em português
+ * porque é o que o leitor de tela anuncia e é a língua do aplicativo; quem for refazer
+ * a arte de celular deve alinhar as palavras impressas com as do tampo deitado.
+ */
+export const MAPA_BAC_BO_EM_PE = {
+  apostas: {
+    jogador: {
+      caixa: [0.03, 0.335, 0.398, 0.645],
+      rotulo: 'Apostar no Jogador',
+      alvo: { x: 0.21, y: 0.62 },
+    },
+    empate: {
+      caixa: [0.402, 0.335, 0.596, 0.645],
+      rotulo: 'Apostar no Empate',
+      alvo: { x: 0.499, y: 0.62 },
+    },
+    banca: {
+      caixa: [0.6, 0.335, 0.97, 0.645],
+      rotulo: 'Apostar na Banca',
+      alvo: { x: 0.786, y: 0.62 },
+    },
+  } satisfies Record<string, AreaDaMesa>,
+  dados: [
+    { x: 0.225, y: 0.268 },
+    { x: 0.41, y: 0.268 },
+    { x: 0.59, y: 0.268 },
+    { x: 0.775, y: 0.268 },
+  ] as PontoDaMesa[],
+};
+
+/** Largura útil de cada casa no tampo em pé, pras pilhas de mesa cheia. */
+export const LARGURA_UTIL_EM_PE: Record<string, number> = {
+  jogador: 0.3,
+  empate: 0.15,
+  banca: 0.3,
+};
