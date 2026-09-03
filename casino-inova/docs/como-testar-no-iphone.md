@@ -4,6 +4,10 @@ Você **não precisa de Mac, nem de conta de desenvolvedor Apple, nem pagar nada
 isso. O app roda dentro do **Expo Go**, um aplicativo gratuito da App Store feito
 justamente pra testar apps em desenvolvimento.
 
+> **Não tem computador nenhum?** Este guia não serve — o Expo Go precisa de um servidor
+> rodando numa máquina sua. O caminho sem computador é publicar o jogo e abrir por um
+> link no Safari: está em **`docs/so-com-o-celular.md`**.
+
 ## Antes de começar: você precisa de um computador
 
 Não dá pra fazer isso só pelo celular. O computador é quem roda o servidor e serve o app
@@ -133,10 +137,12 @@ A tela de login aparece. Use uma conta de teste:
 | `u3@teste.local` | `casino123` | Jogador comum |
 | `u4@teste.local` | `casino123` | Jogador comum |
 
-Ou toque em **"Criar conta"** e faça a sua — mas ela começa com zero fichas.
+Ou toque em **"Criar conta"** e faça a sua: ela nasce com **10.000 fichas**, o bastante
+pra jogar em todas as mesas de Bronze.
 
-> **Sem fichas não dá pra jogar.** Entre com o `u1`, ou use a Loja pra "comprar" um
-> pacote (com `PERMITIR_COMPRA_DE_TESTE=true` ligado, ela credita de graça).
+> As contas `u2`, `u3` e `u4` da tabela são as de semente, criadas direto no banco — elas
+> não passam pelo cadastro e por isso começam zeradas. Pra jogar com elas, use a Loja
+> (com `PERMITIR_COMPRA_DE_TESTE=true` ligado, ela credita de graça).
 
 ---
 

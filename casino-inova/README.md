@@ -43,7 +43,7 @@ A regra aparece escrita na tela de torneios, do mesmo jeito que o RTP aparece na
 
 **`server/`** — o backend (NestJS + TypeScript) com **PostgreSQL**: usuários, carteira de fichas com ledger append-only, loja, cupons, papéis e permissões, amigos, os 10 motores de jogo, o placar de histórico, o chat, os torneios e o gateway WebSocket das mesas online. Saldo, extrato, amizades, cupons e ranking sobrevivem ao servidor reiniciar; mesa em andamento e chat não, de propósito. Todos os sorteios acontecem no servidor — o app nunca decide resultado. Ver `server/README.md` pra rota por rota, evento por evento e a matriz de permissões.
 
-**`docs/`** — os pedidos de imagem escritos imagem por imagem pra gerar no ChatGPT, e `como-testar-no-iphone.md`, que explica passo a passo como abrir o app num iPhone de verdade pelo Expo Go.
+**`docs/`** — os pedidos de imagem escritos imagem por imagem pra gerar no ChatGPT, e os dois guias de teste: `como-testar-no-iphone.md` (pelo Expo Go, com um computador ligado) e `so-com-o-celular.md` (publicando no Render, sem computador nenhum).
 
 ## Rodando
 
@@ -74,7 +74,7 @@ npx expo install    # alinha as versões exatas de cada dependência com o SDK d
 npx expo start
 ```
 
-O app **descobre o endereço do servidor sozinho** — em celular físico ele lê o IP da máquina que está rodando o Expo e monta a URL. Só precisa mexer se quiser apontar pra outro lugar, e aí é a variável `EXPO_PUBLIC_API_URL`. O passo a passo pra testar no iPhone está em `docs/como-testar-no-iphone.md`.
+O app **descobre o endereço do servidor sozinho** — em celular físico ele lê o IP da máquina que está rodando o Expo e monta a URL. Só precisa mexer se quiser apontar pra outro lugar, e aí é a variável `EXPO_PUBLIC_API_URL`. O passo a passo pra testar no iPhone está em `docs/como-testar-no-iphone.md` — e, se você não tiver computador, em `docs/so-com-o-celular.md`.
 
 ## O que ainda falta
 
