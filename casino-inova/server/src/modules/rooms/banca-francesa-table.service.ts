@@ -40,6 +40,8 @@ export interface RoundResult {
    * é neutro: é informação verdadeira do jogo que sumia no caminho.
    */
   rerolls: number;
+  /** Os lançamentos nulos, pra a tela poder mostrar os dados rolando de verdade. */
+  lancamentosNulos: number[][];
   bySeat: Record<string, { results: BetResult[]; totalStake: number; totalReturn: number }>;
   at: string;
 }
@@ -230,7 +232,7 @@ export class BancaFrancesaTableService {
     }
 
     table.relogio.irPara('SORTEIO');
-    const { dice, sum, outcome, rerolls } = rollUntilDecisive();
+    const { dice, sum, outcome, rerolls, nulos } = rollUntilDecisive();
     this.anotar(table, 'DADOS', { dice, sum, outcome, rerolls });
 
     table.relogio.irPara('APURACAO');
@@ -267,7 +269,7 @@ export class BancaFrancesaTableService {
     }
 
     table.relogio.irPara('PAGAMENTO');
-    table.lastRound = { dice, sum, outcome, rerolls, bySeat, at: new Date().toISOString() };
+    table.lastRound = { dice, sum, outcome, rerolls, lancamentosNulos: nulos, bySeat, at: new Date().toISOString() };
     // O log guarda só o que é público: quem apostou o quê e quanto levou já é visível
     // nesta mesa (todo mundo aposta no mesmo resultado), então nada aqui é privado.
     this.anotar(table, 'PAGAMENTO', { bySeat });

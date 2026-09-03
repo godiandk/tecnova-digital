@@ -25,6 +25,14 @@ interface DadoProps {
   /** O dado do Bac Bo tem arte própria; os outros usam o dado da marca. */
   bacBo?: boolean;
   /**
+   * Qual lançamento é este. Serve pra o mesmo dado ser jogado de novo mesmo caindo na
+   * mesma face: sem isto, um relançamento de 4 pra 4 não mexia nada na tela, porque a
+   * animação só reagia à face mudar.
+   */
+  lance?: number;
+  /** Quanto dura o voo. O lançamento nulo é mais rápido: ele não decide nada. */
+  duracaoDoVoo?: number;
+  /**
    * O dado está preso num agitador de vidro e nunca é lançado no pano — ele chacoalha
    * no lugar e assenta ali mesmo. Sem isto, o dado entra voando de fora do quadro, que
    * é o certo pra quem joga dado na mesa e o errado pra quem tem o dado num copo.
@@ -56,7 +64,16 @@ const VOO_EM_MS = 1150;
  * Como no rolo e na roleta, a animação não decide nada: a face já veio do servidor
  * antes de o dado começar a desacelerar. O caminho é desenho; o resultado é sorteio.
  */
-export function Dado({ face, rolando, indice = 0, tamanho = 56, bacBo = false, noAgitador = false }: DadoProps) {
+export function Dado({
+  face,
+  rolando,
+  indice = 0,
+  tamanho = 56,
+  bacBo = false,
+  noAgitador = false,
+  lance = 0,
+  duracaoDoVoo = VOO_EM_MS,
+}: DadoProps) {
   const faces = bacBo ? BACBO_DIE_IMAGES : DIE_FACE_IMAGES;
   /*
    * Começa POUSADO, sempre. `voo = 0` é o ponto de LANÇAMENTO — fora do quadro, alto e
@@ -132,9 +149,9 @@ export function Dado({ face, rolando, indice = 0, tamanho = 56, bacBo = false, n
     voo.value = 0;
     voo.value = withDelay(
       indice * ATRASO_POR_DADO,
-      withTiming(1, { duration: VOO_EM_MS, easing: Easing.linear }),
+      withTiming(1, { duration: duracaoDoVoo, easing: Easing.linear }),
     );
-  }, [rolando, face, indice, noAgitador, voo, chacoalho]);
+  }, [rolando, face, indice, lance, noAgitador, duracaoDoVoo, voo, chacoalho]);
 
   const dado = useAnimatedStyle(() => {
     const t = voo.value;

@@ -1,9 +1,11 @@
 import {
+  ARCO_DA_LINHA,
   BancaFrancesaBetType,
   DICE_COUNT,
   FACES,
   TOTAL_RETURN_MULTIPLIER,
   WINNING_SUMS,
+  ehApostaDeLinha,
 } from './banca-francesa.config';
 import { fracao } from '../shared/rng';
 
@@ -26,6 +28,13 @@ export interface RollOutcome {
   outcome: DecisiveOutcome;
   /** Quantos lançamentos nulos aconteceram antes do decisivo — só informativo, não afeta o resultado. */
   rerolls: number;
+  /**
+   * Os lançamentos que não decidiram nada, na ordem em que saíram (até 3 guardados).
+   *
+   * Existem pra a tela poder LANÇAR cada um na tigela em vez de só escrever quantos
+   * foram. Não afetam o resultado — o decisivo é `dice`.
+   */
+  nulos: number[][];
 }
 
 function rollOnce(random: () => number): number[] {
@@ -39,22 +48,33 @@ function classify(sum: number): DecisiveOutcome | null {
   return null;
 }
 
+/** Quantos lançamentos nulos são guardados pra mostrar. Mais que isso não cabe na tela. */
+const NULOS_GUARDADOS = 3;
+
 /**
  * Lança os 3 dados até sair um resultado decisivo (Ases, Pequeno ou Grande) — na
  * mesa real, uma soma "nula" (4, 8 a 13, 17 ou 18) não resolve nada: os dados voltam
  * pro copo e são relançados com as mesmas apostas em pé. Isso normalmente decide
  * rápido (216/63 ≈ 3,4 lançamentos em média), mas o limite evita loop infinito em
  * teoria (praticamente impossível de bater: chance de 1000 nulos seguidos é ~0).
+ *
+ * OS LANÇAMENTOS NULOS SÃO DEVOLVIDOS, não só contados. Antes só voltava quantos
+ * foram, e a tela dizia "os dados voltaram pro copo 4 vezes" — uma frase pedindo pra
+ * ser acreditada. Devolvendo os dados de cada tentativa, a tela pode LANÇAR cada uma
+ * na tigela: quem está olhando vê o 8 sair, vê não valer, e vê os dados serem jogados
+ * de novo. É a diferença entre contar que aconteceu e mostrar acontecendo.
  */
 export function rollUntilDecisive(random: () => number = fracao): RollOutcome {
   let rerolls = 0;
+  const nulos: number[][] = [];
   for (let attempt = 0; attempt < 1000; attempt += 1) {
     const dice = rollOnce(random);
     const sum = dice.reduce((total, die) => total + die, 0);
     const outcome = classify(sum);
     if (outcome) {
-      return { dice, sum, outcome, rerolls };
+      return { dice, sum, outcome, rerolls, nulos };
     }
+    if (nulos.length < NULOS_GUARDADOS) nulos.push(dice);
     rerolls += 1;
   }
   throw new Error('Não saiu um resultado decisivo depois de 1000 lançamentos — algo está errado.');
@@ -63,25 +83,28 @@ export function rollUntilDecisive(random: () => number = fracao): RollOutcome {
 /**
  * Resolve cada aposta contra o resultado decisivo.
  *
- * Ases/Pequeno/Grande: aposta direta, paga TOTAL_RETURN_MULTIPLIER se a soma bater.
+ * CENTRO (Ases, Pequeno, Grande): a ficha fica dentro do arco. Batendo a soma, paga
+ * TOTAL_RETURN_MULTIPLIER; não batendo, perde tudo.
  *
- * Linha (meia linha): fichas colocadas na linha que separa Grande de Pequeno na mesa
- * real. As fontes descrevendo essa aposta (observador.pt, BacanaPlay, 888.pt) usam
- * frases um pouco diferentes umas das outras — a leitura mais consistente com um jogo
- * de casa real (RTP < 100%) é que a Linha equivale a dividir a ficha ao meio: metade
- * apostada em Pequeno, metade em Grande, cada metade paga 1 pra 1 isoladamente. Isso
- * significa: se sair Pequeno ou Grande, a metade certa te devolve exatamente o que a
- * aposta valia (nem lucro nem prejuízo); se sair Ases, as duas metades perdem. O RTP
- * resultante (62/63 ≈ 98,41%) bate exatamente com o RTP de apostar só em Pequeno, só
- * em Grande, ou só em Ases — ou seja, a Linha não dá nem tira vantagem, só reduz a
- * variância igual apostar em mais de um número na roleta. Ver theoreticalRtp() abaixo.
+ * LINHA (linha-pequeno, linha-grande): a ficha fica EM CIMA do traço do arco, meio
+ * dentro e meio fora, e é isso que a divide: metade dela está apostada, metade não.
+ * Ganhando, você recebe a aposta mais metade dela (1,5x); perdendo, recebe a metade
+ * que nunca esteve em risco (0,5x). É literalmente a aposta do centro com metade do
+ * valor — apostar 100 na linha do Grande é apostar 50 no centro do Grande e guardar
+ * 50 no bolso.
+ *
+ * E é por ser exatamente isso que a matemática fecha sozinha: o RTP da linha é a média
+ * entre o RTP do centro e 100% (a metade guardada sempre volta), o que dá 99,21% —
+ * metade da vantagem da casa, porque metade do dinheiro nem chega a jogar. Menos risco
+ * e menos prêmio, sem nenhum truque no meio.
  */
 export function resolveBets(outcome: DecisiveOutcome, bets: BancaFrancesaBet[]): BetResult[] {
   return bets.map((bet) => {
-    if (bet.type === 'linha') {
-      const half = bet.amount / 2;
-      const totalReturn = outcome === 'ases' ? 0 : half * 2;
-      return { ...bet, won: outcome !== 'ases', totalReturn };
+    if (ehApostaDeLinha(bet.type)) {
+      const metade = bet.amount / 2;
+      const won = outcome === ARCO_DA_LINHA[bet.type];
+      // A metade guardada volta sempre; a apostada paga 1 por 1 quando bate.
+      return { ...bet, won, totalReturn: won ? bet.amount + metade : metade };
     }
     const won = bet.type === outcome;
     const totalReturn = won ? bet.amount * TOTAL_RETURN_MULTIPLIER[bet.type] : 0;
@@ -113,9 +136,17 @@ export function theoreticalRtp(betType: BancaFrancesaBetType): number {
   const waysGrande = WINNING_SUMS.grande.reduce((sum, value) => sum + waysForSum(value), 0);
   const decisive = waysAses + waysPequeno + waysGrande;
 
-  if (betType === 'linha') {
-    return (waysPequeno + waysGrande) / decisive;
+  const caminhosDe = (tipo: 'ases' | 'pequeno' | 'grande') =>
+    tipo === 'ases' ? waysAses : tipo === 'pequeno' ? waysPequeno : waysGrande;
+
+  if (ehApostaDeLinha(betType)) {
+    /*
+     * Metade do dinheiro está no centro do arco e metade não está apostada. O retorno
+     * é a média dos dois: (RTP do centro + 100%) / 2. Com o centro em 31/63 × 2 =
+     * 98,41%, a linha dá 99,21% — exatamente metade da vantagem da casa.
+     */
+    const doCentro = (caminhosDe(ARCO_DA_LINHA[betType]) / decisive) * 2;
+    return (doCentro + 1) / 2;
   }
-  const ways = betType === 'ases' ? waysAses : betType === 'pequeno' ? waysPequeno : waysGrande;
-  return (ways / decisive) * TOTAL_RETURN_MULTIPLIER[betType];
+  return (caminhosDe(betType) / decisive) * TOTAL_RETURN_MULTIPLIER[betType];
 }

@@ -2,7 +2,16 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { BancaFrancesaBet, resolveBets, rollUntilDecisive, theoreticalRtp } from './banca-francesa.engine';
-import { BET_TYPES, MAX_BET, MAX_SIMULTANEOUS_BETS, MIN_BET, TOTAL_RETURN_MULTIPLIER, WINNING_SUMS } from './banca-francesa.config';
+import {
+  apostaDeLinhaEhValida,
+  ehApostaDeLinha,
+  BET_TYPES,
+  MAX_BET,
+  MAX_SIMULTANEOUS_BETS,
+  MIN_BET,
+  TOTAL_RETURN_MULTIPLIER,
+  WINNING_SUMS,
+} from './banca-francesa.config';
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 
@@ -45,7 +54,7 @@ export class BancaFrancesaService {
 
   validateBets(bets: BancaFrancesaBet[]) {
     if (!Array.isArray(bets) || bets.length === 0 || bets.length > MAX_SIMULTANEOUS_BETS) {
-      throw new BadRequestException(`Aposte em 1 a ${MAX_SIMULTANEOUS_BETS} tipos (ases, pequeno, grande, linha).`);
+      throw new BadRequestException(`Aposte em 1 a ${MAX_SIMULTANEOUS_BETS} lugares da mesa.`);
     }
     const seenTypes = new Set<string>();
     for (const bet of bets) {
@@ -58,6 +67,15 @@ export class BancaFrancesaService {
       seenTypes.add(bet.type);
       if (!Number.isFinite(bet.amount) || bet.amount < MIN_BET || bet.amount > MAX_BET) {
         throw new BadRequestException(`Cada aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
+      }
+      /*
+       * A aposta de linha é dividida ao meio, e ficha não se parte: o saldo é inteiro.
+       * Valor ímpar é recusado aqui em vez de arredondado, porque arredondar pra cima
+       * levaria o RTP acima de 100% e pra baixo esconderia meia ficha de vantagem em
+       * toda aposta ímpar. O aplicativo avisa antes de deixar confirmar.
+       */
+      if (ehApostaDeLinha(bet.type) && !apostaDeLinhaEhValida(bet.amount)) {
+        throw new BadRequestException('Aposta na linha precisa ser um valor par — ela é dividida ao meio.');
       }
     }
   }

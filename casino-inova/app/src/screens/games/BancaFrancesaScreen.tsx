@@ -36,11 +36,25 @@ const TAMANHO_DO_DADO = 62;
 const BET_STEP = 50;
 
 const BET_OPTIONS: { type: BancaFrancesaBetType; label: string; description: string; payoutLabel: string }[] = [
-  { type: 'pequeno', label: 'Pequeno', description: 'Soma 5, 6 ou 7', payoutLabel: 'paga 1 p/ 1' },
-  { type: 'grande', label: 'Grande', description: 'Soma 14, 15 ou 16', payoutLabel: 'paga 1 p/ 1' },
+  { type: 'pequeno', label: 'Centro do Pequeno', description: 'Soma 5, 6 ou 7', payoutLabel: 'paga 1 p/ 1' },
+  { type: 'grande', label: 'Centro do Grande', description: 'Soma 14, 15 ou 16', payoutLabel: 'paga 1 p/ 1' },
   { type: 'ases', label: 'Ases', description: 'Soma 3 (raro!)', payoutLabel: 'paga 61 p/ 1' },
-  { type: 'linha', label: 'Linha', description: 'Metade Grande + metade Pequeno', payoutLabel: 'só perde se sair Ases' },
+  {
+    type: 'linha-pequeno',
+    label: 'Linha do Pequeno',
+    description: 'Soma 5, 6 ou 7 — metade do risco',
+    payoutLabel: 'ganha metade, perde metade',
+  },
+  {
+    type: 'linha-grande',
+    label: 'Linha do Grande',
+    description: 'Soma 14, 15 ou 16 — metade do risco',
+    payoutLabel: 'ganha metade, perde metade',
+  },
 ];
+
+/** A linha é dividida ao meio, e ficha não se parte — o valor tem que ser par. */
+const LINHAS: BancaFrancesaBetType[] = ['linha-pequeno', 'linha-grande'];
 
 const OUTCOME_LABEL: Record<string, string> = { ases: 'Ases', pequeno: 'Pequeno', grande: 'Grande' };
 

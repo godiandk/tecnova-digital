@@ -1,7 +1,12 @@
 import { apiRequest } from './client';
 import { Roadmap } from './roadmap';
 
-export type BancaFrancesaBetType = 'ases' | 'pequeno' | 'grande' | 'linha';
+/**
+ * Os cinco lugares da mesa. `grande` e `pequeno` são o CENTRO do arco; `linha-grande` e
+ * `linha-pequeno` são a ficha em cima do traço, que vale metade e arrisca metade. Ases
+ * não tem linha: uma aposta que paga 61 por 1 não precisa de versão de risco reduzido.
+ */
+export type BancaFrancesaBetType = 'ases' | 'pequeno' | 'grande' | 'linha-pequeno' | 'linha-grande';
 export type BancaFrancesaOutcome = 'ases' | 'pequeno' | 'grande';
 
 export interface BancaFrancesaBet {

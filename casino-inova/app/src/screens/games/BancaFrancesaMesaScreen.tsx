@@ -13,7 +13,7 @@ import { ChatPanel } from '../../components/ChatPanel';
 import { ApiError } from '../../api/client';
 import { usuarioLogadoId } from '../../api/session';
 import { SocketError } from '../../api/socket';
-import { BancaFrancesaBet, fetchBancaFrancesaConfig } from '../../api/bancaFrancesa';
+import { BancaFrancesaBet, BancaFrancesaConfig, fetchBancaFrancesaConfig } from '../../api/bancaFrancesa';
 import { usePlayer } from '../../data/usePlayer';
 import { PanoDaBancaFrancesa } from './PanoDaBancaFrancesa';
 import { fetchFriends, Friend } from '../../api/friends';
@@ -46,7 +46,7 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
   const [publicTables, setPublicTables] = useState<PublicTableSummary[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [codeInput, setCodeInput] = useState('');
-  const [limites, setLimites] = useState({ minimo: 50, maximo: 5000 });
+  const [config, setConfig] = useState<BancaFrancesaConfig | null>(null);
   const [painelAberto, setPainelAberto] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,9 +56,7 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
   const isHost = table?.hostUserId === usuarioLogadoId();
 
   useEffect(() => {
-    fetchBancaFrancesaConfig()
-      .then((config) => setLimites({ minimo: config.minBet, maximo: config.maxBet }))
-      .catch(() => undefined);
+    fetchBancaFrancesaConfig().then(setConfig).catch(() => undefined);
   }, []);
 
   const refreshPublic = useCallback(async () => {
@@ -192,8 +190,9 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
           ehAnfitriao={isHost}
           ocupado={busy}
           saldo={jogador?.chipBalance ?? 0}
-          minimo={limites.minimo}
-          maximo={limites.maximo}
+          minimo={config?.minBet ?? 50}
+          maximo={config?.maxBet ?? 5000}
+          config={config}
           onApostar={handlePlaceBets}
           onGirar={handleRoll}
           onSair={handleLeave}

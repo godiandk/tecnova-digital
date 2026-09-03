@@ -7,6 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { TAMPOS_16X9 } from '../../data/tamposDaMesa';
 import {
   MAPA_BANCA_FRANCESA,
+  TAMANHO_DO_DADO_NA_TIGELA,
+  DADO_MINIMO_NA_TIGELA,
   TAMANHO_DA_FICHA_NO_PANO,
   TAMANHO_DA_FICHA_NO_TRILHO,
   FICHA_MINIMA_NO_PANO,
@@ -19,26 +21,30 @@ import { TrilhoDeFichas } from '../../components/TrilhoDeFichas';
 import { PilhaDeFichas } from '../../components/Ficha';
 import { Dado } from '../../components/Dado';
 import { ChipStack } from '../../components/ChipStack';
+import { QuadroDePagamentos, LinhaDePagamento } from '../../components/QuadroDePagamentos';
 import { decomporEmFichas, pilhaEmPalavras } from '../../data/fichasDeValor';
 import { PlayerColor } from '../../data/chipImages';
-import { BancaFrancesaBet, BancaFrancesaBetType } from '../../api/bancaFrancesa';
+import { BancaFrancesaBet, BancaFrancesaBetType, BancaFrancesaConfig } from '../../api/bancaFrancesa';
 import { TableView } from '../../api/bancaFrancesaMesa';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 /*
  * A ordem importa duas vezes.
  *
- * Na tela, a LINHA é desenhada por último porque a faixa dela cruza a de Pequeno: na
- * parte em que as duas se sobrepõem, quem ganha o toque é a última desenhada, e ali o
- * lugar é da Linha — é o traço entre os arcos, e é exatamente onde a ficha da Linha vai
- * numa mesa de verdade.
+ * Na tela, as LINHAS são desenhadas por último porque a faixa de cada uma fica dentro
+ * da faixa do centro do mesmo arco — é o círculo impresso, que na arte está em cima do
+ * traço de baixo. Onde as duas se cruzam quem ganha o toque é a última desenhada, e ali
+ * o lugar é da linha.
  *
  * Na leitura, esta é também a ordem em que as casas são anunciadas por leitor de tela.
  */
-const CASAS = ['ases', 'grande', 'pequeno', 'linha'] as const;
+const CASAS = ['ases', 'grande', 'pequeno', 'linha-grande', 'linha-pequeno'] as const;
+
+/** Só estas são divididas ao meio, e por isso só estas precisam de valor par. */
+const LINHAS: BancaFrancesaBetType[] = ['linha-grande', 'linha-pequeno'];
 
 type Apostas = Record<BancaFrancesaBetType, number[]>;
-const MESA_LIMPA: Apostas = { ases: [], grande: [], pequeno: [], linha: [] };
+const MESA_LIMPA: Apostas = { ases: [], grande: [], pequeno: [], 'linha-grande': [], 'linha-pequeno': [] };
 const soma = (fichas: number[]) => fichas.reduce((t, f) => t + f, 0);
 
 const NOME_DO_RESULTADO: Record<string, string> = { ases: 'Ases', pequeno: 'Pequeno', grande: 'Grande' };
@@ -51,6 +57,8 @@ interface PanoProps {
   saldo: number;
   minimo: number;
   maximo: number;
+  /** A configuração do motor — é dela que sai o quadro de pagamentos. */
+  config: BancaFrancesaConfig | null;
   /** Devolve se a aposta foi aceita — é o que decide se a montagem some ou fica. */
   onApostar: (bets: BancaFrancesaBet[]) => Promise<boolean>;
   onGirar: () => Promise<unknown>;
@@ -81,6 +89,7 @@ export function PanoDaBancaFrancesa({
   saldo,
   minimo,
   maximo,
+  config,
   onApostar,
   onGirar,
   onSair,
@@ -96,6 +105,7 @@ export function PanoDaBancaFrancesa({
   const [ordem, setOrdem] = useState<BancaFrancesaBetType[]>([]);
   const [anterior, setAnterior] = useState<Apostas | null>(null);
   const [recado, setRecado] = useState<string | null>(null);
+  const [quadroAberto, setQuadroAberto] = useState(false);
 
   useEffect(() => setFicha(minimo), [minimo]);
 
@@ -104,10 +114,19 @@ export function PanoDaBancaFrancesa({
     () => CASAS.filter((c) => apostas[c].length > 0 && soma(apostas[c]) < minimo),
     [apostas, minimo],
   );
+  /*
+   * A aposta na linha é dividida ao meio e ficha não se parte — o saldo é inteiro. Um
+   * valor ímpar seria recusado pelo servidor, então a mesa avisa antes, aqui, em vez
+   * de deixar a pessoa confirmar e levar erro.
+   */
+  const linhaImpar = useMemo(
+    () => LINHAS.filter((c) => soma(apostas[c]) % 2 !== 0),
+    [apostas],
+  );
 
   /* --- o lançamento: chacoalho fantasma, depois os dados de verdade --- */
   const rodada = mesa.lastRound;
-  const { dados, girando, hesitando } = useLancamento(rodada);
+  const { dados, lance, girando, duracaoDoVoo } = useLancamento(rodada);
 
   /* Rodada nova chegou: o que estava só encostado já foi pro servidor, a mesa limpa. */
   const marcaDaRodada = rodada?.at;
@@ -155,7 +174,7 @@ export function PanoDaBancaFrancesa({
   };
 
   const apostar = async () => {
-    if (travado || total === 0 || abaixoDoMinimo.length > 0) return;
+    if (travado || total === 0 || abaixoDoMinimo.length > 0 || linhaImpar.length > 0) return;
     const montagem = apostas;
     const aceita = await onApostar(
       CASAS.filter((c) => montagem[c].length > 0).map((type) => ({ type, amount: soma(montagem[type]) })),
@@ -208,9 +227,10 @@ export function PanoDaBancaFrancesa({
   const rotuloDoBotao = () => {
     if (total === 0) return 'Encoste uma ficha no pano';
     if (abaixoDoMinimo.length > 0) return `Mínimo ${minimo.toLocaleString('pt-BR')} por casa`;
+    if (linhaImpar.length > 0) return 'Na linha, valor par';
     return `Confirmar ${total.toLocaleString('pt-BR')}`;
   };
-  const podeApostar = total > 0 && abaixoDoMinimo.length === 0 && !travado;
+  const podeApostar = total > 0 && abaixoDoMinimo.length === 0 && linhaImpar.length === 0 && !travado;
 
   return (
     <TampoDaMesa
@@ -232,14 +252,15 @@ export function PanoDaBancaFrancesa({
       ))}
 
       {/* Os três dados dentro da tigela de couro, onde eles são lançados. */}
-      {(girando || rodada) &&
+      {dados.length > 0 &&
         MAPA_BANCA_FRANCESA.dados.map((ponto, indice) => (
           <DadoNaTigela
             key={indice}
             ponto={ponto}
             face={dados[indice] ?? null}
-            rolando={girando || hesitando}
             indice={indice}
+            lance={lance}
+            duracaoDoVoo={duracaoDoVoo}
           />
         ))}
 
@@ -247,11 +268,14 @@ export function PanoDaBancaFrancesa({
         <View style={styles.barraDeCima} pointerEvents="box-none">
           <BotaoRedondo icone="chevron-back" rotulo="Sair da mesa" onPress={onSair} />
           <ChipStack amount={saldo} />
-          <BotaoRedondo
-            icone="people"
-            rotulo={`Quem está na mesa, ${mesa.seats.length} ${mesa.seats.length === 1 ? 'pessoa' : 'pessoas'}`}
-            onPress={onAbrirPainel}
-          />
+          <View style={styles.botoesDaDireita}>
+            <BotaoRedondo icone="help-circle" rotulo="O que cada aposta paga" onPress={() => setQuadroAberto(true)} />
+            <BotaoRedondo
+              icone="people"
+              rotulo={`Quem está na mesa, ${mesa.seats.length} ${mesa.seats.length === 1 ? 'pessoa' : 'pessoas'}`}
+              onPress={onAbrirPainel}
+            />
+          </View>
         </View>
 
         <Avental>
@@ -320,34 +344,110 @@ export function PanoDaBancaFrancesa({
           </View>
         </Avental>
       </SafeAreaView>
+
+      <QuadroDePagamentos
+        visivel={quadroAberto}
+        aoFechar={() => setQuadroAberto(false)}
+        titulo="Banca Francesa — o que cada aposta paga"
+        linhas={pagamentos(config)}
+        observacao={
+          'Nem toda jogada decide alguma coisa. Das 216 combinações de três dados, só 63 resolvem: ' +
+          'a soma 3 (Ases), as somas 5, 6 e 7 (Pequeno) e as somas 14, 15 e 16 (Grande). Saindo qualquer ' +
+          'outra soma, os dados voltam pro copo e as apostas continuam de pé — ninguém ganha nem perde. ' +
+          'Isso é regra do jogo, não travamento: é o que faz as contas acima serem o que são.\n\n' +
+          'A aposta na linha precisa ser um valor par, porque ela é dividida ao meio e ficha não se parte.'
+        }
+      />
     </TampoDaMesa>
   );
 }
 
-/** A casa que ganhou. A Linha ganha em tudo que não é Ases — metade em cada arco. */
+/**
+ * As linhas do quadro, montadas a partir da configuração do motor.
+ *
+ * O pagamento e o RTP vêm do servidor, não daqui: é o mesmo número que paga a aposta de
+ * verdade. Uma tabela digitada à mão poderia divergir do código numa mudança e virar
+ * propaganda enganosa sem ninguém perceber. O que este arquivo escreve é só a frase em
+ * português de QUANDO cada aposta ganha.
+ */
+function pagamentos(config: BancaFrancesaConfig | null): LinhaDePagamento[] {
+  if (!config) return [];
+  const lista = (tipo: 'pequeno' | 'grande') => config.winningSums[tipo].join(', ').replace(/, (\d+)$/, ' ou $1');
+  const porUm = (tipo: 'ases' | 'pequeno' | 'grande') => `Paga ${config.totalReturnMultiplier[tipo] - 1} por 1`;
+  const naLinha = (arco: 'pequeno' | 'grande') =>
+    `A ficha fica em cima do traço do arco, meio dentro e meio fora — e é isso que a divide: metade dela ` +
+    `está apostada, metade não. Saindo ${arco === 'grande' ? 'Grande' : 'Pequeno'} você ganha metade do que ` +
+    `pôs; saindo qualquer outra coisa, perde só metade. Menos risco e menos prêmio, sem truque no meio.`;
+
+  return [
+    {
+      aposta: 'Centro do Pequeno',
+      quando: `Os três dados somam ${lista('pequeno')}`,
+      paga: porUm('pequeno'),
+      rtp: config.theoreticalRtpByType.pequeno,
+    },
+    {
+      aposta: 'Centro do Grande',
+      quando: `Os três dados somam ${lista('grande')}`,
+      paga: porUm('grande'),
+      rtp: config.theoreticalRtpByType.grande,
+    },
+    {
+      aposta: 'Ases',
+      quando: 'Os três dados caem no 1 — soma 3',
+      paga: porUm('ases'),
+      regra: 'Ases não tem linha: uma aposta que paga 61 por 1 não precisa de versão de risco reduzido.',
+      rtp: config.theoreticalRtpByType.ases,
+    },
+    {
+      aposta: 'Linha do Pequeno',
+      quando: `Os três dados somam ${lista('pequeno')}`,
+      paga: 'Ganha metade',
+      regra: naLinha('pequeno'),
+      rtp: config.theoreticalRtpByType['linha-pequeno'],
+    },
+    {
+      aposta: 'Linha do Grande',
+      quando: `Os três dados somam ${lista('grande')}`,
+      paga: 'Ganha metade',
+      regra: naLinha('grande'),
+      rtp: config.theoreticalRtpByType['linha-grande'],
+    },
+  ];
+}
+
+/** A casa que ganhou. A linha de um arco ganha quando aquele arco ganha. */
 function venceu(casa: BancaFrancesaBetType, resultado: string | undefined, mostrar: boolean) {
   if (!mostrar || !resultado) return false;
-  return casa === 'linha' ? resultado !== 'ases' : casa === resultado;
+  if (casa === 'linha-grande') return resultado === 'grande';
+  if (casa === 'linha-pequeno') return resultado === 'pequeno';
+  return casa === resultado;
 }
 
 /**
  * O tempo do lançamento.
  *
- * O servidor já decidiu tudo antes de a animação começar — os dados, a soma, quem
- * ganhou e quantas vezes eles voltaram pro copo. O que acontece aqui é só a encenação
- * do que já aconteceu, e ela é fiel: se o servidor relançou, os dados HESITAM antes de
- * assentar, porque relançar é regra do jogo e aconteceu de verdade.
+ * O servidor já decidiu tudo antes de a animação começar — os dados de cada tentativa,
+ * a soma, quem ganhou. O que acontece aqui é a encenação do que já aconteceu, e ela é
+ * fiel: cada lançamento que o servidor fez é UM LANÇAMENTO NA TELA, com os dados
+ * entrando na tigela, quicando e parando na face que saiu de verdade.
  *
- * A hesitação é mostrada no máximo duas vezes mesmo quando o servidor relançou mais.
- * A média real é 216/63 ≈ 3,4 lançamentos até decidir, e a cauda não tem teto: mostrar
- * literalmente cada tentativa faria uma rodada azarada travar o jogo por segundos. Duas
- * já dizem "os dados custaram a decidir" — que é a informação — sem cobrar a paciência
- * de quem está na mesa.
+ * ISTO ESTAVA QUEBRADO, e de um jeito que só aparece olhando. O estado `rolando`
+ * ficava ligado do começo ao fim, e o <Dado> só dispara o voo quando `rolando` DESLIGA
+ * com uma face na mão. Resultado: os três dados ficavam parados no ponto de
+ * lançamento — que é fora do quadro, no alto — pendurados em cima do saldo, e depois
+ * apareciam já assentados. A animação existia e nunca rodava.
+ *
+ * Os lançamentos nulos vão mais rápido (700ms contra 1150ms) e ficam menos tempo na
+ * tela: eles não decidem nada, e a média real é de 3,4 tentativas até decidir. Mostrar
+ * cada uma no tempo do decisivo faria uma rodada azarada custar dez segundos.
  */
 function useLancamento(rodada: TableView['lastRound']) {
   const [dados, setDados] = useState<number[]>([]);
+  const [lance, setLance] = useState(0);
+  const [rapido, setRapido] = useState(false);
+  /** A rodada ainda está rolando: a mesa fica travada e o resultado não aparece. */
   const [girando, setGirando] = useState(false);
-  const [hesitando, setHesitando] = useState(false);
   const ultima = useRef<string | undefined>(undefined);
 
   useEffect(() => {
@@ -360,18 +460,25 @@ function useLancamento(rodada: TableView['lastRound']) {
 
     (async () => {
       setGirando(true);
-      setDados([]);
-      for (let i = 0; i < Math.min(rodada.rerolls, 2) && vivo; i += 1) {
-        setHesitando(true);
-        await espera(260);
+      let n = 0;
+
+      // Os lançamentos que não decidiram nada: dados de verdade, do servidor.
+      for (const nulo of (rodada.lancamentosNulos ?? []).slice(0, NULOS_MOSTRADOS)) {
         if (!vivo) return;
-        setHesitando(false);
-        await espera(120);
+        setRapido(true);
+        setDados(nulo);
+        n += 1;
+        setLance(n);
+        await espera(ATE_ASSENTAR_RAPIDO + OLHADA_NO_NULO);
       }
+
       if (!vivo) return;
-      // Só agora os dados sabem a face: o caminho é desenho, o resultado é sorteio.
+      // O decisivo, no tempo cheio.
+      setRapido(false);
       setDados(rodada.dice);
-      await espera(TEMPO_ATE_ASSENTAR);
+      n += 1;
+      setLance(n);
+      await espera(ATE_ASSENTAR);
       if (vivo) setGirando(false);
     })();
 
@@ -381,11 +488,18 @@ function useLancamento(rodada: TableView['lastRound']) {
     };
   }, [rodada]);
 
-  return { dados, girando, hesitando };
+  return { dados, lance, girando, duracaoDoVoo: rapido ? VOO_RAPIDO : VOO_CHEIO };
 }
 
-/** 2 × ATRASO_POR_DADO + VOO_EM_MS do <Dado> — quando o último dado para. */
-const TEMPO_ATE_ASSENTAR = 1450;
+/** Quantos lançamentos nulos aparecem na tela. O texto diz quantos foram de verdade. */
+const NULOS_MOSTRADOS = 2;
+const VOO_CHEIO = 1150;
+const VOO_RAPIDO = 700;
+/** 2 × 150ms de atraso entre dados + o voo — quando o terceiro dado para. */
+const ATE_ASSENTAR = 300 + VOO_CHEIO;
+const ATE_ASSENTAR_RAPIDO = 300 + VOO_RAPIDO;
+/** Tempo pra ler o que saiu antes de os dados serem recolhidos. */
+const OLHADA_NO_NULO = 420;
 
 function PilhaNoPano({
   fichas,
@@ -408,18 +522,21 @@ function PilhaNoPano({
 function DadoNaTigela({
   ponto,
   face,
-  rolando,
   indice,
+  lance,
+  duracaoDoVoo,
 }: {
   ponto: { x: number; y: number };
   face: number | null;
-  rolando: boolean;
   indice: number;
+  lance: number;
+  duracaoDoVoo: number;
 }) {
   const palco = usePalco();
   if (!palco) return null;
-  // A tigela tem 0.366 da largura do tampo; 5,5% deixa os três lado a lado com folga.
-  const tamanho = Math.max(26, palco.largura * 0.055);
+  const tamanho = Math.round(
+    Math.max(DADO_MINIMO_NA_TIGELA, palco.largura * TAMANHO_DO_DADO_NA_TIGELA),
+  );
   return (
     <View
       pointerEvents="none"
@@ -429,7 +546,7 @@ function DadoNaTigela({
         top: palco.topo + ponto.y * palco.altura - tamanho / 2,
       }}
     >
-      <Dado face={face} rolando={rolando} indice={indice} tamanho={tamanho} />
+      <Dado face={face} rolando={false} indice={indice} tamanho={tamanho} lance={lance} duracaoDoVoo={duracaoDoVoo} />
     </View>
   );
 }
@@ -519,6 +636,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(11,15,13,0.62)',
   },
+  botoesDaDireita: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   linhaDoTrilho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
   ladoDoTrilho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minWidth: 104 },
   linhaDeBotoes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md },

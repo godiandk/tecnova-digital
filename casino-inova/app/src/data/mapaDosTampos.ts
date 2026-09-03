@@ -50,6 +50,15 @@ export interface AreaDaMesa {
    *      banca   (vermelho) de 0.650 a 0.900  → centro 0.775
    */
   alvo?: PontoDaMesa;
+  /**
+   * A curva que as fichas seguem, quando a casa é um arco e não um retângulo.
+   *
+   * Numa mesa reta as pilhas se espalham em linha e pronto. Num arco não: espalhar em
+   * linha reta joga as pilhas das pontas pra fora do desenho, porque o arco sobe. Estes
+   * pontos são o traço de baixo do arco, medidos na arte, e a pilha de cada pessoa
+   * acha o próprio y interpolando entre eles.
+   */
+  arco?: PontoDaMesa[];
 }
 
 /** Um ponto do tampo — onde uma carta pousa, onde um dado assenta. */
@@ -160,6 +169,81 @@ export const PASSO_DA_PILHA = 0.2;
  * na letra — metade em cada). Então a faixa dela fica exatamente sobre esse traço, e ela
  * é desenhada DEPOIS de Pequeno pra ganhar o toque na parte em que as duas se cruzam.
  */
+/**
+ * O traço de baixo de cada arco, medido de 0.02 em 0.02 na arte 1920x1080.
+ *
+ * A ficha do CENTRO assenta neste traço e cresce pra dentro do arco — é onde ela
+ * ficaria numa mesa, encostada na borda de baixo da caixa. Como o arco é curvo, o y
+ * muda com o x, e sem esta curva as pilhas das pontas caíam fora do desenho.
+ *
+ * A medição pegou o traço dourado mais baixo de cada coluna, pulando a faixa central
+ * (0.45 a 0.55) onde o círculo impresso esconde a linha. Os dois arcos saíram
+ * simétricos em torno de x=0.5, como a arte promete.
+ */
+const ARCO_DO_GRANDE: PontoDaMesa[] = [
+  { x: 0.28, y: 0.4348 }, { x: 0.32, y: 0.458 }, { x: 0.36, y: 0.4756 }, { x: 0.4, y: 0.4885 },
+  { x: 0.44, y: 0.4969 }, { x: 0.5, y: 0.4975 }, { x: 0.56, y: 0.4959 }, { x: 0.6, y: 0.4876 },
+  { x: 0.64, y: 0.4746 }, { x: 0.68, y: 0.457 }, { x: 0.72, y: 0.433 },
+];
+
+const ARCO_DO_PEQUENO: PontoDaMesa[] = [
+  { x: 0.2, y: 0.6102 }, { x: 0.24, y: 0.6324 }, { x: 0.28, y: 0.6519 }, { x: 0.32, y: 0.6667 },
+  { x: 0.36, y: 0.6787 }, { x: 0.4, y: 0.688 }, { x: 0.44, y: 0.6935 }, { x: 0.5, y: 0.694 },
+  { x: 0.56, y: 0.6935 }, { x: 0.6, y: 0.687 }, { x: 0.64, y: 0.6787 }, { x: 0.68, y: 0.6667 },
+  { x: 0.72, y: 0.6509 }, { x: 0.76, y: 0.6324 }, { x: 0.8, y: 0.6093 },
+];
+
+/**
+ * A TIGELA DE COURO onde os dados são lançados, medida na arte.
+ *
+ * A moldura inteira (latão + couro) vai de x 0.3245 a 0.6630 e de y 0.1630 a 0.2722 —
+ * é a maior figura clara da mesa, isolada por brilho alto com saturação quente contra
+ * o feltro escuro (brilho 94–161 e saturação 50–62 dentro, contra brilho 11–22 e
+ * saturação 14–18 no feltro em volta).
+ *
+ * O CHÃO DE COURO, que é onde o dado pode parar, sai do corte vertical no centro da
+ * tigela: a moldura de cima ocupa 0.163 a 0.185, o couro vai de 0.185 a 0.262, e a
+ * beirada da frente pega luz de novo em 0.265 a 0.272. Descontando as pontas
+ * arredondadas nas laterais, sobra a faixa abaixo.
+ */
+export const TIGELA_DA_BANCA = {
+  /** A moldura inteira, pra quem precisar desenhar em volta. */
+  fora: { esquerda: 0.3245, topo: 0.163, direita: 0.663, base: 0.2722 },
+  /** O couro útil: onde o dado assenta sem encostar na moldura. */
+  chao: { esquerda: 0.355, topo: 0.185, direita: 0.635, base: 0.262 },
+};
+
+/**
+ * O tamanho do dado, em fração da LARGURA da mesa.
+ *
+ * A régua aqui é a própria tigela, não o olho. Ela tem 0.109 da altura da mesa de
+ * fundo visível (0.163 a 0.272), e um dado a 60% dessa altura assenta dentro dela sem
+ * afundar nem transbordar: 0.6 × 0.109 = 0.065 da altura, que numa mesa 16:9 dá 0.037
+ * da largura. Numa mesa de 1180 isso são 44 pixels — menor que uma ficha (64), que é
+ * o certo, porque dado é menor que ficha mesmo, e grande o bastante pra os pontos
+ * lerem de longe.
+ *
+ * O piso em pixel existe porque fração não protege legibilidade: numa janela estreita
+ * 0.037 daria um dado de 26 pixels, e aí ninguém enxerga quanto saiu.
+ */
+export const TAMANHO_DO_DADO_NA_TIGELA = 0.037;
+export const DADO_MINIMO_NA_TIGELA = 34;
+
+/**
+ * Os três lugares onde os dados param, lado a lado dentro da tigela.
+ *
+ * O espaçamento é 2,2 vezes o lado do dado: junta os três num grupo que lê como um
+ * lançamento só, e ainda sobra 0.058 de couro de cada lado — nenhum dado encosta na
+ * moldura, nem no maior tamanho de tela.
+ */
+function assentosNaTigela(): PontoDaMesa[] {
+  const { esquerda, direita, topo, base } = TIGELA_DA_BANCA.chao;
+  const centroX = (esquerda + direita) / 2;
+  const centroY = (topo + base) / 2;
+  const passo = TAMANHO_DO_DADO_NA_TIGELA * 2.2;
+  return [-1, 0, 1].map((k) => ({ x: centroX + k * passo, y: centroY }));
+}
+
 export const MAPA_BANCA_FRANCESA = {
   apostas: {
     ases: {
@@ -168,31 +252,30 @@ export const MAPA_BANCA_FRANCESA = {
       alvo: { x: 0.2115, y: 0.322 },
     },
     grande: {
-      caixa: [0.226, 0.3, 0.771, 0.478],
-      rotulo: 'Apostar em Grande, 14, 15 ou 16',
-      alvo: { x: 0.499, y: 0.5 },
+      caixa: [0.226, 0.3, 0.771, 0.505],
+      rotulo: 'Apostar no centro do Grande, 14, 15 ou 16',
+      alvo: { x: 0.34, y: 0.4672 },
+      arco: ARCO_DO_GRANDE,
     },
     pequeno: {
-      caixa: [0.118, 0.482, 0.877, 0.72],
-      rotulo: 'Apostar em Pequeno, 5, 6 ou 7',
-      alvo: { x: 0.4964, y: 0.7 },
+      caixa: [0.118, 0.51, 0.877, 0.72],
+      rotulo: 'Apostar no centro do Pequeno, 5, 6 ou 7',
+      alvo: { x: 0.32, y: 0.6667 },
+      arco: ARCO_DO_PEQUENO,
     },
-    linha: {
-      caixa: [0.35, 0.478, 0.65, 0.552],
-      rotulo: 'Apostar na Linha, metade Grande e metade Pequeno',
-      alvo: { x: 0.499, y: 0.548 },
+    'linha-grande': {
+      caixa: [0.44, 0.42, 0.56, 0.545],
+      rotulo: 'Apostar na linha do Grande, metade do risco e metade do prêmio',
+      alvo: { x: 0.499, y: 0.519 },
+    },
+    'linha-pequeno': {
+      caixa: [0.44, 0.62, 0.56, 0.745],
+      rotulo: 'Apostar na linha do Pequeno, metade do risco e metade do prêmio',
+      alvo: { x: 0.4964, y: 0.718 },
     },
   } satisfies Record<string, AreaDaMesa>,
-  /**
-   * Os três dados dentro da tigela. A tigela mede 0.366 de largura por 0.150 de altura,
-   * centrada em (0.4995, 0.1972); três dados espalhados nela cabem com folga em 0.42,
-   * 0.50 e 0.58, um pouco abaixo do centro, que é onde o couro da tigela pega a luz.
-   */
-  dados: [
-    { x: 0.42, y: 0.208 },
-    { x: 0.5, y: 0.208 },
-    { x: 0.58, y: 0.208 },
-  ] as PontoDaMesa[],
+  /** Onde os dados param depois de lançados. Ver TIGELA_DA_BANCA. */
+  dados: assentosNaTigela(),
 };
 
 /**
@@ -225,9 +308,15 @@ export const LARGURA_UTIL: Record<string, number> = {
    * cheia encostam uma na outra — que é o que acontece no feltro de verdade.
    */
   ases: 0.07,
-  grande: 0.4,
-  pequeno: 0.5,
-  linha: 0.22,
+  /*
+   * O centro se espalha pelo arco, mas nunca até o meio: ali fica o círculo, que é o
+   * lugar da LINHA. Uma pilha de centro pousada em cima do círculo faria a mesa mentir
+   * sobre qual aposta ela é.
+   */
+  grande: 0.16,
+  pequeno: 0.18,
+  'linha-grande': 0.08,
+  'linha-pequeno': 0.08,
 };
 
 /**
@@ -253,5 +342,21 @@ export function assentoDaPilha(
   if (quantas <= 1) return alvo;
   const passo = Math.min(espacamento, larguraUtil / (quantas - 1));
   const larguraDoGrupo = passo * (quantas - 1);
-  return { x: alvo.x - larguraDoGrupo / 2 + indice * passo, y: alvo.y };
+  const x = alvo.x - larguraDoGrupo / 2 + indice * passo;
+  return { x, y: area.arco ? alturaNoArco(area.arco, x) : alvo.y };
+}
+
+/** O y do arco num x qualquer, interpolando entre os pontos medidos. */
+function alturaNoArco(arco: PontoDaMesa[], x: number): number {
+  if (x <= arco[0].x) return arco[0].y;
+  const ultimo = arco[arco.length - 1];
+  if (x >= ultimo.x) return ultimo.y;
+  for (let i = 1; i < arco.length; i += 1) {
+    if (x <= arco[i].x) {
+      const a = arco[i - 1];
+      const b = arco[i];
+      return a.y + ((x - a.x) / (b.x - a.x)) * (b.y - a.y);
+    }
+  }
+  return ultimo.y;
 }

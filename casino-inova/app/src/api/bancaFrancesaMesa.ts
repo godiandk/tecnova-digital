@@ -17,6 +17,13 @@ export interface TableRoundView {
   outcome: BancaFrancesaOutcome;
   /** Quantas vezes os dados voltaram pro copo antes de sair soma que decide. */
   rerolls: number;
+  /**
+   * Os lançamentos que não decidiram nada, na ordem em que saíram (até 3 guardados).
+   *
+   * É com eles que a tela LANÇA a hesitação em vez de só escrever que ela houve: cada
+   * um é jogado na tigela de verdade, com os dados que saíram de verdade.
+   */
+  lancamentosNulos: number[][];
   bySeat: Record<string, { results: BetResult[]; totalStake: number; totalReturn: number }>;
   at: string;
 }
