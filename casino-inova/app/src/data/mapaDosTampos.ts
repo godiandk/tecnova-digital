@@ -18,8 +18,11 @@
  * entre as duas. Não é olhômetro; dá pra refazer a medição e conferir. Cada campo
  * abaixo diz qual varredura deu aquele número.
  *
- * O TAMANHO DA FICHA também é medido, e está em TAMANHO_DA_FICHA_NO_PANO.
+ * O TAMANHO de cada objeto — ficha, dado, pilha — não fica aqui: fica em
+ * theme/medidasDaMesa.ts. Aqui é ONDE as coisas ficam; lá é QUÃO GRANDES elas são.
  */
+
+import { DADO_NA_TIGELA, FICHA_NO_PANO } from '../theme/medidasDaMesa';
 
 /** Uma área tocável do pano, em fração do tampo. */
 export interface AreaDaMesa {
@@ -102,41 +105,9 @@ export const MAPA_BAC_BO = {
   ] as PontoDaMesa[],
 };
 
-/**
- * O tamanho da ficha, em fração da LARGURA do tampo.
- *
- * De onde vem 0.054: a régua é a própria letra impressa no feltro. Uma ficha tem que
- * ler tão fácil quanto o nome da casa em que ela está — menor que isso e ela vira
- * um confete, maior e ela cobre a mesa. Medindo a altura das maiúsculas na arte:
- *   JOGADOR  0.0491 da altura da mesa
- *   BANCA    0.0704 (o painel da banca é desenhado mais perto, então maior)
- *   média    0.0598 da altura = 0.0336 da largura (a mesa é 16:9)
- * Uma ficha de cassino tem mais ou menos uma vez e meia a altura da letra que está ao
- * lado dela numa mesa de verdade; 1,6× dá 0.054 da largura do tampo.
- *
- * O piso em pixel existe porque abaixo de uns 44px o número impresso na ficha some, e
- * fração não protege disso: numa janela estreita 0.054 daria uma ficha ilegível.
- */
-export const TAMANHO_DA_FICHA_NO_PANO = 0.054;
-export const FICHA_MINIMA_NO_PANO = 44;
 
-/**
- * A ficha do trilho é maior que a do pano: ela é ALVO DE TOQUE, e o mínimo confortável
- * pra um dedo é 44pt. 56 dá folga real, e o teto de 84 evita que numa tela grande o
- * trilho vire um cinto de fichas gigantes.
- */
-export const TAMANHO_DA_FICHA_NO_TRILHO = 0.062;
-export const FICHA_MINIMA_NO_TRILHO = 56;
-export const FICHA_MAXIMA_NO_TRILHO = 84;
 
-/**
- * Quanto de cada ficha aparece na pilha, em fração do diâmetro.
- *
- * Medido numa foto de pilha de fichas de verdade: seis fichas empilhadas ocupam cerca
- * de 1,2 diâmetro de altura, o que dá 0.20 por ficha. Menos que isso e a pilha vira
- * um borrão; mais e ela lê como fichas soltas equilibradas.
- */
-export const PASSO_DA_PILHA = 0.2;
+
 
 /**
  * Banca Francesa. Três casas impressas no feltro — a caixa "3 ASES" no canto, o arco
@@ -213,21 +184,7 @@ export const TIGELA_DA_BANCA = {
   chao: { esquerda: 0.355, topo: 0.185, direita: 0.635, base: 0.262 },
 };
 
-/**
- * O tamanho do dado, em fração da LARGURA da mesa.
- *
- * A régua aqui é a própria tigela, não o olho. Ela tem 0.109 da altura da mesa de
- * fundo visível (0.163 a 0.272), e um dado a 60% dessa altura assenta dentro dela sem
- * afundar nem transbordar: 0.6 × 0.109 = 0.065 da altura, que numa mesa 16:9 dá 0.037
- * da largura. Numa mesa de 1180 isso são 44 pixels — menor que uma ficha (64), que é
- * o certo, porque dado é menor que ficha mesmo, e grande o bastante pra os pontos
- * lerem de longe.
- *
- * O piso em pixel existe porque fração não protege legibilidade: numa janela estreita
- * 0.037 daria um dado de 26 pixels, e aí ninguém enxerga quanto saiu.
- */
-export const TAMANHO_DO_DADO_NA_TIGELA = 0.037;
-export const DADO_MINIMO_NA_TIGELA = 34;
+
 
 /**
  * Os três lugares onde os dados param, lado a lado dentro da tigela.
@@ -240,7 +197,7 @@ function assentosNaTigela(): PontoDaMesa[] {
   const { esquerda, direita, topo, base } = TIGELA_DA_BANCA.chao;
   const centroX = (esquerda + direita) / 2;
   const centroY = (topo + base) / 2;
-  const passo = TAMANHO_DO_DADO_NA_TIGELA * 2.2;
+  const passo = DADO_NA_TIGELA * 2.2;
   return [-1, 0, 1].map((k) => ({ x: centroX + k * passo, y: centroY }));
 }
 
@@ -336,7 +293,7 @@ export function assentoDaPilha(
   larguraUtil: number,
   indice: number,
   quantas: number,
-  espacamento = TAMANHO_DA_FICHA_NO_PANO * 1.15,
+  espacamento = FICHA_NO_PANO * 1.15,
 ): PontoDaMesa {
   const alvo = area.alvo ?? centroDe(area);
   if (quantas <= 1) return alvo;

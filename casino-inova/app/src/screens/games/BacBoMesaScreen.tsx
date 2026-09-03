@@ -6,16 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { TAMPOS_16X9 } from '../../data/tamposDaMesa';
 import { TABLE_IMAGES } from '../../data/tableImages';
-import {
-  MAPA_BAC_BO,
-  MAPA_BAC_BO_EM_PE,
-  LARGURA_UTIL_EM_PE,
-  TAMANHO_DA_FICHA_NO_PANO,
-  TAMANHO_DA_FICHA_NO_TRILHO,
-  FICHA_MINIMA_NO_PANO,
-  FICHA_MINIMA_NO_TRILHO,
-  FICHA_MAXIMA_NO_TRILHO,
-} from '../../data/mapaDosTampos';
+import { MAPA_BAC_BO, MAPA_BAC_BO_EM_PE, LARGURA_UTIL_EM_PE } from '../../data/mapaDosTampos';
+import { dadoNoAgitador, fichaNoPano, fichaNoTrilho, larguraDoPlacar, telaBaixa } from '../../theme/medidasDaMesa';
 import { TampoDaMesa, usePalco } from '../../components/TampoDaMesa';
 import { useJanela } from '../../theme/useJanela';
 import { CasaDeAposta } from '../../components/CasaDeAposta';
@@ -103,7 +95,7 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
    * mas desperdiçando a tela toda em tarja preta. Numa linha só, tudo cabe e a mesa
    * fica grande.
    */
-  const apertado = janela.height < 520;
+  const apertado = telaBaixa(janela);
 
   useEffect(() => {
     // O placar da mesa já existe no servidor desde antes desta tela; o que faltava era
@@ -364,7 +356,7 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
                   roadmap={placar}
                   vocabulario={VOCABULARIO_DO_BAC_BO}
                   /* O placar ocupa a folha, com uma margem — painel de mesa é largo. */
-                  largura={Math.min(janela.width - spacing.lg * 2, 760)}
+                  largura={larguraDoPlacar(janela.width, spacing.lg)}
                 />
               )}
             </ScrollView>
@@ -477,9 +469,7 @@ function Trilho({ apertado, ...resto }: {
   travado: boolean;
 }) {
   const palco = usePalco();
-  const tamanho = fichaNoTrilho(palco?.largura ?? 700);
-  // Em tela baixa a ficha encolhe até o mínimo confortável pro dedo, e não abaixo.
-  return <TrilhoDeFichas {...resto} tamanho={apertado ? Math.min(tamanho, FICHA_MINIMA_NO_TRILHO) : tamanho} />;
+  return <TrilhoDeFichas {...resto} tamanho={fichaNoTrilho(palco?.largura ?? 700, apertado)} />;
 }
 
 /** A pilha dentro da casa, no tamanho medido na arte (ver TAMANHO_DA_FICHA_NO_PANO). */
@@ -489,16 +479,7 @@ function PilhaNoPano({ fichas, cor }: { fichas: number[]; cor: PlayerColor | und
   return <PilhaDeFichas fichas={fichas} cor={cor} tamanho={fichaNoPano(palco.largura)} />;
 }
 
-/** Diâmetro da ficha em cima do pano, a partir da largura que o tampo ocupou na tela. */
-function fichaNoPano(larguraDoTampo: number) {
-  return Math.round(Math.max(FICHA_MINIMA_NO_PANO, larguraDoTampo * TAMANHO_DA_FICHA_NO_PANO));
-}
 
-/** Diâmetro da ficha no trilho: maior que a do pano, porque nela se toca. */
-function fichaNoTrilho(larguraDoTampo: number) {
-  const bruto = larguraDoTampo * TAMANHO_DA_FICHA_NO_TRILHO;
-  return Math.round(Math.min(FICHA_MAXIMA_NO_TRILHO, Math.max(FICHA_MINIMA_NO_TRILHO, bruto)));
-}
 
 /** Um dado assentado na boca do agitador onde ele está desenhado. */
 function DadoNoAgitador({
@@ -516,7 +497,7 @@ function DadoNoAgitador({
   if (!palco) return null;
   // O dado cresce com a mesa. 5% da largura do tampo é o que cabe DENTRO do vidro do
   // agitador desenhado na arte — maior que isso e ele transborda o copo.
-  const tamanho = Math.max(26, palco.largura * 0.05);
+  const tamanho = dadoNoAgitador(palco.largura);
   return (
     <View
       pointerEvents="none"

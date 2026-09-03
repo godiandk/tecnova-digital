@@ -2,7 +2,7 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { PlayerColor } from '../data/chipImages';
 import { arteDaFicha, corDaChapa } from '../data/fichasDeValor';
-import { PASSO_DA_PILHA } from '../data/mapaDosTampos';
+import { FICHAS_VISIVEIS_NA_PILHA, PASSO_DA_PILHA } from '../theme/medidasDaMesa';
 import { colors, fontFamily } from '../theme';
 
 /**
@@ -80,14 +80,7 @@ export function PilhaDeFichas({
   tamanho?: number;
 }) {
   if (fichas.length === 0) return null;
-  /*
-   * Cinco de altura é o teto, e não é número redondo: a faixa de feltro livre da casa do
-   * jogador mede 0.163 da altura da mesa, e cinco fichas ocupam 1 + 4×0.20 = 1.8
-   * diâmetro, que é o que cabe ali sem subir por cima do nome da casa. Passando disso a
-   * pilha continua contando certo — ela só para de crescer na tela, como pilha que
-   * alguém arrumou.
-   */
-  const mostradas = fichas.slice(-5);
+  const mostradas = fichas.slice(-FICHAS_VISIVEIS_NA_PILHA);
   const passo = tamanho * PASSO_DA_PILHA;
 
   return (

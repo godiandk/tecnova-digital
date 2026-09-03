@@ -5,16 +5,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { TAMPOS_16X9 } from '../../data/tamposDaMesa';
-import {
-  MAPA_BANCA_FRANCESA,
-  TAMANHO_DO_DADO_NA_TIGELA,
-  DADO_MINIMO_NA_TIGELA,
-  TAMANHO_DA_FICHA_NO_PANO,
-  TAMANHO_DA_FICHA_NO_TRILHO,
-  FICHA_MINIMA_NO_PANO,
-  FICHA_MINIMA_NO_TRILHO,
-  FICHA_MAXIMA_NO_TRILHO,
-} from '../../data/mapaDosTampos';
+import { MAPA_BANCA_FRANCESA } from '../../data/mapaDosTampos';
+import { dadoNaTigela, fichaNoPano, fichaNoTrilho, telaBaixa } from '../../theme/medidasDaMesa';
 import { TampoDaMesa, usePalco } from '../../components/TampoDaMesa';
 import { useJanela } from '../../theme/useJanela';
 import { CasaDeAposta, PilhaNaCasa } from '../../components/CasaDeAposta';
@@ -112,7 +104,7 @@ export function PanoDaBancaFrancesa({
   const [alturaDaBarra, setAlturaDaBarra] = useState(0);
   const janela = useJanela();
   /* Tela baixa não comporta avental de duas linhas: tudo numa só. */
-  const apertado = janela.height < 520;
+  const apertado = telaBaixa(janela);
 
   useEffect(() => setFicha(minimo), [minimo]);
 
@@ -547,9 +539,7 @@ function DadoNaTigela({
 }) {
   const palco = usePalco();
   if (!palco) return null;
-  const tamanho = Math.round(
-    Math.max(DADO_MINIMO_NA_TIGELA, palco.largura * TAMANHO_DO_DADO_NA_TIGELA),
-  );
+  const tamanho = dadoNaTigela(palco.largura);
   return (
     <View
       pointerEvents="none"
@@ -574,8 +564,7 @@ function Trilho({ apertado, ...resto }: {
   maximo: number;
 }) {
   const palco = usePalco();
-  const tamanho = fichaNoTrilho(palco?.largura ?? 700);
-  return <TrilhoDeFichas {...resto} tamanho={apertado ? Math.min(tamanho, FICHA_MINIMA_NO_TRILHO) : tamanho} />;
+  return <TrilhoDeFichas {...resto} tamanho={fichaNoTrilho(palco?.largura ?? 700, apertado)} />;
 }
 
 function Avental({ children, aoMedir }: { children: ReactNode; aoMedir: (a: number) => void }) {
@@ -618,14 +607,7 @@ function BotaoRedondo({
   );
 }
 
-function fichaNoPano(larguraDoTampo: number) {
-  return Math.round(Math.max(FICHA_MINIMA_NO_PANO, larguraDoTampo * TAMANHO_DA_FICHA_NO_PANO));
-}
 
-function fichaNoTrilho(larguraDoTampo: number) {
-  const bruto = larguraDoTampo * TAMANHO_DA_FICHA_NO_TRILHO;
-  return Math.round(Math.min(FICHA_MAXIMA_NO_TRILHO, Math.max(FICHA_MINIMA_NO_TRILHO, bruto)));
-}
 
 const styles = StyleSheet.create({
   frente: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between' },

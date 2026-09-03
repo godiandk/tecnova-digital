@@ -64,6 +64,22 @@ const GRADE_PEQUENA = {
 /** As duas molduras são 2:1 — a altura sai da largura, sem chute. */
 const PROPORCAO_DO_PAINEL = 2;
 
+/**
+ * Onde a moldura realmente COMEÇA e ACABA dentro do arquivo.
+ *
+ * Os três PNGs têm margem transparente em cima e embaixo, e ela é grande: a legenda só
+ * ocupa 32% da altura do arquivo, o painel grande 67%, o pequeno 91%. Desenhar a imagem
+ * inteira e deixar o layout medir o arquivo põe esse vazio entre as seções como se
+ * fosse espaçamento — foi o que abriu o buraco entre a legenda e o primeiro painel.
+ *
+ * Medido pelo canal alfa de cada arquivo.
+ */
+const OPACO = {
+  legenda: { topo: 41 / 128, base: 82 / 128 },
+  grande: { topo: 67 / 512, base: 412 / 512 },
+  pequeno: { topo: 10 / 256, base: 243 / 256 },
+};
+
 /** Onde os quatro números entram na moldura da legenda (512x128), medido nela. */
 const CAIXAS_DA_LEGENDA = [0.1895, 0.4297, 0.6699, 0.9102];
 const LINHA_DA_LEGENDA = 0.4805;
@@ -91,6 +107,10 @@ function Painel({
   rotulo: string;
 }) {
   const altura = largura / PROPORCAO_DO_PAINEL;
+  const opaco = grande ? OPACO.grande : OPACO.pequeno;
+  // A caixa que o layout mede é só a parte visível; o resto do arquivo é transparente.
+  const deslocamento = opaco.topo * altura;
+  const alturaVisivel = (opaco.base - opaco.topo) * altura;
   const grade = grande ? GRADE_GRANDE : GRADE_PEQUENA;
   const ladoX = grade.celulaX * largura;
   const ladoY = grade.celulaY * altura;
@@ -102,17 +122,21 @@ function Painel({
   const desloca = Math.max(0, ultima - grade.colunas + 1);
 
   return (
-    <View style={{ width: largura, height: altura }} accessibilityLabel={rotulo} accessible>
+    <View
+      style={{ width: largura, height: alturaVisivel, overflow: 'visible' }}
+      accessibilityLabel={rotulo}
+      accessible
+    >
       <Image
         source={grande ? ROADMAP_IMAGES.painelGrande : ROADMAP_IMAGES.painelPequeno}
-        style={{ width: largura, height: altura }}
+        style={{ position: 'absolute', top: -deslocamento, width: largura, height: altura }}
         resizeMode="stretch"
       />
       {pecas.map((peca, i) => {
         const coluna = peca.coluna - desloca;
         if (coluna < 0 || coluna >= grade.colunas || peca.fileira >= grade.fileiras) return null;
         const esquerda = grade.esquerda * largura + (coluna + 0.5) * ladoX - lado / 2;
-        const topo = grade.topo * altura + (peca.fileira + 0.5) * ladoY - lado / 2;
+        const topo = grade.topo * altura + (peca.fileira + 0.5) * ladoY - lado / 2 - deslocamento;
         return (
           <View key={i} pointerEvents="none" style={{ position: 'absolute', left: esquerda, top: topo }}>
             <Image source={MARCADORES_DO_PLACAR[peca.marcador]} style={{ width: lado, height: lado }} resizeMode="contain" />
@@ -133,11 +157,17 @@ function Painel({
 /** A legenda: a moldura é arte, os quatro números entram nas caixas medidas nela. */
 function Legenda({ largura, totais, palavras }: { largura: number; totais: Roadmap['totals']; palavras: VocabularioDoPlacar }) {
   const altura = largura * (128 / 512);
+  const deslocamento = OPACO.legenda.topo * altura;
+  const alturaVisivel = (OPACO.legenda.base - OPACO.legenda.topo) * altura;
   const valores = [totais.banca, totais.jogador, totais.empate, totais.total];
   const nomes = [palavras.banca, palavras.jogador, palavras.empate, 'Total'];
   return (
-    <View style={{ width: largura, height: altura }}>
-      <Image source={ROADMAP_IMAGES.legenda} style={{ width: largura, height: altura }} resizeMode="stretch" />
+    <View style={{ width: largura, height: alturaVisivel, overflow: 'visible' }}>
+      <Image
+        source={ROADMAP_IMAGES.legenda}
+        style={{ position: 'absolute', top: -deslocamento, width: largura, height: altura }}
+        resizeMode="stretch"
+      />
       {valores.map((valor, i) => (
         <Text
           key={i}
@@ -146,7 +176,7 @@ function Legenda({ largura, totais, palavras }: { largura: number; totais: Roadm
             styles.numeroDaLegenda,
             {
               left: CAIXAS_DA_LEGENDA[i] * largura - largura * 0.05,
-              top: LINHA_DA_LEGENDA * altura - altura * 0.1,
+              top: LINHA_DA_LEGENDA * altura - altura * 0.1 - deslocamento,
               width: largura * 0.1,
               fontSize: Math.max(10, altura * 0.2),
             },
@@ -201,21 +231,37 @@ export function RoadmapPanel({
       coluna.map((marca, f) => ({ coluna: c, fileira: f, marcador: marca === 'vermelho' ? vermelho : azul })),
     );
 
+  /*
+   * Tudo mede a mesma coluna de `largura`, e é ela que dá a estrutura: legenda, painéis
+   * e rótulos começam e terminam alinhados, e o vão entre as seções é sempre o mesmo.
+   * Antes cada peça escolhia o próprio tamanho e alinhamento — os rótulos encostados na
+   * esquerda da folha, os painéis centrados no meio dela, e os três pequenos como
+   * miniaturas soltas embaixo.
+   */
+  const VAO_PEQUENO = 6;
+  const larguraPequena = (largura - VAO_PEQUENO * 2) / 3;
+
   return (
-    <View style={styles.placar}>
+    <View style={[styles.placar, { width: largura }]}>
       <Legenda largura={largura} totais={roadmap.totals} palavras={palavras} />
 
-      <Text style={styles.titulo}>Rodada a rodada</Text>
-      <Painel largura={largura} grande pecas={contas} rotulo="Histórico rodada a rodada" />
+      <View style={styles.secao}>
+        <Text style={styles.titulo}>Rodada a rodada</Text>
+        <Painel largura={largura} grande pecas={contas} rotulo="Histórico rodada a rodada" />
+      </View>
 
-      <Text style={styles.titulo}>Estrada principal</Text>
-      <Painel largura={largura} grande pecas={estrada} rotulo="Estrada principal" />
+      <View style={styles.secao}>
+        <Text style={styles.titulo}>Estrada principal</Text>
+        <Painel largura={largura} grande pecas={estrada} rotulo="Estrada principal" />
+      </View>
 
-      <Text style={styles.titulo}>Tendência · vermelho repete, azul pica</Text>
-      <View style={styles.tresPequenos}>
-        <Painel largura={largura / 3 - 6} grande={false} pecas={derivada(roadmap.bigEyeBoy, 'quadradoVermelho', 'quadradoAzul')} rotulo="Olho grande" />
-        <Painel largura={largura / 3 - 6} grande={false} pecas={derivada(roadmap.smallRoad, 'riscoVermelho', 'riscoAzul')} rotulo="Estrada pequena" />
-        <Painel largura={largura / 3 - 6} grande={false} pecas={derivada(roadmap.cockroachPig, 'trianguloCima', 'trianguloBaixo')} rotulo="Barata" />
+      <View style={styles.secao}>
+        <Text style={styles.titulo}>Tendência · vermelho repete, azul pica</Text>
+        <View style={[styles.tresPequenos, { gap: VAO_PEQUENO }]}>
+          <Painel largura={larguraPequena} grande={false} pecas={derivada(roadmap.bigEyeBoy, 'quadradoVermelho', 'quadradoAzul')} rotulo="Olho grande" />
+          <Painel largura={larguraPequena} grande={false} pecas={derivada(roadmap.smallRoad, 'riscoVermelho', 'riscoAzul')} rotulo="Estrada pequena" />
+          <Painel largura={larguraPequena} grande={false} pecas={derivada(roadmap.cockroachPig, 'trianguloCima', 'trianguloBaixo')} rotulo="Barata" />
+        </View>
       </View>
 
       <Text style={styles.aviso}>
@@ -226,9 +272,11 @@ export function RoadmapPanel({
 }
 
 const styles = StyleSheet.create({
-  placar: { gap: 8, alignItems: 'center' },
-  titulo: { fontFamily: fontFamily.body, fontSize: 11, color: colors.textFaint, alignSelf: 'flex-start' },
-  tresPequenos: { flexDirection: 'row', gap: 6, alignSelf: 'stretch', justifyContent: 'center' },
+  /* A coluna é a estrutura: tudo dentro dela tem a mesma largura e o mesmo começo. */
+  placar: { gap: 14, alignSelf: 'center' },
+  secao: { gap: 5 },
+  titulo: { fontFamily: fontFamily.body, fontSize: 11, color: colors.textFaint },
+  tresPequenos: { flexDirection: 'row' },
   numeroDaLegenda: {
     position: 'absolute',
     textAlign: 'center',
