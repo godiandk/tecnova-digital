@@ -21,6 +21,8 @@ interface DadoProps {
   rolando: boolean;
   /** Posição na mesa — cada dado é lançado um pouco depois do anterior. */
   indice?: number;
+  /** Como o dado se apresenta em voz alta. Padrão: "Dado 1". */
+  nome?: string;
   tamanho?: number;
   /** O dado do Bac Bo tem arte própria; os outros usam o dado da marca. */
   bacBo?: boolean;
@@ -71,6 +73,7 @@ export function Dado({
   tamanho = 56,
   bacBo = false,
   noAgitador = false,
+  nome,
   lance = 0,
   duracaoDoVoo = VOO_EM_MS,
 }: DadoProps) {
@@ -195,8 +198,31 @@ export function Dado({
   // Rolando: o borrado no Bac Bo, a face da vez nos outros. Parado: a face sorteada.
   const imagem = rolando ? (bacBo ? BACBO_DIE_BLURRED : faces[quadro]) : faces[face ?? 1];
 
+  /*
+   * O DADO FALA QUANTO SAIU.
+   *
+   * Sem isto, quem usa leitor de tela não tinha como saber o resultado da rodada — a
+   * informação central do jogo estava só no desenho. E a face 1 precisa do rótulo mais
+   * do que as outras: na nossa arte ela é o brasão da casa num losango, do jeito que
+   * uma mesa de verdade marca o ás, e brasão não se conta como ponto. Quem vê aprende
+   * na primeira rodada; quem ouve nunca ia aprender.
+   */
+  const comoSeChama = nome ?? `Dado ${indice + 1}`;
+  const emVozAlta = rolando
+    ? `${comoSeChama} rolando`
+    : face === null
+      ? comoSeChama
+      : face === 1
+        ? `${comoSeChama} mostrando 1, o brasão da casa`
+        : `${comoSeChama} mostrando ${face}`;
+
   return (
-    <View style={{ width: tamanho, height: tamanho }}>
+    <View
+      style={{ width: tamanho, height: tamanho }}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={emVozAlta}
+    >
       <Animated.View
         pointerEvents="none"
         style={[styles.sombra, { width: tamanho, height: tamanho, borderRadius: tamanho / 2 }, sombra]}

@@ -37,7 +37,16 @@ export interface RollOutcome {
   nulos: number[][];
 }
 
-function rollOnce(random: () => number): number[] {
+/**
+ * Um lançamento cru dos três dados, sem julgar se decide.
+ *
+ * Exportado porque testar a lealdade do dado exige a saída CRUA: medir as faces que
+ * saem de rollUntilDecisive dá um resultado enviesado e assustador (1 e 6 aparecendo
+ * 17,2% contra 16,3% das outras, qui-quadrado 244), mas o viés é da seleção, não do
+ * dado — as somas que decidem são as extremas, então o lançamento que encerra a
+ * rodada tende a ter face extrema. O dado está certo; quem estava errado era a medida.
+ */
+export function rollOnce(random: () => number = fracao): number[] {
   return Array.from({ length: DICE_COUNT }, () => Math.floor(random() * FACES) + 1);
 }
 

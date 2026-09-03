@@ -394,7 +394,15 @@ function DadoNoAgitador({
         top: palco.topo + ponto.y * palco.altura - tamanho / 2,
       }}
     >
-      <Dado face={face} rolando={rolando} indice={indice} tamanho={tamanho} bacBo noAgitador />
+      <Dado
+        face={face}
+        rolando={rolando}
+        indice={indice}
+        tamanho={tamanho}
+        nome={indice < 2 ? `Dado ${indice + 1} do jogador` : `Dado ${indice - 1} da banca`}
+        bacBo
+        noAgitador
+      />
     </View>
   );
 }
