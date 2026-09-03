@@ -1,16 +1,27 @@
 import { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AreaDaMesa } from '../data/mapaDosTampos';
+import { AreaDaMesa, LARGURA_UTIL, assentoDaPilha } from '../data/mapaDosTampos';
 import { usePalco } from './TampoDaMesa';
-import { colors, fontFamily, fontSize } from '../theme';
+import { colors } from '../theme';
+
+/** Uma pilha de alguém dentro da casa. Numa mesa cheia há uma por jogador. */
+export interface PilhaNaCasa {
+  /** Quem é o dono — usado só como chave; a cor vai no que `desenhar` devolve. */
+  chave: string;
+  desenhar: () => ReactNode;
+}
 
 interface CasaDeApostaProps {
   area: AreaDaMesa;
-  /** Quanto já está apostado aqui. Zero = a casa está vazia. */
+  /** Chave da casa no mapa, pra saber a largura útil dela. */
+  nome: string;
+  /** Quanto VOCÊ já apostou aqui. Zero = você não pôs nada nesta casa. */
   valor: number;
-  /** Esta é a casa escolhida agora — fica marcada mesmo com valor zero. */
-  escolhida?: boolean;
+  /** O que anunciar sobre as suas fichas daqui, pra quem usa leitor de tela. */
+  descricao?: string;
+  /** As pilhas de todo mundo, uma por jogador, na ordem em que sentaram. */
+  pilhas?: PilhaNaCasa[];
   /** A rodada fechou: dá pra ver, não dá pra apostar. */
   travada?: boolean;
   /** Esta casa ganhou a rodada. */
@@ -22,16 +33,33 @@ interface CasaDeApostaProps {
 /**
  * Uma área de aposta DO PANO — a área que já está desenhada na arte, agora tocável.
  *
- * Este componente é o que tira a mesa do papel de fundo de tela. O nome e o pagamento
- * já estão impressos no feltro, então aqui não se repete nada disso: o que entra é só o
- * que MUDA — a borda acesa quando você escolhe, a ficha que você pôs, e o brilho de
- * quem ganhou.
+ * Este componente é o que tira a mesa do papel de fundo de tela. E ele é INVISÍVEL: não
+ * desenha borda, não pinta fundo, não escreve nada. Só existe pra receber o toque e pra
+ * saber onde a ficha assenta.
  *
- * A área não é pintada por cima. Ela fica transparente por padrão, porque a arte já
- * desenhou a casa; um retângulo colorido em cima só sujaria o feltro. O toque é o que
- * ela adiciona.
+ * POR QUE INVISÍVEL. Um retângulo aceso em cima do feltro denuncia o programa por trás
+ * do jogo: a pessoa para de ver uma mesa e passa a ver uma área clicável de aplicativo.
+ * A arte já imprimiu JOGADOR, EMPATE e BANCA no pano — é ela que diz onde tocar, como
+ * numa mesa de verdade, onde também não existe contorno luminoso em volta da sua
+ * aposta. E o retorno de que a aposta entrou não precisa de moldura nenhuma: as fichas
+ * aparecem no lugar. A ficha é a confirmação.
+ *
+ * O que continua existindo, porque é informação e não enfeite: o nome da casa e o valor
+ * apostado, ditos em voz alta pra quem usa leitor de tela (`rotulo` e `descricao`), e a
+ * luz de quem ganhou — que é luz no pano, sem contorno, do jeito que um holofote cai
+ * numa mesa e não do jeito que um aplicativo desenha uma caixa.
  */
-export function CasaDeAposta({ area, valor, escolhida, travada, vencedora, onPress, children }: CasaDeApostaProps) {
+export function CasaDeAposta({
+  area,
+  nome,
+  valor,
+  descricao,
+  pilhas,
+  travada,
+  vencedora,
+  onPress,
+  children,
+}: CasaDeApostaProps) {
   const palco = usePalco();
   if (!palco) return null;
 
@@ -44,48 +72,91 @@ export function CasaDeAposta({ area, valor, escolhida, travada, vencedora, onPre
     height: (base - topo) * palco.altura,
   };
 
+  /*
+   * Onde a pilha assenta. Com `alvo`, é o ponto medido no pano — a base da ficha de
+   * baixo encosta ali e a pilha cresce pra cima, como pilha de verdade. A faixa tem a
+   * largura da casa inteira em vez de largura zero, pro conteúdo centralizar dentro
+   * dela sem transbordar pelos lados, que na web viraria corte.
+   */
+  const larguraUtil = LARGURA_UTIL[nome] ?? 0;
+  const assentar = (indice: number, quantas: number) => {
+    const ponto = assentoDaPilha(area, larguraUtil, indice, quantas);
+    return {
+      position: 'absolute' as const,
+      left: 0,
+      width: caixa.width,
+      bottom: (base - ponto.y) * palco.altura,
+      alignItems: 'center' as const,
+      transform: [{ translateX: (ponto.x - esquerda) * palco.largura - caixa.width / 2 }],
+    };
+  };
+  const assento = area.alvo ? assentar(0, 1) : null;
+
   return (
     <Pressable
       onPress={travada ? undefined : onPress}
       disabled={travada}
       accessibilityRole="button"
       accessibilityLabel={area.rotulo}
-      accessibilityState={{ selected: Boolean(escolhida), disabled: Boolean(travada) }}
-      accessibilityHint={valor > 0 ? `${valor} fichas apostadas aqui` : undefined}
-      style={[caixa, styles.casa, escolhida && styles.escolhida, vencedora && styles.vencedora]}
+      accessibilityState={{ selected: valor > 0, disabled: Boolean(travada) }}
+      accessibilityHint={valor > 0 ? `${valor.toLocaleString('pt-BR')} apostados aqui: ${descricao ?? ''}`.trim() : undefined}
+      style={[caixa, styles.casa]}
     >
-      {children}
-      {valor > 0 && (
-        <View style={styles.selo}>
-          <Text style={styles.seloValor}>{valor.toLocaleString('pt-BR')}</Text>
-        </View>
-      )}
+      {vencedora && <LuzDeVitoria alvo={assento} />}
+      {pilhas
+        ? pilhas.map((pilha, i) => (
+            <View key={pilha.chave} style={assentar(i, pilhas.length)} pointerEvents="none">
+              {pilha.desenhar()}
+            </View>
+          ))
+        : null}
+      <View style={assento ?? styles.rodape} pointerEvents="none">
+        {children}
+      </View>
     </Pressable>
+  );
+}
+
+/**
+ * A luz que marca a casa que ganhou.
+ *
+ * São três elipses concêntricas, cada uma mais fraca e mais larga que a de dentro. Sem
+ * biblioteca de SVG não dá pra fazer um degradê radial de verdade, e três anéis com
+ * opacidade caindo chegam perto o bastante: a borda some antes de virar linha, então
+ * lê como luz caindo no feltro e não como contorno de caixa.
+ */
+function LuzDeVitoria({ alvo }: { alvo: { bottom: number } | null }) {
+  const base = alvo?.bottom ?? 0;
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, styles.centroDaLuz, { paddingBottom: base }]}>
+      {[
+        { tamanho: 230, opacidade: 0.05 },
+        { tamanho: 160, opacidade: 0.07 },
+        { tamanho: 100, opacidade: 0.09 },
+      ].map((anel) => (
+        <View
+          key={anel.tamanho}
+          style={{
+            position: 'absolute',
+            width: anel.tamanho,
+            height: anel.tamanho * 0.62,
+            borderRadius: anel.tamanho,
+            backgroundColor: colors.success,
+            opacity: anel.opacidade,
+          }}
+        />
+      ))}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   /*
-   * Sem cor de fundo: a arte já pintou a casa. O que este componente acrescenta é o
-   * toque e o estado — pintar por cima cobriria o feltro que o jogo comprou.
+   * Nada de cor, nada de borda. A arte já pintou a casa; o que este componente
+   * acrescenta é o toque, e toque não tem aparência.
    */
-  casa: {
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingBottom: 10,
-  },
-  escolhida: { borderColor: colors.goldBright, backgroundColor: 'rgba(255,217,138,0.12)' },
-  vencedora: { borderColor: colors.success, backgroundColor: 'rgba(63,191,127,0.18)' },
-  selo: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 999,
-    backgroundColor: 'rgba(11,15,13,0.85)',
-    borderWidth: 1,
-    borderColor: colors.gold,
-  },
-  seloValor: { fontFamily: fontFamily.displayBold, fontSize: fontSize.base, color: colors.goldBright },
+  casa: { alignItems: 'center', justifyContent: 'flex-end' },
+  /* Sem `alvo` no mapa: a pilha vai pro rodapé da casa. */
+  rodape: { alignItems: 'center', paddingBottom: 10 },
+  centroDaLuz: { alignItems: 'center', justifyContent: 'flex-end' },
 });

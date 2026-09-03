@@ -24,6 +24,12 @@ interface DadoProps {
   tamanho?: number;
   /** O dado do Bac Bo tem arte própria; os outros usam o dado da marca. */
   bacBo?: boolean;
+  /**
+   * O dado está preso num agitador de vidro e nunca é lançado no pano — ele chacoalha
+   * no lugar e assenta ali mesmo. Sem isto, o dado entra voando de fora do quadro, que
+   * é o certo pra quem joga dado na mesa e o errado pra quem tem o dado num copo.
+   */
+  noAgitador?: boolean;
 }
 
 /** Quanto tempo cada face fica na tela durante o chacoalho. */
@@ -50,9 +56,16 @@ const VOO_EM_MS = 1150;
  * Como no rolo e na roleta, a animação não decide nada: a face já veio do servidor
  * antes de o dado começar a desacelerar. O caminho é desenho; o resultado é sorteio.
  */
-export function Dado({ face, rolando, indice = 0, tamanho = 56, bacBo = false }: DadoProps) {
+export function Dado({ face, rolando, indice = 0, tamanho = 56, bacBo = false, noAgitador = false }: DadoProps) {
   const faces = bacBo ? BACBO_DIE_IMAGES : DIE_FACE_IMAGES;
-  const voo = useSharedValue(face === null ? 0 : 1);
+  /*
+   * Começa POUSADO, sempre. `voo = 0` é o ponto de LANÇAMENTO — fora do quadro, alto e
+   * de lado. Um dado que nasce em 0 e nunca é lançado fica boiando no ar acima do lugar
+   * dele, que foi exatamente o que aconteceu nos agitadores do Bac Bo antes da primeira
+   * rodada. Quem monta já com uma face (uma reconexão, por exemplo) também tem que
+   * aparecer pousado.
+   */
+  const voo = useSharedValue(1);
   const chacoalho = useSharedValue(0);
   const [quadro, setQuadro] = useState(1);
 
@@ -84,7 +97,8 @@ export function Dado({ face, rolando, indice = 0, tamanho = 56, bacBo = false }:
 
   useEffect(() => {
     if (rolando) {
-      voo.value = 0;
+      // No agitador o dado não sai do lugar: só o chacoalho se mexe.
+      voo.value = noAgitador ? 1 : 0;
       chacoalho.value = withRepeat(
         withSequence(
           withTiming(1, { duration: 110, easing: Easing.out(Easing.quad) }),
@@ -99,13 +113,28 @@ export function Dado({ face, rolando, indice = 0, tamanho = 56, bacBo = false }:
     if (face === null) return;
 
     cancelAnimation(chacoalho);
+
+    if (noAgitador) {
+      /*
+       * Os agitadores param um depois do outro, da esquerda pra direita — é o mesmo
+       * atraso do lançamento, só que aqui ele vira o "toc, toc, toc" de cada copo
+       * assentando. O dado já está no lugar; o que termina é o chacoalho.
+       */
+      voo.value = 1;
+      chacoalho.value = withDelay(
+        indice * ATRASO_POR_DADO,
+        withTiming(0, { duration: 220, easing: Easing.out(Easing.quad) }),
+      );
+      return;
+    }
+
     chacoalho.value = 0;
     voo.value = 0;
     voo.value = withDelay(
       indice * ATRASO_POR_DADO,
       withTiming(1, { duration: VOO_EM_MS, easing: Easing.linear }),
     );
-  }, [rolando, face, indice, voo, chacoalho]);
+  }, [rolando, face, indice, noAgitador, voo, chacoalho]);
 
   const dado = useAnimatedStyle(() => {
     const t = voo.value;
