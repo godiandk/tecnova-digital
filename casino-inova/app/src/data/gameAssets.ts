@@ -191,6 +191,33 @@ export const ROADMAP_IMAGES = {
   legenda: require('../../assets/images/placar/placar-legenda.png'),
 };
 
+/**
+ * As contas do placar — os marcadores de vidro que vão nas casas da grade.
+ *
+ * Isto é arte, não desenho de código. Uma versão anterior deste app fazia os
+ * marcadores com View e borda arredondada e deixava estes dezesseis arquivos parados
+ * na pasta, com um comentário explicando que era melhor assim. Não era: um círculo
+ * chapado de CSS ao lado de uma moldura dourada com brasão não parece a mesma mesa.
+ */
+export const MARCADORES_DO_PLACAR = {
+  banca: require('../../assets/images/placar/marcadores/banca.png'),
+  jogador: require('../../assets/images/placar/marcadores/jogador.png'),
+  empate: require('../../assets/images/placar/marcadores/empate.png'),
+  bancaPar: require('../../assets/images/placar/marcadores/banca-par.png'),
+  jogadorPar: require('../../assets/images/placar/marcadores/jogador-par.png'),
+  bancaVazado: require('../../assets/images/placar/marcadores/banca-vazado.png'),
+  jogadorVazado: require('../../assets/images/placar/marcadores/jogador-vazado.png'),
+  quadradoVermelho: require('../../assets/images/placar/marcadores/quadrado-vermelho.png'),
+  quadradoAzul: require('../../assets/images/placar/marcadores/quadrado-azul.png'),
+  riscoVermelho: require('../../assets/images/placar/marcadores/risco-vermelho.png'),
+  riscoAzul: require('../../assets/images/placar/marcadores/risco-azul.png'),
+  riscoVerde: require('../../assets/images/placar/marcadores/risco-verde.png'),
+  trianguloCima: require('../../assets/images/placar/marcadores/triangulo-cima.png'),
+  trianguloBaixo: require('../../assets/images/placar/marcadores/triangulo-baixo.png'),
+  anelAtual: require('../../assets/images/placar/marcadores/anel-atual.png'),
+  atualDourado: require('../../assets/images/placar/marcadores/atual-dourado.png'),
+} as const;
+
 /** Visual do Stock Market. */
 export const STOCK_IMAGES = {
   painelGrafico: require('../../assets/images/stock/stock-painel-grafico.png'),

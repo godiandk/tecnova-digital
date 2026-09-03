@@ -24,7 +24,6 @@ import { PilhaDeFichas } from '../../components/Ficha';
 import { DENOMINACOES, corDoJogador, pilhaEmPalavras } from '../../data/fichasDeValor';
 import { Dado } from '../../components/Dado';
 import { ChipStack } from '../../components/ChipStack';
-import { FaixaDeHistorico } from '../../components/FaixaDeHistorico';
 import { RoadmapPanel, VocabularioDoPlacar } from '../../components/RoadmapPanel';
 import { ApiError, novaAcao } from '../../api/client';
 import { Roadmap } from '../../api/roadmap';
@@ -257,8 +256,11 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
       />
       {/* --- Os controles, fora do pano --- */}
       <SafeAreaView style={styles.frente} edges={['top', 'bottom']} pointerEvents="box-none">
-        <View pointerEvents="box-none" onLayout={(e) => setAlturaDaBarra(e.nativeEvent.layout.height)}>
-        <View style={styles.barraDeCima} pointerEvents="box-none">
+        <View
+          style={styles.barraDeCima}
+          pointerEvents="box-none"
+          onLayout={(e) => setAlturaDaBarra(e.nativeEvent.layout.height)}
+        >
           <Pressable
             onPress={navigation.goBack}
             accessibilityRole="button"
@@ -269,17 +271,21 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </Pressable>
           <ChipStack amount={saldo} />
-          <View style={styles.botaoRedondo} />
-        </View>
-
-        {/* O histórico fica ligado, como o monitor ao lado de uma mesa de verdade. */}
-        <View style={styles.faixaDoPlacar} pointerEvents="box-none">
-          <FaixaDeHistorico
-            roadmap={placar}
-            vocabulario={VOCABULARIO_DO_BAC_BO}
+          {/*
+            O placar mora atrás deste botão, não em cima da mesa.
+            Numa casa de verdade o histórico fica num monitor AO LADO da mesa — não
+            flutuando sobre o feltro. Aqui a tela é a mesa inteira, então o lugar
+            equivalente é um botão na borda: quem quer ver, abre.
+          */}
+          <Pressable
             onPress={() => setPlacarAberto(true)}
-          />
-        </View>
+            accessibilityRole="button"
+            accessibilityLabel="Histórico da mesa"
+            style={styles.botaoRedondo}
+            hitSlop={12}
+          >
+            <Ionicons name="stats-chart" size={20} color={colors.textPrimary} />
+          </Pressable>
         </View>
 
         <Apron aoMedir={setAlturaDoAvental}>
@@ -353,7 +359,14 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
               </Pressable>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
-              {placar && <RoadmapPanel roadmap={placar} vocabulario={VOCABULARIO_DO_BAC_BO} />}
+              {placar && (
+                <RoadmapPanel
+                  roadmap={placar}
+                  vocabulario={VOCABULARIO_DO_BAC_BO}
+                  /* O placar ocupa a folha, com uma margem — painel de mesa é largo. */
+                  largura={Math.min(janela.width - spacing.lg * 2, 760)}
+                />
+              )}
             </ScrollView>
           </SafeAreaView>
         </View>
@@ -555,7 +568,6 @@ function BotaoDeMesa({
 const styles = StyleSheet.create({
   /* `box-none` deixa o toque atravessar pro pano onde não há controle. */
   frente: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between' },
-  faixaDoPlacar: { alignItems: 'center', paddingTop: spacing.xs },
   fundoDoPlacar: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(4,6,5,0.72)' },
   folhaDoPlacar: {
     maxHeight: '82%',
