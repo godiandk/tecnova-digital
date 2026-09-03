@@ -4,10 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { chipPackages } from '../data/chipPackages';
 import { colors, fontFamily, fontSize, spacing } from '../theme';
 import { CasinoCard } from '../components/CasinoCard';
+import { Fundo } from '../components/Fundo';
+import { FUNDOS } from '../data/artePorTela';
 import { GoldButton } from '../components/GoldButton';
 
 export function StoreScreen() {
   return (
+    /* O cofre de ouro é o fundo da loja desde que a arte foi feita; só faltava alguém
+       desenhar. O escurecido por cima é o que mantém o texto legível sobre a foto. */
+    <Fundo source={FUNDOS.loja} style={styles.fundo}>
     <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.title}>Loja de fichas</Text>
       <Text style={styles.subtitle}>Fichas são só pra jogar dentro do Casino Inova — não têm valor de saque.</Text>
@@ -27,11 +32,13 @@ export function StoreScreen() {
         )}
       />
     </SafeAreaView>
+    </Fundo>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.xl },
+  fundo: { flex: 1 },
+  container: { flex: 1, backgroundColor: 'rgba(6,9,8,0.62)', paddingHorizontal: spacing.xl },
   title: { fontFamily: fontFamily.displayBold, fontSize: fontSize.xl, color: colors.textPrimary, marginTop: spacing.lg },
   subtitle: { fontFamily: fontFamily.body, fontSize: fontSize.sm, color: colors.textFaint, marginTop: spacing.xs, marginBottom: spacing.lg },
   list: { gap: spacing.md, paddingBottom: spacing.xxxl },

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, Pressable,
+  View, Text, Image, StyleSheet, TextInput, Pressable,
   KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { googleEstaConfigurado } from '../firebase/config';
 import { useLoginGoogle } from '../firebase/loginSocial';
 import { ApiError } from '../api/client';
 import { GoldButton } from '../components/GoldButton';
+import { FUNDOS, MARCA } from '../data/artePorTela';
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
 import { Fundo } from '../components/Fundo';
 
@@ -76,11 +77,10 @@ export function LoginScreen({ aoEntrar }: { aoEntrar: () => void }) {
     email.trim().length > 0 && senha.length > 0 && (modo === 'entrar' || nome.trim().length > 0);
 
   return (
-    <Fundo
-      source={require('../../assets/images/backgrounds/lobby-fundo.jpg')}
-      style={styles.fundo}
-      resizeMode="cover"
-    >
+    /* A entrada do cassino — tapete vermelho e lustres — é o fundo desta tela desde
+       que a arte foi feita. Estava usando a foto do salão, que é a do lobby: duas telas
+       diferentes com a mesma imagem, e uma foto parada na pasta. */
+    <Fundo source={FUNDOS.entrada} style={styles.fundo} resizeMode="cover">
       <LinearGradient
         colors={['rgba(11,15,13,0.75)', colors.background]}
         locations={[0, 0.8]}
@@ -92,7 +92,15 @@ export function LoginScreen({ aoEntrar }: { aoEntrar: () => void }) {
           style={styles.flex}
         >
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-            <Text style={styles.marca}>Casino Inova</Text>
+            {/* A marca é a logo desenhada, não o nome escrito com a fonte do sistema. */}
+            <Image
+              source={MARCA.logo}
+              style={styles.logo}
+              resizeMode="contain"
+              accessible
+              accessibilityRole="image"
+              accessibilityLabel="Casino Inova"
+            />
             <Text style={styles.subtitulo}>
               {modo === 'entrar' ? 'Entre pra continuar de onde parou.' : 'Crie sua conta e comece a jogar.'}
             </Text>
@@ -188,6 +196,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   flex: { flex: 1 },
   scroll: { padding: spacing.xl, gap: spacing.md, justifyContent: 'center', flexGrow: 1 },
+  logo: { width: 200, height: 200, alignSelf: 'center', marginBottom: -18 },
   marca: { fontFamily: fontFamily.displayBold, fontSize: fontSize.xxl, color: colors.goldBright, textAlign: 'center' },
   subtitulo: {
     fontFamily: fontFamily.body,

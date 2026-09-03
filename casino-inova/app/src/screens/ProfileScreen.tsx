@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ActivityIndicator, Dimensions, Pressable } from 'react-native';
+import { View, Text, Image, StyleSheet, TextInput, ActivityIndicator, Dimensions, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { usePlayer } from '../data/usePlayer';
@@ -7,6 +7,7 @@ import { fetchFriends } from '../api/friends';
 import { sair } from '../api/auth';
 import { ApiError } from '../api/client';
 import { redeemCoupon } from '../api/coupons';
+import { MOLDURAS_DE_AVATAR, SELO_VIP, avatarPadraoDe } from '../data/artePorTela';
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
 import { CasinoCard } from '../components/CasinoCard';
 import { LevelBar } from '../components/LevelBar';
@@ -60,7 +61,7 @@ export function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.headerBlock}>
-        <View style={styles.avatar} />
+        <Retrato id={jogador?.id} nivel={jogador?.vipTier ?? 'bronze'} />
         <Text style={styles.name}>{jogador?.name ?? ''}</Text>
         <View style={styles.vipPill}>
           <Text style={styles.vipLabel}>Clube {VIP_LABEL[jogador?.vipTier ?? 'bronze']}</Text>
@@ -125,17 +126,46 @@ export function ProfileScreen() {
   );
 }
 
+/**
+ * O retrato da pessoa, dentro da moldura do clube dela.
+ *
+ * Antes daqui existia uma caixa cinza vazia com uma borda dourada — e, parada na pasta,
+ * uma folha com seis retratos e outra com quatro molduras, uma por nível do clube. A
+ * moldura não é enfeite: ela é o nível. Quem sobe de bronze pra prata VÊ a diferença no
+ * próprio rosto, que é pra isso que quatro anéis diferentes foram desenhados.
+ */
+function Retrato({ id, nivel }: { id?: string; nivel: 'bronze' | 'prata' | 'ouro' | 'diamante' }) {
+  return (
+    <View
+      style={styles.retrato}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={`Foto do perfil, com a moldura do clube ${VIP_LABEL[nivel]}`}
+    >
+      <Image source={avatarPadraoDe(id)} style={styles.rosto} resizeMode="cover" />
+      <Image source={MOLDURAS_DE_AVATAR[nivel]} style={styles.moldura} resizeMode="contain" />
+      <Image source={SELO_VIP} style={styles.selo} resizeMode="contain" />
+    </View>
+  );
+}
+
+/** O rosto ocupa 74% do anel: é o vão que a moldura desenhada deixa livre no meio. */
+const LADO_DO_RETRATO = 112;
+const VAO_DA_MOLDURA = 0.74;
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.xl },
   headerBlock: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
-  avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 3,
-    borderColor: colors.gold,
+  retrato: { width: LADO_DO_RETRATO, height: LADO_DO_RETRATO, alignItems: 'center', justifyContent: 'center' },
+  rosto: {
+    width: LADO_DO_RETRATO * VAO_DA_MOLDURA,
+    height: LADO_DO_RETRATO * VAO_DA_MOLDURA,
+    borderRadius: (LADO_DO_RETRATO * VAO_DA_MOLDURA) / 2,
   },
+  moldura: { position: 'absolute', width: LADO_DO_RETRATO, height: LADO_DO_RETRATO },
+  /* O selo POUSA na moldura, encostado nela — broche preso no anel, não medalha
+     pendurada ao lado. Por isso ele entra um pouco pra dentro do círculo. */
+  selo: { position: 'absolute', right: 2, bottom: 8, width: 30, height: 30 },
   name: { fontFamily: fontFamily.displayBold, fontSize: fontSize.xl, color: colors.textPrimary },
   vipPill: { backgroundColor: colors.backgroundElevated, borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: spacing.md },
   vipLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.xs, color: colors.goldBright },

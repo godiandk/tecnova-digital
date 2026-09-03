@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, RefreshControl, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+import { Fundo } from '../components/Fundo';
+import { FUNDOS, TROFEUS } from '../data/artePorTela';
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
 import { CasinoCard } from '../components/CasinoCard';
 import { usuarioLogadoId } from '../api/session';
@@ -82,8 +84,13 @@ export function TournamentsScreen() {
   }
 
   return (
+    /* O pódio sob os holofotes é o fundo dos torneios desde que a arte foi feita. */
+    <Fundo source={FUNDOS.torneios} style={styles.fundo}>
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Text style={styles.title}>Torneios &amp; ranking</Text>
+      <View style={styles.tituloComTrofeus}>
+        <Image source={TROFEUS.ranking} style={styles.trofeus} resizeMode="contain" />
+        <Text style={styles.title}>Torneios &amp; ranking</Text>
+      </View>
 
       <View style={styles.tabs}>
         {tournaments.map((item) => (
@@ -207,11 +214,16 @@ export function TournamentsScreen() {
         )}
       </ScrollView>
     </SafeAreaView>
+    </Fundo>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.xl },
+  fundo: { flex: 1 },
+  container: { flex: 1, backgroundColor: 'rgba(6,9,8,0.6)', paddingHorizontal: spacing.xl },
+  tituloComTrofeus: { alignItems: 'center', gap: spacing.xs },
+  /* Os três troféus ficam acima do título, como o pódio de uma premiação. */
+  trofeus: { width: 210, height: 118 },
   center: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
   title: {
     fontFamily: fontFamily.displayBold,
