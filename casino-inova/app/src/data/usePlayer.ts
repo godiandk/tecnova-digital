@@ -6,6 +6,12 @@ import { usuarioLogado, definirUsuario, aoMudarSessao } from '../api/session';
 
 export interface Jogador {
   id: string;
+  /** Oito dígitos, o número que a pessoa vê e diz pro suporte. */
+  publicCode: string;
+  /** Qual retrato ela escolheu, ou null enquanto não escolheu nenhum. */
+  avatar: string | null;
+  /** É o que faz a entrada do painel aparecer — ou não — no perfil. */
+  role: 'jogador' | 'moderador' | 'admin';
   name: string;
   level: number;
   xp: number;
@@ -16,6 +22,9 @@ export interface Jogador {
 
 interface UsuarioDto {
   id: string;
+  publicCode?: string;
+  avatar?: string | null;
+  role?: Jogador['role'];
   name: string;
   level: number;
   xp: number;
@@ -80,6 +89,9 @@ async function buscarJogador(): Promise<void> {
       definirUsuario({ id: usuario.id, name: usuario.name });
       jogadorAtual = {
         id: usuario.id,
+        publicCode: usuario.publicCode ?? '',
+        avatar: usuario.avatar ?? null,
+        role: usuario.role ?? 'jogador',
         name: usuario.name,
         level: usuario.level,
         xp: usuario.xp,
@@ -110,6 +122,13 @@ async function buscarJogador(): Promise<void> {
  *
  * O dado certo já estava chegando. O que faltava era um caminho pra ele entrar.
  */
+/** O perfil mudou (apelido, retrato): grava sem esperar uma nova ida ao servidor. */
+export function perfilMudou(dados: Partial<Jogador>) {
+  if (!jogadorAtual) return;
+  jogadorAtual = { ...jogadorAtual, ...dados };
+  avisarInscritos();
+}
+
 export function saldoChegouDeFora(saldo: number) {
   if (!jogadorAtual || jogadorAtual.chipBalance === saldo) return;
   jogadorAtual = { ...jogadorAtual, chipBalance: saldo };
@@ -169,7 +188,18 @@ export function usePlayer() {
     jogador:
       jogadorAtual ??
       (provisorio
-        ? { id: provisorio.id, name: provisorio.name, level: 1, xp: 0, xpToNextLevel: xpDoNivelProvisorio(1), chipBalance: 0, vipTier: 'bronze' as const }
+        ? {
+            id: provisorio.id,
+            publicCode: '',
+            avatar: null,
+            role: 'jogador' as const,
+            name: provisorio.name,
+            level: 1,
+            xp: 0,
+            xpToNextLevel: xpDoNivelProvisorio(1),
+            chipBalance: 0,
+            vipTier: 'bronze' as const,
+          }
         : null),
     carregando: carregandoAgora,
     recarregar,

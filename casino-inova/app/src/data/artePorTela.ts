@@ -47,6 +47,21 @@ export const AVATARES_PADRAO = [
   require('../../assets/images/perfil/avatares/6.jpg'),
 ];
 
+/**
+ * O retrato que a pessoa ESCOLHEU, pelo nome que o servidor guarda.
+ *
+ * Os nomes são `avatar-1` a `avatar-6` e a ordem bate com a lista acima. Se um dia
+ * chegar um nome que esta versão do aplicativo não conhece — conta criada numa versão
+ * mais nova, aplicativo antigo na mão — cai no retrato de sempre em vez de deixar o
+ * perfil sem rosto.
+ */
+export function avatarEscolhido(nome: string | null | undefined, id?: string) {
+  if (!nome) return avatarPadraoDe(id);
+  const posicao = Number(String(nome).replace('avatar-', ''));
+  const indice = Number.isInteger(posicao) ? posicao - 1 : -1;
+  return AVATARES_PADRAO[indice] ?? avatarPadraoDe(id);
+}
+
 export const SELO_VIP = require('../../assets/images/perfil/selo-vip.png');
 
 /** Pódio e troféus do ranking. */

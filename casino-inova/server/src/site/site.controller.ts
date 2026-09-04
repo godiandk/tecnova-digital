@@ -26,6 +26,22 @@ export class SiteController {
   @Publico()
   @Get('*')
   entregarOSite(@Res() res: Response) {
+    /*
+     * O index.html NÃO PODE FICAR EM CACHE. Ele é o único arquivo do site com nome
+     * fixo; todo o resto tem o resumo do conteúdo no nome (AppEntry-a1072ff.js), então
+     * uma versão nova tem nome novo e nunca é confundida com a velha.
+     *
+     * É por isso que o cache do index é o que trava uma atualização: o navegador guarda
+     * o HTML de ontem, o HTML de ontem aponta pro pacote de ontem, e o pacote novo — que
+     * já está no servidor — nunca chega a ser pedido. A pessoa recarrega, recarrega, e
+     * continua vendo a versão antiga sem entender por quê.
+     *
+     * `no-store` resolve na raiz: o HTML é sempre buscado, sempre pequeno (1 kB), e o
+     * pacote pesado continua sendo cacheado pelo nome. Recarregar passa a mostrar a
+     * versão nova na hora.
+     */
+    res.setHeader('Cache-Control', 'no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
     res.sendFile(join(PASTA_DO_SITE, 'index.html'));
   }
 }

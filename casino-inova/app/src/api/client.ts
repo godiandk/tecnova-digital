@@ -74,7 +74,7 @@ export function novaAcao(): string {
 
 export async function apiRequest<T>(
   path: string,
-  options?: { method?: 'GET' | 'POST'; body?: unknown; actionId?: string },
+  options?: { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown; actionId?: string },
 ): Promise<T> {
   const token = tokenAtual();
   const response = await fetch(`${API_BASE_URL}${path}`, {

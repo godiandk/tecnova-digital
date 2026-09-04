@@ -5,6 +5,7 @@ import type { Role } from '../roles/roles.constants';
 import { DatabaseService } from '../../database/database.service';
 import { Progresso, somarXp, xpDoNivel } from '../progressao/niveis';
 import { gerarCodigoPublico, somenteDigitos } from './codigo-publico';
+import { emailsDeAdmin } from '../roles/donos';
 
 const scryptAsync = promisify(scrypt);
 
@@ -74,6 +75,32 @@ const SEMENTE: Array<Omit<User, 'xpToNextLevel' | 'publicCode' | 'avatar'> & { f
 @Injectable()
 export class UsersService {
   constructor(private readonly db: DatabaseService) {}
+
+  /**
+   * Promove os donos na subida do servidor.
+   *
+   * A promoção também acontece no login, mas isso não bastava pra quem JÁ ESTÁ LOGADO:
+   * a sessão guardada é restaurada sem passar pelo login, então a conta ficaria como
+   * jogador comum até a pessoa sair e entrar de novo — que é exatamente o que
+   * aconteceu. Aqui, uma conta que já existe vira admin assim que a versão nova sobe.
+   *
+   * Roda em toda subida e não faz nada quando não há o que mudar: é um UPDATE que só
+   * alcança quem está na lista e ainda não é admin.
+   */
+  async promoverDonos(): Promise<number> {
+    const emails = emailsDeAdmin();
+    if (emails.length === 0) return 0;
+
+    const linhas = await this.db.query<{ id: string }>(
+      `UPDATE users
+          SET role = 'admin'
+        WHERE role <> 'admin'
+          AND id IN (SELECT user_id FROM credentials WHERE lower(subject) = ANY($1::text[]))
+        RETURNING id`,
+      [emails],
+    );
+    return linhas.length;
+  }
 
   /** Chamado uma vez na subida do servidor, depois do esquema estar aplicado. */
   async seedIfEmpty() {

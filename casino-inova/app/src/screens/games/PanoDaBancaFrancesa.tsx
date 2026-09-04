@@ -20,6 +20,7 @@ import { PlayerColor } from '../../data/chipImages';
 import { BancaFrancesaBet, BancaFrancesaBetType, BancaFrancesaConfig } from '../../api/bancaFrancesa';
 import { TableView } from '../../api/bancaFrancesaMesa';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
+import { estouOcupado } from '../../api/versao';
 
 /*
  * A ordem importa duas vezes.
@@ -154,6 +155,20 @@ export function PanoDaBancaFrancesa({
   }, [marcaDaRodada]);
 
   const travado = ocupado || girando;
+
+  /*
+   * Enquanto os dados estão no ar, o app não se atualiza sozinho.
+   *
+   * A atualização automática recarrega a página, e recarregar no meio de um lançamento
+   * faria a mesa sumir com os dados rolando. Nada de dinheiro se perde — a rodada está
+   * no servidor — mas some justamente a parte que a pessoa está olhando. A atualização
+   * espera os dados assentarem.
+   */
+  useEffect(() => {
+    if (!girando) return undefined;
+    estouOcupado(true);
+    return () => estouOcupado(false);
+  }, [girando]);
 
   const encostar = (casa: BancaFrancesaBetType) => {
     if (travado) return;

@@ -12,8 +12,24 @@ import { LoginScreen } from './src/screens/LoginScreen';
 import { carregarSessao, aoMudarSessao } from './src/api/session';
 import { recuperarSessao } from './src/api/auth';
 import { colors } from './src/theme';
+import { aplicarAjustesDaWeb } from './src/theme/ajustesDaWeb';
+import { vigiarVersao } from './src/api/versao';
 
 SplashScreen.preventAutoHideAsync();
+
+/*
+ * Roda antes do primeiro desenho, e não dentro de um efeito: se entrasse num
+ * `useEffect`, a primeira pintura ainda aconteceria com o comportamento antigo e a tela
+ * daria um salto visível ao ser corrigida.
+ */
+aplicarAjustesDaWeb();
+
+/*
+ * Vigia a versão desde a subida, e não dentro de um componente: a checagem não depende
+ * de nada da tela, e ligar aqui garante que ela existe mesmo se a árvore inteira for
+ * remontada num logout.
+ */
+vigiarVersao();
 
 export default function App() {
   /*

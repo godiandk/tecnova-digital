@@ -27,7 +27,25 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.enableCors();
 
-  if (SITE_PUBLICADO) app.useStaticAssets(PASTA_DO_SITE, { index: false });
+  /*
+   * Os arquivos do site, com cache agressivo — e isso é seguro justamente porque os
+   * nomes carregam o resumo do conteúdo (AppEntry-a1072ff.js). Nome novo a cada versão
+   * significa que guardar por um ano nunca serve um arquivo velho: o pedido é por outro
+   * nome. Quem manda na atualização é o index.html, que vai com `no-store` no
+   * SiteController.
+   */
+  if (SITE_PUBLICADO) {
+    app.useStaticAssets(PASTA_DO_SITE, {
+      index: false,
+      setHeaders: (res, caminho) => {
+        const temResumoNoNome = /-[0-9a-f]{8,}\.[a-z0-9]+$/i.test(caminho);
+        res.setHeader(
+          'Cache-Control',
+          temResumoNoNome ? 'public, max-age=31536000, immutable' : 'no-cache',
+        );
+      },
+    });
+  }
 
   /*
    * `init()` explícito antes da semente: é ele que dispara o onModuleInit do
@@ -40,6 +58,14 @@ async function bootstrap() {
 
   // Contas de teste, só quando a base está vazia. Depois disso o banco manda.
   await app.get(UsersService).seedIfEmpty();
+
+  /*
+   * Quem está na lista de donos vira admin agora, e não só no próximo login. Uma conta
+   * já existente e já logada nunca passa de novo pelo login — sem isto, o painel só
+   * apareceria pra quem saísse e entrasse outra vez.
+   */
+  const promovidos = await app.get(UsersService).promoverDonos();
+  if (promovidos > 0) console.log(`${promovidos} conta(s) de dono promovida(s) a admin.`);
 
   const port = process.env.PORT ? Number(process.env.PORT) : 3000;
   // '0.0.0.0' em vez do padrão: aceita conexão de outros aparelhos da rede, que é o

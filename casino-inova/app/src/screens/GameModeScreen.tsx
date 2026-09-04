@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -12,8 +12,18 @@ import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
 import { Fundo } from '../components/Fundo';
 
 /** Os cartazes de variante são 1200x600 — deitados, empilhados numa lista. */
-const LARGURA_CARTAZ = Dimensions.get('window').width - spacing.lg * 2;
-const ALTURA_CARTAZ = Math.round(LARGURA_CARTAZ / 2);
+/*
+ * A altura do cartaz sai da PROPORÇÃO, não de uma conta com a largura da tela.
+ *
+ * Antes era `Dimensions.get('window').width / 2`, lido no topo do arquivo: a janela do
+ * instante em que o arquivo carregou, e nunca mais. A largura do cartaz é 100% do que o
+ * pai der, então bastava a janela mudar de tamanho — girar o telefone, redimensionar a
+ * aba — pra a altura ficar de outro tamanho de tela e a arte esticar ou sobrar.
+ *
+ * Com `aspectRatio` quem decide a altura é a largura de verdade, medida pelo layout no
+ * momento de desenhar. Acompanha qualquer tela sem ninguém precisar recalcular nada.
+ */
+const PROPORCAO_DO_CARTAZ = 2;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GameMode'>;
 
@@ -173,10 +183,10 @@ const styles = StyleSheet.create({
   },
   optionSelected: { borderColor: colors.goldBright },
   optionDisabled: { opacity: 0.45 },
-  cartaz: { width: '100%', height: ALTURA_CARTAZ },
+  cartaz: { width: '100%', aspectRatio: PROPORCAO_DO_CARTAZ },
   cartazVazio: {
     width: '100%',
-    height: ALTURA_CARTAZ,
+    aspectRatio: PROPORCAO_DO_CARTAZ,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.felt,

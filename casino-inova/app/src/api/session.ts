@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 /**
@@ -11,6 +12,45 @@ import * as SecureStore from 'expo-secure-store';
  * socket precisam dele fora de qualquer componente.
  */
 const CHAVE = 'casino-inova-token';
+
+/*
+ * ONDE O TOKEN FICA GUARDADO, e por que não é o mesmo lugar nos dois.
+ *
+ * No celular é o SecureStore (Keychain no iOS, Keystore no Android) — armazenamento do
+ * sistema, protegido pelo aparelho.
+ *
+ * NA WEB O SecureStore NÃO EXISTE. Ele nem é implementado no navegador: toda chamada
+ * falhava, o `catch` engolia o erro, e o token vivia só na memória da aba. O efeito era
+ * o que dava pra ver: ATUALIZAR A PÁGINA DESLOGAVA. Não era sessão expirando nem token
+ * inválido — era o token nunca ter sido gravado em lugar nenhum.
+ *
+ * Na web o lugar é o localStorage. Ele é legível por JavaScript da mesma origem, o que
+ * seria um problema se a página carregasse script de terceiro; esta não carrega — o
+ * site e a API são servidos pelo mesmo processo, e não existe anúncio nem widget de
+ * fora. É o mesmo lugar onde qualquer aplicativo web guarda sessão.
+ */
+const naWeb = Platform.OS === 'web';
+
+async function guardar(token: string): Promise<void> {
+  if (naWeb) {
+    globalThis.localStorage?.setItem(CHAVE, token);
+    return;
+  }
+  await SecureStore.setItemAsync(CHAVE, token);
+}
+
+async function ler(): Promise<string | null> {
+  if (naWeb) return globalThis.localStorage?.getItem(CHAVE) ?? null;
+  return SecureStore.getItemAsync(CHAVE);
+}
+
+async function apagar(): Promise<void> {
+  if (naWeb) {
+    globalThis.localStorage?.removeItem(CHAVE);
+    return;
+  }
+  await SecureStore.deleteItemAsync(CHAVE);
+}
 
 let tokenEmMemoria: string | null = null;
 let usuarioEmMemoria: { id: string; name: string } | null = null;
@@ -32,7 +72,7 @@ export function usuarioLogadoId(): string {
 /** Chamado uma vez na subida do app, antes de decidir qual tela mostrar. */
 export async function carregarSessao(): Promise<string | null> {
   try {
-    tokenEmMemoria = await SecureStore.getItemAsync(CHAVE);
+    tokenEmMemoria = await ler();
   } catch {
     // Aparelho sem armazenamento seguro disponível: segue deslogado.
     tokenEmMemoria = null;
@@ -53,7 +93,7 @@ export async function salvarToken(token: string, usuario?: { id: string; name: s
   tokenEmMemoria = token;
   if (usuario) usuarioEmMemoria = usuario;
   try {
-    await SecureStore.setItemAsync(CHAVE, token);
+    await guardar(token);
   } catch {
     // Sem armazenamento seguro a sessão vale só enquanto o app estiver aberto.
   }
@@ -64,7 +104,7 @@ export async function limparSessao() {
   tokenEmMemoria = null;
   usuarioEmMemoria = null;
   try {
-    await SecureStore.deleteItemAsync(CHAVE);
+    await apagar();
   } catch {
     // nada a fazer
   }

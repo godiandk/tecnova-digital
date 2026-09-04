@@ -23,4 +23,6 @@ export type RootStackParamList = {
   Domino: undefined;
   DominoMesa: undefined;
   Poker: undefined;
+  /** Painel de administração. A tela confere a permissão de novo — a rota existir não abre nada. */
+  Painel: undefined;
 };
