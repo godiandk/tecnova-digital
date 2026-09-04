@@ -19,15 +19,21 @@ const PROPORCAO = 120 / 800;
 /**
  * Centro do brasão redondo na ponta esquerda da calha, em fração da imagem.
  *
- * MEDIDO NA ARTE, não estimado: o anel dourado vai de x=4 a x=139 de 800, e o vão
- * escuro onde o número cabe vai de 31 a 110. Os valores anteriores (0,062 / 0,425 /
- * 0,117) tinham sido chutados olhando a imagem, e o número saía 2% da largura à
- * esquerda do centro do vão — sete pixels numa barra de celular, o bastante pra ler
- * como torto.
+ * MEDIDO NA ARTE, e desta vez de um jeito que dá pra repetir: o vão escuro do brasão é
+ * o segundo maior grupo de pixels escuros de hud-barra-nivel.png (o maior é o canal), e
+ * ele vai de x=20 a x=82 e de y=21 a y=83. Centro (51,4; 52,7), diâmetro 63.
+ *
+ * A conferência está em verificacao/verifica-barra-de-nivel.mjs, que refaz essa medida
+ * na imagem e compara com os números daqui. Ela existe porque ESTE MESMO defeito foi
+ * relatado três vezes: o número do nível saía encostado na borda direita do vão, meio
+ * escondido atrás dos louros, e as duas correções anteriores foram feitas com medidas
+ * tomadas à mão que erraram por pouco — a de antes punha o centro em 0,0881 quando ele
+ * está em 0,0642, o que numa barra de celular joga o número quase trinta pixels pra
+ * direita. É a diferença entre "no meio do brasão" e "grudado no louro".
  */
-const BRASAO_X = 0.0881; // centro do vão: (31+110)/2 de 800
-const BRASAO_Y = 0.4125; // centro do vão: (10+89)/2 de 120
-const BRASAO_TAMANHO = 0.1; // 80px de 800, o vão inteiro
+const BRASAO_X = 0.0642; // 51,4 de 800
+const BRASAO_Y = 0.4392; // 52,7 de 120
+const BRASAO_TAMANHO = 0.0788; // 63 de 800 — o vão inteiro, sem o anel dourado
 
 /**
  * O CANAL DA CALHA: onde o preenchimento pode aparecer, em fração da imagem.

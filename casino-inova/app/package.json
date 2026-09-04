@@ -8,7 +8,12 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:barra-de-nivel": "node verificacao/verifica-barra-de-nivel.mjs",
+    "verify:palco": "node verificacao/verifica-palco.mjs",
+    "verify:roleta": "node verificacao/verifica-roleta.mjs  # precisa do servidor no ar e do playwright",
+    "verify:escada-do-truco": "node verificacao/verifica-escada-do-truco.mjs",
+    "verify:tudo": "npm run typecheck && npm run verify:barra-de-nivel && npm run verify:palco && npm run verify:escada-do-truco"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",

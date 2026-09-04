@@ -88,7 +88,17 @@ export function RouletteScreen({ navigation }: Props) {
   const [ficha, setFicha] = useState(50);
   const [fichaAjustada, setFichaAjustada] = useState(false);
 
-  const [girando, setGirando] = useState(false);
+  /**
+   * A rodada está em curso: o pedido no ar OU a roda ainda contando.
+   *
+   * Não confundir com o `girando` da roda. Enquanto este é verdadeiro a mesa fica
+   * travada e o resultado não aparece; a roda, por outro lado, para de girar solto no
+   * instante em que o número chega — é aí que ela COMEÇA a desacelerar até a casa. Os
+   * dois juntos numa variável só foi o defeito da primeira versão: a roda esperava a
+   * revelação pra só então começar a parar, e a parada dela terminava três segundos
+   * depois do número já estar escrito na tela.
+   */
+  const [rodando, setRodando] = useState(false);
   const [rodada, setRodada] = useState<RouletteSpinResponse | null>(null);
   /** O resultado só é ESCRITO depois que a bola assenta. Antes disso a roda é que fala. */
   const [resultadoNaTela, setResultadoNaTela] = useState<RouletteSpinResponse | null>(null);
@@ -118,7 +128,7 @@ export function RouletteScreen({ navigation }: Props) {
 
   const minimo = meuNivel?.nivel.minimo ?? config?.minBet ?? 50;
   const total = useMemo(() => Object.values(apostas).reduce((t, v) => t + v, 0), [apostas]);
-  const travado = girando;
+  const travado = rodando;
 
   const encostar = useCallback(
     (casa: CasaDoPano) => {
@@ -186,10 +196,11 @@ export function RouletteScreen({ navigation }: Props) {
       return c.tipo === 'numero' ? { type: c.tipo, number: c.numero, amount } : { type: c.tipo, amount };
     });
 
-    setGirando(true);
+    setRodando(true);
     setErro(null);
     setRecado(null);
     setResultadoNaTela(null);
+    setRodada(null);
     try {
       const r = await spinRoulette(bets, novaAcao());
       setRodada(r);
@@ -206,11 +217,11 @@ export function RouletteScreen({ navigation }: Props) {
         setApostas({});
         setOrdem([]);
         saldoChegouDeFora(r.newBalance);
-        setGirando(false);
+        setRodando(false);
       }, ATE_A_BOLA_PARAR);
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : 'Não foi possível girar agora.');
-      setGirando(false);
+      setRodando(false);
     }
   };
 
@@ -247,15 +258,24 @@ export function RouletteScreen({ navigation }: Props) {
         {config && (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.rolagem}>
             <View style={styles.roda}>
-              <RodaDaRoleta resultado={rodada ? rodada.pocket : null} girando={girando} tamanho={tamanhoDaRoda} />
-              {!girando && resultadoNaTela && (
+              {/*
+                A roda gira SOLTA enquanto o número não chegou, e começa a desacelerar
+                assim que ele chega — que é o momento em que, na mesa, o crupiê já sabe
+                onde a bola vai cair e ninguém mais sabe. A tela só conta depois.
+              */}
+              <RodaDaRoleta
+                resultado={rodada ? rodada.pocket : null}
+                girando={rodando && rodada === null}
+                tamanho={tamanhoDaRoda}
+              />
+              {!rodando && resultadoNaTela && (
                 <View style={[styles.selo, { backgroundColor: COR_DA_CASA[resultadoNaTela.color] }]}>
                   <Text style={styles.seloNumero}>{resultadoNaTela.pocket}</Text>
                 </View>
               )}
             </View>
 
-            {resultadoNaTela && !girando && (
+            {resultadoNaTela && !rodando && (
               <Text style={[styles.placar, resultadoNaTela.win ? styles.ganhou : styles.perdeu]}>
                 {resultadoNaTela.win
                   ? `Caiu no ${resultadoNaTela.pocket} — você recebeu ${resultadoNaTela.totalReturn.toLocaleString('pt-BR')} fichas`
@@ -267,7 +287,7 @@ export function RouletteScreen({ navigation }: Props) {
 
             <PanoDaRoleta
               apostas={apostas}
-              saiu={girando ? null : resultadoNaTela?.pocket ?? null}
+              saiu={rodando ? null : resultadoNaTela?.pocket ?? null}
               travado={travado}
               onEncostar={encostar}
               largura={larguraDoPano}
@@ -301,7 +321,7 @@ export function RouletteScreen({ navigation }: Props) {
               style={[styles.girar, (travado || total === 0) && styles.girarApagado]}
             >
               <Text style={styles.girarTexto}>
-                {girando ? 'A bola está correndo…' : total === 0 ? 'Encoste uma ficha no pano' : `Girar · ${chapaEmTexto(total)}`}
+                {rodando ? 'A bola está correndo…' : total === 0 ? 'Encoste uma ficha no pano' : `Girar · ${chapaEmTexto(total)}`}
               </Text>
             </Pressable>
 
