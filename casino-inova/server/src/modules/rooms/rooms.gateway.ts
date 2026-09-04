@@ -46,7 +46,20 @@ export class RoomsGateway implements OnGatewayDisconnect {
     private readonly auth: AuthService,
     private readonly reconexao: ReconexaoService,
     private readonly eventos: RegistroDeEventos,
-  ) {}
+  ) {
+    /*
+     * A mesa de banca francesa se mexe sozinha: depois de um lançamento nulo ela abre
+     * uma janela de 12 segundos e, quando o prazo acaba, lança de novo sem ninguém
+     * pedir. Todo o resto aqui responde a um pedido de alguém e transmite na volta —
+     * este é o único caso em que a mudança nasce no servidor, e sem esta linha os dados
+     * sairiam lá dentro e as telas continuariam mostrando a janela aberta.
+     */
+    this.tables.aoAtualizar((table) => {
+      void this.broadcastAndReturn(table).catch((erro) => {
+        console.error(`[banca-francesa] não consegui transmitir a mesa ${table.id}:`, erro);
+      });
+    });
+  }
 
   /**
    * Cair não é sair.
@@ -262,6 +275,16 @@ export class RoomsGateway implements OnGatewayDisconnect {
   @SubscribeMessage('banca-francesa:apostar')
   async handleBet(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string; bets: BancaFrancesaBet[] }) {
     return this.comUsuario(socket, async (usuario) => this.broadcastAndReturn(await this.tables.placeBets(usuario, body.tableId, body.bets)));
+  }
+
+  /**
+   * Tira as fichas da mesa. Vale enquanto as apostas estiverem abertas — inclusive na
+   * janela que abre depois de um lançamento nulo, que é justamente quando desistir faz
+   * sentido. Não custa nada: a ficha só sai do saldo quando o dado decide.
+   */
+  @SubscribeMessage('banca-francesa:retirar')
+  handleWithdraw(@ConnectedSocket() socket: Socket, @MessageBody() body: { tableId: string }) {
+    return this.comUsuario(socket, async (usuario) => this.broadcastAndReturn(this.tables.retirarApostas(usuario, body.tableId)));
   }
 
   @SubscribeMessage('banca-francesa:girar')
@@ -619,6 +642,13 @@ export class RoomsGateway implements OnGatewayDisconnect {
         })),
       ),
       lastRound: table.lastRound,
+      /*
+       * A rodada que está acontecendo agora, separada da que acabou (`lastRound`). É o
+       * que deixa a tela mostrar um lançamento nulo enquanto ele importa, em vez de só
+       * no resumo do fim — e é como quem senta no meio de uma sequência de nulos
+       * entende por que a mesa está esperando.
+       */
+      rodada: this.tables.rodadaEmAndamento(table),
       /*
        * A fase vai junto do estado, sempre. É o que a tela usa pra decidir se o botão de
        * apostar está ligado — e é o servidor quem diz, não a tela adivinhando pelo que

@@ -2,8 +2,15 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { WalletService } from '../wallet/wallet.service';
 import { TournamentsService } from '../tournaments/tournaments.service';
 import { UsersService } from '../users/users.service';
-import { BancaFrancesaBet, BetResult, resolveBets, rollUntilDecisive } from '../games/banca-francesa/banca-francesa.engine';
-import { BET_TYPES, MAX_BET, MAX_SIMULTANEOUS_BETS, MIN_BET } from '../games/banca-francesa/banca-francesa.config';
+import { BancaFrancesaBet, BetResult, DecisiveOutcome, Lancamento, lancar, resolveBets } from '../games/banca-francesa/banca-francesa.engine';
+import {
+  BET_TYPES,
+  JANELA_ENTRE_LANCAMENTOS_MS,
+  LANCAMENTOS_MAXIMOS_COM_JANELA,
+  MAX_BET,
+  MAX_SIMULTANEOUS_BETS,
+  MIN_BET,
+} from '../games/banca-francesa/banca-francesa.config';
 import { MAX_SEATS, PLAYER_COLORS, PlayerColor } from './player-colors';
 import { generateTableCode } from './table-code';
 import { umDe } from '../games/shared/rng';
@@ -62,6 +69,23 @@ export interface BancaFrancesaTable {
   /** Identifica a rodada no log de eventos e no extrato. */
   rodadaId: string;
   rodadasJogadas: number;
+  /**
+   * Os lançamentos JÁ FEITOS nesta rodada, na ordem, incluindo o decisivo.
+   *
+   * Uma rodada de banca francesa não é um lançamento: é uma sequência deles, que só
+   * acaba quando sai uma soma que decide. Guardar a sequência é o que deixa a tela
+   * mostrar cada lance acontecendo em vez de escrever "relançou 3 vezes" no fim.
+   */
+  lancamentos: Lancamento[];
+  /**
+   * O relógio que dispara o próximo lance quando a janela de aposta acaba.
+   *
+   * Fica na mesa e não num mapa à parte porque tem exatamente o mesmo tempo de vida
+   * que ela: mesa que fecha leva o relógio junto, e mesa esquecida com relógio pendente
+   * seria uma mesa lançando dado pra ninguém. NÃO vai pra tela — `view()` monta o
+   * estado campo a campo, então isto não vaza.
+   */
+  proximoLance?: ReturnType<typeof setTimeout>;
 }
 
 /**
@@ -85,6 +109,34 @@ export class BancaFrancesaTableService {
     private readonly eventos: RegistroDeEventos,
   ) {}
 
+  /**
+   * Quem avisar quando a MESA se mexer sozinha.
+   *
+   * Até agora toda mudança de estado vinha de alguém: apostou, girou, saiu — e quem
+   * respondia ao pedido também mandava o estado novo pra mesa. Com a janela entre
+   * lançamentos existe uma mudança que ninguém pediu: o prazo acaba e a mesa lança. Sem
+   * este aviso, os dados sairiam no servidor e as telas continuariam mostrando a janela
+   * aberta até alguém tocar em alguma coisa.
+   *
+   * É um retorno de chamada, e não o gateway injetado aqui, pra a mesa continuar sem
+   * saber que socket existe: ela avisa "mudei", e quem sabe transmitir transmite.
+   */
+  private ouvinte: ((table: BancaFrancesaTable) => void) | null = null;
+
+  aoAtualizar(fn: (table: BancaFrancesaTable) => void) {
+    this.ouvinte = fn;
+  }
+
+  private avisar(table: BancaFrancesaTable) {
+    this.ouvinte?.(table);
+  }
+
+  /** Tira a mesa do ar de vez. Desarmar o relógio é o que impede um lance órfão. */
+  private fecharMesa(table: BancaFrancesaTable) {
+    this.cancelarProximoLance(table);
+    this.tables.delete(table.id);
+  }
+
   async createTable(hostUserId: string, visibility: TableVisibility): Promise<BancaFrancesaTable> {
     const host = (await this.requireUser(hostUserId));
     const table: BancaFrancesaTable = {
@@ -96,6 +148,7 @@ export class BancaFrancesaTableService {
       relogio: new RelogioDaSala(),
       rodadaId: '',
       rodadasJogadas: 0,
+      lancamentos: [],
     };
     this.nextId += 1;
     table.seats.push({ userId: hostUserId, name: host.name, isBot: false, color: this.nextFreeColor(table), pendingBets: [] });
@@ -151,13 +204,13 @@ export class BancaFrancesaTableService {
     table.seats = table.seats.filter((seat) => seat.userId !== userId);
 
     if (table.seats.length === 0) {
-      this.tables.delete(table.id);
+      this.fecharMesa(table);
       return { removed: true };
     }
     if (table.hostUserId === userId) {
       const nextHost = table.seats.find((seat) => !seat.isBot);
       if (!nextHost) {
-        this.tables.delete(table.id);
+        this.fecharMesa(table);
         return { removed: true };
       }
       table.hostUserId = nextHost.userId;
@@ -180,21 +233,25 @@ export class BancaFrancesaTableService {
     this.validateBets(bets);
 
     /*
-     * Guarda em QUAL rodada esta aposta está entrando, porque a linha seguinte cede o
-     * controle (é `await`) e o anfitrião pode girar nesse intervalo. Conferir a fase só
-     * aqui em cima não bastava: quando a execução voltasse, a rodada podia já ser outra
-     * — e como a rodada nova também está em APOSTAS_ABERTAS, reconferir a fase não
-     * pegaria nada. Quem denuncia é o id da rodada, não a fase.
+     * Guarda em QUE ESTADO a mesa estava, porque a linha seguinte cede o controle (é
+     * `await`) e a mesa pode lançar nesse intervalo. Reconferir a fase quando a
+     * execução voltasse não pegaria nada: o estado seguinte também é APOSTAS_ABERTAS.
+     *
+     * A marca é a VERSÃO do relógio, que sobe a cada mudança de fase, e não o id da
+     * rodada. O id não serve mais desde que o lançamento nulo existe: numa rodada com
+     * três nulos, o id é o mesmo do começo ao fim, então uma aposta que saísse antes de
+     * um lance e chegasse depois passaria pela conferência — e entraria como aposta do
+     * lance seguinte, que a pessoa não viu. A versão denuncia qualquer lance no meio.
      */
-    const rodadaPretendida = table.rodadaId;
+    const versaoPretendida = table.relogio.versao;
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
     if (await this.walletService.balanceOf(userId) < totalStake) {
       throw new BadRequestException('Saldo de fichas insuficiente pra essa aposta.');
     }
 
-    if (table.rodadaId !== rodadaPretendida) {
-      throw new BadRequestException('A rodada virou enquanto a aposta ia — aposte de novo.');
+    if (table.relogio.versao !== versaoPretendida) {
+      throw new BadRequestException('Os dados saíram enquanto a aposta ia — aposte de novo.');
     }
 
     seat.pendingBets = bets;
@@ -202,39 +259,175 @@ export class BancaFrancesaTableService {
   }
 
   /**
-   * Só o anfitrião gira — evita duas pessoas girando ao mesmo tempo por engano.
-   * Cada assento é resolvido isoladamente: se alguém gastou as fichas em outra mesa
-   * entre apostar aqui e o anfitrião girar (dá pra estar em duas telas de jogo — não
-   * existe trava de "uma mesa por vez" pro saldo), a aposta dessa pessoa é anulada em
-   * vez de travar a rodada de todo mundo.
+   * Manda lançar. Só o anfitrião — evita duas pessoas lançando ao mesmo tempo por engano.
+   *
+   * Isto lança UMA vez, não a rodada inteira. Se a soma decidir, a rodada é apurada e
+   * paga; se não decidir, as apostas ficam em pé e abre uma janela pra mexer nelas —
+   * ver `lancarNaMesa`. Durante a janela o anfitrião pode chamar de novo pra lançar
+   * antes do prazo, e é por isso que a fase aceita aposta nos dois momentos.
    */
   async roll(hostUserId: string, tableId: string): Promise<BancaFrancesaTable> {
     const table = this.requireTable(tableId);
     this.requireHost(table, hostUserId);
 
     if (!aceitaAposta(table.relogio.fase)) {
-      throw new BadRequestException('Esta rodada já foi girada.');
+      throw new BadRequestException('Os dados já estão rolando.');
     }
 
+    return await this.lancarNaMesa(table);
+  }
+
+  /**
+   * Tira as fichas da mesa e sai da rodada.
+   *
+   * NÃO CUSTA NADA, e isso é regra, não gentileza: nesta mesa a ficha só sai do saldo
+   * quando um lançamento decide (ver a apuração em `apurar`). Antes disso a aposta é
+   * uma intenção guardada em `pendingBets` — quem desiste no meio de uma sequência de
+   * nulos sai com o mesmo saldo com que entrou, sem lançamento nenhum no extrato.
+   *
+   * A janela é a mesma da aposta, de propósito: dá pra retirar enquanto dá pra apostar,
+   * e nem um instante depois. Retirar depois de ver o dado seria escolher o resultado.
+   */
+  retirarApostas(userId: string, tableId: string): BancaFrancesaTable {
+    const table = this.requireTable(tableId);
+    const seat = this.requireSeat(table, userId);
+
+    if (!aceitaAposta(table.relogio.fase)) {
+      throw new BadRequestException('Tarde demais — os dados já estão rolando.');
+    }
+    if (seat.pendingBets.length === 0) {
+      return table;
+    }
+
+    seat.pendingBets = [];
+    this.anotar(table, 'APOSTA_RETIRADA', { userId });
+    return table;
+  }
+
+  /**
+   * UM lançamento dos três dados, e o que fazer com o que saiu.
+   *
+   * Das 216 combinações, 63 decidem (1 de Ases, 31 de Pequeno, 31 de Grande). As
+   * outras — 4, 8 a 13, 17, 18 — são NULAS: não resolvem aposta nenhuma e os dados
+   * voltam pro copo. Isso é regra do jogo e é o que calibra o RTP.
+   *
+   * Antes, a rodada inteira acontecia dentro de uma chamada: a mesa lançava até decidir
+   * e a tela recebia a sequência pronta pra animar. Funcionava, mas transformava o nulo
+   * em enfeite — os dados "voltavam pro copo" numa animação enquanto o resultado já
+   * estava decidido, e ninguém podia fazer nada entre um lance e outro. Na mesa de
+   * verdade é justamente aí que se aumenta a aposta ou se desiste dela.
+   *
+   * Agora cada lance é um evento. Nulo reabre as apostas com prazo, e o prazo é do
+   * SERVIDOR: o app recebe o instante em que acaba e anima o relógio sozinho. Chegar a
+   * zero no celular não lança nada — quem lança é o relógio daqui.
+   */
+  private async lancarNaMesa(table: BancaFrancesaTable): Promise<BancaFrancesaTable> {
+    // Se o anfitrião lançou antes do prazo, o relógio da janela não pode disparar depois.
+    this.cancelarProximoLance(table);
+
+    const primeiroDaRodada = table.lancamentos.length === 0;
+
     /*
-     * Daqui pra baixo a rodada anda pelas fases na ordem, e cada uma é anotada no log.
      * Fechar as apostas é a PRIMEIRA coisa: a partir desta linha, aposta que chegar é
-     * recusada, inclusive a que estiver na rede a caminho.
+     * recusada, inclusive a que estiver na rede a caminho. Vale igual pro primeiro
+     * lance e pro que vem depois de um nulo.
      */
     table.relogio.irPara('APOSTAS_FECHADAS');
     this.anotar(table, 'APOSTAS_FECHADAS', {});
 
-    for (const seat of table.seats) {
-      if (seat.isBot && seat.pendingBets.length === 0) {
-        const type = umDe(BET_TYPES);
-        seat.pendingBets = [{ type, amount: MIN_BET }];
+    /*
+     * Bot aposta uma vez por rodada, no primeiro lance. Deixar o bot remexer a aposta a
+     * cada nulo daria a ele uma decisão que o jogador humano nem sempre está olhando
+     * pra tomar — e não muda nada no resultado, porque cada lançamento é independente.
+     */
+    if (primeiroDaRodada) {
+      for (const seat of table.seats) {
+        if (seat.isBot && seat.pendingBets.length === 0) {
+          const type = umDe(BET_TYPES);
+          seat.pendingBets = [{ type, amount: MIN_BET }];
+        }
       }
     }
 
     table.relogio.irPara('SORTEIO');
-    const { dice, sum, outcome, rerolls, nulos } = rollUntilDecisive();
-    this.anotar(table, 'DADOS', { dice, sum, outcome, rerolls });
+    let lance = lancar();
+    table.lancamentos.push(lance);
+    this.anotarLance(table, lance);
 
+    if (!lance.outcome) {
+      if (table.lancamentos.length < LANCAMENTOS_MAXIMOS_COM_JANELA) {
+        return this.reabrirApostas(table);
+      }
+      /*
+       * Teto batido: daqui em diante lança até decidir, sem mais janelas. Não é regra
+       * de jogo — é o jeito de a rodada TERMINAR em vez de a mesa ficar abrindo janela
+       * pra sempre. Ninguém fica com aposta presa, e a chance de chegar aqui é
+       * (153/216)^40, cerca de 1 em 10 milhões de bilhões.
+       */
+      while (!lance.outcome) {
+        lance = lancar();
+        table.lancamentos.push(lance);
+        this.anotarLance(table, lance);
+      }
+    }
+
+    return await this.apurar(table, lance.outcome);
+  }
+
+  /**
+   * O lançamento não decidiu: as apostas voltam a aceitar mexida, com prazo.
+   *
+   * A mesma rodada continua — o `rodadaId` não muda e ninguém foi cobrado ainda. Por
+   * isso a volta é uma transição de fase (SORTEIO -> APOSTAS_ABERTAS) e não um fechar
+   * e abrir de novo: fechar aqui geraria extrato de uma aposta que nunca foi resolvida.
+   */
+  private reabrirApostas(table: BancaFrancesaTable): BancaFrancesaTable {
+    table.relogio.irPara('APOSTAS_ABERTAS', JANELA_ENTRE_LANCAMENTOS_MS);
+    this.anotar(table, 'APOSTAS_ABERTAS', {
+      rodadaId: table.rodadaId,
+      motivo: 'LANCAMENTO_NULO',
+      lancamentosFeitos: table.lancamentos.length,
+      terminaEm: table.relogio.terminaEm,
+    });
+
+    table.proximoLance = setTimeout(() => void this.lancarPeloRelogio(table.id), JANELA_ENTRE_LANCAMENTOS_MS);
+    return table;
+  }
+
+  /**
+   * O prazo da janela acabou: lança sozinho e avisa a mesa.
+   *
+   * Recebe o ID e não a mesa porque durante os 12 segundos ela pode ter fechado (todo
+   * mundo saiu) — buscar de novo é o que diferencia "a mesa acabou" de lançar dado numa
+   * mesa que não existe mais.
+   */
+  private async lancarPeloRelogio(tableId: string): Promise<void> {
+    const table = this.tables.get(tableId);
+    if (!table) return;
+    // O anfitrião lançou antes do prazo: este relógio ficou pra trás.
+    if (!aceitaAposta(table.relogio.fase)) return;
+
+    try {
+      await this.lancarNaMesa(table);
+    } catch (erro) {
+      console.error(`[banca-francesa] o lance automático da mesa ${tableId} falhou:`, erro);
+      return;
+    }
+    this.avisar(table);
+  }
+
+  /**
+   * Saiu um resultado: resolve cada assento, paga e encerra a rodada.
+   *
+   * Cada assento é resolvido isoladamente: se alguém gastou as fichas em outra mesa
+   * entre apostar aqui e o dado decidir (dá pra estar em duas telas de jogo — não
+   * existe trava de "uma mesa por vez" pro saldo), a aposta dessa pessoa é anulada em
+   * vez de travar a rodada de todo mundo.
+   *
+   * É AQUI que a ficha sai do saldo, e não quando a aposta é posta na mesa. Essa
+   * escolha é o que faz retirar no meio de uma sequência de nulos não custar nada.
+   */
+  private async apurar(table: BancaFrancesaTable, outcome: DecisiveOutcome): Promise<BancaFrancesaTable> {
     table.relogio.irPara('APURACAO');
     const bySeat: RoundResult['bySeat'] = {};
 
@@ -254,7 +447,8 @@ export class BancaFrancesaTableService {
       if (!seat.isBot) {
         /*
          * A chave de idempotência é (mesa, rodada, jogador): a mesma rodada não cobra a
-         * mesma pessoa duas vezes nem que este método seja chamado de novo.
+         * mesma pessoa duas vezes nem que este método seja chamado de novo. A rodada
+         * inteira é uma cobrança só, por mais lançamentos que ela tenha levado.
          */
         const acao = `${table.id}:${table.rodadaId}:${seat.userId}`;
         await this.walletService.debit(seat.userId, totalStake, 'aposta', GAME_ID, `${acao}:aposta`);
@@ -269,7 +463,19 @@ export class BancaFrancesaTableService {
     }
 
     table.relogio.irPara('PAGAMENTO');
-    table.lastRound = { dice, sum, outcome, rerolls, lancamentosNulos: nulos, bySeat, at: new Date().toISOString() };
+
+    // O último da lista é o que decidiu; todos os anteriores foram nulos, por definição.
+    const decisivo = table.lancamentos[table.lancamentos.length - 1];
+    const nulos = table.lancamentos.slice(0, -1).map((item) => item.dice);
+    table.lastRound = {
+      dice: decisivo.dice,
+      sum: decisivo.sum,
+      outcome,
+      rerolls: nulos.length,
+      lancamentosNulos: nulos,
+      bySeat,
+      at: new Date().toISOString(),
+    };
     // O log guarda só o que é público: quem apostou o quê e quanto levou já é visível
     // nesta mesa (todo mundo aposta no mesmo resultado), então nada aqui é privado.
     this.anotar(table, 'PAGAMENTO', { bySeat });
@@ -282,6 +488,23 @@ export class BancaFrancesaTableService {
     return table;
   }
 
+  private anotarLance(table: BancaFrancesaTable, lance: Lancamento) {
+    this.anotar(table, lance.outcome ? 'DADOS' : 'DADOS_NULOS', {
+      dice: lance.dice,
+      sum: lance.sum,
+      outcome: lance.outcome,
+      lance: table.lancamentos.length,
+    });
+  }
+
+  /** Desarma o relógio da janela, se houver um armado. Chamar antes de qualquer lance. */
+  private cancelarProximoLance(table: BancaFrancesaTable) {
+    if (table.proximoLance) {
+      clearTimeout(table.proximoLance);
+      table.proximoLance = undefined;
+    }
+  }
+
   /**
    * Começa uma rodada nova: id próprio, apostas abertas, evento anotado.
    *
@@ -289,6 +512,13 @@ export class BancaFrancesaTableService {
    * — sem ele, "a aposta da rodada passada" e "a desta" seriam indistinguíveis.
    */
   private abrirRodada(table: BancaFrancesaTable) {
+    /*
+     * A sequência de lançamentos é POR RODADA. Sem zerar aqui, a segunda rodada nasceria
+     * já contando os nulos da primeira contra o teto, e `lastRound` mostraria dados de
+     * uma rodada que já foi paga.
+     */
+    this.cancelarProximoLance(table);
+    table.lancamentos = [];
     table.rodadasJogadas += 1;
     table.rodadaId = `${table.id}-r${table.rodadasJogadas}`;
     if (table.relogio.fase !== 'RODADA_ABERTA') table.relogio.irPara('RODADA_ABERTA');
@@ -311,6 +541,23 @@ export class BancaFrancesaTableService {
    *  queda pode estar voltando pra uma mesa que já fechou, e isso não é erro. */
   buscarMesa(tableId: string): BancaFrancesaTable | undefined {
     return this.tables.get(tableId);
+  }
+
+  /**
+   * A rodada que está acontecendo AGORA — os lançamentos já feitos e o que falta.
+   *
+   * Diferente de `lastRound`, que é a rodada que acabou. Isto é o que deixa a tela
+   * mostrar o nulo enquanto ele importa: os dados que saíram, quantos lances já foram e
+   * se a mesa está esperando gente decidir. Sem isto, quem entrasse no meio de uma
+   * sequência de nulos veria uma mesa parada sem entender por quê.
+   */
+  rodadaEmAndamento(table: BancaFrancesaTable) {
+    return {
+      rodadaId: table.rodadaId,
+      lancamentos: table.lancamentos,
+      /** Verdadeiro quando as apostas reabriram porque o dado não decidiu. */
+      esperandoDepoisDeNulo: table.lancamentos.length > 0 && aceitaAposta(table.relogio.fase),
+    };
   }
 
   /** A fase e a versão, pra tela saber o que pode fazer e o que já está velho. */

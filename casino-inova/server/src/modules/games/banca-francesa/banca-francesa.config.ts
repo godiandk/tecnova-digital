@@ -81,14 +81,23 @@ export const MAX_SIMULTANEOUS_BETS = BET_TYPES.length;
 export const JANELA_ENTRE_LANCAMENTOS_MS = 12_000;
 
 /**
- * Teto de lançamentos numa rodada. Não é regra de jogo: é rede de segurança.
+ * Teto de lançamentos com janela numa rodada. Não é regra de jogo: é rede de segurança.
  *
- * A chance de 40 nulos seguidos é (153/216)^40, cerca de 1 em 10 milhões de bilhões —
- * na prática a rodada decide em 3,4 lançamentos. Existe pra uma mesa esquecida aberta
- * não ficar lançando pra sempre. Batendo o teto, a mesa lança até decidir de uma vez,
- * sem mais janelas: a rodada TERMINA, ninguém fica com aposta presa.
+ * Batendo o teto, a mesa lança até decidir de uma vez, sem mais janelas — a rodada
+ * TERMINA, ninguém fica com aposta presa. O jogo em si não muda: os dados continuam
+ * sendo os mesmos e a rodada é paga igual.
+ *
+ * O NÚMERO PRECISOU SER MEDIDO, e o primeiro chute estava errado. 153 das 216
+ * combinações são nulas, então a chance de uma rodada passar de N lançamentos é
+ * (153/216)^N. Em 40 isso dá 1 em 976 mil — parece bastante até lembrar que uma mesa
+ * movimentada joga milhares de rodadas, e `verify-janela.ts` de fato achou uma rodada
+ * de 42 lançamentos em 500 mil. Um teto que morde jogo de verdade não é rede de
+ * segurança, é regra escondida.
+ *
+ * Em 100 a chance é 1 em 950 trilhões, com a média em 3,43 lançamentos por rodada.
+ * Aí sim é só a proteção contra mesa esquecida lançando pra sempre.
  */
-export const LANCAMENTOS_MAXIMOS_COM_JANELA = 40;
+export const LANCAMENTOS_MAXIMOS_COM_JANELA = 100;
 
 /**
  * A aposta na linha é dividida ao meio, e o saldo é guardado em número inteiro de

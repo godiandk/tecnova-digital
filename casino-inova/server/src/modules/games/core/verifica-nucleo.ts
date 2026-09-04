@@ -23,6 +23,10 @@ const falhar = (m: string) => { problemas += 1; console.log(`FALHOU: ${m}`); };
   if (podeIrPara('RODADA_FECHADA', 'SORTEIO')) falhar('sortear com a rodada fechada devia ser proibido');
   if (!podeIrPara('SORTEIO', 'APURACAO')) falhar('slots/roleta precisam pular ACOES_DOS_JOGADORES');
   if (!podeIrPara('SORTEIO', 'ACOES_DOS_JOGADORES')) falhar('blackjack precisa entrar em ACOES_DOS_JOGADORES');
+  // O lançamento nulo da banca francesa: o dado saiu, não decidiu, e a MESMA rodada
+  // volta a aceitar aposta. Sem esta transição não existe janela pra aumentar ou desistir.
+  if (!podeIrPara('SORTEIO', 'APOSTAS_ABERTAS')) falhar('o lançamento nulo precisa poder reabrir as apostas');
+  if (podeIrPara('APOSTAS_FECHADAS', 'APOSTAS_ABERTAS')) falhar('reabrir aposta sem lançar o dado devia ser proibido');
 
   if (!aceitaAposta('APOSTAS_ABERTAS')) falhar('APOSTAS_ABERTAS devia aceitar aposta');
   for (const fase of ['APOSTAS_FECHADAS', 'SORTEIO', 'APURACAO', 'PAGAMENTO', 'RODADA_FECHADA'] as const) {
