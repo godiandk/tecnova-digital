@@ -65,6 +65,32 @@ export const MAX_BET = 5000;
 export const MAX_SIMULTANEOUS_BETS = BET_TYPES.length;
 
 /**
+ * Quanto tempo a mesa espera, depois de um lançamento NULO, antes de lançar de novo.
+ *
+ * Um lançamento nulo (4, 8 a 13, 17, 18) não decide nada e as apostas ficam em pé —
+ * mas "ficam em pé" não pode significar "ficam presas". Nesta janela dá pra aumentar,
+ * mudar de lugar ou RETIRAR tudo, e retirar não custa nada: na mesa compartilhada a
+ * ficha só sai do saldo quando o lançamento decide. Quem desistir no meio sai como
+ * entrou.
+ *
+ * 12 segundos porque é o meio da faixa que o cassino físico usa (10 a 15) — tempo de
+ * ler os dados na tigela, decidir e tocar, sem virar espera. É PRAZO DO SERVIDOR: o
+ * app recebe o instante em que acaba e anima sozinho, e o relógio dele chegar a zero
+ * não lança nada. Atrasar o celular não estende o prazo de ninguém.
+ */
+export const JANELA_ENTRE_LANCAMENTOS_MS = 12_000;
+
+/**
+ * Teto de lançamentos numa rodada. Não é regra de jogo: é rede de segurança.
+ *
+ * A chance de 40 nulos seguidos é (153/216)^40, cerca de 1 em 10 milhões de bilhões —
+ * na prática a rodada decide em 3,4 lançamentos. Existe pra uma mesa esquecida aberta
+ * não ficar lançando pra sempre. Batendo o teto, a mesa lança até decidir de uma vez,
+ * sem mais janelas: a rodada TERMINA, ninguém fica com aposta presa.
+ */
+export const LANCAMENTOS_MAXIMOS_COM_JANELA = 40;
+
+/**
  * A aposta na linha é dividida ao meio, e o saldo é guardado em número inteiro de
  * fichas (a coluna `amount` do ledger é BIGINT). Metade de um valor ímpar não é
  * inteira, então valor ímpar na linha é recusado.

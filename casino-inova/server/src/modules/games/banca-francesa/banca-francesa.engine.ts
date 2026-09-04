@@ -50,11 +50,33 @@ export function rollOnce(random: () => number = fracao): number[] {
   return Array.from({ length: DICE_COUNT }, () => Math.floor(random() * FACES) + 1);
 }
 
-function classify(sum: number): DecisiveOutcome | null {
+/**
+ * O que aquela soma decide — ou nada, quando ela é nula.
+ *
+ * Exportado porque a mesa compartilhada precisa julgar UM lançamento por vez: entre um
+ * nulo e o próximo lance abre uma janela de aposta, e pra saber se a janela abre é
+ * preciso saber se aquele lance decidiu. Quem lança até decidir de uma vez só
+ * (`rollUntilDecisive`) continua usando isto por dentro.
+ */
+export function classificar(sum: number): DecisiveOutcome | null {
   if (WINNING_SUMS.ases.includes(sum)) return 'ases';
   if (WINNING_SUMS.pequeno.includes(sum)) return 'pequeno';
   if (WINNING_SUMS.grande.includes(sum)) return 'grande';
   return null;
+}
+
+export interface Lancamento {
+  dice: number[];
+  sum: number;
+  /** `null` é o lançamento nulo: não resolve aposta nenhuma e os dados voltam pro copo. */
+  outcome: DecisiveOutcome | null;
+}
+
+/** Um lançamento, já julgado. É a unidade da mesa compartilhada: um lance, um evento. */
+export function lancar(random: () => number = fracao): Lancamento {
+  const dice = rollOnce(random);
+  const sum = dice.reduce((total, die) => total + die, 0);
+  return { dice, sum, outcome: classificar(sum) };
 }
 
 /** Quantos lançamentos nulos são guardados pra mostrar. Mais que isso não cabe na tela. */
@@ -77,9 +99,7 @@ export function rollUntilDecisive(random: () => number = fracao): RollOutcome {
   let rerolls = 0;
   const nulos: number[][] = [];
   for (let attempt = 0; attempt < 1000; attempt += 1) {
-    const dice = rollOnce(random);
-    const sum = dice.reduce((total, die) => total + die, 0);
-    const outcome = classify(sum);
+    const { dice, sum, outcome } = lancar(random);
     if (outcome) {
       return { dice, sum, outcome, rerolls, nulos };
     }

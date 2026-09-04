@@ -18,7 +18,17 @@ export const PROXIMAS_FASES: Record<FaseDaRodada, readonly FaseDaRodada[]> = {
   APOSTAS_ABERTAS: ['APOSTAS_FECHADAS'],
   // Pular ACOES_DOS_JOGADORES é normal: slots, roleta e bacará não têm decisão.
   APOSTAS_FECHADAS: ['SORTEIO'],
-  SORTEIO: ['ACOES_DOS_JOGADORES', 'APURACAO'],
+  /*
+   * Voltar de SORTEIO pra APOSTAS_ABERTAS é o LANÇAMENTO NULO da banca francesa: os
+   * dados saíram, a soma não decidiu nada (4, 8 a 13, 17, 18) e a mesma rodada
+   * continua — as apostas ficam em pé e abre uma janela pra quem quiser aumentar ou
+   * retirar antes do próximo lance.
+   *
+   * É a mesma RODADA, não uma nova: o rodadaId não muda, ninguém foi cobrado ainda, e
+   * é por isso que a volta é uma transição e não um "fechar e abrir de novo". Fechar a
+   * rodada aqui geraria extrato de uma aposta que nunca foi resolvida.
+   */
+  SORTEIO: ['ACOES_DOS_JOGADORES', 'APURACAO', 'APOSTAS_ABERTAS'],
   ACOES_DOS_JOGADORES: ['APURACAO'],
   APURACAO: ['PAGAMENTO'],
   PAGAMENTO: ['RODADA_FECHADA'],

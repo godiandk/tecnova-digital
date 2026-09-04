@@ -31,32 +31,40 @@ Nada pra instalar. Tudo acontece no Safari.
 
 ## Passo 1 — Criar a conta no Render
 
-No Safari do iPhone, abra **render.com** e toque em **Get Started** → **GitHub**.
+Abra no Safari: **https://dashboard.render.com/register**
 
-Ele vai pedir permissão pra ver seus repositórios. Aceite. O plano gratuito serve pra
-testar — não pede cartão.
+Toque em **GitHub** e autorize. O plano gratuito serve pra testar — não pede cartão.
 
-> Se o site abrir na versão de celular e ficar apertado, toque no **ᴀA** na barra de
-> endereço do Safari → **Solicitar Site para Computador**. O painel do Render foi feito
-> pra tela grande, e assim ele fica utilizável no telefone.
+## Passo 2 — Pedir a versão de computador
 
-## Passo 2 — Apontar pro projeto
+Ainda no Safari, na barra de endereço, toque em **ᴀA** → **Solicitar Site para
+Computador**.
+
+Não é frescura: o painel do Render foi feito pra tela grande, e na versão de celular
+alguns botões deste guia simplesmente não aparecem.
+
+## Passo 3 — Apontar pro projeto
 
 O Render monta tudo sozinho a partir de um arquivo que já está no repositório
-(`render.yaml`, na raiz). Você não precisa configurar servidor, banco nem senha — está
-tudo escrito lá.
+(`render.yaml`, na raiz). Você não configura servidor, banco nem senha — está tudo
+escrito lá.
 
-O botão pra isso **não fica** no "New +". Ele tem endereço próprio:
+Vá direto pra lista de repositórios: **https://dashboard.render.com/select-repo?type=blueprint**
 
-**dashboard.render.com/blueprints**
+> Se esse link não abrir a lista, o caminho manual é
+> **https://dashboard.render.com/blueprints** → **New Blueprint Instance**. O botão
+> **não fica** na lista do "New +" — é a parte em que a maioria trava.
 
-Abra esse endereço e toque em **New Blueprint Instance**. Depois:
+Lá dentro:
 
 1. Escolha o repositório **tecnova-digital**
-2. Escolha a branch **`claude/mobile-casino-tournaments-jdtyzb`**
+   (se ele não aparecer, toque em **Configure account** e dê acesso a
+   `godiandk/tecnova-digital`)
+2. Troque a branch pra **`claude/mobile-casino-tournaments-jdtyzb`** — o padrão vem
+   `main`, e no `main` o jogo não existe
 3. Toque em **Apply**
 
-## Passo 3 — Esperar
+## Passo 4 — Esperar
 
 De 5 a 15 minutos na primeira vez. Ele está fazendo três coisas demoradas: criando o
 banco Postgres, construindo o app web (são mais de 300 imagens de arte pra empacotar) e
@@ -68,7 +76,7 @@ Quando terminar, o serviço `casino-inova` aparece como **Live**, em verde.
 As tabelas do banco são criadas sozinhas quando o servidor sobe. Você não roda comando
 nenhum.
 
-## Passo 4 — Abrir o jogo
+## Passo 5 — Abrir o jogo
 
 No topo da página do serviço tem o endereço, algo como:
 
@@ -78,13 +86,13 @@ https://casino-inova.onrender.com
 
 Toque nele. O jogo abre no Safari.
 
-## Passo 5 — Criar sua conta
+## Passo 6 — Criar sua conta
 
 Toque em **Criar conta** e use qualquer e-mail e senha (a senha precisa de 8 letras ou
 mais). A conta nasce com **10.000 fichas** — o bastante pra jogar em todas as mesas de
 Bronze e ver o saldo mexer de verdade.
 
-## Passo 6 — Virar ícone na tela do iPhone
+## Passo 7 — Virar ícone na tela do iPhone
 
 Isto vale a pena, porque é o que faz parecer aplicativo de verdade:
 
