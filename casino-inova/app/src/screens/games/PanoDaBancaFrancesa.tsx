@@ -55,6 +55,8 @@ interface PanoProps {
   /** Devolve se a aposta foi aceita — é o que decide se a montagem some ou fica. */
   onApostar: (bets: BancaFrancesaBet[]) => Promise<boolean>;
   onGirar: () => Promise<unknown>;
+  /** Tira as fichas da mesa na janela entre lançamentos. Não custa nada. */
+  onRetirar: () => Promise<unknown>;
   onSair: () => void;
   onAbrirPainel: () => void;
   erro?: string | null;
@@ -85,6 +87,7 @@ export function PanoDaBancaFrancesa({
   config,
   onApostar,
   onGirar,
+  onRetirar,
   onSair,
   onAbrirPainel,
   erro,
@@ -123,9 +126,24 @@ export function PanoDaBancaFrancesa({
     [apostas],
   );
 
-  /* --- o lançamento: chacoalho fantasma, depois os dados de verdade --- */
+  /* --- o lançamento: cada lance vira uma jogada na tigela, na hora em que acontece --- */
   const rodada = mesa.lastRound;
-  const { dados, lance, girando, duracaoDoVoo } = useLancamento(rodada);
+  const { dados, lance, girando, duracaoDoVoo } = useLancamento(mesa);
+
+  /*
+   * A janela entre lançamentos: o dado saiu, não decidiu, e a mesa espera antes de
+   * lançar de novo. É a hora de aumentar, mudar de lugar ou desistir — e desistir aqui
+   * não custa nada, porque nesta mesa a ficha só sai do saldo quando o dado decide.
+   *
+   * O prazo vem do servidor como um INSTANTE, não como uma contagem que chega de
+   * segundo em segundo: a tela conta sozinha a partir dele e continua certa mesmo
+   * perdendo mensagem. E chegar a zero aqui não lança nada — quem lança é o servidor.
+   */
+  const janelaAberta = Boolean(mesa.rodada?.esperandoDepoisDeNulo) && !girando;
+  const prazoDaJanela = janelaAberta ? mesa.fase?.terminaEm ?? null : null;
+  const nulosAteAgora = mesa.rodada?.lancamentos.length ?? 0;
+  const minhasApostasNaMesa = meuLugar?.pendingBets ?? [];
+  const tenhoFichaNaMesa = minhasApostasNaMesa.length > 0;
 
   /* Rodada nova chegou: o que estava só encostado já foi pro servidor, a mesa limpa. */
   const marcaDaRodada = rodada?.at;
@@ -316,6 +334,20 @@ export function PanoDaBancaFrancesa({
             </View>
           </View>
 
+          {/*
+            * A faixa da janela fica no AVENTAL, junto das mãos, e não em cima do pano.
+            * Em cima do pano ela taparia a mesa justamente no momento em que a pessoa
+            * precisa olhar pra ela pra decidir onde pôr a ficha.
+            */}
+          {janelaAberta && prazoDaJanela !== null && (
+            <FaixaDaJanela
+              prazo={prazoDaJanela}
+              lancesNulos={nulosAteAgora}
+              podeRetirar={tenhoFichaNaMesa && !travado}
+              onRetirar={onRetirar}
+            />
+          )}
+
           <View style={[styles.linhaDeBotoes, apertado && styles.linhaApertada]}>
             <Pressable
               onPress={apostar}
@@ -447,57 +479,145 @@ function venceu(casa: BancaFrancesaBetType, resultado: string | undefined, mostr
  * tela: eles não decidem nada, e a média real é de 3,4 tentativas até decidir. Mostrar
  * cada uma no tempo do decisivo faria uma rodada azarada custar dez segundos.
  */
-function useLancamento(rodada: TableView['lastRound']) {
+function useLancamento(mesa: TableView) {
   const [dados, setDados] = useState<number[]>([]);
   const [lance, setLance] = useState(0);
   const [rapido, setRapido] = useState(false);
-  /** A rodada ainda está rolando: a mesa fica travada e o resultado não aparece. */
+  /** Um lance está sendo encenado agora: a mesa fica travada enquanto os dados voam. */
   const [girando, setGirando] = useState(false);
-  const ultima = useRef<string | undefined>(undefined);
+
+  /** Que rodada está em cena e quantos lances dela já foram pra tela. */
+  const emCena = useRef({ rodadaId: '', mostrados: 0 });
+  /** A última apuração encenada, pra o decisivo não ser jogado duas vezes. */
+  const ultimaApuracao = useRef<string | undefined>(undefined);
+
+  const rodada = mesa.rodada;
+  const resultado = mesa.lastRound;
+  const rodadaId = rodada?.rodadaId ?? '';
+  const lancesFeitos = rodada?.lancamentos.length ?? 0;
+  const marcaDaApuracao = resultado?.at;
 
   useEffect(() => {
-    if (!rodada || rodada.at === ultima.current) return;
-    ultima.current = rodada.at;
+    /** Joga estes lances na tigela, um depois do outro, e devolve como cancelar. */
+    const encenar = (lances: { dice: number[] }[], rapidos: boolean) => {
+      let vivo = true;
+      const relogios: ReturnType<typeof setTimeout>[] = [];
+      const espera = (ms: number) => new Promise<void>((ok) => relogios.push(setTimeout(ok, ms)));
 
-    let vivo = true;
-    const relogios: ReturnType<typeof setTimeout>[] = [];
-    const espera = (ms: number) => new Promise<void>((ok) => relogios.push(setTimeout(ok, ms)));
+      (async () => {
+        setGirando(true);
+        for (const item of lances) {
+          if (!vivo) return;
+          setRapido(rapidos);
+          setDados(item.dice);
+          setLance((n) => n + 1);
+          await espera(rapidos ? ATE_ASSENTAR_RAPIDO + OLHADA_NO_NULO : ATE_ASSENTAR);
+        }
+        if (vivo) setGirando(false);
+      })();
 
-    (async () => {
-      setGirando(true);
-      let n = 0;
-
-      // Os lançamentos que não decidiram nada: dados de verdade, do servidor.
-      for (const nulo of (rodada.lancamentosNulos ?? []).slice(0, NULOS_MOSTRADOS)) {
-        if (!vivo) return;
-        setRapido(true);
-        setDados(nulo);
-        n += 1;
-        setLance(n);
-        await espera(ATE_ASSENTAR_RAPIDO + OLHADA_NO_NULO);
-      }
-
-      if (!vivo) return;
-      // O decisivo, no tempo cheio.
-      setRapido(false);
-      setDados(rodada.dice);
-      n += 1;
-      setLance(n);
-      await espera(ATE_ASSENTAR);
-      if (vivo) setGirando(false);
-    })();
-
-    return () => {
-      vivo = false;
-      relogios.forEach(clearTimeout);
+      return () => {
+        vivo = false;
+        relogios.forEach(clearTimeout);
+      };
     };
-  }, [rodada]);
+
+    // A rodada virou: o que falta encenar é o lance que DECIDIU. Os nulos dela já
+    // foram jogados um a um, no momento em que aconteceram — repetir aqui seria
+    // mostrar duas vezes o mesmo dado.
+    if (rodadaId && rodadaId !== emCena.current.rodadaId) {
+      emCena.current = { rodadaId, mostrados: 0 };
+      if (resultado && marcaDaApuracao !== ultimaApuracao.current) {
+        ultimaApuracao.current = marcaDaApuracao;
+        return encenar([{ dice: resultado.dice }], false);
+      }
+      // Sentei agora numa mesa que já estava aberta: não há o que encenar.
+      return;
+    }
+
+    // Lances novos da rodada em andamento. São nulos por definição: o que decide
+    // encerra a rodada, e aí ele chega pelo caminho de cima.
+    if (rodada && lancesFeitos > emCena.current.mostrados) {
+      const novos = rodada.lancamentos.slice(emCena.current.mostrados);
+      emCena.current = { rodadaId, mostrados: lancesFeitos };
+      return encenar(novos, true);
+    }
+
+    return undefined;
+    // `rodada` e `resultado` entram pelos campos que mudam: o objeto é novo a cada
+    // mensagem do servidor e reencenaria tudo a cada respiro da mesa.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rodadaId, lancesFeitos, marcaDaApuracao]);
 
   return { dados, lance, girando, duracaoDoVoo: rapido ? VOO_RAPIDO : VOO_CHEIO };
 }
 
-/** Quantos lançamentos nulos aparecem na tela. O texto diz quantos foram de verdade. */
-const NULOS_MOSTRADOS = 2;
+/**
+ * A faixa da janela entre lançamentos: quanto falta, e o botão de desistir.
+ *
+ * O relógio conta a partir de um INSTANTE que o servidor mandou, e não de mensagens
+ * chegando de segundo em segundo — assim ele continua certo mesmo se a rede engasgar, e
+ * adiantar o celular não muda nada, porque quem lança o dado é o servidor.
+ *
+ * O texto diz o que aconteceu sem enfeitar: o dado saiu, não decidiu, sua aposta
+ * continua de pé. Nada de "quase!" — não houve quase nenhum. Uma soma nula não chegou
+ * perto de decidir; ela simplesmente não decide.
+ */
+function FaixaDaJanela({
+  prazo,
+  lancesNulos,
+  podeRetirar,
+  onRetirar,
+}: {
+  prazo: number;
+  lancesNulos: number;
+  podeRetirar: boolean;
+  onRetirar: () => Promise<unknown>;
+}) {
+  const [restante, setRestante] = useState(() => Math.max(0, prazo - Date.now()));
+
+  useEffect(() => {
+    setRestante(Math.max(0, prazo - Date.now()));
+    const relogio = setInterval(() => setRestante(Math.max(0, prazo - Date.now())), 250);
+    return () => clearInterval(relogio);
+  }, [prazo]);
+
+  const segundos = Math.ceil(restante / 1000);
+
+  return (
+    <View style={styles.faixaDaJanela}>
+      <View style={styles.contagem}>
+        <Ionicons name="time-outline" size={16} color={colors.goldBright} />
+        <Text style={styles.contagemNumero}>{segundos}s</Text>
+      </View>
+
+      <Text style={styles.faixaTexto} numberOfLines={2}>
+        {lancesNulos === 1
+          ? 'Os dados não decidiram. Sua aposta continua de pé — dá pra aumentar, mudar ou tirar.'
+          : `${lancesNulos} lançamentos sem decidir. Sua aposta continua de pé — dá pra aumentar, mudar ou tirar.`}
+      </Text>
+
+      {podeRetirar && (
+        <Pressable
+          onPress={onRetirar}
+          accessibilityRole="button"
+          accessibilityLabel="Tirar minhas fichas da mesa"
+          style={styles.botaoRetirar}
+        >
+          <Ionicons name="hand-left-outline" size={16} color={colors.textPrimary} />
+          <Text style={styles.botaoRetirarTexto}>Tirar minhas fichas</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+/*
+ * Não existe mais um teto de nulos mostrados. Antes a rodada inteira chegava resolvida
+ * e a tela encenava só os dois primeiros relançamentos pra não custar dez segundos —
+ * agora cada lance CHEGA no momento em que acontece, e entre um e outro tem uma janela
+ * de aposta de verdade. Mostrar todos deixou de ser um custo e passou a ser o jogo.
+ */
 const VOO_CHEIO = 1150;
 const VOO_RAPIDO = 700;
 /** 2 × 150ms de atraso entre dados + o voo — quando o terceiro dado para. */
@@ -637,6 +757,39 @@ const styles = StyleSheet.create({
   linhaDoTrilho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
   ladoDoTrilho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minWidth: 104 },
   linhaDeBotoes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md },
+  /* A faixa da janela entre lançamentos: contagem, o que houve, e como desistir. */
+  faixaDaJanela: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    marginBottom: spacing.xs,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    backgroundColor: 'rgba(11,15,13,0.82)',
+  },
+  contagem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  contagemNumero: {
+    fontFamily: fontFamily.bodySemiBold,
+    fontSize: fontSize.base,
+    color: colors.goldBright,
+    // Largura fixa: sem isto o texto ao lado pula quando a contagem passa de 10 pra 9.
+    minWidth: 34,
+  },
+  faixaTexto: { flex: 1, fontFamily: fontFamily.body, fontSize: fontSize.sm, color: colors.textSecondary },
+  botaoRetirar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.textSecondary,
+  },
+  botaoRetirarTexto: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textPrimary },
   linhaApertada: { gap: spacing.sm, flexWrap: 'nowrap' },
   botaoPrincipal: {
     minWidth: 210,

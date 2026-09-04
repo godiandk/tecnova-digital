@@ -29,6 +29,7 @@ import {
   onTableUpdated,
   placeBets,
   roll,
+  withdrawBets,
   PublicTableSummary,
   TableView,
 } from '../../api/bancaFrancesaMesa';
@@ -163,6 +164,19 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
       }
     });
 
+  /*
+   * Desistir na janela entre lançamentos. Não custa nada e o aviso diz isso com
+   * todas as letras: nesta mesa a ficha só sai do saldo quando o dado decide, então
+   * quem tira as fichas no meio de uma sequência de nulos sai com o saldo com que
+   * entrou. Dizer isso importa — sem dizer, ninguém usa um botão que parece cobrar.
+   */
+  const handleWithdraw = () =>
+    run(async () => {
+      if (!table) return;
+      setTable(await withdrawBets(table.id));
+      setNotice('Fichas retiradas — você saiu desta rodada sem perder nada.');
+    });
+
   const handleLeave = () =>
     run(async () => {
       if (!table) return;
@@ -195,6 +209,7 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
           config={config}
           onApostar={handlePlaceBets}
           onGirar={handleRoll}
+          onRetirar={handleWithdraw}
           onSair={handleLeave}
           onAbrirPainel={() => setPainelAberto(true)}
           erro={error}

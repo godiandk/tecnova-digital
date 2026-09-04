@@ -17,6 +17,7 @@
     "verify:domino-abertura": "ts-node src/modules/games/domino/verify-abertura.ts",
     "verify:banca-francesa": "ts-node src/modules/games/banca-francesa/verify-rtp.ts",
     "verify:banca-francesa-janela": "ts-node src/modules/games/banca-francesa/verify-janela.ts",
+    "verify:banca-francesa-mesa": "node verificacao/verifica-janela-mesa.mjs",
     "verify:blackjack": "ts-node src/modules/games/blackjack/verify-strategy.ts",
     "verify:blackjack-mesa": "node verificacao/verifica-blackjack.mjs",
     "verify:idempotencia": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" ts-node src/modules/wallet/verify-idempotencia.ts",
