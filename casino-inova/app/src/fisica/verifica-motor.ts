@@ -208,5 +208,70 @@ const AGITADOR: Arena = { formato: 'caixa', raioX: 2.4, raioY: 2.4 };
   else console.log('  o dado fica preso dentro da cápsula — ok');
 }
 
+// --- 7. o agitador do Bac Bo desliga um de cada vez ---
+{
+  const DESLIGA_EM = [40, 70, 100, 130]; // quadros: 0,67s / 1,17s / 1,67s / 2,17s
+  let errados = 0;
+  let paradoCedo = 0;
+  let fora = 0;
+  let noAr = 0;
+
+  for (let semente = 1; semente <= 600; semente += 1) {
+    const faces = [1 + (semente % 6), 1 + ((semente * 3) % 6), 1 + ((semente * 5) % 6), 1 + ((semente * 7) % 6)];
+    /*
+     * UM LANÇAMENTO POR DADO, e a cápsula EM PÉ — que é como o jogo usa. Cada dado está
+     * no próprio tubo: eles não se veem, e simulados na mesma arena o motor os separava
+     * quando se sobrepunham, empurrando um pra fora da parede.
+     */
+    const caminhos = faces.map((face, i) =>
+      lancarDados({
+        faces: [face],
+        arena: { formato: 'caixa', raioX: 1.7, raioY: 2.1, emPe: true },
+        semente: semente * 31 + i,
+        entrada: { x: 0, y: 0, z: 0 },
+        agitarAte: [DESLIGA_EM[i]],
+        quadrosFixos: Math.max(...DESLIGA_EM) + 48,
+      }).caminhos[0],
+    );
+
+    for (let i = 0; i < faces.length; i += 1) {
+      const caminho = caminhos[i];
+      const fim = caminho[caminho.length - 1];
+      if (faceVirada(fim.rx, fim.ry) !== faces[i]) errados += 1;
+
+      // Enquanto o agitador dele não desligou, o dado tem que estar SE MEXENDO.
+      const antes = caminho.slice(Math.max(0, DESLIGA_EM[i] - 20), DESLIGA_EM[i] - 2);
+      const mexeu = antes.some(
+        (q, k) => k > 0 && (Math.abs(q.x - antes[k - 1].x) > 0.01 || Math.abs(q.y - antes[k - 1].y) > 0.01),
+      );
+      if (antes.length > 4 && !mexeu) paradoCedo += 1;
+
+      for (const q of caminho) {
+        if (Math.abs(q.x) > 0.72 || Math.abs(q.y) > 1.12) fora += 1;
+      }
+
+      /*
+       * NO ÚLTIMO QUADRO O DADO TEM QUE ESTAR NO CHÃO DA CÁPSULA.
+       *
+       * Isto pegou um defeito que só apareceu na tela: o último dado a parar ficava
+       * congelado NO AR, flutuando acima do agitador, porque o sopro jogava ele a cinco
+       * alturas de dado e não sobrava tempo de cair antes de a animação acabar.
+       */
+      // Em pé, assentado é estar NO FUNDO do tubo, e não com z zerado.
+      if (fim.y < 1.1 - 0.05) noAr += 1;
+    }
+  }
+
+  console.log(`\nagitador em ordem (desligam nos quadros ${DESLIGA_EM.join(', ')}):`);
+  console.log(`  ${errados} faces erradas, ${paradoCedo} parados cedo, ${fora} quadros fora da cápsula, ${noAr} dados congelados no ar`);
+  if (errados > 0) falhar(`${errados} dados do agitador pararam na face errada`);
+  if (paradoCedo > 0) falhar(`${paradoCedo} dados pararam de se mexer ANTES de o agitador deles desligar — some o suspense`);
+  if (fora > 0) falhar(`${fora} quadros com dado atravessando o vidro da cápsula`);
+  if (noAr > 0) falhar(`${noAr} dados terminaram FLUTUANDO acima do agitador em vez de assentados`);
+  if (errados + paradoCedo + fora + noAr === 0) {
+    console.log('  cada dado se mexe até o agitador dele desligar, e aí assenta na face certa — ok');
+  }
+}
+
 console.log(problemas === 0 ? '\nTUDO OK — é dado, não é animação de dado.' : `\n${problemas} PROBLEMA(S).`);
 process.exit(problemas === 0 ? 0 : 1);

@@ -103,7 +103,38 @@ export const MAPA_BAC_BO = {
     { x: 0.613, y: 0.285 },
     { x: 0.703, y: 0.285 },
   ] as PontoDaMesa[],
+  /**
+   * O VIDRO de cada agitador — o espaço em que o dado pode se mexer lá dentro.
+   *
+   * MEDIDO NA ARTE, ampliando a faixa dos agitadores e lendo as bordas do cilindro de
+   * vidro do segundo pote (o mais bem enquadrado): ele vai de 0.354 a 0.406 na
+   * horizontal, com centro em 0.380 — que bate com o 0.383 do mapa. Na vertical o vidro
+   * vai de 0.209 (logo abaixo da tampa de latão) a 0.324 (a base).
+   *
+   * ESTE NÚMERO É QUEM MANDA NO TAMANHO DO DADO, e não o contrário. Antes o dado era
+   * 0.05 da largura do tampo, escolhido sozinho, e o vidro tem 0.052: o dado preenchia
+   * o tubo inteiro. Não sobrava folga nenhuma pra ele se mexer, e qualquer arredondamento
+   * o punha atravessando o vidro — que foi exatamente o que apareceu na tela.
+   *
+   * Agora o dado é uma fração DESTA largura (ver `dadoDentroDoVidro` em
+   * medidasDaMesa.ts), então ele cabe por construção, em qualquer tamanho de tela.
+   */
+  vidroDoAgitador: { largura: 0.052, topo: 0.209, base: 0.324 },
 };
+
+/**
+ * A ORDEM EM QUE OS AGITADORES DESLIGAM, e por que ela não é 1, 2, 3, 4.
+ *
+ * Os dados 0 e 1 são do JOGADOR (agitadores azuis, à esquerda) e os dados 2 e 3 são da
+ * BANCA (vermelhos, à direita). Parar os dois de um lado e depois os dois do outro
+ * entregaria o resultado no meio do caminho: com os dois do jogador já parados, quem
+ * sabe somar já conhece metade da conta e fica só esperando.
+ *
+ * Alternando — vermelho, azul, vermelho, azul — nenhum dos dois lados fecha a soma
+ * antes do último dado. O suspense dura até o fim, e dura porque a informação chega
+ * dividida, não porque alguém está segurando o resultado.
+ */
+export const ORDEM_DE_PARAR_BAC_BO = [2, 0, 3, 1];
 
 
 
@@ -371,6 +402,18 @@ export const MAPA_BAC_BO_EM_PE = {
     { x: 0.59, y: 0.268 },
     { x: 0.775, y: 0.268 },
   ] as PontoDaMesa[],
+  /*
+   * O vidro na arte em pé.
+   *
+   * Os agitadores são os mesmos potes, só que a arte em pé é mais estreita, então cada
+   * um ocupa mais fração da largura. A proporção entre o vidro e o espaço de um
+   * agitador ao vizinho é a mesma da arte deitada (0.052 / 0.09 = 0.578), e aqui o
+   * espaço entre vizinhos é 0.185 — daí a largura de 0.107.
+   *
+   * Na vertical a mesma altura de vidro ocupa MENOS fração, porque a tela em pé é bem
+   * mais alta: 0.070 contra os 0.115 da deitada.
+   */
+  vidroDoAgitador: { largura: 0.107, topo: 0.236, base: 0.306 },
 };
 
 /** Largura útil de cada casa no tampo em pé, pras pilhas de mesa cheia. */

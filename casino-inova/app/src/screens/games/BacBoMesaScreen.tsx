@@ -6,8 +6,23 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { TAMPOS_16X9 } from '../../data/tamposDaMesa';
 import { TABLE_IMAGES } from '../../data/tableImages';
-import { MAPA_BAC_BO, MAPA_BAC_BO_EM_PE, LARGURA_UTIL_EM_PE } from '../../data/mapaDosTampos';
-import { dadoNoAgitador, fichaNoPano, fichaNoTrilho, larguraDoPlacar, telaBaixa } from '../../theme/medidasDaMesa';
+import {
+  MAPA_BAC_BO,
+  MAPA_BAC_BO_EM_PE,
+  LARGURA_UTIL_EM_PE,
+  ORDEM_DE_PARAR_BAC_BO,
+} from '../../data/mapaDosTampos';
+import { DadoFisico } from '../../components/DadoFisico';
+import { MeuNivel, fetchMeuNivel } from '../../api/niveis';
+import { Arena, lancarDados } from '../../fisica/motorDeDados';
+import { BACBO_DIE_IMAGES } from '../../data/gameAssets';
+import {
+  dadoDentroDoVidro,
+  fichaNoPano,
+  fichaNoTrilho,
+  larguraDoPlacar,
+  telaBaixa,
+} from '../../theme/medidasDaMesa';
 import { TampoDaMesa, usePalco } from '../../components/TampoDaMesa';
 import { useJanela } from '../../theme/useJanela';
 import { CasaDeAposta } from '../../components/CasaDeAposta';
@@ -79,6 +94,15 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
   const [anterior, setAnterior] = useState<ApostasNaMesa | null>(null);
   const [rodada, setRodada] = useState<BacBoRoundResponse | null>(null);
   const [rolando, setRolando] = useState(false);
+  /*
+   * O nível DESTA pessoa: é dele que saem o mínimo, o máximo e as fichas do trilho.
+   *
+   * Sem isto o trilho mostrava as vinte e cinco denominações que existem, a maioria
+   * apagada por saldo insuficiente — um trilho em que quase tudo é impossível é pior do
+   * que um trilho curto. E o teto por casa vinha da configuração pública do jogo, igual
+   * pra quem criou a conta agora e pra quem tem cem milhões.
+   */
+  const [meuNivel, setMeuNivel] = useState<MeuNivel | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   /*
@@ -109,13 +133,26 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
       );
   }, []);
 
+  /*
+   * O nível é buscado de novo sempre que o saldo muda: ganhar uma rodada grande, ou
+   * receber fichas, pode subir a pessoa de mesa. Sem isto o trilho ficaria no nível de
+   * quando a tela abriu.
+   */
+  useEffect(() => {
+    fetchMeuNivel().then(setMeuNivel).catch(() => undefined);
+  }, [saldo]);
+
+  /** Os limites desta pessoa nesta mesa. Enquanto o nível não chega, os do nível de entrada. */
+  const minimoDaMesa = meuNivel?.nivel.minimo ?? config?.minBet ?? 0;
+  const maximoDaMesa = meuNivel?.nivel.maximo ?? config?.maxBet ?? 0;
+
   const total = useMemo(() => CASAS.reduce((t, c) => t + soma(apostas[c]), 0), [apostas]);
 
   /** Casas montadas abaixo do mínimo da mesa: o servidor recusaria, então avisamos antes. */
-  const abaixoDoMinimo = useMemo(() => {
-    const min = config?.minBet ?? 0;
-    return CASAS.filter((c) => apostas[c].length > 0 && soma(apostas[c]) < min);
-  }, [apostas, config]);
+  const abaixoDoMinimo = useMemo(
+    () => CASAS.filter((c) => apostas[c].length > 0 && soma(apostas[c]) < minimoDaMesa),
+    [apostas, minimoDaMesa],
+  );
 
   /** Encostar a ficha escolhida numa casa. Tocar de novo empilha outra. */
   const encostar = (casa: BacBoBetType) => {
@@ -127,8 +164,8 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
       setAviso('Você não tem fichas suficientes pra essa.');
       return;
     }
-    if (soma(apostas[casa]) + ficha > config.maxBet) {
-      setAviso(`O máximo por casa é ${config.maxBet.toLocaleString('pt-BR')}.`);
+    if (maximoDaMesa > 0 && soma(apostas[casa]) + ficha > maximoDaMesa) {
+      setAviso(`O máximo por casa é ${maximoDaMesa.toLocaleString('pt-BR')}.`);
       return;
     }
 
@@ -227,7 +264,7 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
 
   const rotuloDoBotao = () => {
     if (total === 0) return 'Encoste uma ficha no pano';
-    if (abaixoDoMinimo.length > 0) return `Mínimo ${config?.minBet.toLocaleString('pt-BR')} por casa`;
+    if (abaixoDoMinimo.length > 0) return `Mínimo ${minimoDaMesa.toLocaleString('pt-BR')} por casa`;
     return `Confirmar ${total.toLocaleString('pt-BR')}`;
   };
 
@@ -322,6 +359,8 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
               }}
               saldo={saldo - total}
               travado={rolando}
+              minimo={minimoDaMesa}
+              maximo={maximoDaMesa || undefined}
             />
 
             <View style={styles.ladoDoTrilho}>
@@ -397,6 +436,13 @@ function MesaDoBacBo({
   const mapa = palco?.emPe ? MAPA_BAC_BO_EM_PE : MAPA_BAC_BO;
   const larguras = palco?.emPe ? LARGURA_UTIL_EM_PE : undefined;
 
+  /*
+   * O número do lançamento. Serve de semente pra física: o mesmo lançamento redesenhado
+   * (uma remontagem da tela no meio da animação) sai idêntico em vez de saltar, e
+   * lançamentos diferentes chacoalham diferente sem ninguém sortear nada à mão.
+   */
+  const lance = useMemo(() => contarLance(rodada), [rodada]);
+
   return (
     <>
       {/* --- As três casas do pano, com as fichas encostadas em cima --- */}
@@ -422,12 +468,22 @@ function MesaDoBacBo({
         fica enquanto a mesa aceita aposta. Dado parado no vidro sem rodada nenhuma é
         cenário; dado que aparece quando a rodada começa é o jogo.
       */}
-      {(rolando || rodada) &&
-        mapa.dados.map((ponto, indice) => (
-          <DadoNoAgitador key={indice} ponto={ponto} face={dados[indice]} rolando={rolando} indice={indice} />
-        ))}
+      {(rolando || rodada) && <DadosNosAgitadores mapa={mapa} faces={dados} rolando={rolando} lance={lance} />}
     </>
   );
+}
+
+/** As seis faces do dado do Bac Bo, em ordem, montadas uma vez só. */
+const FACES_DO_BAC_BO = [1, 2, 3, 4, 5, 6].map((n) => BACBO_DIE_IMAGES[n]);
+
+/**
+ * Um número que muda a cada rodada nova. Sai do próprio resultado, e não de um contador
+ * guardado: assim ele sobrevive a a tela ser remontada no meio da animação.
+ */
+function contarLance(rodada: BacBoRoundResponse | null): number {
+  if (!rodada) return 0;
+  const dados = [...rodada.playerDice, ...rodada.bankerDice];
+  return dados.reduce((soma, d, i) => soma * 7 + d * (i + 1), 1);
 }
 
 /** Quanto tempo os dados chacoalham antes de mostrar a face. */
@@ -467,6 +523,9 @@ function Trilho({ apertado, ...resto }: {
   cor: PlayerColor | undefined;
   saldo: number;
   travado: boolean;
+  /** Os limites do NÍVEL de quem está jogando: é o que decide quais fichas aparecem. */
+  minimo?: number;
+  maximo?: number;
 }) {
   const palco = usePalco();
   return <TrilhoDeFichas {...resto} tamanho={fichaNoTrilho(palco?.largura ?? 700, apertado)} />;
@@ -482,43 +541,140 @@ function PilhaNoPano({ fichas, cor }: { fichas: number[]; cor: PlayerColor | und
 
 
 /** Um dado assentado na boca do agitador onde ele está desenhado. */
-function DadoNoAgitador({
-  ponto,
-  face,
+/**
+ * Os quatro dados chacoalhando nos agitadores, e parando UM DE CADA VEZ.
+ *
+ * Cada dado vive dentro do próprio tubo de vidro, e o tubo é apertado: o dado mal cabe,
+ * bate nos dois lados e sobe — o movimento da bola na máquina de bingo, que é o que se
+ * queria. A física é a mesma da tigela da banca francesa; muda só a arena (uma caixa
+ * estreita em vez de uma elipse) e o fato de o agitador continuar soprando até desligar.
+ *
+ * A ORDEM É VERMELHO, AZUL, VERMELHO, AZUL. Parar os dois do jogador e depois os dois da
+ * banca entregaria metade da conta cedo demais: com os dois azuis parados, quem sabe
+ * somar já espera sem suspense nenhum. Alternando, nenhum lado fecha a soma antes do
+ * último dado — e o suspense vem de a informação chegar dividida, não de alguém segurar
+ * o resultado. O resultado já estava decidido no servidor antes do primeiro chacoalho.
+ */
+function DadosNosAgitadores({
+  mapa,
+  faces,
   rolando,
-  indice,
+  lance,
 }: {
-  ponto: { x: number; y: number };
-  face: number | null;
+  mapa: typeof MAPA_BAC_BO;
+  faces: Array<number | null>;
   rolando: boolean;
-  indice: number;
+  lance: number;
 }) {
   const palco = usePalco();
-  if (!palco) return null;
-  // O dado cresce com a mesa. 5% da largura do tampo é o que cabe DENTRO do vidro do
-  // agitador desenhado na arte — maior que isso e ele transborda o copo.
-  const tamanho = dadoNoAgitador(palco.largura);
+
+  const preparado = useMemo(() => {
+    if (!palco) return null;
+    const conhecidas = faces.map((f) => f ?? 1);
+    if (conhecidas.length === 0) return null;
+
+    const vidro = mapa.vidroDoAgitador;
+    /*
+     * O TAMANHO DO DADO SAI DA CÁPSULA, e não de um número próprio. Antes ele era 5% da
+     * largura do tampo, escolhido sem olhar o vidro — e o vidro tem 5,2%. O dado
+     * preenchia o tubo inteiro e saía pra fora dele na tela.
+     */
+    const tamanho = dadoDentroDoVidro(palco.largura, vidro.largura);
+    const escalaDoMundo = tamanho / 2;
+
+    /*
+     * A cápsula em unidades do motor. O dado tem raio 1, então uma cápsula de raio 1,2
+     * deixa ele andar 0,2 pra cada lado — apertado de propósito: é o que faz ele
+     * chacoalhar em vez de rolar.
+     */
+    const arena: Arena = {
+      formato: 'caixa',
+      /*
+       * O tubo está EM PÉ na tela. Sem isto a gravidade puxaria pra fora do plano, como
+       * na tigela vista de cima, e os quatro dados parariam boiando cada um numa altura
+       * do vidro em vez de assentados no fundo.
+       */
+      emPe: true,
+      raioX: Math.max(1.05, (vidro.largura * palco.largura) / 2 / escalaDoMundo),
+      raioY: Math.max(1.05, ((vidro.base - vidro.topo) * palco.altura) / 2 / escalaDoMundo),
+    };
+
+    /*
+     * O CENTRO DA ARENA É O MEIO DO VIDRO, e não o ponto onde o dado assenta.
+     *
+     * O mapa guarda onde o dado PARA (no fundo do tubo). Se a física usasse esse ponto
+     * como centro, metade da cápsula ficaria abaixo da base do pote — o dado quicaria
+     * pra dentro do latão. O meio do vidro é (topo + base) / 2.
+     */
+    const centroDoVidro = (vidro.topo + vidro.base) / 2;
+
+    // Quando cada agitador desliga, em quadros de 60 por segundo.
+    const desligaEm: number[] = [];
+    ORDEM_DE_PARAR_BAC_BO.forEach((indiceDoDado, posicao) => {
+      desligaEm[indiceDoDado] = PRIMEIRO_A_PARAR + posicao * INTERVALO_ENTRE_PARADAS;
+    });
+    const total = Math.max(...desligaEm) + QUADROS_PRA_ASSENTAR;
+
+    /*
+     * UM LANÇAMENTO POR DADO, e não os quatro juntos.
+     *
+     * Cada dado está no PRÓPRIO tubo de vidro: eles não se veem e não podem se encostar.
+     * Simulados na mesma arena, o motor tratava os quatro como estando na mesma caixa e
+     * os separava quando se sobrepunham — e essa separação empurrava um pra FORA da
+     * parede. Era o dado que aparecia do lado de fora do pote na tela.
+     */
+    const caminhos = conhecidas.map((face, i) =>
+      lancarDados({
+        faces: [face],
+        arena,
+        semente: lance * 6151 + face * (i + 1) * 17 + i,
+        entrada: { x: 0, y: 0, z: 1 },
+        agitarAte: [desligaEm[i]],
+        quadrosFixos: total,
+      }).caminhos[0],
+    );
+
+    return { caminhos, tamanho, escalaDoMundo, centroDoVidro };
+  }, [palco, faces, lance, mapa]);
+
+  if (!palco || !preparado) return null;
+
   return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: 'absolute',
-        left: palco.esquerda + ponto.x * palco.largura - tamanho / 2,
-        top: palco.topo + ponto.y * palco.altura - tamanho / 2,
-      }}
-    >
-      <Dado
-        face={face}
-        rolando={rolando}
-        indice={indice}
-        tamanho={tamanho}
-        nome={indice < 2 ? `Dado ${indice + 1} do jogador` : `Dado ${indice - 1} da banca`}
-        bacBo
-        noAgitador
-      />
-    </View>
+    <>
+      {preparado.caminhos.map((caminho, indice) => {
+        const ponto = mapa.dados[indice];
+        if (!ponto) return null;
+        return (
+          <DadoFisico
+            key={indice}
+            caminho={caminho}
+            faces={FACES_DO_BAC_BO}
+            tamanho={preparado.tamanho}
+            escalaDoMundo={preparado.escalaDoMundo}
+            centro={{
+              x: palco.esquerda + ponto.x * palco.largura,
+              y: palco.topo + preparado.centroDoVidro * palco.altura,
+            }}
+            chave={lance}
+          />
+        );
+      })}
+    </>
   );
 }
+
+/** Quando o primeiro agitador desliga, e de quanto em quanto os outros seguem. */
+const PRIMEIRO_A_PARAR = 54; // 0,9s
+const INTERVALO_ENTRE_PARADAS = 33; // 0,55s entre um e o próximo
+/*
+ * 48 quadros (0,8s) pro último dado cair e assentar depois de o agitador dele desligar.
+ *
+ * O número saiu da medição, não do olho: com 18 o último dado ficava congelado no meio
+ * do tubo em 15% dos lançamentos, e com 45 ainda sobrava um em duzentos e quarenta.
+ * `verifica-agitador.ts` mede isso em onze tamanhos de tela nas duas artes.
+ */
+const QUADROS_PRA_ASSENTAR = 48;
+
 
 function BotaoDeMesa({
   icone,

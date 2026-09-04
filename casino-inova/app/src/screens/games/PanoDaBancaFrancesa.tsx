@@ -739,7 +739,13 @@ function DadosNaTigela({ faces, lance, rapido }: { faces: number[]; lance: numbe
       arena,
       semente: lance * 7919 + faces.reduce((soma, f, i) => soma + f * (i + 1) * 31, 0),
       // Entram por cima e pela esquerda, como quem despeja o copo na beirada.
-      entrada: { x: -arena.raioX * 0.6, y: -arena.raioY * 0.5, z: 8 },
+      /*
+       * A altura de entrada é 5, e não mais: cada unidade sobe pouco mais de meio dado
+       * na tela, e com 8 os dados nasciam ACIMA DA BORDA DA MESA — os primeiros quadros
+       * mostravam dado pela metade, cortado pelo tampo, antes de entrarem na tigela.
+       * Cinco deixa a queda visível inteira, com a sombra já dentro da tigela.
+       */
+      entrada: { x: -arena.raioX * 0.6, y: -arena.raioY * 0.5, z: 5 },
       /*
        * O lançamento nulo é mais curto: ele não decide nada, e a rodada pode ter três ou
        * quatro deles seguidos. No tempo do decisivo, uma rodada azarada viraria dez

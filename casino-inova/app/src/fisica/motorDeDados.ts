@@ -56,6 +56,19 @@ interface Corpo {
 export interface Arena {
   /** 'elipse' é a tigela de couro da banca francesa; 'caixa' é o agitador do Bac Bo. */
   formato: 'elipse' | 'caixa';
+  /**
+   * A arena está EM PÉ na tela — um tubo visto de lado, e não uma tigela vista de cima.
+   *
+   * Muda pra onde a gravidade puxa, e isso não é detalhe. Na tigela, olhada de cima, o
+   * que sobe e desce é a ALTURA acima do feltro (o eixo z), e o dado pousa em qualquer
+   * ponto do couro. No tubo do Bac Bo, olhado de frente, quem sobe e desce é o próprio
+   * eixo Y DA TELA: o dado tem que terminar NO FUNDO do vidro, sempre, como qualquer
+   * coisa dentro de um pote.
+   *
+   * Sem isto os quatro dados paravam boiando no meio do tubo, cada um numa altura
+   * diferente, porque nada os puxava pra baixo dentro do plano.
+   */
+  emPe?: boolean;
   /** Meia largura útil, em unidades de meio dado (o dado tem raio 1). */
   raioX: number;
   /** Meia altura útil, em unidades de meio dado. */
@@ -172,6 +185,22 @@ export interface OpcoesDoLancamento {
    * um instante antes de a rodada seguir.
    */
   quadrosFixos?: number;
+  /**
+   * Até que quadro cada dado CONTINUA SENDO SACUDIDO. Um número por dado.
+   *
+   * É o agitador do Bac Bo: uma cápsula de vidro estreita com ar soprando embaixo, como
+   * a máquina de bingo. O dado não cai e assenta — ele fica batendo no vidro até o
+   * operador desligar aquele agitador.
+   *
+   * Sem isto o dado assentaria em meio segundo (a cápsula é pequena, o atrito come a
+   * energia depressa) e os quatro parariam quase juntos. O suspense do Bac Bo é
+   * exatamente o contrário: os agitadores desligam UM DE CADA VEZ, e enquanto o seu não
+   * desligou o dado continua se mexendo, ilegível.
+   *
+   * Depois do quadro indicado, ninguém sopra mais: o atrito e a gravidade fazem o
+   * resto, e o dado assenta na face que o servidor mandou.
+   */
+  agitarAte?: number[];
 }
 
 /**
@@ -213,14 +242,92 @@ export function lancarDados(opcoes: OpcoesDoLancamento): Lancamento {
       const c = corpos[i];
       if (c.parado) continue;
 
+      /*
+       * O SOPRO DO AGITADOR. Enquanto este dado está sendo sacudido, ele ganha energia
+       * de volta a cada quadro, em direção sorteada — é o ar da máquina de bingo
+       * empurrando a bola. O resultado é um dado que não consegue assentar: bate no
+       * vidro, sobe, gira, bate de novo.
+       */
+      const sacudindo = opcoes.agitarAte ? quadro < (opcoes.agitarAte[i] ?? 0) : false;
+      if (sacudindo) {
+        c.vx += (sortear() - 0.5) * 34;
+        c.vy += (sortear() - 0.5) * 34;
+        /*
+         * O EMPURRÃO PRA CIMA ACONTECE NO FUNDO DO TUBO, UMA VEZ POR TOQUE.
+         *
+         * Escrito como `if (c.z < 0.35) c.vz += ...` ele se SOMAVA: o dado sobe 0,22 por
+         * quadro, continuava abaixo de 0,35 no quadro seguinte, e levava outro empurrão,
+         * e outro. Três quadros bastavam pra a velocidade triplicar, e a verificação
+         * mediu o resultado: o último dado chegava a subir NOVE alturas de dado e ainda
+         * estava no ar quando a animação acabava — congelado flutuando acima do pote.
+         *
+         * Agora é `=` e não `+=`, e só quando o dado está encostado E não está subindo.
+         * É o que o jato de ar faz numa máquina de bingo: chuta a bola quando ela cai no
+         * fundo, não empurra ela a viagem inteira. Sobe pouco mais de um dado e cai em
+         * pouco mais de um quarto de segundo.
+         */
+        if (arena.emPe) {
+          // No tubo em pé, o jato chuta o dado PRA CIMA DA TELA quando ele está no fundo.
+          const fundo = Math.max(0.05, arena.raioY - 1);
+          if (c.y >= fundo - 0.02 && c.vy >= 0) c.vy = -(6 + sortear() * 7);
+        } else if (c.z <= 0.02 && c.vz <= 0) {
+          c.vz = 6 + sortear() * 7;
+        }
+        c.wx += (sortear() - 0.5) * 260;
+        c.wy += (sortear() - 0.5) * 260;
+        c.wz += (sortear() - 0.5) * 160;
+      }
+
       // --- gravidade e voo ---
-      c.vz -= GRAVIDADE * PASSO;
+      /*
+       * Em pé, a gravidade puxa pra baixo NA TELA (+y); deitada, puxa pra fora dela (-z).
+       *
+       * E EM PÉ O EIXO Z NÃO EXISTE. Num tubo visto de frente, "altura acima do tampo"
+       * não quer dizer nada — o que sobe e desce já é o y da tela. Zerar não é atalho: é
+       * dizer que aquele eixo não é usado nesta arena.
+       *
+       * Sem zerar, o z herdava a velocidade inicial de arremesso e subia pra sempre, sem
+       * nada puxando de volta. Chegava a 11,7 no fim, e como a tela levanta o dado
+       * conforme o z, os quatro apareciam flutuando 124 pixels ACIMA dos potes, pousados
+       * em cima das tampas de latão.
+       */
+      if (arena.emPe) {
+        c.vy += GRAVIDADE * PASSO;
+        c.z = 0;
+        c.vz = 0;
+      } else {
+        c.vz -= GRAVIDADE * PASSO;
+      }
       c.x += c.vx * PASSO;
       c.y += c.vy * PASSO;
       c.z += c.vz * PASSO;
 
+      // --- o fundo do tubo, quando ele está em pé ---
+      if (arena.emPe) {
+        const fundo = Math.max(0.05, arena.raioY - 1);
+        if (c.y >= fundo) {
+          c.y = fundo;
+          if (c.vy > 0) {
+            /*
+             * COM O AGITADOR DESLIGADO O DADO QUICA MENOS. Não é atalho: enquanto o ar
+             * sopra, o dado é mantido no alto e volta com força; desligado, ele só cai
+             * dentro de um tubo de vidro, e vidro devolve pouco. Sem esta diferença, uma
+             * parte dos lançamentos terminava com o dado ainda no meio do tubo, boiando
+             * em vez de assentado no fundo — medido em verifica-agitador.ts.
+             */
+            c.vy = -c.vy * (sacudindo ? DEVOLUCAO_DO_CHAO : DEVOLUCAO_DO_CHAO * 0.45);
+            // A batida no fundo vira giro, como vira em qualquer coisa que cai de lado.
+            c.wz += c.vx * 26;
+            c.wx += c.vx * 14;
+            if (Math.abs(c.vy) < 1.2) c.vy = 0;
+          }
+          const freioNoFundo = Math.max(0, 1 - ATRITO_DO_CHAO * PASSO);
+          c.vx *= freioNoFundo;
+        }
+      }
+
       // --- o chão ---
-      if (c.z <= 0) {
+      if (!arena.emPe && c.z <= 0) {
         c.z = 0;
         if (c.vz < 0) {
           c.vz = -c.vz * DEVOLUCAO_DO_CHAO;
@@ -241,6 +348,16 @@ export function lancarDados(opcoes: OpcoesDoLancamento): Lancamento {
 
       // --- as paredes ---
       bater(c, arena);
+
+      /*
+       * Sem ar, o dado também perde velocidade no plano. É o que faz ele parar de correr
+       * de um lado pro outro do tubo depois que o agitador desliga.
+       */
+      if (arena.emPe && !sacudindo) {
+        const arrasto = Math.max(0, 1 - 2.4 * PASSO);
+        c.vx *= arrasto;
+        c.vy *= arrasto;
+      }
 
       // --- o giro morre devagar ---
       const freioDoGiro = Math.max(0, 1 - FREIO_DO_GIRO * PASSO);
@@ -275,7 +392,11 @@ export function lancarDados(opcoes: OpcoesDoLancamento): Lancamento {
       if (c.parado) continue;
       const anda = Math.hypot(c.vx, c.vy) + Math.abs(c.vz);
       const roda = (Math.abs(c.wx) + Math.abs(c.wy) + Math.abs(c.wz)) / 360;
-      if (c.z === 0 && anda < QUASE_PARADO && roda < QUASE_PARADO) {
+      // Em pé, "no chão" é estar no fundo do tubo; deitada, é estar no feltro.
+      const encostado = arena.emPe ? c.y >= Math.max(0.05, arena.raioY - 1) - 0.02 : c.z === 0;
+      // Quem ainda está sendo sacudido não para, nem que a conta diga que parou.
+      const aindaSacudindo = opcoes.agitarAte ? quadro < (opcoes.agitarAte[i] ?? 0) : false;
+      if (!aindaSacudindo && encostado && anda < QUASE_PARADO && roda < QUASE_PARADO) {
         c.parado = true;
         paradaDe[i] = quadro;
       }
@@ -288,6 +409,8 @@ export function lancarDados(opcoes: OpcoesDoLancamento): Lancamento {
 
     quadro += 1;
     if (corpos.every((c) => c.parado)) break;
+    // Com agitador, a conta vai pelo menos até o último desligar.
+    if (opcoes.agitarAte && quadro <= Math.max(...opcoes.agitarAte)) continue;
   }
 
   // Quem não parou sozinho (bateu o teto) é dado como parado agora.
@@ -305,7 +428,7 @@ export function lancarDados(opcoes: OpcoesDoLancamento): Lancamento {
    * definida. Ao contrário, cortar o fim do caminho cortaria justamente os quadros em
    * que o dado se ajeita na face — e o dado pararia numa face qualquer.
    */
-  assentarNasFaces(caminhos, faces);
+  assentarNasFaces(caminhos, faces, opcoes.agitarAte);
 
   return { caminhos, quadros: caminhos[0]?.length ?? 0, colisoes, paradaDe };
 }
@@ -418,7 +541,7 @@ function colidir(a: Corpo, b: Corpo): boolean {
  * mais curta — o dado assenta na face como um dado assenta, sem desandar meia volta pra
  * trás na frente de quem olha.
  */
-function assentarNasFaces(caminhos: Quadro[][], faces: number[]) {
+function assentarNasFaces(caminhos: Quadro[][], faces: number[], assentarDe?: number[]) {
   for (let i = 0; i < caminhos.length; i += 1) {
     const caminho = caminhos[i];
     if (caminho.length === 0) continue;
@@ -431,7 +554,14 @@ function assentarNasFaces(caminhos: Quadro[][], faces: number[]) {
     // no tampo é o que impede três dados parecerem alinhados por um esquadro.
     const alvoRz = Math.round(ultimo.rz / 90) * 90;
 
-    const inicio = Math.max(0, caminho.length - QUADROS_DE_ASSENTAR);
+    /*
+     * Onde o dado começa a se ajeitar na face. Normalmente é nos últimos quadros; com
+     * agitador é logo depois de o sopro parar, pra o dado assentar NA HORA em que
+     * aquele agitador desliga, e não todos juntos no fim.
+     */
+    const inicio = assentarDe
+      ? Math.min(caminho.length - 2, Math.max(0, assentarDe[i] ?? 0))
+      : Math.max(0, caminho.length - QUADROS_DE_ASSENTAR);
     const deRx = caminho[inicio].rx;
     const deRy = caminho[inicio].ry;
     const deRz = caminho[inicio].rz;

@@ -141,7 +141,40 @@ export function fichaNoTrilho(larguraDoTampo: number, apertado = false): number 
   return apertado ? Math.min(bruto, FICHA_NO_TRILHO_MINIMA) : bruto;
 }
 
-/** Lado do dado no agitador de vidro. */
+/**
+ * Quanto do vidro o dado ocupa, de lado a lado.
+ *
+ * 58% é o que faz caber COM FOLGA PRA CHACOALHAR. Acima disso o dado entala: sobra
+ * menos de um quarto do próprio tamanho pra cada lado, e o movimento vira tremidinha em
+ * vez de batida no vidro. Abaixo disso ele fica pequeno demais pra ler a face de longe.
+ *
+ * Com 58%, o dado tem 0,73 do próprio raio de folga pra cada lado na horizontal e mais
+ * de um dado inteiro de altura pra subir — que é o espaço da bola na máquina de bingo.
+ */
+const DADO_DENTRO_DO_VIDRO = 0.58;
+
+/**
+ * Lado do dado dentro do agitador de vidro, DERIVADO DA CÁPSULA.
+ *
+ * ESTA É A CORREÇÃO DE UM DEFEITO QUE APARECEU NA TELA: o dado saía de dentro do pote.
+ * A causa era o tamanho vir de um número próprio — 5% da largura do tampo — escolhido
+ * sem olhar a cápsula. O vidro tem 5,2% da largura. O dado preenchia o tubo inteiro,
+ * não sobrava folga nenhuma, e qualquer arredondamento o punha atravessando o vidro.
+ *
+ * Agora quem manda é a cápsula: o dado é uma fração DELA. Ele cabe por construção, em
+ * qualquer tamanho de tela e em qualquer das duas artes (deitada e em pé), porque as
+ * duas informam a própria largura de vidro.
+ */
+export function dadoDentroDoVidro(larguraDoTampo: number, larguraDoVidro: number): number {
+  return Math.max(10, larguraDoVidro * larguraDoTampo * DADO_DENTRO_DO_VIDRO);
+}
+
+/**
+ * Lado do dado no agitador, quando não se sabe a largura do vidro.
+ *
+ * Sobrou pra quem ainda não passa a cápsula. Prefira `dadoDentroDoVidro`: este aqui
+ * escolhe o tamanho sem olhar onde o dado vai ficar, que é a origem do defeito acima.
+ */
 export function dadoNoAgitador(larguraDoTampo: number): number {
   return entre(DADO_NO_AGITADOR_MINIMO, larguraDoTampo * DADO_NO_AGITADOR);
 }
