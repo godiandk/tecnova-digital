@@ -73,8 +73,25 @@ export function TrilhoDeFichas({
    */
   const rolagem = useRef<ScrollView>(null);
   const [larguraVisivel, setLarguraVisivel] = useState(0);
-  const [larguraTotal, setLarguraTotal] = useState(0);
   const [posicao, setPosicao] = useState(0);
+
+  /*
+   * A LARGURA DO TRILHO É CALCULADA, e não medida.
+   *
+   * Medir criava um laço que se mordia: a centralização é padding, o padding entra na
+   * largura do conteúdo, a largura do conteúdo decide o padding. Na primeira passada as
+   * fichas sobravam e ganhavam folga; na segunda a folga tinha feito o conteúdo caber
+   * exato, então a folga virava zero; na terceira sobrava de novo. Onde ele parava
+   * dependia de qual passada ganhava — e era por isso que o mesmo trilho aparecia
+   * centrado numa tela e grudado na esquerda em outra.
+   *
+   * Não precisa medir: sabemos quantas fichas são, o diâmetro de cada uma e o vão entre
+   * elas. A conta é exata e não depende de nada que ela mesma produza.
+   */
+  const vao = tamanho * 0.16;
+  const respiro = tamanho * 0.2;
+  const larguraTotal =
+    cabem.length * tamanho + Math.max(0, cabem.length - 1) * vao + respiro * 2;
 
   const passo = (tamanho + tamanho * 0.16) * 3;
   /*
@@ -99,8 +116,7 @@ export function TrilhoDeFichas({
    * Com padding, a medida do conteúdo continua sendo a natural, a comparação continua
    * valendo, e o trilho fica centrado do mesmo jeito quando sobra espaço.
    */
-  const sobra = Math.max(0, larguraVisivel - larguraTotal);
-  const folgaLateral = larguraTotal > 0 ? sobra / 2 : 0;
+  const folgaLateral = Math.max(0, larguraVisivel - larguraTotal) / 2;
 
   const deslizar = (direcao: 1 | -1) => {
     const alvo = Math.max(0, Math.min(larguraTotal - larguraVisivel, posicao + direcao * passo));
@@ -121,12 +137,11 @@ export function TrilhoDeFichas({
         horizontal
         showsHorizontalScrollIndicator={false}
         onLayout={(e) => setLarguraVisivel(e.nativeEvent.layout.width)}
-        onContentSizeChange={(largura) => setLarguraTotal(largura)}
         onScroll={(e) => setPosicao(e.nativeEvent.contentOffset.x)}
         scrollEventThrottle={16}
         contentContainerStyle={[
           styles.trilho,
-          { gap: tamanho * 0.16, paddingHorizontal: tamanho * 0.2 + folgaLateral },
+          { gap: vao, paddingHorizontal: respiro + folgaLateral },
         ]}
         accessibilityRole="radiogroup"
         accessibilityLabel="Fichas"

@@ -9,7 +9,7 @@ import {
   LANCAMENTOS_MAXIMOS_COM_JANELA,
   MAX_SIMULTANEOUS_BETS,
 } from '../games/banca-francesa/banca-francesa.config';
-import { NIVEIS_DE_MESA, nivelPara } from '../games/shared/niveis-de-mesa';
+import { NIVEIS_DE_MESA, nivelPara, problemaComAAposta } from '../games/shared/niveis-de-mesa';
 import { MAX_SEATS, PLAYER_COLORS, PlayerColor } from './player-colors';
 import { generateTableCode } from './table-code';
 import { umDe } from '../games/shared/rng';
@@ -648,11 +648,19 @@ export class BancaFrancesaTableService {
         throw new BadRequestException(`Aposta em "${bet.type}" duplicada — some tudo numa aposta só.`);
       }
       seen.add(bet.type);
-      if (!Number.isFinite(bet.amount) || bet.amount < nivel.minimo || bet.amount > nivel.maximo) {
-        throw new BadRequestException(
-          `Na mesa ${nivel.nome}, cada aposta vai de ${nivel.minimo.toLocaleString('pt-BR')} a ${nivel.maximo.toLocaleString('pt-BR')} fichas.`,
-        );
-      }
+      /*
+       * A REGRA DE VALOR VEM DE UM LUGAR SÓ (`problemaComAAposta`), e não de uma cópia
+       * escrita aqui.
+       *
+       * Havia duas cópias — esta e a da mesa compartilhada — e as duas continuaram
+       * recusando aposta acima de vinte vezes o mínimo depois que o teto foi tirado do
+       * jogo. Quem tinha cem bilhões montava cinquenta bilhões no pano e a mesa
+       * respondia "cada aposta vai de 500.000.000 a 10.000.000.000": um limite que não
+       * existia mais em lugar nenhum, menos aqui. É exatamente o defeito que a função
+       * compartilhada foi criada pra impedir, e ela só impede se for a única a decidir.
+       */
+      const problema = problemaComAAposta(bet.amount, saldo);
+      if (problema) throw new BadRequestException(problema);
     }
   }
 

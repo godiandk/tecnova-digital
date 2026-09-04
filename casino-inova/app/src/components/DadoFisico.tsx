@@ -4,12 +4,11 @@ import Animated, {
   Easing,
   SharedValue,
   useAnimatedStyle,
-  useDerivedValue,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 
-import { Quadro, QUADROS_POR_SEGUNDO } from '../fisica/motorDeDados';
+import { faceVirada, Quadro, QUADROS_POR_SEGUNDO } from '../fisica/motorDeDados';
 
 /**
  * Um dado percorrendo o caminho que a física calculou.
@@ -112,7 +111,13 @@ export function DadoFisico({ caminho, faces, tamanho, escalaDoMundo, centro, cha
         { scaleY: escalaY * perspectiva },
       ],
     };
-  }, [quadros, escalaDoMundo, centro.x, centro.y]);
+    /*
+     * `trilha` PRECISA ESTAR AQUI. Ela é lida dentro do worklet, e sem entrar na lista
+     * o worklet fica com a trilha do lançamento anterior — o dado repetiria o mesmo
+     * caminho a cada rodada, porque no Bac Bo e na Banca Francesa todo lançamento tem o
+     * mesmo número de quadros e `quadros` sozinho nunca muda.
+     */
+  }, [quadros, escalaDoMundo, centro.x, centro.y, trilha]);
 
   const estiloDaSombra = useAnimatedStyle(() => {
     'worklet';
@@ -127,22 +132,31 @@ export function DadoFisico({ caminho, faces, tamanho, escalaDoMundo, centro, cha
         { scale: 1 - alturaRelativa * 0.45 },
       ],
     };
-  }, [quadros, escalaDoMundo, centro.x, centro.y, tamanho]);
+  }, [quadros, escalaDoMundo, centro.x, centro.y, tamanho, trilha]);
 
   /*
-   * Qual face está de frente AGORA, num valor só, calculado uma vez por quadro.
+   * QUAL FACE ESTÁ DE FRENTE EM CADA QUADRO — calculado UMA VEZ, em JavaScript comum.
    *
-   * Cada face lê este número em vez de refazer a conta: seis contas por quadro viraram
-   * uma. E, mais importante, isto deixa cada face ter o próprio `useAnimatedStyle`
-   * dentro do próprio componente — hook chamado em laço funciona por acaso enquanto a
-   * lista tem sempre o mesmo tamanho, e quebra no dia em que não tiver.
+   * Antes isto era um worklet que refazia a conta a cada quadro, no processador de
+   * animação. Duas coisas ruins vinham daí, e as duas apareceram na tela:
+   *
+   * 1. A CONTA ESTAVA DUPLICADA. O motor tem `faceVirada`, e o worklet tinha uma cópia
+   *    dela reescrita — com o aviso, no próprio comentário, de que se as duas
+   *    divergissem o dado mostraria uma face e o servidor pagaria outra. Agora existe
+   *    uma só, a do motor, e é a mesma que a verificação confere.
+   *
+   * 2. O WORKLET GUARDAVA O CAMINHO ANTIGO. A lista de dependências era `[quadros]`, e
+   *    no Bac Bo todos os lançamentos têm o MESMO número de quadros (o motor iguala os
+   *    quatro dados). Quadros iguais, dependência igual, worklet não reconstruído: ele
+   *    continuava lendo as rotações do primeiro lançamento da sessão para sempre. Era
+   *    isto que fazia os quatro dados assentarem mostrando a mesma face enquanto o texto
+   *    embaixo dizia outro resultado.
+   *
+   * Uma lista de números inteiros, calculada quando o caminho muda, não tem nem uma
+   * coisa nem a outra: é o mesmo dado que o motor já entregou, lido do jeito mais
+   * simples possível.
    */
-  const faceVisivel = useDerivedValue(() => {
-    'worklet';
-    if (quadros === 0) return 1;
-    const i = Math.min(quadros - 1, Math.max(0, Math.floor(andar.value * quadros)));
-    return faceNaFrente(trilha.rx[i], trilha.ry[i]);
-  }, [quadros]);
+  const facePorQuadro = useMemo(() => caminho.map((q) => faceVirada(q.rx, q.ry)), [caminho]);
 
   const meio = -tamanho / 2;
 
@@ -161,7 +175,13 @@ export function DadoFisico({ caminho, faces, tamanho, escalaDoMundo, centro, cha
         style={[styles.dado, { width: tamanho, height: tamanho, marginLeft: meio, marginTop: meio }, estiloDoDado]}
       >
         {faces.map((fonte, indice) => (
-          <FaceDoDado key={indice} fonte={fonte} numero={indice + 1} faceVisivel={faceVisivel} />
+          <FaceDoDado
+            key={indice}
+            fonte={fonte}
+            numero={indice + 1}
+            facePorQuadro={facePorQuadro}
+            andar={andar}
+          />
         ))}
       </Animated.View>
     </>
@@ -178,65 +198,34 @@ export function DadoFisico({ caminho, faces, tamanho, escalaDoMundo, centro, cha
 function FaceDoDado({
   fonte,
   numero,
-  faceVisivel,
+  facePorQuadro,
+  andar,
 }: {
   fonte: ImageSourcePropType;
   numero: number;
-  faceVisivel: SharedValue<number>;
+  /** Que face está de frente em cada quadro do caminho. Vem pronta do motor. */
+  facePorQuadro: number[];
+  /** Onde a animação está, de 0 a 1. */
+  andar: SharedValue<number>;
 }) {
   const estilo = useAnimatedStyle(() => {
     'worklet';
-    return { opacity: faceVisivel.value === numero ? 1 : 0 };
-  }, [numero]);
+    const total = facePorQuadro.length;
+    if (total === 0) return { opacity: 0 };
+    const i = Math.min(total - 1, Math.max(0, Math.floor(andar.value * total)));
+    return { opacity: facePorQuadro[i] === numero ? 1 : 0 };
+    /*
+     * `facePorQuadro` ENTRA NA LISTA DE DEPENDÊNCIAS. Sem ela, o worklet guardaria a
+     * lista do lançamento anterior — que é exatamente o defeito que esta versão
+     * conserta, só que um andar acima.
+     */
+  }, [numero, facePorQuadro]);
 
   return (
     <Animated.View style={[StyleSheet.absoluteFill, estilo]}>
       <Image source={fonte} style={styles.face} resizeMode="contain" />
     </Animated.View>
   );
-}
-
-/**
- * Qual face está virada pra frente, nesta orientação.
- *
- * É a mesma conta de `faceVirada` no motor, reescrita como worklet porque roda no
- * processador de animação, onde não dá pra chamar função de fora. A verificação do motor
- * confere a versão de lá; se as duas divergirem, o dado mostra uma face e o servidor
- * pagou outra — por isso a tabela de faces é a mesma, escrita igual, e as duas são
- * conferidas contra as mesmas seis orientações.
- */
-function faceNaFrente(rx: number, ry: number): number {
-  'worklet';
-  const grau = Math.PI / 180;
-  const sx = Math.sin(rx * grau);
-  const cx = Math.cos(rx * grau);
-  const sy = Math.sin(ry * grau);
-  const cy = Math.cos(ry * grau);
-
-  const normais: number[][] = [
-    [1, 0, 0, 1],
-    [6, 0, 0, -1],
-    [2, 1, 0, 0],
-    [5, -1, 0, 0],
-    [3, 0, -1, 0],
-    [4, 0, 1, 0],
-  ];
-
-  let melhor = 1;
-  let maiorZ = -2;
-  for (let k = 0; k < normais.length; k += 1) {
-    const face = normais[k][0];
-    const x = normais[k][1];
-    const y = normais[k][2];
-    const z = normais[k][3];
-    const z1 = y * sx + z * cx;
-    const z2 = -x * sy + z1 * cy;
-    if (z2 > maiorZ) {
-      maiorZ = z2;
-      melhor = face;
-    }
-  }
-  return melhor;
 }
 
 const styles = StyleSheet.create({

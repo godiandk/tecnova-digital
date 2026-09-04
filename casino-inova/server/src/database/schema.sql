@@ -165,3 +165,28 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS birth_date DATE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS legal_name TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_version TEXT;
+
+-- --- Recompensa diária ---
+--
+-- Uma linha por jogador, e não uma por coleta: o que precisa ser sabido é só onde a
+-- pessoa está na sequência e quando ela coletou pela última vez. O histórico de quem
+-- recebeu o quê já existe no livro-caixa (`ledger_entries`, tipo 'presente'), e guardar
+-- de novo aqui seria duas verdades sobre o mesmo fato.
+--
+-- `last_claim_day` é a DATA (sem hora) do dia em que a coleta aconteceu, e não o
+-- instante. É ela que a regra usa — "coletou hoje", "coletou ontem" —, e guardar a data
+-- torna a conta imune a fuso e a horário de verão dentro do mesmo dia.
+--
+-- A CHAVE PRIMÁRIA NO user_id É O QUE IMPEDE COLETAR DUAS VEZES. A coleta é um UPDATE
+-- condicionado a `last_claim_day < CURRENT_DATE`: dois pedidos simultâneos disputam a
+-- mesma linha, o segundo encontra a data já de hoje e não atualiza nada — então não
+-- paga. Sem isso, dois toques rápidos no botão valeriam dois prêmios.
+CREATE TABLE IF NOT EXISTS daily_rewards (
+  user_id        TEXT    PRIMARY KEY REFERENCES users(id),
+  -- Em que dia do calendário (1 a 30) foi a última coleta.
+  last_claim_day INTEGER NOT NULL CHECK (last_claim_day BETWEEN 1 AND 30),
+  -- A data da última coleta, em UTC. NULL nunca acontece: a linha só nasce ao coletar.
+  last_claim_on  DATE    NOT NULL,
+  -- Quantos dias seguidos, pra mostrar na tela. É informação, não regra.
+  streak         INTEGER NOT NULL DEFAULT 1 CHECK (streak >= 1)
+);

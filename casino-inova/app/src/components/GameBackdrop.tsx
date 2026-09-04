@@ -34,7 +34,24 @@ interface GameBackdropProps {
  * Então a mesa joga numa coluna centralizada, como fazem os cassinos que também rodam
  * no navegador, e o resto da tela vira ambiente.
  */
-const LARGURA_MESA = 560;
+/*
+ * A coluna era 560 fixos, e num monitor de 1920 isso é uma tira no meio da tela — a
+ * mesa aparecia menor do que aparece num celular grande, com preto dos dois lados. O
+ * limite existe por um motivo real (os controles foram desenhados pra uma coluna
+ * estreita, e espalhá-los por 1920 é redesenhar dez telas), mas 560 é estreito demais
+ * pra qualquer monitor.
+ *
+ * Agora ela acompanha a janela: 42% da largura, nunca menos que os 560 de antes e nunca
+ * mais que 900 — acima disso os controles começam a nadar. Num monitor de 1920 dá 806,
+ * quase metade a mais de mesa; num notebook de 1366 dá os mesmos 574 de sempre.
+ */
+const LARGURA_MESA_MINIMA = 560;
+const LARGURA_MESA_MAXIMA = 900;
+const FATIA_DA_JANELA = 0.42;
+
+export function larguraDaMesa(larguraDaJanela: number): number {
+  return Math.min(LARGURA_MESA_MAXIMA, Math.max(LARGURA_MESA_MINIMA, larguraDaJanela * FATIA_DA_JANELA));
+}
 
 /** Abaixo disso a tela é estreita o bastante pra mesa ocupar tudo, como no celular. */
 const LIMITE_ESTREITO = 700;
@@ -76,7 +93,7 @@ export function GameBackdrop({ source, children, apagarAMesa }: GameBackdropProp
         <View style={styles.veu} />
       </Fundo>
 
-      <View style={[styles.coluna, { width: LARGURA_MESA }]}>{mesa}</View>
+      <View style={[styles.coluna, { width: larguraDaMesa(janela.width) }]}>{mesa}</View>
     </View>
   );
 }

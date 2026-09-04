@@ -26,6 +26,7 @@ import { StockMarketModule } from './modules/games/stock-market/stock-market.mod
 import { ChatModule } from './modules/chat/chat.module';
 import { RoadmapModule } from './modules/roadmap/roadmap.module';
 import { TournamentsModule } from './modules/tournaments/tournaments.module';
+import { RecompensasModule } from './modules/recompensas/recompensas.module';
 import { SharedGamesModule } from './modules/games/shared/shared-games.module';
 import { CoreDeSalasModule } from './modules/games/core/core.module';
 
@@ -51,6 +52,7 @@ import { CoreDeSalasModule } from './modules/games/core/core.module';
     ChatModule,
     RoadmapModule,
     TournamentsModule,
+    RecompensasModule,
     RolesModule,
     CouponsModule,
     TrucoModule,

@@ -8,7 +8,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { getTutorialByGameId } from '../../data/tutorials';
 import { TABLE_IMAGES } from '../../data/tableImages';
 import { TutorialModal } from '../../components/TutorialModal';
-import { GameBackdrop } from '../../components/GameBackdrop';
+import { GameBackdrop, larguraDaMesa } from '../../components/GameBackdrop';
 import { ChipStack } from '../../components/ChipStack';
 import { RodaDaRoleta } from '../../components/RodaDaRoleta';
 import { PanoDaRoleta } from '../../components/PanoDaRoleta';
@@ -225,8 +225,12 @@ export function RouletteScreen({ navigation }: Props) {
     }
   };
 
-  /* A roda ocupa o que sobra da largura, com teto: num tablet ela não vira um prato. */
-  const larguraDoPano = Math.min(janela.width - spacing.md * 2, 560);
+  /*
+   * O pano ocupa a coluna da mesa inteira, menos o respiro dos lados. A largura da
+   * coluna é a mesma que o GameBackdrop usa — sem isso, num monitor grande o pano
+   * ficava com 560 dentro de uma coluna de 806, e sobrava feltro vazio dos dois lados.
+   */
+  const larguraDoPano = Math.min(janela.width, larguraDaMesa(janela.width)) - spacing.md * 2;
   const tamanhoDaRoda = Math.min(larguraDoPano * 0.62, 240);
 
   return (
