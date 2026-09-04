@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -7,324 +7,397 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { getTutorialByGameId } from '../../data/tutorials';
 import { TABLE_IMAGES } from '../../data/tableImages';
-import { DEALER_IMAGES } from '../../data/dealerImages';
 import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
-import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
 import { RodaDaRoleta } from '../../components/RodaDaRoleta';
+import { PanoDaRoleta } from '../../components/PanoDaRoleta';
+import { TrilhoDeFichas } from '../../components/TrilhoDeFichas';
 import { RouletteHistoryPanel, RouletteHistory } from '../../components/RouletteHistoryPanel';
-import { ApiError } from '../../api/client';
-import { fetchRouletteConfig, fetchRouletteHistory, spinRoulette, RouletteConfig, RouletteBetType, RouletteSpinResponse } from '../../api/roulette';
-import { usePlayer } from '../../data/usePlayer';
+import { ApiError, novaAcao } from '../../api/client';
+import {
+  fetchRouletteConfig,
+  fetchRouletteHistory,
+  spinRoulette,
+  ApostaDaRoleta,
+  RouletteConfig,
+  RouletteSpinResponse,
+} from '../../api/roulette';
+import { fetchMeuNivel, MeuNivel } from '../../api/niveis';
+import { CASAS_POR_CHAVE, CasaDoPano } from '../../data/panoDaRoleta';
+import { chapaEmTexto, corDoJogador } from '../../data/fichasDeValor';
+import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
+import { usuarioLogadoId } from '../../api/session';
+import { useJanela } from '../../theme/useJanela';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Roulette'>;
 
-/** Diâmetro da roda na tela. Cabe num celular estreito e ainda deixa ler as casas. */
-const TAMANHO_DA_RODA = 268;
-
-const BET_STEP = 50;
-
-const BET_OPTIONS: { type: Exclude<RouletteBetType, 'numero'>; label: string }[] = [
-  { type: 'vermelho', label: 'Vermelho' },
-  { type: 'preto', label: 'Preto' },
-  { type: 'par', label: 'Par' },
-  { type: 'impar', label: 'Ímpar' },
-  { type: 'baixo', label: '1-18' },
-  { type: 'alto', label: '19-36' },
-  { type: 'duzia1', label: '1ª Dúzia' },
-  { type: 'duzia2', label: '2ª Dúzia' },
-  { type: 'duzia3', label: '3ª Dúzia' },
-];
-
-const POCKET_COLOR: Record<'vermelho' | 'preto' | 'verde', string> = {
-  vermelho: colors.ruby,
-  preto: '#1B1F1D',
-  verde: colors.feltBright,
+const COR_DA_CASA: Record<string, string> = {
+  vermelho: '#B0201C',
+  preto: '#171A18',
+  verde: '#116B3C',
 };
 
+/** Quanto a bola leva pra assentar. É o mesmo tempo da parada em RodaDaRoleta. */
+const ATE_A_BOLA_PARAR = 3200;
+
+/**
+ * A ROLETA, jogada na mesa.
+ *
+ * A tela anterior tinha dez pílulas escritas ("Vermelho · ×2", "Número exato · ×36") e
+ * um − / + preso no teto da configuração. Duas coisas erradas ao mesmo tempo: não havia
+ * como escolher QUAL número (a pílula "número exato" não perguntava qual), e quem tinha
+ * bilhões precisava apertar o "mais" a vida inteira pra chegar na própria aposta mínima.
+ *
+ * Agora é mesa: o pano com as 37 casas e as doze apostas de fora, a ficha escolhida no
+ * trilho (que vem do degrau da pessoa, calculado pelo servidor sobre o saldo), quantas
+ * apostas quiser antes de a bola correr, e desfazer/limpar/repetir como na mesa.
+ *
+ * A BOLA CONTINUA NÃO DECIDINDO NADA. O servidor sorteia e responde ANTES de a roda
+ * começar a parar; a animação leva a bola até a casa que já saiu. É por isso que o
+ * resultado escrito e o saldo só aparecem depois que ela assenta — não pra criar
+ * suspense falso, mas porque contar antes seria a tela entregando um resultado que ela
+ * não produziu.
+ */
 export function RouletteScreen({ navigation }: Props) {
   const tutorial = getTutorialByGameId('roleta');
-
   const [tutorialVisible, setTutorialVisible] = useState(true);
-  const [config, setConfig] = useState<RouletteConfig | null>(null);
-  const [configError, setConfigError] = useState<string | null>(null);
-  const [balance, setBalance] = useState(0);
-  const { jogador } = usePlayer();
 
-  // Semeia o saldo com a carteira de verdade; a partir da primeira aposta quem manda é
-  // o `newBalance` que o servidor devolve.
-  useEffect(() => {
-    if (jogador) setBalance(jogador.chipBalance);
-  }, [jogador]);
-  const [amount, setAmount] = useState(100);
-  const [betType, setBetType] = useState<RouletteBetType>('vermelho');
-  const [betNumber, setBetNumber] = useState(7);
-  const [spinning, setSpinning] = useState(false);
-  const [spinError, setSpinError] = useState<string | null>(null);
-  const [lastResult, setLastResult] = useState<RouletteSpinResponse | null>(null);
-  const [history, setHistory] = useState<RouletteHistory | null>(null);
+  const { jogador } = usePlayer();
+  const saldo = jogador?.chipBalance ?? 0;
+  const janela = useJanela();
+
+  const [config, setConfig] = useState<RouletteConfig | null>(null);
+  const [erroDaConfig, setErroDaConfig] = useState<string | null>(null);
+  const [meuNivel, setMeuNivel] = useState<MeuNivel | null>(null);
+  const [historico, setHistorico] = useState<RouletteHistory | null>(null);
+
+  /** Quanto está encostado em cada casa, pela chave dela. */
+  const [apostas, setApostas] = useState<Record<string, number>>({});
+  /**
+   * As fichas encostadas, na ordem, cada uma com O VALOR QUE ELA TINHA.
+   *
+   * Guardar só a casa não bastava: quem encosta uma de 500 mil, troca pra uma de 10
+   * milhões, encosta de novo e desfaz teria 10 milhões tirados da primeira. O valor vem
+   * junto porque é ele que volta.
+   */
+  const [ordem, setOrdem] = useState<Array<{ chave: string; valor: number }>>([]);
+  /** A última rodada apostada, pro "repetir". */
+  const [anterior, setAnterior] = useState<Record<string, number> | null>(null);
+  const [ficha, setFicha] = useState(50);
+  const [fichaAjustada, setFichaAjustada] = useState(false);
+
+  const [girando, setGirando] = useState(false);
+  const [rodada, setRodada] = useState<RouletteSpinResponse | null>(null);
+  /** O resultado só é ESCRITO depois que a bola assenta. Antes disso a roda é que fala. */
+  const [resultadoNaTela, setResultadoNaTela] = useState<RouletteSpinResponse | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  const [recado, setRecado] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRouletteConfig()
-      .then((data) => {
-        setConfig(data);
-        setAmount(Math.max(data.minBet, Math.min(100, data.maxBet)));
-      })
-      .catch((error: unknown) => {
-        setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
-      });
-    fetchRouletteHistory().then(setHistory).catch(() => undefined);
+      .then(setConfig)
+      .catch((e: unknown) =>
+        setErroDaConfig(e instanceof ApiError ? e.message : 'Não foi possível falar com o servidor.'),
+      );
+    fetchRouletteHistory().then(setHistorico).catch(() => undefined);
   }, []);
 
-  const adjustAmount = (delta: number) => {
-    if (!config) return;
-    setAmount((current) => Math.max(config.minBet, Math.min(config.maxBet, current + delta)));
+  /* O degrau é relido a cada mudança de saldo: perder um degrau muda mínimo e fichas. */
+  useEffect(() => {
+    fetchMeuNivel().then(setMeuNivel).catch(() => undefined);
+  }, [saldo]);
+
+  /* A ficha começa valendo o mínimo da mesa, e não 50 — uma vez só, sem atropelar escolha. */
+  useEffect(() => {
+    if (!meuNivel || fichaAjustada) return;
+    setFicha(meuNivel.nivel.minimo);
+    setFichaAjustada(true);
+  }, [meuNivel, fichaAjustada]);
+
+  const minimo = meuNivel?.nivel.minimo ?? config?.minBet ?? 50;
+  const total = useMemo(() => Object.values(apostas).reduce((t, v) => t + v, 0), [apostas]);
+  const travado = girando;
+
+  const encostar = useCallback(
+    (casa: CasaDoPano) => {
+      if (travado) return;
+      if (total + ficha > saldo) {
+        setRecado('Você não tem fichas suficientes pra essa.');
+        return;
+      }
+      setRecado(null);
+      setErro(null);
+      setApostas((atual) => ({ ...atual, [casa.chave]: (atual[casa.chave] ?? 0) + ficha }));
+      setOrdem((atual) => [...atual, { chave: casa.chave, valor: ficha }]);
+    },
+    [travado, total, ficha, saldo],
+  );
+
+  /*
+   * Desfaz A ÚLTIMA FICHA, e não a casa inteira: quem encostou três no 17 e errou a
+   * terceira quer tirar uma, não perder as três.
+   */
+  const desfazer = () => {
+    if (travado || ordem.length === 0) return;
+    const ultima = ordem[ordem.length - 1];
+    setOrdem((atual) => atual.slice(0, -1));
+    setApostas((atual) => {
+      const restante = (atual[ultima.chave] ?? 0) - ultima.valor;
+      const proximo = { ...atual };
+      if (restante > 0) proximo[ultima.chave] = restante;
+      else delete proximo[ultima.chave];
+      return proximo;
+    });
+    setRecado(null);
   };
 
-  const adjustBetNumber = (delta: number) => {
-    setBetNumber((current) => Math.max(0, Math.min(36, current + delta)));
+  const limpar = () => {
+    if (travado) return;
+    setApostas({});
+    setOrdem([]);
+    setRecado(null);
   };
 
-  const handleSpin = async () => {
-    if (!config || spinning) return;
-    setSpinning(true);
-    setSpinError(null);
+  const repetir = () => {
+    if (travado || !anterior) return;
+    const custo = Object.values(anterior).reduce((t, v) => t + v, 0);
+    if (custo > saldo) {
+      setRecado('Você não tem fichas suficientes pra repetir.');
+      return;
+    }
+    setApostas(anterior);
+    setOrdem(Object.entries(anterior).map(([chave, valor]) => ({ chave, valor })));
+    setRecado(null);
+  };
+
+  const girar = async () => {
+    if (travado || total === 0) return;
+    const abaixo = Object.entries(apostas).filter(([, v]) => v < minimo);
+    if (abaixo.length > 0) {
+      setRecado(`O mínimo é ${chapaEmTexto(minimo)} por casa.`);
+      return;
+    }
+
+    const montagem = { ...apostas };
+    const bets: ApostaDaRoleta[] = Object.entries(montagem).map(([chave, amount]) => {
+      const c = CASAS_POR_CHAVE.get(chave)!;
+      return c.tipo === 'numero' ? { type: c.tipo, number: c.numero, amount } : { type: c.tipo, amount };
+    });
+
+    setGirando(true);
+    setErro(null);
+    setRecado(null);
+    setResultadoNaTela(null);
     try {
-      const bet = betType === 'numero' ? { type: betType, number: betNumber } : { type: betType };
-      const result = await spinRoulette(bet, amount);
-      setLastResult(result);
-      setBalance(result.newBalance);
-      setHistory(result.history);
-    } catch (error) {
-      setSpinError(error instanceof ApiError ? error.message : 'Não foi possível girar agora.');
-    } finally {
-      setSpinning(false);
+      const r = await spinRoulette(bets, novaAcao());
+      setRodada(r);
+      setAnterior(montagem);
+      setHistorico(r.history);
+      /*
+       * A bola já sabe onde vai parar — o servidor decidiu antes desta linha. O que
+       * espera aqui é só a roda terminar de contar: o número escrito, o saldo e as
+       * casas acesas entram todos quando ela assenta, juntos, porque é isso que
+       * acontece na mesa quando o crupiê aponta a casa.
+       */
+      setTimeout(() => {
+        setResultadoNaTela(r);
+        setApostas({});
+        setOrdem([]);
+        saldoChegouDeFora(r.newBalance);
+        setGirando(false);
+      }, ATE_A_BOLA_PARAR);
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível girar agora.');
+      setGirando(false);
     }
   };
 
-  const multiplier = config ? config.totalMultiplier[betType] : undefined;
+  /* A roda ocupa o que sobra da largura, com teto: num tablet ela não vira um prato. */
+  const larguraDoPano = Math.min(janela.width - spacing.md * 2, 560);
+  const tamanhoDaRoda = Math.min(larguraDoPano * 0.62, 240);
 
   return (
-    <GameBackdrop source={TABLE_IMAGES.roleta}>
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.iconButton} hitSlop={12}>
+    <GameBackdrop source={TABLE_IMAGES.roleta} apagarAMesa>
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <View style={styles.barraDeCima}>
+          <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Sair da mesa" style={styles.botaoRedondo} hitSlop={12}>
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </Pressable>
-          <ChipStack amount={balance} />
-          <Pressable onPress={() => setTutorialVisible(true)} accessibilityRole="button" accessibilityLabel="Como jogar" style={styles.iconButton} hitSlop={12}>
+          {/*
+            O saldo mostrado é o do JOGADOR, e ele só muda quando a bola para: até lá
+            `saldoChegouDeFora` ainda não foi chamado. É o mesmo princípio do pano da
+            Banca Francesa — a barra não entrega o resultado antes da animação.
+          */}
+          <ChipStack amount={saldo} />
+          <Pressable onPress={() => setTutorialVisible(true)} accessibilityRole="button" accessibilityLabel="Como jogar" style={styles.botaoRedondo} hitSlop={12}>
             <Ionicons name="help-circle" size={24} color={colors.goldBright} />
           </Pressable>
         </View>
 
-        <View style={styles.titleRow}>
-          <DealerBadge source={DEALER_IMAGES.roleta} />
-          <Text style={styles.title}>Roleta</Text>
-        </View>
-
-        {!config && !configError && <ActivityIndicator color={colors.goldBright} style={styles.loading} />}
-
-        {configError && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{configError}</Text>
-            <Text style={styles.errorHint}>Confira se o servidor (server/) está rodando em npm run start:dev.</Text>
+        {!config && !erroDaConfig && <ActivityIndicator color={colors.goldBright} style={styles.carregando} />}
+        {erroDaConfig && (
+          <View style={styles.caixaDeErro}>
+            <Text style={styles.erro}>{erroDaConfig}</Text>
+            <Text style={styles.dica}>Confira se o servidor (server/) está rodando em npm run start:dev.</Text>
           </View>
         )}
 
         {config && (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            <Text style={styles.rtpLabel}>RTP divulgado: {(config.theoreticalRtp * 100).toFixed(2)}%</Text>
-
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.rolagem}>
             <View style={styles.roda}>
-              <RodaDaRoleta
-                resultado={lastResult ? lastResult.pocket : null}
-                girando={spinning}
-                tamanho={TAMANHO_DA_RODA}
-              />
-              {/*
-                O número também aparece escrito, e não só na roda: a casa que para
-                embaixo do marcador é pequena num celular, e ninguém deveria precisar
-                apertar os olhos pra saber no que deu.
-              */}
-              {!spinning && lastResult && (
-                <View style={[styles.selo, { backgroundColor: POCKET_COLOR[lastResult.color] }]}>
-                  <Text style={styles.resultNumber}>{lastResult.pocket}</Text>
+              <RodaDaRoleta resultado={rodada ? rodada.pocket : null} girando={girando} tamanho={tamanhoDaRoda} />
+              {!girando && resultadoNaTela && (
+                <View style={[styles.selo, { backgroundColor: COR_DA_CASA[resultadoNaTela.color] }]}>
+                  <Text style={styles.seloNumero}>{resultadoNaTela.pocket}</Text>
                 </View>
               )}
             </View>
 
-            {lastResult && (
-              <Text style={[styles.resultLabel, lastResult.win ? styles.resultWin : styles.resultLoss]}>
-                {lastResult.win
-                  ? `Caiu no ${lastResult.pocket} (${lastResult.color}) — você ganhou ${lastResult.totalReturn.toLocaleString('pt-BR')} fichas!`
-                  : `Caiu no ${lastResult.pocket} (${lastResult.color}) — não foi dessa vez.`}
+            {resultadoNaTela && !girando && (
+              <Text style={[styles.placar, resultadoNaTela.win ? styles.ganhou : styles.perdeu]}>
+                {resultadoNaTela.win
+                  ? `Caiu no ${resultadoNaTela.pocket} — você recebeu ${resultadoNaTela.totalReturn.toLocaleString('pt-BR')} fichas`
+                  : `Caiu no ${resultadoNaTela.pocket} — não foi dessa vez`}
               </Text>
             )}
+            {erro && <Text style={styles.erro}>{erro}</Text>}
+            {recado && <Text style={styles.recado}>{recado}</Text>}
 
-            {spinError && <Text style={styles.errorText}>{spinError}</Text>}
+            <PanoDaRoleta
+              apostas={apostas}
+              saiu={girando ? null : resultadoNaTela?.pocket ?? null}
+              travado={travado}
+              onEncostar={encostar}
+              largura={larguraDoPano}
+            />
 
-            <Text style={styles.sectionLabel}>Sua aposta</Text>
-            <View style={styles.betTypes}>
-              {BET_OPTIONS.map((option) => (
-                <Pressable
-                  key={option.type}
-                  onPress={() => setBetType(option.type)}
-                  style={[styles.betTypeChip, betType === option.type && styles.betTypeChipActive]}
-                  disabled={spinning}
-                >
-                  <Text style={[styles.betTypeLabel, betType === option.type && styles.betTypeLabelActive]}>
-                    {option.label} · ×{config.totalMultiplier[option.type]}
-                  </Text>
-                </Pressable>
-              ))}
-              <Pressable
-                onPress={() => setBetType('numero')}
-                style={[styles.betTypeChip, betType === 'numero' && styles.betTypeChipActive]}
-                disabled={spinning}
-              >
-                <Text style={[styles.betTypeLabel, betType === 'numero' && styles.betTypeLabelActive]}>
-                  Número exato · ×{config.totalMultiplier.numero}
-                </Text>
-              </Pressable>
+            <Text style={styles.placaDaMesa}>
+              Mesa {meuNivel?.nivel.nome ?? '—'} · mínimo {chapaEmTexto(minimo)} por casa · sem teto ·
+              {' '}RTP {(config.theoreticalRtp * 100).toFixed(2)}% em toda aposta
+            </Text>
+
+            <TrilhoDeFichas
+              selecionada={ficha}
+              onSelecionar={setFicha}
+              cor={corDoJogador(usuarioLogadoId() ?? undefined)}
+              saldo={saldo}
+              travado={travado}
+              fichas={meuNivel?.nivel.fichas}
+              minimo={minimo}
+            />
+
+            <View style={styles.botoesDaMesa}>
+              <BotaoDaMesa icone="arrow-undo" rotulo="Tirar a última ficha" onPress={desfazer} apagado={travado || ordem.length === 0} />
+              <BotaoDaMesa icone="trash" rotulo="Limpar a mesa" onPress={limpar} apagado={travado || total === 0} />
+              <BotaoDaMesa icone="repeat" rotulo="Repetir a aposta anterior" onPress={repetir} apagado={travado || !anterior} />
             </View>
 
-            {betType === 'numero' && (
-              <View style={styles.betRow}>
-                <Pressable onPress={() => adjustBetNumber(-1)} style={styles.betButton} disabled={spinning}>
-                  <Ionicons name="remove" size={20} color={colors.textPrimary} />
-                </Pressable>
-                <View style={styles.betValue}>
-                  <Text style={styles.betLabel}>Número</Text>
-                  <Text style={styles.betAmount}>{betNumber}</Text>
-                </View>
-                <Pressable onPress={() => adjustBetNumber(1)} style={styles.betButton} disabled={spinning}>
-                  <Ionicons name="add" size={20} color={colors.textPrimary} />
-                </Pressable>
-              </View>
-            )}
-
-            <View style={styles.betRow}>
-              <Pressable onPress={() => adjustAmount(-BET_STEP)} style={styles.betButton} disabled={spinning}>
-                <Ionicons name="remove" size={20} color={colors.textPrimary} />
-              </Pressable>
-              <View style={styles.betValue}>
-                <Text style={styles.betLabel}>Aposta{multiplier ? ` (paga ×${multiplier})` : ''}</Text>
-                <Text style={styles.betAmount}>{amount.toLocaleString('pt-BR')}</Text>
-              </View>
-              <Pressable onPress={() => adjustAmount(BET_STEP)} style={styles.betButton} disabled={spinning}>
-                <Ionicons name="add" size={20} color={colors.textPrimary} />
-              </Pressable>
-            </View>
-
-            <Pressable onPress={handleSpin} disabled={spinning} style={[styles.spinButton, spinning && styles.spinButtonDisabled]}>
-              {spinning ? <ActivityIndicator color={colors.background} /> : <Text style={styles.spinButtonLabel}>Girar</Text>}
+            <Pressable
+              onPress={girar}
+              disabled={travado || total === 0}
+              accessibilityRole="button"
+              style={[styles.girar, (travado || total === 0) && styles.girarApagado]}
+            >
+              <Text style={styles.girarTexto}>
+                {girando ? 'A bola está correndo…' : total === 0 ? 'Encoste uma ficha no pano' : `Girar · ${chapaEmTexto(total)}`}
+              </Text>
             </Pressable>
-            {history && history.totals.total > 0 && <RouletteHistoryPanel history={history} />}
+
+            {historico && <RouletteHistoryPanel history={historico} />}
           </ScrollView>
         )}
-      </SafeAreaView>
 
-      <TutorialModal
-        visible={tutorialVisible}
-        gameName="Roleta"
-        tutorial={tutorial}
-        onClose={() => setTutorialVisible(false)}
-      />
+        {tutorial && (
+          <TutorialModal visible={tutorialVisible} gameName="Roleta" tutorial={tutorial} onClose={() => setTutorialVisible(false)} />
+        )}
+      </SafeAreaView>
     </GameBackdrop>
   );
 }
 
+function BotaoDaMesa({
+  icone,
+  rotulo,
+  onPress,
+  apagado,
+}: {
+  icone: keyof typeof Ionicons.glyphMap;
+  rotulo: string;
+  onPress: () => void;
+  apagado: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={apagado}
+      accessibilityRole="button"
+      accessibilityLabel={rotulo}
+      style={[styles.botaoDaMesa, apagado && styles.botaoApagado]}
+      hitSlop={8}
+    >
+      <Ionicons name={icone} size={20} color={colors.goldBright} />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, paddingHorizontal: spacing.xl, alignItems: 'center' },
-  topBar: {
+  safe: { flex: 1 },
+  barraDeCima: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    width: '100%',
-    marginTop: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.lg },
-  iconButton: {
+  botaoRedondo: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(8,14,11,0.72)',
   },
-  title: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xl, color: colors.textPrimary },
-  rtpLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center', marginTop: spacing.xs },
-  loading: { marginTop: spacing.xxxl },
-  errorBox: { marginTop: spacing.xxxl, alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg },
-  errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
-  errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  scrollContent: { alignItems: 'center', paddingBottom: spacing.xxxl },
-  roda: { marginTop: spacing.xl, alignItems: 'center', justifyContent: 'center' },
-  /*
-   * O selo do número fica no miolo da roda, onde só existe o eixo dourado da arte —
-   * não cobre casa nenhuma.
-   */
+  carregando: { marginTop: spacing.xl },
+  caixaDeErro: { paddingHorizontal: spacing.md },
+  rolagem: { paddingHorizontal: spacing.md, paddingBottom: spacing.xl, gap: spacing.sm, alignItems: 'center' },
+  roda: { alignItems: 'center', justifyContent: 'center' },
   selo: {
     position: 'absolute',
-    width: 74,
-    height: 74,
-    borderRadius: 37,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: radius.md,
+    borderWidth: 2,
     borderColor: colors.goldBright,
   },
-  resultNumber: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xxl, color: colors.textPrimary },
-  resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, marginTop: spacing.md, textAlign: 'center', maxWidth: 280 },
-  resultWin: { color: colors.goldBright },
-  resultLoss: { color: colors.textFaint },
-  sectionLabel: {
-    fontFamily: fontFamily.bodySemiBold,
-    fontSize: fontSize.xs,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    color: colors.textFaint,
-    marginTop: spacing.xl,
-    marginBottom: spacing.sm,
-    alignSelf: 'flex-start',
-  },
-  betTypes: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center' },
-  betTypeChip: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.pill,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-  },
-  betTypeChipActive: { backgroundColor: colors.ruby, borderColor: colors.ruby },
-  betTypeLabel: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.textSecondary },
-  betTypeLabelActive: { color: colors.textPrimary },
-  betRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: spacing.xl },
-  betButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
+  seloNumero: { fontFamily: fontFamily.displayBold, fontSize: 30, color: '#F4EFE2' },
+  placar: { fontFamily: fontFamily.displayBold, fontSize: fontSize.md, textAlign: 'center' },
+  ganhou: { color: colors.goldBright },
+  perdeu: { color: colors.textSecondary },
+  erro: { color: '#E8A0A0', fontSize: fontSize.sm, textAlign: 'center' },
+  recado: { color: colors.goldBright, fontSize: fontSize.sm, textAlign: 'center' },
+  dica: { color: colors.textSecondary, fontSize: fontSize.xs, textAlign: 'center' },
+  placaDaMesa: { color: colors.textSecondary, fontSize: fontSize.xs, textAlign: 'center' },
+  botoesDaMesa: { flexDirection: 'row', gap: spacing.lg, justifyContent: 'center' },
+  botaoDaMesa: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(8,14,11,0.72)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(214,178,94,0.45)',
   },
-  betValue: { alignItems: 'center', minWidth: 140 },
-  betLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
-  betAmount: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
-  spinButton: {
+  botaoApagado: { opacity: 0.35 },
+  girar: {
+    alignSelf: 'stretch',
+    paddingVertical: 14,
+    borderRadius: radius.lg,
     backgroundColor: colors.goldBright,
-    borderRadius: radius.pill,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xxxl,
-    marginTop: spacing.xl,
-    minWidth: 180,
     alignItems: 'center',
   },
-  spinButtonDisabled: { opacity: 0.6 },
-  spinButtonLabel: { fontFamily: fontFamily.displaySemiBold, fontSize: fontSize.md, color: colors.background },
+  girarApagado: { backgroundColor: 'rgba(214,178,94,0.35)' },
+  girarTexto: { fontFamily: fontFamily.displayBold, fontSize: fontSize.md, color: '#10201A' },
 });

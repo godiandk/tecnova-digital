@@ -7,6 +7,17 @@ import { Fundo } from './Fundo';
 interface GameBackdropProps {
   source: ImageSourcePropType;
   children: React.ReactNode;
+  /**
+   * Apaga mais a foto da mesa, pra ela ficar só como ambiente.
+   *
+   * Serve pras telas em que a MESA É DESENHADA POR CIMA da foto — a roleta é o caso. Lá
+   * o pano de apostas é montado pelo app, e a foto por baixo tem o pano dela impresso,
+   * na disposição de mesa física (doze fileiras de três, em pé). Na claridade normal
+   * apareciam os dois: o pano de verdade e, atrás, um segundo pano com os números em
+   * outro lugar. Não é que o de trás esteja errado — é que ninguém precisa de duas
+   * mesas na mesma tela.
+   */
+  apagarAMesa?: boolean;
 }
 
 /**
@@ -37,15 +48,19 @@ const LIMITE_ESTREITO = 700;
  * tamanho certo. Reusar a foto em vez de pedir uma arte de fundo mantém a cor e a luz
  * de cada jogo diferentes entre si, de graça.
  */
-export function GameBackdrop({ source, children }: GameBackdropProps) {
+export function GameBackdrop({ source, children, apagarAMesa }: GameBackdropProps) {
   const janela = useJanela();
   const largo = janela.width > LIMITE_ESTREITO;
 
   const mesa = (
     <Fundo source={source} style={styles.mesa} resizeMode="cover">
       <LinearGradient
-        colors={['rgba(11,15,13,0.25)', colors.background]}
-        locations={[0, 0.8]}
+        colors={
+          apagarAMesa
+            ? ['rgba(11,15,13,0.84)', 'rgba(11,15,13,0.96)']
+            : ['rgba(11,15,13,0.25)', colors.background]
+        }
+        locations={apagarAMesa ? [0, 1] : [0, 0.8]}
         style={StyleSheet.absoluteFillObject}
       />
       {children}

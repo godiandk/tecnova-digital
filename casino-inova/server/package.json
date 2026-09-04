@@ -33,11 +33,12 @@
     "verify:persistencia": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" ts-node src/database/verify-persistencia.ts",
     "verify:placar": "ts-node src/modules/roadmap/verify-roadmap.ts",
     "verify:poker-hands": "ts-node src/modules/games/poker/verify-hand-evaluator.ts",
+    "verify:roleta": "ts-node src/modules/games/roulette/verifica-roleta.ts",
     "verify:rtp": "ts-node src/modules/games/slots/verify-rtp.ts",
     "verify:stock-market": "ts-node src/modules/games/stock-market/verify-rtp.ts",
     "verify:rotas": "ts-node verificacao/verifica-rotas.ts",
     "verify:torneios": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" ts-node src/modules/tournaments/verify-tournaments.ts",
-    "verify:tudo": "npm run verify:bac-bo && npm run verify:bacara && npm run verify:bacara-regras && npm run verify:banca-francesa && npm run verify:domino-abertura && npm run verify:blackjack && npm run verify:nucleo && npm run verify:rng && npm run verify:idempotencia && npm run verify:sapata && npm run verify:slots && npm run verify:persistencia && npm run verify:placar && npm run verify:poker-hands && npm run verify:rtp && npm run verify:stock-market && npm run verify:torneios"
+    "verify:tudo": "npm run verify:bac-bo && npm run verify:bacara && npm run verify:bacara-regras && npm run verify:banca-francesa && npm run verify:domino-abertura && npm run verify:blackjack && npm run verify:nucleo && npm run verify:rng && npm run verify:idempotencia && npm run verify:sapata && npm run verify:slots && npm run verify:persistencia && npm run verify:placar && npm run verify:poker-hands && npm run verify:roleta && npm run verify:rtp && npm run verify:stock-market && npm run verify:torneios"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

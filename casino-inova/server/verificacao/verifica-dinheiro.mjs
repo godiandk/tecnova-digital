@@ -59,7 +59,7 @@ const meuNivel = async (token) => (await chamar('/niveis/meu', { token })).corpo
 /** Os jogos que resolvem tudo numa chamada só, e como se aposta em cada um. */
 const JOGOS = [
   { nome: 'Slots', rota: '/games/slots/girar', monta: (v, id) => ({ bet: v, actionId: id }) },
-  { nome: 'Roleta', rota: '/games/roleta/girar', monta: (v, id) => ({ bet: { type: 'vermelho' }, amount: v, actionId: id }) },
+  { nome: 'Roleta', rota: '/games/roleta/girar', monta: (v, id) => ({ bets: [{ type: 'vermelho', amount: v }], actionId: id }) },
   { nome: 'Bacará', rota: '/games/bacara/apostar', monta: (v, id) => ({ betType: 'jogador', amount: v, actionId: id }) },
   { nome: 'Bac Bo', rota: '/games/bac-bo/apostar', monta: (v, id) => ({ bets: [{ type: 'jogador', amount: v }], actionId: id }) },
   { nome: 'Banca Francesa', rota: '/games/banca-francesa/apostar', monta: (v, id) => ({ bets: [{ type: 'grande', amount: v }], actionId: id }) },

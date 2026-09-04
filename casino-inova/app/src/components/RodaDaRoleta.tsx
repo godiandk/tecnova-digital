@@ -34,6 +34,21 @@ const VOLTAS = 4;
 
 const DURACAO_DA_PARADA = 3200;
 
+/*
+ * ONDE A BOLA CORRE E ONDE ELA CAI, medido na própria arte da roda
+ * (assets/images/roleta/roda-roleta.png, 2048x2048).
+ *
+ * Varrendo a imagem em anéis, as casas pintadas de vermelho e preto ocupam de 0,464 a
+ * 0,714 do raio, e a pista de madeira escura em volta vai de 0,75 a 0,89. São dois
+ * lugares diferentes, e a bola passa pelos dois: enquanto corre ela fica na pista de
+ * fora; quando a roda perde velocidade ela cai pra dentro e assenta na casa.
+ *
+ * Os números estão em fração do TAMANHO da roda (o dobro do raio), que é o que o
+ * componente recebe: 0,385 é o meio da pista, 0,295 é o meio das casas.
+ */
+const RAIO_DA_PISTA = 0.385;
+const RAIO_DA_CASA = 0.295;
+
 interface RodaProps {
   /** O número que o servidor sorteou, ou null enquanto não há resultado. */
   resultado: number | null;
@@ -54,6 +69,8 @@ interface RodaProps {
 export function RodaDaRoleta({ resultado, girando, tamanho }: RodaProps) {
   const anguloDaRoda = useSharedValue(0);
   const anguloDaBola = useSharedValue(0);
+  /** A que distância do centro a bola está. Ela CAI pra dentro quando a roda para. */
+  const raioDaBola = useSharedValue(RAIO_DA_PISTA);
 
   useEffect(() => {
     if (girando) {
@@ -68,6 +85,8 @@ export function RodaDaRoleta({ resultado, girando, tamanho }: RodaProps) {
         -1,
         false,
       );
+      // Correndo, ela fica na pista de fora — é lá que a bola anda antes de cair.
+      raioDaBola.value = withTiming(RAIO_DA_PISTA, { duration: 300 });
       return;
     }
 
@@ -78,6 +97,7 @@ export function RodaDaRoleta({ resultado, girando, tamanho }: RodaProps) {
 
     cancelAnimation(anguloDaRoda);
     cancelAnimation(anguloDaBola);
+    cancelAnimation(raioDaBola);
 
     /*
      * Onde a roda tem que parar: girar a casa sorteada até o marcador das 12 horas.
@@ -98,12 +118,24 @@ export function RodaDaRoleta({ resultado, girando, tamanho }: RodaProps) {
       duration: DURACAO_DA_PARADA,
       easing: Easing.out(Easing.poly(4)),
     });
-  }, [girando, resultado, anguloDaRoda, anguloDaBola]);
+    /*
+     * E cai pra dentro no fim, não no começo: a bola desliza na pista enquanto tem
+     * velocidade e só desce pra casa quando a roda já está lenta. `Easing.in` deixa a
+     * queda quase toda no último terço da parada, que é quando ela acontece na mesa.
+     */
+    raioDaBola.value = withTiming(RAIO_DA_CASA, {
+      duration: DURACAO_DA_PARADA,
+      easing: Easing.in(Easing.poly(3)),
+    });
+  }, [girando, resultado, anguloDaRoda, anguloDaBola, raioDaBola]);
 
   const roda = useAnimatedStyle(() => ({ transform: [{ rotate: `${anguloDaRoda.value}deg` }] }));
   const bola = useAnimatedStyle(() => ({ transform: [{ rotate: `${anguloDaBola.value}deg` }] }));
+  /* O raio muda enquanto ela cai, então o deslocamento é animado junto com o giro. */
+  const posicaoDaBola = useAnimatedStyle(() => ({
+    transform: [{ translateY: -raioDaBola.value * tamanho }],
+  }));
 
-  const raioDaBola = tamanho * 0.385;
   const ladoDaBola = Math.max(9, Math.round(tamanho * 0.045));
 
   return (
@@ -118,15 +150,11 @@ export function RodaDaRoleta({ resultado, girando, tamanho }: RodaProps) {
 
       {/* A bola mora numa camada própria, que gira sozinha em volta do mesmo centro. */}
       <Animated.View style={[styles.camada, bola]} pointerEvents="none">
-        <View
+        <Animated.View
           style={[
             styles.bola,
-            {
-              width: ladoDaBola,
-              height: ladoDaBola,
-              borderRadius: ladoDaBola / 2,
-              transform: [{ translateY: -raioDaBola }],
-            },
+            { width: ladoDaBola, height: ladoDaBola, borderRadius: ladoDaBola / 2 },
+            posicaoDaBola,
           ]}
         />
       </Animated.View>

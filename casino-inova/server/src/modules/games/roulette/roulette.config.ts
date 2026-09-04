@@ -22,7 +22,19 @@ export type RouletteBetType =
   | 'alto'
   | 'duzia1'
   | 'duzia2'
-  | 'duzia3';
+  | 'duzia3'
+  /*
+   * AS COLUNAS. São as três casas "2:1" no fim de cada fileira da mesa: a coluna 1 são
+   * os números que caem em 3n+1 (1, 4, 7... 34), a 2 em 3n+2 e a 3 os múltiplos de 3.
+   *
+   * Faltavam. A mesa impressa sempre teve as três casas, e a tela não deixava apostar
+   * nelas — o jogador via na arte uma aposta que o jogo não aceitava. Pagam 3x o total
+   * (o "2 para 1" da mesa), como as dúzias, e por doze números em 37 dão o mesmo
+   * 36/37 de sempre.
+   */
+  | 'coluna1'
+  | 'coluna2'
+  | 'coluna3';
 
 export interface RouletteBet {
   type: RouletteBetType;
@@ -46,7 +58,17 @@ export const TOTAL_MULTIPLIER: Record<RouletteBetType, number> = {
   duzia1: 3,
   duzia2: 3,
   duzia3: 3,
+  coluna1: 3,
+  coluna2: 3,
+  coluna3: 3,
 };
 
-export const MIN_BET = 50;
-export const MAX_BET = 5000;
+/**
+ * Quantas apostas cabem numa rodada.
+ *
+ * Numa mesa de verdade não há limite de casas: quem quiser cobre o pano inteiro. O teto
+ * aqui não é regra de jogo, é proteção do servidor — impede que um pedido forjado mande
+ * cem mil apostas e faça a rodada custar o processo. Trinta e sete números mais as doze
+ * casas de fora dão 49; cem deixa folga pra qualquer jogada humana.
+ */
+export const MAXIMO_DE_APOSTAS_POR_RODADA = 100;

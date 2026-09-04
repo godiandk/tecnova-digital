@@ -1,13 +1,20 @@
 import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common';
 import { RouletteService } from './roulette.service';
-import { RouletteBet } from './roulette.config';
+import { ApostaComValor } from './roulette.engine';
 import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
 import { Publico } from '../../auth/auth.guard';
 import { AcaoDto } from '../shared/acao.dto';
 
 class SpinDto extends AcaoDto {
-  bet!: RouletteBet;
-  amount!: number;
+  /**
+   * As apostas da rodada, cada uma com o valor dela.
+   *
+   * Era uma aposta só (`bet` mais `amount`), e isso não é roleta: na mesa se põe ficha
+   * em quantas casas quiser antes de a bola correr. Com uma aposta por rodada, "uma
+   * ficha no 17 e uma no vermelho" precisava de dois giros — dois resultados
+   * diferentes pra uma jogada que na mesa é uma só.
+   */
+  bets!: ApostaComValor[];
 }
 
 @Controller('games/roleta')
@@ -28,9 +35,12 @@ export class RouletteController {
 
   @Post('girar')
   spin(@UsuarioAtual() usuarioLogado: string, @Body() body: SpinDto) {
-    if (!body?.bet?.type || typeof body.amount !== 'number') {
-      throw new BadRequestException('Informe bet e amount.');
+    if (!Array.isArray(body?.bets) || body.bets.length === 0) {
+      throw new BadRequestException('Informe bets: a lista de apostas da rodada.');
     }
-    return this.rouletteService.playSpin(usuarioLogado, body.bet, body.amount, body.actionId);
+    if (body.bets.some((a) => !a || typeof a.type !== 'string' || typeof a.amount !== 'number')) {
+      throw new BadRequestException('Cada aposta precisa de type e amount.');
+    }
+    return this.rouletteService.playSpin(usuarioLogado, body.bets, body.actionId);
   }
 }
