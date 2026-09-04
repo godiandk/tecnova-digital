@@ -7,6 +7,7 @@ import { UsersModule } from './modules/users/users.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { LobbyModule } from './modules/lobby/lobby.module';
 import { SiteModule } from './site/site.module';
+import { LegalModule } from './modules/legal/legal.module';
 import { StoreModule } from './modules/store/store.module';
 import { SlotsModule } from './modules/games/slots/slots.module';
 import { RouletteModule } from './modules/games/roulette/roulette.module';
@@ -70,6 +71,8 @@ import { CoreDeSalasModule } from './modules/games/core/core.module';
      * undefined" porque /amigos/pendentes devolvia HTML. É o que
      * verificacao/verifica-rotas.ts existe pra pegar.
      */
+    // Antes do SiteModule, que é curinga e engoliria /legal/termos.
+    LegalModule,
     SiteModule,
   ],
   /*

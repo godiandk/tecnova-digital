@@ -26,7 +26,21 @@ const MIOLO_DIREITA = 0.17;
 /** Área do botão "+", na ponta direita, pra virar alvo de toque. */
 const BOTAO_MAIS = 0.16;
 
+/**
+ * O saldo escrito na cápsula. Encurta quando não cabe.
+ *
+ * "99.999.995.277" tem catorze caracteres e NÃO CABE no vão da moldura em tela de
+ * celular — sai cortado como "99.999.99…", que é pior do que arredondar: quem lê não
+ * sabe se tem 99 milhões ou 99 bilhões.
+ *
+ * Até nove dígitos (999 milhões) vai por extenso, com os pontos, porque cabe e porque
+ * ver o número exato importa. Passando disso vira "99,99 bi", que é como qualquer jogo
+ * escreve saldo grande — e o número exato continua no perfil, onde há espaço.
+ */
 function formatChips(amount: number): string {
+  if (amount >= 1_000_000_000) {
+    return `${(amount / 1_000_000_000).toFixed(2).replace('.', ',')} bi`;
+  }
   return amount.toLocaleString('pt-BR');
 }
 

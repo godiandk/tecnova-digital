@@ -333,11 +333,15 @@ export function PanoDaBancaFrancesa({
             </Text>
           )}
 
-          <View style={[styles.linhaDoTrilho, apertado && styles.linhaApertada]}>
-            <View style={styles.ladoDoTrilho}>
-              <BotaoRedondo icone="arrow-undo" rotulo="Desfazer a última ficha" onPress={desfazer} inativo={travado || ordem.length === 0} />
-              <BotaoRedondo icone="trash-outline" rotulo="Limpar a mesa" onPress={limpar} inativo={travado || total === 0} />
-            </View>
+          {/*
+            * O TRILHO TEM A LINHA INTEIRA, e os botões redondos foram pra linha de baixo.
+            *
+            * Espremido entre os dois blocos de botões, ele ficava com 95 pixels de 320 —
+            * uma ficha e meia visível, com o resto atrás de uma seta. As fichas são o
+            * controle mais usado da mesa (cada aposta é um toque numa delas) e estavam
+            * com a menor parte da linha; desfazer, limpar e repetir são de vez em quando.
+            */}
+          <View style={styles.linhaDoTrilho}>
             <Trilho
               apertado={apertado}
               cor={minhaCor}
@@ -348,11 +352,15 @@ export function PanoDaBancaFrancesa({
               }}
               saldo={saldo - total}
               travado={travado}
+              minimo={minimo}
               maximo={maximo}
             />
-            <View style={styles.ladoDoTrilho}>
-              <BotaoRedondo icone="repeat" rotulo="Repetir a aposta anterior" onPress={repetir} inativo={travado || !anterior} />
-            </View>
+          </View>
+
+          <View style={styles.linhaDosBotoesRedondos}>
+            <BotaoRedondo icone="arrow-undo" rotulo="Desfazer a última ficha" onPress={desfazer} inativo={travado || ordem.length === 0} />
+            <BotaoRedondo icone="trash-outline" rotulo="Limpar a mesa" onPress={limpar} inativo={travado || total === 0} />
+            <BotaoRedondo icone="repeat" rotulo="Repetir a aposta anterior" onPress={repetir} inativo={travado || !anterior} />
           </View>
 
           {/*
@@ -783,6 +791,8 @@ function Trilho({ apertado, ...resto }: {
   cor: PlayerColor | undefined;
   saldo: number;
   travado: boolean;
+  /** Os limites do nível: é o que decide quais fichas o trilho mostra. */
+  minimo: number;
   maximo: number;
 }) {
   const palco = usePalco();
@@ -856,8 +866,47 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(11,15,13,0.62)',
   },
   botoesDaDireita: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  linhaDoTrilho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
-  ladoDoTrilho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minWidth: 104 },
+  /*
+   * `width: '100%'` e `minWidth: 0` nos lados: sem os dois, esta linha ficava mais larga
+   * que a tela e o trilho transbordava em vez de rolar.
+   *
+   * A linha era dimensionada pelos filhos (dois blocos de botões com largura mínima de
+   * 104 mais a fileira de fichas inteira), e não pela tela. Medido num celular de 320px:
+   * a linha tinha 656 de largura, as fichas das pontas saíam metade fora, e a rolagem
+   * nunca era acionada porque, do ponto de vista da caixa, tudo cabia dentro dela.
+   */
+  linhaDoTrilho: { flexDirection: 'row', alignItems: 'center', width: '100%' },
+  linhaDosBotoesRedondos: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.lg,
+    marginTop: spacing.xs,
+  },
+  /*
+   * Sem largura mínima: ela existia pra manter o trilho centrado, e quem centra agora é
+   * o próprio trilho (com respiro nas laterais quando sobra espaço). Mantida, ela
+   * roubava 208 dos 320 pixels de um celular pequeno e não sobrava trilho.
+   */
+  /*
+   * Os botões laterais CEDEM espaço pro trilho, e não o contrário.
+   *
+   * Com largura mínima de 104 de cada lado, num celular de 320 sobravam 46 pixels pro
+   * trilho — menos de uma ficha. As fichas eram a coisa mais importante da linha e
+   * ficavam com a menor parte dela.
+   *
+   * Agora os três blocos repartem por peso: o trilho leva 3 partes e cada lado leva 1.
+   * Em 320px isso dá cerca de 170 pro trilho e 57 pra cada lado, que é o bastante pros
+   * botões redondos; e o trilho, quando ainda não couber, rola com as setas.
+   */
+  ladoDoTrilho: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    flex: 1,
+    minWidth: 0,
+  },
   linhaDeBotoes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md },
   placaDaMesa: {
     fontFamily: fontFamily.body,

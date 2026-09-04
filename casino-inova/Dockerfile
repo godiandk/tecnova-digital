@@ -38,6 +38,12 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=servidor /servidor/dist ./dist
 COPY --from=app /app/dist ./site
 
+# Os termos de uso e a política de privacidade, servidos em /legal/termos e
+# /legal/privacidade. O texto mora em docs/ e não dentro do código: documento jurídico
+# escondido numa constante de TypeScript é documento que ninguém revisa. Esta linha é o
+# preço de ter UM texto só — o mesmo que o app mostra e o mesmo que está no repositório.
+COPY docs/termos-de-uso.md docs/politica-de-privacidade.md ./documentos/
+
 # Onde o servidor acha o site. Sem isto ele procuraria em ../../app/dist, caminho que
 # só existe no repositório.
 ENV PASTA_DO_SITE=/casino/site

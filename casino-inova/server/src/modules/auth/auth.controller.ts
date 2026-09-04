@@ -7,7 +7,14 @@ import { UsuarioAtual } from './usuario-atual.decorator';
 class CadastroDto {
   email!: string;
   senha!: string;
+  /** O apelido do jogo — o que aparece na mesa, no chat e no ranking. */
   nome!: string;
+  /** AAAA-MM-DD. Obrigatório: a conta só existe com 18 anos ou mais. */
+  nascimento!: string;
+  /** O nome de verdade. Fica guardado e não aparece pra outros jogadores. */
+  nomeCompleto!: string;
+  /** Tem que ser exatamente `true`. Sem aceite, não há cadastro. */
+  aceitouTermos!: boolean;
 }
 
 class LoginDto {
@@ -32,9 +39,13 @@ export class AuthController {
   @Post('cadastrar')
   cadastrar(@Body() body: CadastroDto) {
     if (!body?.email || !body?.senha || !body?.nome) {
-      throw new BadRequestException('Informe email, senha e nome.');
+      throw new BadRequestException('Informe e-mail, senha e apelido.');
     }
-    return this.auth.registrarComSenha(body.email, body.senha, body.nome);
+    return this.auth.registrarComSenha(body.email, body.senha, body.nome, {
+      nascimento: body.nascimento,
+      nomeCompleto: body.nomeCompleto,
+      aceitouTermos: body.aceitouTermos,
+    });
   }
 
   @Publico()

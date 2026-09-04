@@ -333,22 +333,15 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
             </Text>
           )}
 
-          <View style={[styles.linhaDoTrilho, apertado && styles.linhaApertada]}>
-            <View style={styles.ladoDoTrilho}>
-              <BotaoDeMesa
-                icone="arrow-undo"
-                rotulo="Desfazer a última ficha"
-                onPress={desfazer}
-                inativo={rolando || ordem.length === 0}
-              />
-              <BotaoDeMesa
-                icone="trash-outline"
-                rotulo="Limpar a mesa"
-                onPress={limpar}
-                inativo={rolando || total === 0}
-              />
-            </View>
-
+          {/*
+            * O TRILHO TEM A LINHA INTEIRA, igual à Banca Francesa — o mesmo controle nas
+            * duas mesas tem que se comportar do mesmo jeito.
+            *
+            * Espremido entre os dois blocos de botões, ele ficava com uma ficha e meia
+            * visível e o resto atrás de uma seta. As fichas são o controle mais usado da
+            * mesa; desfazer, limpar e repetir são de vez em quando.
+            */}
+          <View style={styles.linhaDoTrilho}>
             <Trilho
               apertado={apertado}
               cor={minhaCor}
@@ -362,17 +355,28 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
               minimo={minimoDaMesa}
               maximo={maximoDaMesa || undefined}
             />
+          </View>
 
-            <View style={styles.ladoDoTrilho}>
-              <BotaoDeMesa
-                icone="repeat"
-                rotulo="Repetir a aposta anterior"
-                onPress={repetir}
-                inativo={rolando || !anterior}
-              />
-            </View>
-
-            {/* Tela baixa: o botão entra nesta linha, em vez de abrir uma segunda. */}
+          <View style={styles.linhaDosBotoesRedondos}>
+            <BotaoDeMesa
+              icone="arrow-undo"
+              rotulo="Desfazer a última ficha"
+              onPress={desfazer}
+              inativo={rolando || ordem.length === 0}
+            />
+            <BotaoDeMesa
+              icone="trash-outline"
+              rotulo="Limpar a mesa"
+              onPress={limpar}
+              inativo={rolando || total === 0}
+            />
+            <BotaoDeMesa
+              icone="repeat"
+              rotulo="Repetir a aposta anterior"
+              onPress={repetir}
+              inativo={rolando || !anterior}
+            />
+            {/* Tela baixa: o botão de jogar entra nesta linha, em vez de abrir uma segunda. */}
             {apertado && <BotaoJogar />}
           </View>
 
@@ -743,8 +747,47 @@ const styles = StyleSheet.create({
    * os dois lados têm a mesma largura mínima, então desfazer/limpar de um lado e
    * repetir do outro não empurram as fichas pro canto.
    */
-  linhaDoTrilho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
-  ladoDoTrilho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minWidth: 104 },
+  /*
+   * `width: '100%'` e `minWidth: 0` nos lados: sem os dois, esta linha ficava mais larga
+   * que a tela e o trilho transbordava em vez de rolar.
+   *
+   * A linha era dimensionada pelos filhos (dois blocos de botões com largura mínima de
+   * 104 mais a fileira de fichas inteira), e não pela tela. Medido num celular de 320px:
+   * a linha tinha 656 de largura, as fichas das pontas saíam metade fora, e a rolagem
+   * nunca era acionada porque, do ponto de vista da caixa, tudo cabia dentro dela.
+   */
+  linhaDoTrilho: { flexDirection: 'row', alignItems: 'center', width: '100%' },
+  linhaDosBotoesRedondos: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.lg,
+    marginTop: spacing.xs,
+  },
+  /*
+   * Sem largura mínima: ela existia pra manter o trilho centrado, e quem centra agora é
+   * o próprio trilho (com respiro nas laterais quando sobra espaço). Mantida, ela
+   * roubava 208 dos 320 pixels de um celular pequeno e não sobrava trilho.
+   */
+  /*
+   * Os botões laterais CEDEM espaço pro trilho, e não o contrário.
+   *
+   * Com largura mínima de 104 de cada lado, num celular de 320 sobravam 46 pixels pro
+   * trilho — menos de uma ficha. As fichas eram a coisa mais importante da linha e
+   * ficavam com a menor parte dela.
+   *
+   * Agora os três blocos repartem por peso: o trilho leva 3 partes e cada lado leva 1.
+   * Em 320px isso dá cerca de 170 pro trilho e 57 pra cada lado, que é o bastante pros
+   * botões redondos; e o trilho, quando ainda não couber, rola com as setas.
+   */
+  ladoDoTrilho: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    flex: 1,
+    minWidth: 0,
+  },
   botaoJogar: {
     minWidth: 210,
     paddingHorizontal: spacing.lg,

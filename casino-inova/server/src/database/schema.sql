@@ -148,3 +148,20 @@ CREATE INDEX IF NOT EXISTS purchases_user_idx ON purchases (user_id, created_at)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS public_code TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS users_public_code_idx ON users (public_code);
+
+-- --- Idade e aceite dos termos ---
+--
+-- `birth_date` é DATA e não idade: idade muda sozinha todo ano, e guardar um número que
+-- envelhece errado é como não guardar nada. A conferência dos 18 anos é feita a partir
+-- dela, no momento em que importa.
+--
+-- `terms_accepted_at` guarda QUANDO a pessoa aceitou, e não um sim/não. Um booleano não
+-- responde a única pergunta que alguém faria depois ("aceitou qual versão, quando?"), e
+-- `terms_version` diz qual texto estava valendo — sem isso, mudar os termos apagaria o
+-- histórico de quem concordou com os antigos.
+--
+-- Entram como ALTER porque a tabela já existe nas bases rodando.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS birth_date DATE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS legal_name TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_version TEXT;

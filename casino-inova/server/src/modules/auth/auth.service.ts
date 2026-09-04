@@ -4,6 +4,8 @@ import { PoolClient } from 'pg';
 import { promisify } from 'util';
 import * as jwt from 'jsonwebtoken';
 import { ehEmailDeAdmin } from '../roles/donos';
+import { lerNascimento } from '../legal/idade';
+import { VERSAO_DOS_TERMOS } from '../legal/termos';
 import { DatabaseService } from '../../database/database.service';
 import { UsersService, User } from '../users/users.service';
 import { firebaseEstaLigado, verificarTokenFirebase } from './firebase';
@@ -80,7 +82,12 @@ export class AuthService {
     return valor;
   }
 
-  async registrarComSenha(email: string, senha: string, nome: string) {
+  async registrarComSenha(
+    email: string,
+    senha: string,
+    nome: string,
+    dados?: { nascimento?: string; nomeCompleto?: string; aceitouTermos?: boolean },
+  ) {
     const emailNormalizado = normalizarEmail(email);
     if (!emailNormalizado.includes('@')) {
       throw new BadRequestException('E-mail inválido.');
@@ -89,7 +96,30 @@ export class AuthService {
       throw new BadRequestException('A senha precisa ter pelo menos 8 caracteres.');
     }
     if (!nome?.trim()) {
-      throw new BadRequestException('Informe um nome.');
+      throw new BadRequestException('Informe um apelido.');
+    }
+
+    /*
+     * A IDADE E O ACEITE SÃO CONFERIDOS AQUI, NO SERVIDOR.
+     *
+     * O aplicativo avisa antes pra a pessoa não preencher o resto à toa, mas quem recusa
+     * é este ponto: no aplicativo bastaria mudar o relógio do telefone, ou mandar outro
+     * número na requisição.
+     *
+     * `nascimento` é opcional no tipo por causa das contas que já existem e das que
+     * entram por Google — mas no cadastro por senha ele é obrigatório, e a linha abaixo
+     * recusa quando falta.
+     */
+    const nascimento = lerNascimento(dados?.nascimento);
+    if ('erro' in nascimento) throw new BadRequestException(nascimento.erro);
+
+    if (dados?.aceitouTermos !== true) {
+      throw new BadRequestException('É preciso aceitar os termos de uso e a política de privacidade.');
+    }
+
+    const nomeCompleto = dados?.nomeCompleto?.trim();
+    if (!nomeCompleto || nomeCompleto.length < 3) {
+      throw new BadRequestException('Informe seu nome completo.');
     }
 
     const existente = await this.db.queryOne(
@@ -104,7 +134,11 @@ export class AuthService {
     const hash = await gerarHash(senha);
 
     await this.db.transaction(async (client) => {
-      await client.query(`INSERT INTO users (id, name) VALUES ($1, $2)`, [userId, nome.trim()]);
+      await client.query(
+        `INSERT INTO users (id, name, legal_name, birth_date, terms_accepted_at, terms_version)
+         VALUES ($1, $2, $3, $4, now(), $5)`,
+        [userId, nome.trim().slice(0, 20), nomeCompleto.slice(0, 120), nascimento.data, VERSAO_DOS_TERMOS],
+      );
       await client.query(
         `INSERT INTO credentials (provider, subject, user_id, password_hash) VALUES ('senha', $1, $2, $3)`,
         [emailNormalizado, userId, hash],

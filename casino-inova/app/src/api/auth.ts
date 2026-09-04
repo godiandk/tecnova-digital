@@ -35,11 +35,21 @@ export async function entrar(email: string, senha: string): Promise<UsuarioLogad
   return resposta.user;
 }
 
-export async function cadastrar(nome: string, email: string, senha: string): Promise<UsuarioLogado> {
-  const resposta = await apiRequest<RespostaSessao>('/auth/cadastrar', {
-    method: 'POST',
-    body: { nome, email, senha },
-  });
+export interface DadosDoCadastro {
+  /** O apelido do jogo — o que aparece na mesa, no chat e no ranking. */
+  nome: string;
+  /** O nome de verdade. Fica guardado e não aparece pra outros jogadores. */
+  nomeCompleto: string;
+  email: string;
+  senha: string;
+  /** AAAA-MM-DD. Obrigatório: a conta só existe com 18 anos ou mais. */
+  nascimento: string;
+  /** Tem que ser `true`. O servidor recusa sem isto — a tela avisa antes. */
+  aceitouTermos: boolean;
+}
+
+export async function cadastrar(dados: DadosDoCadastro): Promise<UsuarioLogado> {
+  const resposta = await apiRequest<RespostaSessao>('/auth/cadastrar', { method: 'POST', body: dados });
   await salvarToken(resposta.token, resposta.user);
   return resposta.user;
 }
