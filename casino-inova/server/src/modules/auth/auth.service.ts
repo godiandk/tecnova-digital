@@ -3,6 +3,7 @@ import { randomBytes, scrypt, timingSafeEqual } from 'crypto';
 import { PoolClient } from 'pg';
 import { promisify } from 'util';
 import * as jwt from 'jsonwebtoken';
+import { ehEmailDeAdmin } from '../roles/donos';
 import { DatabaseService } from '../../database/database.service';
 import { UsersService, User } from '../users/users.service';
 import { firebaseEstaLigado, verificarTokenFirebase } from './firebase';
@@ -205,7 +206,35 @@ export class AuthService {
     }
   }
 
+  /**
+   * Quem está na lista de donos entra como admin.
+   *
+   * Chamado de `sessaoDe` porque é o funil por onde TODA entrada passa — cadastro,
+   * login com senha e login social. Num lugar só, não tem caminho pra esquecer.
+   *
+   * A ordem importa: isto roda DEPOIS de a identidade estar provada, nunca antes. Estar
+   * na lista não abre porta nenhuma, não cria conta e não pula senha; só ajusta o papel
+   * de quem já entrou pelos próprios meios.
+   *
+   * E só PROMOVE, nunca rebaixa: tirar um e-mail da lista não derruba ninguém que tenha
+   * virado admin por outro caminho.
+   */
+  private async garantirDono(userId: string): Promise<void> {
+    const credenciais = await this.db.query<{ subject: string }>(
+      `SELECT subject FROM credentials WHERE user_id = $1`,
+      [userId],
+    );
+    if (!credenciais.some((linha) => ehEmailDeAdmin(linha.subject))) return;
+
+    const usuario = await this.users.findById(userId);
+    if (!usuario || usuario.role === 'admin') return;
+
+    await this.users.updateRole(userId, 'admin');
+  }
+
   private async sessaoDe(userId: string): Promise<{ token: string; user: User }> {
+    await this.garantirDono(userId);
+
     const user = await this.users.findById(userId);
     if (!user) {
       throw new UnauthorizedException('Conta não encontrada.');

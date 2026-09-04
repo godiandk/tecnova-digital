@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
+import { xpDaRodada } from '../progressao/niveis';
 import { WalletService } from '../wallet/wallet.service';
 import { DatabaseService } from '../../database/database.service';
 import {
@@ -55,6 +56,16 @@ export class TournamentsService {
   async recordRound(userId: string, gameId: string, stake: number, returned: number) {
     if (!Number.isFinite(stake) || stake <= 0) return;
     if (!Number.isFinite(returned) || returned < 0) return;
+
+    /*
+     * XP entra AQUI, e não em cada jogo, porque isto já é o funil por onde toda rodada
+     * dos dez jogos passa. Espalhar o ganho de XP jogo a jogo seria dez lugares pra
+     * esquecer um — e um jogo sem XP é uma barra que anda em nove telas e trava na
+     * décima, sem ninguém entender por quê.
+     *
+     * Note que o XP sai do APOSTADO e ignora o `returned`: ganhar e perder valem igual.
+     */
+    await this.users.somarExperiencia(userId, xpDaRodada(stake));
     await this.db.query(
       'INSERT INTO tournament_rounds (user_id, game_id, stake, returned) VALUES ($1,$2,$3,$4)',
       [userId, gameId, Math.round(stake), Math.round(returned)],

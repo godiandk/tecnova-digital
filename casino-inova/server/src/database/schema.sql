@@ -130,3 +130,21 @@ CREATE TABLE IF NOT EXISTS purchases (
 );
 
 CREATE INDEX IF NOT EXISTS purchases_user_idx ON purchases (user_id, created_at);
+
+-- --- Identidade visível e aparência do jogador ---
+--
+-- `public_code` é o número que a pessoa vê no perfil e diz pro suporte. O `id` de
+-- verdade (`u-` mais nove bytes em base64url) não serve pra isso: ninguém consegue ler
+-- em voz alta nem digitar sem errar. São oito dígitos, mostrados como 0000-0000.
+--
+-- `avatar` guarda QUAL retrato a pessoa escolheu, por nome, e não uma imagem: as
+-- opções são arte que já vem dentro do aplicativo. Guardar o arquivo aqui significaria
+-- upload, armazenamento e moderação de imagem — três problemas que a escolha entre
+-- retratos prontos não tem.
+--
+-- Entram como ALTER e não na criação da tabela porque a tabela já existe nas bases que
+-- estão rodando. `IF NOT EXISTS` nos dois lados deixa isto rodar toda subida sem fazer
+-- nada quando já foi aplicado.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS public_code TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS users_public_code_idx ON users (public_code);

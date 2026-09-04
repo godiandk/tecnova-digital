@@ -14,7 +14,7 @@ import { ApiError } from '../../api/client';
 import { usuarioLogadoId } from '../../api/session';
 import { SocketError } from '../../api/socket';
 import { BancaFrancesaBet, BancaFrancesaConfig, fetchBancaFrancesaConfig } from '../../api/bancaFrancesa';
-import { usePlayer } from '../../data/usePlayer';
+import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
 import { PanoDaBancaFrancesa } from './PanoDaBancaFrancesa';
 import { fetchFriends, Friend } from '../../api/friends';
 import {
@@ -55,6 +55,17 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
 
   const { jogador } = usePlayer();
   const isHost = table?.hostUserId === usuarioLogadoId();
+
+  /*
+   * O saldo de verdade já vem no estado da mesa, a cada rodada, no assento de quem está
+   * jogando. Sem esta linha o número no topo ficava parado enquanto a pessoa jogava —
+   * ela perdia ficha rodada após rodada lendo o mesmo 10.000, porque o `usePlayer` só
+   * busca quando a tela monta ou ganha foco, e a tela da mesa nunca perde o foco.
+   */
+  const meuSaldoNaMesa = table?.seats.find((seat) => seat.userId === usuarioLogadoId())?.balance;
+  useEffect(() => {
+    if (typeof meuSaldoNaMesa === 'number') saldoChegouDeFora(meuSaldoNaMesa);
+  }, [meuSaldoNaMesa]);
 
   useEffect(() => {
     fetchBancaFrancesaConfig().then(setConfig).catch(() => undefined);

@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { WalletService } from '../wallet/wallet.service';
 import { MODERATOR_SUPPORT_CHIPS_CAP, Permission, Role, ROLE_PERMISSIONS } from './roles.constants';
@@ -45,11 +45,40 @@ export class RolesService {
     return this.usersService.updateRole(targetUserId, role);
   }
 
-  async grantSupportChips(actingUserId: string, targetUserId: string, chips: number, reason: string) {
+  /**
+   * Procura uma pessoa pelo e-mail ou pelo id, já com o saldo.
+   *
+   * Devolve o saldo junto porque quem procura alguém no painel está sempre indo dar ou
+   * conferir fichas — separar em duas chamadas só faria a tela mostrar o nome primeiro e
+   * o número um segundo depois.
+   */
+  async procurarUsuario(actingUserId: string, termo: string) {
+    await this.requirePermission(actingUserId, 'ver_carteira_usuario');
+    const usuario = await this.usersService.findByEmailOrId(termo);
+    if (!usuario) throw new NotFoundException('Não achei ninguém com esse e-mail ou id.');
+    return {
+      usuario,
+      emails: await this.usersService.emailsDe(usuario.id),
+      balance: await this.walletService.balanceOf(usuario.id),
+    };
+  }
+
+  /**
+   * `alvo` pode ser o id OU o e-mail de login. Aceitar os dois é o que torna o painel
+   * usável: quem pede fichas diz o e-mail com que entrou, não um id em base64.
+   */
+  async grantSupportChips(actingUserId: string, alvo: string, chips: number, reason: string) {
     await this.requirePermission(actingUserId, 'conceder_fichas_suporte');
     if (!Number.isFinite(chips) || chips <= 0) {
       throw new BadRequestException('chips precisa ser maior que zero.');
     }
+    if (!Number.isInteger(chips)) {
+      throw new BadRequestException('Ficha não se parte — o valor precisa ser inteiro.');
+    }
+
+    const destino = await this.usersService.findByEmailOrId(alvo);
+    if (!destino) throw new NotFoundException('Não achei ninguém com esse e-mail ou id.');
+    const targetUserId = destino.id;
 
     const actingUser = (await this.usersService.findById(actingUserId))!;
     if (actingUser.role === 'moderador' && chips > MODERATOR_SUPPORT_CHIPS_CAP) {
@@ -57,6 +86,13 @@ export class RolesService {
     }
 
     const ledgerEntry = await this.walletService.credit(targetUserId, chips, 'suporte');
-    return { targetUserId, chips, reason, ledgerEntry, newBalance: await this.walletService.balanceOf(targetUserId) };
+    return {
+      targetUserId,
+      targetName: destino.name,
+      chips,
+      reason,
+      ledgerEntry,
+      newBalance: await this.walletService.balanceOf(targetUserId),
+    };
   }
 }

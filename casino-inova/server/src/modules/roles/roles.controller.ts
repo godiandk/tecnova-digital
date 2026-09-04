@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { WalletService } from '../wallet/wallet.service';
 import { Role } from './roles.constants';
@@ -10,6 +10,7 @@ class AssignRoleDto {
 }
 
 class GrantSupportChipsDto {
+  /** Id OU e-mail de login. Quem pede fichas diz o e-mail; o id ninguém sabe de cabeça. */
   targetUserId!: string;
   chips!: number;
   reason?: string;
@@ -42,6 +43,16 @@ export class RolesController {
   async historicoDe(@UsuarioAtual() actingUserId: string, @Param('userId') userId: string) {
     await this.rolesService.requirePermission(actingUserId, 'ver_carteira_usuario');
     return this.walletService.historyOf(userId);
+  }
+
+  /**
+   * Procura alguém pelo e-mail ou pelo id, já com o saldo. É a primeira coisa que o
+   * painel faz — confirmar que a pessoa da tela é mesmo quem se quer creditar.
+   */
+  @Get('usuarios/procurar')
+  procurar(@UsuarioAtual() actingUserId: string, @Query('termo') termo: string) {
+    if (!termo?.trim()) throw new BadRequestException('Informe um e-mail ou id.');
+    return this.rolesService.procurarUsuario(actingUserId, termo);
   }
 
   @Get('papeis/permissoes')
