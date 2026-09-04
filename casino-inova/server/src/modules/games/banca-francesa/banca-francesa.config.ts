@@ -59,8 +59,68 @@ export const TOTAL_RETURN_MULTIPLIER: Record<ApostaDeCentro, number> = {
   grande: 2,
 };
 
+/**
+ * OS LIMITES POR TIPO DE APOSTA, em múltiplos do mínimo da mesa.
+ *
+ * A mesa de verdade não tem um teto só: ela tem um teto por casa, e o das Ases é muito
+ * mais baixo que o dos arcos. O motivo é o pagamento — uma casa que paga 61 por 1
+ * expõe a banca a sessenta e uma vezes o que a casa que paga 1 por 1 expõe. Numa mesa
+ * de mínimo 50, o teto de Ases fica em 300 e o dos arcos em 10.000.
+ *
+ * Isto é um recuo em relação ao "sem teto" que valeu por um tempo aqui, e o recuo é
+ * deliberado: com teto, a tela precisa DIZER o teto. A regra antiga permitia cobrir a
+ * mesa inteira num toque e a tela anunciava "sem teto" — o que era verdade. Anunciar
+ * "sem teto" com um limite no servidor seria mentira, e é o erro que este arquivo
+ * existe pra não deixar acontecer: os dois números saem daqui, e a mesma função que
+ * recusa a aposta é a que a tela lê pra escrever o limite.
+ */
+export const TETO_EM_MINIMOS: Record<BancaFrancesaBetType, number> = {
+  ases: 6,
+  pequeno: 200,
+  grande: 200,
+  'linha-pequeno': 200,
+  'linha-grande': 200,
+};
+
+/**
+ * O PISO POR TIPO, também em múltiplos do mínimo.
+ *
+ * A linha vale METADE do que está escrito na ficha — quem põe 100 na linha está
+ * arriscando 50. Então o mínimo da mesa só é respeitado de verdade se a ficha na linha
+ * for pelo menos o DOBRO do mínimo: com mínimo 50, a menor ficha que pode ir na linha
+ * é 100, que arrisca os 50 exigidos. Sem esta regra, uma ficha de 50 na linha
+ * arriscaria 25 numa mesa de mínimo 50 — aposta abaixo do mínimo entrando pela porta
+ * dos fundos.
+ */
+export const PISO_EM_MINIMOS: Record<BancaFrancesaBetType, number> = {
+  ases: 1,
+  pequeno: 1,
+  grande: 1,
+  'linha-pequeno': 2,
+  'linha-grande': 2,
+};
+
+/** Quanto vale, em fichas, o piso e o teto de um tipo numa mesa deste mínimo. */
+export function limitesDaCasa(tipo: BancaFrancesaBetType, minimoDaMesa: number) {
+  return {
+    minimo: minimoDaMesa * PISO_EM_MINIMOS[tipo],
+    maximo: minimoDaMesa * TETO_EM_MINIMOS[tipo],
+  };
+}
+
+/**
+ * O RISCO EFETIVO de uma aposta — quanto ela pode custar de verdade.
+ *
+ * No centro é o valor cheio. Na linha é a metade, porque a linha perde metade. É este
+ * número que a tela mostra como "risco", e é ele que a soma das apostas usa pra dizer
+ * quanto o jogador pode perder na rodada — mostrar o valor cheio da linha ali seria
+ * assustar com um número que não existe.
+ */
+export function riscoDaAposta(tipo: BancaFrancesaBetType, valor: number): number {
+  return ehApostaDeLinha(tipo) ? valor / 2 : valor;
+}
+
 export const MIN_BET = 50;
-export const MAX_BET = 5000;
 /** Quantas apostas diferentes dá pra fazer na mesma rodada — uma por lugar da mesa. */
 export const MAX_SIMULTANEOUS_BETS = BET_TYPES.length;
 
@@ -113,3 +173,51 @@ export const LANCAMENTOS_MAXIMOS_COM_JANELA = 100;
 export function apostaDeLinhaEhValida(valor: number): boolean {
   return Number.isInteger(valor) && valor % 2 === 0;
 }
+
+/**
+ * A APOSTA CABE NESTA CASA, NESTA MESA? Devolve o problema, ou `null` quando está certa.
+ *
+ * É a ÚNICA porta. As duas mesas (a de um jogador e a compartilhada) chamam esta função
+ * e mais nenhuma — porque a regra já esteve escrita em duas cópias, e as duas ficaram
+ * para trás quando o teto mudou: a mesa recusava aposta por um limite que não existia
+ * mais em lugar nenhum. Uma regra de aposta copiada é uma regra que vai divergir.
+ *
+ * A ordem das conferências é a ordem em que elas ajudam quem está jogando: primeiro o
+ * que é da casa (piso, teto, par), depois o que é do bolso (saldo). Assim a mensagem
+ * fala do que a pessoa acabou de fazer, e não de dinheiro quando o problema era outro.
+ */
+export function problemaComApostaDaBanca(
+  tipo: BancaFrancesaBetType,
+  valor: number,
+  minimoDaMesa: number,
+): string | null {
+  if (!Number.isFinite(valor) || !Number.isInteger(valor)) {
+    return 'Ficha não se parte — a aposta precisa ser um número inteiro.';
+  }
+  if (valor <= 0) return 'A aposta precisa ser maior que zero.';
+
+  const { minimo, maximo } = limitesDaCasa(tipo, minimoDaMesa);
+  const nome = NOME_DA_CASA[tipo];
+
+  if (valor < minimo) {
+    return ehApostaDeLinha(tipo)
+      ? `Na linha a ficha vale metade, então o mínimo em ${nome} é ${minimo.toLocaleString('pt-BR')} — o dobro do mínimo da mesa.`
+      : `O mínimo em ${nome} é ${minimo.toLocaleString('pt-BR')} fichas.`;
+  }
+  if (valor > maximo) {
+    return `O máximo em ${nome} é ${maximo.toLocaleString('pt-BR')} fichas.`;
+  }
+  if (ehApostaDeLinha(tipo) && !apostaDeLinhaEhValida(valor)) {
+    return `A aposta em ${nome} é dividida ao meio, então precisa ser um valor par.`;
+  }
+  return null;
+}
+
+/** Como cada casa é chamada em voz alta. Usado nas mensagens e pelo leitor de tela. */
+export const NOME_DA_CASA: Record<BancaFrancesaBetType, string> = {
+  ases: 'Ases',
+  pequeno: 'Pequeno',
+  grande: 'Grande',
+  'linha-pequeno': 'Linha do Pequeno',
+  'linha-grande': 'Linha do Grande',
+};

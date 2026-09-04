@@ -190,3 +190,28 @@ CREATE TABLE IF NOT EXISTS daily_rewards (
   -- Quantos dias seguidos, pra mostrar na tela. É informação, não regra.
   streak         INTEGER NOT NULL DEFAULT 1 CHECK (streak >= 1)
 );
+
+-- --- O extrato passa a se auditar sozinho ---
+--
+-- Antes, cada linha guardava só o movimento (`amount`). Pra saber se o extrato estava
+-- certo era preciso somar tudo de novo — e uma linha perdida no meio some sem deixar
+-- marca, porque a soma continua sendo a soma do que sobrou.
+--
+-- Com o saldo ANTES e DEPOIS gravados na própria linha, o extrato vira uma corrente:
+-- o `balance_after` de uma linha tem que ser o `balance_before` da seguinte, e
+-- `balance_before + amount` tem que dar `balance_after`. Qualquer buraco, qualquer
+-- gravação fora de transação e qualquer linha apagada quebram a corrente num ponto
+-- exato, que dá pra apontar. É o que `verifica-corrente-do-extrato.ts` confere.
+--
+-- `round_id` amarra o movimento à rodada que o causou: a aposta e o prêmio da mesma
+-- rodada passam a ter o mesmo identificador, e aí dá pra perguntar "quanto esta rodada
+-- custou e pagou" sem adivinhar por horário.
+--
+-- As três entram como ALTER porque a tabela já existe nas bases rodando, e ficam
+-- NULL nas linhas antigas — que é a verdade: aquele saldo não foi gravado na época.
+ALTER TABLE ledger_entries ADD COLUMN IF NOT EXISTS balance_before BIGINT;
+ALTER TABLE ledger_entries ADD COLUMN IF NOT EXISTS balance_after  BIGINT;
+ALTER TABLE ledger_entries ADD COLUMN IF NOT EXISTS round_id       TEXT;
+
+CREATE INDEX IF NOT EXISTS ledger_entries_rodada_idx ON ledger_entries (round_id)
+  WHERE round_id IS NOT NULL;

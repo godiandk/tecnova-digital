@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Image, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -63,6 +63,24 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
   const [notice, setNotice] = useState<string | null>(null);
 
   const { jogador } = usePlayer();
+  /**
+   * O piso e o teto de cada casa, em fichas.
+   *
+   * Na mesa de um jogador só o servidor manda isto pronto na própria rodada. Aqui a
+   * rodada é de todo mundo e o degrau é de cada um, então a conta é feita com o mínimo
+   * DESTA pessoa e os multiplicadores que a configuração do jogo publica.
+   */
+  const limitesPorCasa = useMemo(() => {
+    const minimo = meuNivel?.nivel.minimo ?? config?.minBet;
+    if (!config || !minimo) return undefined;
+    return Object.fromEntries(
+      config.betTypes.map((t) => [
+        t,
+        { minimo: minimo * config.pisoEmMinimos[t], maximo: minimo * config.tetoEmMinimos[t] },
+      ]),
+    );
+  }, [config, meuNivel]);
+
   const isHost = table?.hostUserId === usuarioLogadoId();
 
   /*
@@ -236,6 +254,14 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
           ocupado={busy}
           saldo={jogador?.chipBalance ?? 0}
           minimo={meuNivel?.nivel.minimo ?? config?.minBet ?? 50}
+          /*
+           * OS LIMITES POR CASA, montados do que o servidor mandou: os multiplicadores
+           * vêm da configuração do jogo (Ases 6×, arcos 200×, linha a partir de 2×) e o
+           * mínimo vem do degrau desta pessoa. A conta é feita uma vez, aqui, e é a
+           * mesma que o servidor faz ao receber a aposta.
+           */
+          limites={limitesPorCasa}
+          nomeDaCasa={config?.nomeDaCasa}
           nomeDoNivel={meuNivel?.nivel.nome}
           fichasDaMesa={meuNivel?.nivel.fichas}
           config={config}

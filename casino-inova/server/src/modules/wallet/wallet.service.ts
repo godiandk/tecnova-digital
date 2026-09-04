@@ -24,7 +24,31 @@ export interface LedgerEntry {
    * sozinho não explica nada; "Prêmio — Corrida do Dia" explica.
    */
   origin?: string;
+  /**
+   * A rodada que causou o movimento. A aposta e o prêmio da MESMA rodada carregam o
+   * mesmo identificador — é o que deixa perguntar "quanto esta rodada custou e pagou"
+   * sem adivinhar por horário.
+   */
+  roundId?: string;
+  /**
+   * O saldo imediatamente ANTES deste movimento, e o de DEPOIS. Sempre
+   * `balanceAfter = balanceBefore + amount`.
+   *
+   * AUSENTES nas linhas anteriores à corrente existir. Devolver zero ali seria pior que
+   * não devolver nada: um lançamento de 2026 apareceria como se o jogador tivesse saldo
+   * zero antes e depois, e a conferência da corrente acusaria um buraco que nunca
+   * existiu. Ausente é a verdade — aquele saldo não foi gravado na época.
+   */
+  balanceBefore?: number;
+  balanceAfter?: number;
   createdAt: string;
+}
+
+/** O que acompanha um movimento além do valor. Tudo opcional; tudo vai pro extrato. */
+export interface ContextoDoMovimento {
+  origin?: string;
+  actionId?: string;
+  roundId?: string;
 }
 
 interface LinhaLedger {
@@ -34,6 +58,9 @@ interface LinhaLedger {
   amount: number;
   origin: string | null;
   action_id: string | null;
+  round_id: string | null;
+  balance_before: string | number | null;
+  balance_after: string | number | null;
   created_at: Date;
 }
 
@@ -63,13 +90,16 @@ export class WalletService {
     return linhas.map((linha) => paraEntrada(linha));
   }
 
+
   /**
-   * Credita. Com `actionId`, creditar duas vezes a mesma ação é impossível — a segunda
-   * chamada devolve a entrada que já existe, marcada como repetida.
+   * Credita.
    *
-   * `ON CONFLICT DO NOTHING` + releitura, em vez de "consultar antes e depois inserir":
-   * quem decide se já existe é o índice único do banco, então duas requisições
-   * simultâneas não conseguem as duas achar que são a primeira.
+   * PASSOU A TRAVAR A LINHA DO JOGADOR, como o débito já fazia. Não é ciúme de
+   * simetria: agora cada movimento grava o saldo de ANTES e o de DEPOIS, e esses dois
+   * números só são verdade se ninguém mexer no saldo entre a leitura e a gravação.
+   * Sem a trava, dois créditos simultâneos leriam o mesmo "antes" e gravariam o mesmo
+   * "depois" — a corrente do extrato quebraria em silêncio, que é exatamente o que ela
+   * existe pra denunciar.
    */
   async credit(
     userId: string,
@@ -77,36 +107,10 @@ export class WalletService {
     type: LedgerEntryType,
     origin?: string,
     actionId?: string,
+    roundId?: string,
   ): Promise<LedgerEntry> {
-    if (amount <= 0) {
-      throw new BadRequestException('O valor de um crédito precisa ser maior que zero.');
-    }
-    const valor = Math.round(amount);
-
-    if (!actionId) {
-      const linha = await this.db.queryOne<LinhaLedger>(
-        `INSERT INTO ledger_entries (user_id, type, amount, origin)
-         VALUES ($1, $2, $3, $4) RETURNING *`,
-        [userId, type, valor, origin ?? null],
-      );
-      return paraEntrada(linha!);
-    }
-
-    const inserido = await this.db.queryOne<LinhaLedger>(
-      `INSERT INTO ledger_entries (user_id, type, amount, origin, action_id)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (user_id, action_id) WHERE action_id IS NOT NULL DO NOTHING
-       RETURNING *`,
-      [userId, type, valor, origin ?? null, actionId],
-    );
-    if (inserido) return paraEntrada(inserido);
-
-    // Não inseriu porque já existia: devolve a de antes, marcada como repetida.
-    const anterior = await this.db.queryOne<LinhaLedger>(
-      'SELECT * FROM ledger_entries WHERE user_id = $1 AND action_id = $2',
-      [userId, actionId],
-    );
-    return paraEntrada(anterior!, true);
+    exigirFichaInteira(amount, 'crédito');
+    return this.movimentar(userId, amount, type, { origin, actionId, roundId });
   }
 
   /**
@@ -119,9 +123,9 @@ export class WalletService {
    * tudo vivia em memória num processo só isso não acontecia; com banco de verdade e
    * requisições concorrentes, acontece.
    *
-   * A trava é o `SELECT ... FOR UPDATE` na linha do usuário: qualquer outro débito do
-   * MESMO jogador espera esta transação terminar antes de ler o saldo. Débitos de
-   * jogadores diferentes não se atrapalham, porque cada um trava a sua própria linha.
+   * A trava é o `SELECT ... FOR UPDATE` na linha do usuário: qualquer outro movimento
+   * do MESMO jogador espera esta transação terminar antes de ler o saldo. Movimentos
+   * de jogadores diferentes não se atrapalham, porque cada um trava a sua própria linha.
    */
   async debit(
     userId: string,
@@ -129,11 +133,44 @@ export class WalletService {
     type: LedgerEntryType,
     origin?: string,
     actionId?: string,
+    roundId?: string,
   ): Promise<LedgerEntry> {
-    if (amount <= 0) {
-      throw new BadRequestException('O valor de um débito precisa ser maior que zero.');
+    exigirFichaInteira(amount, 'débito');
+    return this.movimentar(userId, -amount, type, { origin, actionId, roundId });
+  }
+
+  /**
+   * O ÚNICO caminho por onde ficha entra ou sai. Crédito e débito são o mesmo
+   * movimento com o sinal trocado.
+   *
+   * Era um caminho pra cada um, e os dois iam divergindo: o débito travava a linha e o
+   * crédito não, o débito conferia idempotência dentro da transação e o crédito
+   * dependia de uma restrição do banco. Duas implementações da mesma coisa é como se
+   * perde uma delas de vista.
+   *
+   * A ORDEM AQUI É A REGRA, e cada passo depende do anterior:
+   *
+   *   1. Trava a linha do jogador. Daqui até o fim, mais ninguém mexe no saldo dele.
+   *   2. Já foi feito? Com a linha travada, duas requisições iguais não conseguem ler
+   *      "não existe" ao mesmo tempo. A segunda devolve a primeira, marcada.
+   *   3. Lê o saldo. É o `balance_before` e é a base da conferência de saldo.
+   *   4. Recusa débito que não cabe. Nunca existe saldo negativo.
+   *   5. Grava, com antes e depois na própria linha.
+   */
+  private async movimentar(
+    userId: string,
+    valor: number,
+    type: LedgerEntryType,
+    contexto: ContextoDoMovimento,
+  ): Promise<LedgerEntry> {
+    if (!Number.isSafeInteger(valor) || valor === 0) {
+      /*
+       * Ficha é inteira, e um valor que não é inteiro seguro só chega aqui por erro de
+       * conta em algum motor — NaN, Infinity, fração perdida num float. Recusar em vez
+       * de arredondar é o que impede o erro virar dinheiro.
+       */
+      throw new BadRequestException('Movimento inválido: o valor precisa ser um inteiro diferente de zero.');
     }
-    const valor = Math.round(amount);
 
     return this.db.transaction(async (client) => {
       const trancado = await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [userId]);
@@ -141,34 +178,39 @@ export class WalletService {
         throw new BadRequestException('Usuário não encontrado.');
       }
 
-      /*
-       * Idempotência: se esta ação já foi debitada, devolve a entrada que já existe em
-       * vez de criar outra. A leitura acontece DEPOIS do FOR UPDATE de propósito — com
-       * a linha do usuário travada, duas requisições simultâneas do mesmo jogador não
-       * conseguem ler "não existe" ao mesmo tempo.
-       */
-      if (actionId) {
+      if (contexto.actionId) {
         const { rows: jaFeito } = await client.query<LinhaLedger>(
           'SELECT * FROM ledger_entries WHERE user_id = $1 AND action_id = $2',
-          [userId, actionId],
+          [userId, contexto.actionId],
         );
-        if (jaFeito.length > 0) {
-          return paraEntrada(jaFeito[0], true);
-        }
+        if (jaFeito.length > 0) return paraEntrada(jaFeito[0], true);
       }
 
-      const { rows } = await client.query<{ saldo: number }>(
+      const { rows } = await client.query<{ saldo: string }>(
         'SELECT COALESCE(SUM(amount), 0)::bigint AS saldo FROM ledger_entries WHERE user_id = $1',
         [userId],
       );
-      if ((rows[0]?.saldo ?? 0) < valor) {
+      const antes = Number(rows[0]?.saldo ?? 0);
+      const depois = antes + valor;
+
+      if (depois < 0) {
         throw new BadRequestException('Saldo de fichas insuficiente.');
       }
 
       const inserido = await client.query<LinhaLedger>(
-        `INSERT INTO ledger_entries (user_id, type, amount, origin, action_id)
-         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-        [userId, type, -valor, origin ?? null, actionId ?? null],
+        `INSERT INTO ledger_entries
+           (user_id, type, amount, origin, action_id, round_id, balance_before, balance_after)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+        [
+          userId,
+          type,
+          valor,
+          contexto.origin ?? null,
+          contexto.actionId ?? null,
+          contexto.roundId ?? null,
+          antes,
+          depois,
+        ],
       );
       return paraEntrada(inserido.rows[0]);
     });
@@ -185,24 +227,81 @@ export class WalletService {
     amount: number,
     type: LedgerEntryType,
     origin?: string,
+    roundId?: string,
   ): Promise<LedgerEntry> {
+    exigirFichaInteira(amount, 'crédito');
+    const valor = amount;
+    /*
+     * A TRAVA ENTRA AQUI TAMBÉM. Quem chama já abriu a transação, mas pode não ter
+     * travado a linha do jogador — e sem a trava o saldo lido para o `balance_before`
+     * pode mudar antes da gravação, quebrando a corrente do extrato. `FOR UPDATE`
+     * repetido na mesma transação é barato: se já estiver travada, passa direto.
+     */
+    await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [userId]);
+    const { rows: saldo } = await client.query<{ saldo: string }>(
+      'SELECT COALESCE(SUM(amount), 0)::bigint AS saldo FROM ledger_entries WHERE user_id = $1',
+      [userId],
+    );
+    const antes = Number(saldo[0]?.saldo ?? 0);
+
     const { rows } = await client.query<LinhaLedger>(
-      `INSERT INTO ledger_entries (user_id, type, amount, origin)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [userId, type, Math.round(amount), origin ?? null],
+      `INSERT INTO ledger_entries
+         (user_id, type, amount, origin, round_id, balance_before, balance_after)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [userId, type, valor, origin ?? null, roundId ?? null, antes, antes + valor],
     );
     return paraEntrada(rows[0]);
   }
 }
 
+/**
+ * A POLÍTICA DE ARREDONDAMENTO DO CASSINO, num lugar só: **a carteira não arredonda.**
+ *
+ * Ela recusa qualquer valor que não seja ficha inteira. Parece rigor inútil e não é:
+ * antes disto a carteira fazia `Math.round`, e um prêmio de 100,4 virava 100 sem que
+ * ninguém soubesse — a fração sumia todo dia, em toda rodada, sempre para o mesmo lado.
+ * Isso é vantagem da casa não declarada, que é o contrário do que este jogo promete.
+ *
+ * Arredondar é decisão de REGRA DE JOGO, e cada motor toma a sua onde ela é visível e
+ * pode ser explicada na tela ("o prêmio é truncado para baixo", "a comissão é arredondada
+ * para cima"). O que não pode é a decisão acontecer aqui embaixo, escondida, onde
+ * ninguém procura e nada documenta.
+ */
+export function exigirFichaInteira(valor: number, oQue: string): void {
+  if (!Number.isFinite(valor)) {
+    throw new BadRequestException(`O valor de um ${oQue} precisa ser um número.`);
+  }
+  if (!Number.isInteger(valor)) {
+    throw new BadRequestException(
+      `O valor de um ${oQue} precisa ser ficha inteira — ${valor} tem fração. ` +
+        'Quem calcula decide como arredondar, e mostra a regra na tela.',
+    );
+  }
+  if (!Number.isSafeInteger(valor)) {
+    throw new BadRequestException(`O valor de um ${oQue} passou do inteiro seguro.`);
+  }
+  if (valor <= 0) {
+    throw new BadRequestException(`O valor de um ${oQue} precisa ser maior que zero.`);
+  }
+}
+
 function paraEntrada(linha: LinhaLedger, repetida = false): LedgerEntry {
+  /*
+   * O `pg` devolve BIGINT como TEXTO, pra não perder precisão acima de 2^53. Aqui os
+   * valores cabem folgadamente num número, mas a conversão precisa ser explícita —
+   * `'900' + 100` daria `'900100'`, e um saldo assim passaria despercebido.
+   */
+  const numero = (v: string | number | null): number | undefined => (v === null ? undefined : Number(v));
   return {
     id: String(linha.id),
     userId: linha.user_id,
     type: linha.type,
-    amount: linha.amount,
+    amount: Number(linha.amount),
     origin: linha.origin ?? undefined,
     actionId: linha.action_id ?? undefined,
+    roundId: linha.round_id ?? undefined,
+    balanceBefore: numero(linha.balance_before),
+    balanceAfter: numero(linha.balance_after),
     createdAt: linha.created_at.toISOString(),
     ...(repetida ? { repetida: true } : {}),
   };

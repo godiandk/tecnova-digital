@@ -39,6 +39,12 @@ const CASAS = ['ases', 'grande', 'pequeno', 'linha-grande', 'linha-pequeno'] as 
 /** Só estas são divididas ao meio, e por isso só estas precisam de valor par. */
 const LINHAS: BancaFrancesaBetType[] = ['linha-grande', 'linha-pequeno'];
 
+/** Cada linha acompanha um arco: é a mesma soma, com metade do risco e metade do prêmio. */
+const ARCO_DA_CASA: Record<string, 'pequeno' | 'grande'> = {
+  'linha-pequeno': 'pequeno',
+  'linha-grande': 'grande',
+};
+
 type Apostas = Record<BancaFrancesaBetType, number[]>;
 const MESA_LIMPA: Apostas = { ases: [], grande: [], pequeno: [], 'linha-grande': [], 'linha-pequeno': [] };
 const soma = (fichas: number[]) => fichas.reduce((t, f) => t + f, 0);
@@ -55,6 +61,25 @@ interface PanoProps {
   ocupado: boolean;
   saldo: number;
   minimo: number;
+  /**
+   * O PISO E O TETO DE CADA CASA, em fichas, já calculados pelo SERVIDOR.
+   *
+   * Vêm prontos porque a regra é dele: Ases vai até 6× o mínimo, os arcos até 200×, e a
+   * linha começa no DOBRO do mínimo porque a ficha vale metade lá. A tela não recalcula
+   * nada disso — ela mostra o número e recusa antes de mandar, com a mesma conta que o
+   * servidor vai fazer. Duas contas seriam duas chances de divergir, e já divergiram.
+   */
+  limites?: Record<string, { minimo: number; maximo: number }>;
+  /** Como cada casa é chamada — vem do servidor pra a mensagem ser a mesma dos dois lados. */
+  nomeDaCasa?: Record<string, string>;
+  /** Quanto a aposta montada pode CUSTAR. Na linha é metade da ficha. */
+  risco?: number;
+  /** O maior retorno possível. Só um resultado sai, então não é a soma de todos. */
+  retornoPossivel?: number;
+  /** O saldo que sobra se tudo der errado. */
+  saldoDepoisDaAposta?: number;
+  /** O último lançamento foi nulo: o botão vira "Jogar novamente". */
+  esperandoDepoisDoNulo?: boolean;
   /** O nome da mesa em que esta pessoa está jogando (Bronze, Ouro, Safira...). */
   nomeDoNivel?: string;
   /** As cinco fichas deste degrau, calculadas pelo servidor sobre o saldo. */
@@ -101,6 +126,12 @@ export function PanoDaBancaFrancesa({
   ocupado,
   saldo,
   minimo,
+  limites,
+  nomeDaCasa,
+  risco,
+  retornoPossivel,
+  saldoDepoisDaAposta,
+  esperandoDepoisDoNulo,
   nomeDoNivel,
   fichasDaMesa,
   config,
@@ -117,6 +148,21 @@ export function PanoDaBancaFrancesa({
   const minhaCor = meuLugar?.color;
 
   const [ficha, setFicha] = useState(minimo);
+  /*
+   * A FICHA ESCOLHIDA ACOMPANHA O MÍNIMO DA MESA.
+   *
+   * `useState(minimo)` guarda o valor da PRIMEIRA renderização, e nessa altura o
+   * mínimo ainda é o padrão de 50 — o degrau só chega quando o servidor responde. O
+   * resultado aparecia na tela: numa conta de cento e sete bilhões (mesa de mínimo
+   * 500 milhões), o trilho ficava com a ficha de 50 selecionada, a pessoa montava a
+   * aposta e o servidor recusava por estar abaixo do mínimo.
+   *
+   * Subir a ficha quando ela está abaixo do mínimo não atropela escolha nenhuma: uma
+   * ficha abaixo do mínimo não serve pra nada nesta mesa.
+   */
+  useEffect(() => {
+    setFicha((atual) => (atual < minimo ? minimo : atual));
+  }, [minimo]);
   const [apostas, setApostas] = useState<Apostas>(MESA_LIMPA);
   const [ordem, setOrdem] = useState<BancaFrancesaBetType[]>([]);
   const [anterior, setAnterior] = useState<Apostas | null>(null);
@@ -132,9 +178,22 @@ export function PanoDaBancaFrancesa({
   useEffect(() => setFicha(minimo), [minimo]);
 
   const total = useMemo(() => CASAS.reduce((t, c) => t + soma(apostas[c]), 0), [apostas]);
+  /*
+   * O PISO É POR CASA, e não um mínimo só pra mesa inteira.
+   *
+   * A linha começa no DOBRO do mínimo, porque a ficha vale metade lá: com mínimo 50, a
+   * menor ficha que pode ir na linha é 100 — arriscando os 50 exigidos. Comparar tudo
+   * com o mesmo `minimo` deixaria passar uma ficha de 50 na linha, que arrisca 25 numa
+   * mesa de mínimo 50: aposta abaixo do mínimo entrando pela porta dos fundos.
+   */
   const abaixoDoMinimo = useMemo(
-    () => CASAS.filter((c) => apostas[c].length > 0 && soma(apostas[c]) < minimo),
-    [apostas, minimo],
+    () =>
+      CASAS.filter((c) => {
+        const posto = soma(apostas[c]);
+        if (posto === 0) return false;
+        return posto < (limites?.[c]?.minimo ?? minimo);
+      }),
+    [apostas, minimo, limites],
   );
   /*
    * A aposta na linha é dividida ao meio e ficha não se parte — o saldo é inteiro. Um
@@ -145,6 +204,44 @@ export function PanoDaBancaFrancesa({
     () => LINHAS.filter((c) => soma(apostas[c]) % 2 !== 0),
     [apostas],
   );
+
+  /*
+   * AS CONTAS DA APOSTA, somando o que JÁ FOI CONFIRMADO com o que ainda está sendo
+   * montado.
+   *
+   * O servidor manda `risco` e `retornoPossivel` do que ele guardou — mas ele não
+   * conhece as fichas que a pessoa acabou de encostar e ainda não confirmou. Mostrar só
+   * o número dele deixava a linha dizer "risco 0" com fichas no pano; mostrar só o
+   * local ignoraria uma aposta já de pé numa rodada com nulo. São os dois somados.
+   *
+   * O RISCO DA LINHA É METADE. É essa a diferença entre o que está na mesa e o que a
+   * rodada pode custar, e é a informação que a pessoa precisa antes de decidir.
+   */
+  const totalNaMesa = total + (mesa.seats.find((s) => s.userId === meuId)?.pendingBets ?? [])
+    .reduce((t, b) => t + b.amount, 0);
+  const riscoDaMontagem = CASAS.reduce(
+    (t, c) => t + (LINHAS.includes(c) ? soma(apostas[c]) / 2 : soma(apostas[c])),
+    0,
+  );
+  const riscoNaMesa = riscoDaMontagem + (risco ?? 0);
+  /*
+   * O retorno da montagem é o do MELHOR resultado: só um sai por lançamento, então
+   * somar Ases com Grande anunciaria um prêmio que não existe em cenário nenhum.
+   */
+  const retornoDaMontagem = Math.max(
+    0,
+    ...(['ases', 'pequeno', 'grande'] as const).map((o) =>
+      CASAS.reduce((t, c) => {
+        const posto = soma(apostas[c]);
+        if (posto === 0) return t;
+        const arco = LINHAS.includes(c) ? ARCO_DA_CASA[c] : c;
+        const ganhou = arco === o;
+        if (LINHAS.includes(c)) return t + (ganhou ? posto * 1.5 : posto * 0.5);
+        return t + (ganhou ? posto * (c === 'ases' ? 62 : 2) : 0);
+      }, 0),
+    ),
+  );
+  const retornoNaMesa = Math.round(retornoDaMontagem + (retornoPossivel ?? 0));
 
   /* --- o lançamento: cada lance vira uma jogada na tigela, na hora em que acontece --- */
   const rodada = mesa.lastRound;
@@ -199,7 +296,34 @@ export function PanoDaBancaFrancesa({
 
   const encostar = (casa: BancaFrancesaBetType) => {
     if (travado) return;
-    if (total + ficha > saldo) return setRecado('Você não tem fichas suficientes pra essa.');
+
+    /*
+     * A CONFERÊNCIA AQUI É A MESMA DO SERVIDOR, com os números que ELE mandou.
+     *
+     * Não é a tela decidindo a regra — é a tela evitando que a pessoa monte uma aposta
+     * inteira pra ouvir "não" depois. O servidor confere de novo de qualquer jeito, e é
+     * ele quem manda; se um dia os dois discordarem, quem vale é o de lá.
+     */
+    const limite = limites?.[casa];
+    if (limite) {
+      const depois = soma(apostas[casa]) + ficha;
+      if (depois > limite.maximo) {
+        return setRecado(
+          `O máximo em ${nomeDaCasa?.[casa] ?? casa} é ${limite.maximo.toLocaleString('pt-BR')}.`,
+        );
+      }
+    }
+
+    /*
+     * O saldo é conferido contra o RISCO, não contra o valor cheio das fichas: uma
+     * ficha de 100 na linha só pode custar 50.
+     */
+    const riscoAtual = CASAS.reduce(
+      (t, c) => t + (LINHAS.includes(c) ? soma(apostas[c]) / 2 : soma(apostas[c])),
+      0,
+    );
+    const riscoDaNova = LINHAS.includes(casa) ? ficha / 2 : ficha;
+    if (riscoAtual + riscoDaNova > saldo) return setRecado('Você não tem fichas suficientes pra essa.');
     /*
      * NÃO EXISTE MÁXIMO POR CASA. A única trava é o saldo, conferida na linha acima —
      * é a mesma regra que o servidor aplica (`problemaComAAposta`), e as duas
@@ -288,7 +412,11 @@ export function PanoDaBancaFrancesa({
 
   const rotuloDoBotao = () => {
     if (total === 0) return 'Encoste uma ficha no pano';
-    if (abaixoDoMinimo.length > 0) return `Mínimo ${minimo.toLocaleString('pt-BR')} por casa`;
+    if (abaixoDoMinimo.length > 0) {
+      const casa = abaixoDoMinimo[0];
+      const piso = limites?.[casa]?.minimo ?? minimo;
+      return `Mínimo ${piso.toLocaleString('pt-BR')} em ${nomeDaCasa?.[casa] ?? casa}`;
+    }
     if (linhaImpar.length > 0) return 'Na linha, valor par';
     return `Confirmar ${total.toLocaleString('pt-BR')}`;
   };
@@ -387,9 +515,39 @@ export function PanoDaBancaFrancesa({
             * escrito ANTES de sentar, e não descoberto no erro depois de montar a
             * aposta. Some numa tela baixa, onde cada linha disputa espaço com o pano.
             */}
-          {nomeDoNivel && !apertado && (
-            <Text style={styles.placaDaMesa} numberOfLines={1}>
-              Mesa {nomeDoNivel} · mínimo {minimo.toLocaleString('pt-BR')} por casa · sem teto
+          {/*
+            "SEM TETO" SAIU DA PLACA, e não foi enfeite: existe teto, e ele é por casa.
+            Ases vai até seis mínimos, os arcos até duzentos, e a linha começa no dobro
+            do mínimo porque a ficha vale metade lá. Anunciar "sem teto" com um limite
+            no servidor é a mesa mentindo na porta — o jogador monta a aposta e só
+            descobre no erro.
+
+            Os números vêm PRONTOS do servidor (`limites`). A tela não os recalcula.
+          */}
+          {!apertado && (
+            <Text style={styles.placaDaMesa} numberOfLines={2}>
+              {nomeDoNivel ? `Mesa ${nomeDoNivel} · ` : ''}
+              {limites
+                ? `Ases ${limites.ases.minimo.toLocaleString('pt-BR')}–${limites.ases.maximo.toLocaleString('pt-BR')} · ` +
+                  `Grande e Pequeno ${limites.grande.minimo.toLocaleString('pt-BR')}–${limites.grande.maximo.toLocaleString('pt-BR')} · ` +
+                  `linha a partir de ${limites['linha-grande'].minimo.toLocaleString('pt-BR')} (vale metade)`
+                : `mínimo ${minimo.toLocaleString('pt-BR')} por casa`}
+            </Text>
+          )}
+
+          {/*
+            AS QUATRO CONTAS QUE A PESSOA PRECISA ANTES DE DECIDIR, e não depois.
+            Aposta total é o que está na mesa; RISCO é o que pode custar de verdade (na
+            linha, metade); retorno possível é o do MELHOR resultado (só um sai por
+            lançamento, então somar todos anunciaria um prêmio que não existe); e o
+            saldo restante é o que sobra se tudo der errado. Os quatro vêm do servidor.
+          */}
+          {totalNaMesa > 0 && (
+            <Text style={styles.contasDaAposta} numberOfLines={2}>
+              Aposta {totalNaMesa.toLocaleString('pt-BR')} · risco{' '}
+              {riscoNaMesa.toLocaleString('pt-BR')} · pode devolver até{' '}
+              {retornoNaMesa.toLocaleString('pt-BR')} · sobram{' '}
+              {Math.max(0, saldo - riscoNaMesa).toLocaleString('pt-BR')}
             </Text>
           )}
 
@@ -398,7 +556,13 @@ export function PanoDaBancaFrancesa({
             * Em cima do pano ela taparia a mesa justamente no momento em que a pessoa
             * precisa olhar pra ela pra decidir onde pôr a ficha.
             */}
-          {janelaAberta && prazoDaJanela !== null && (
+          {/*
+            A faixa aparece sempre que a janela está aberta — com ou sem prazo. Antes
+            ela exigia `prazoDaJanela !== null`, e por isso a mesa de um jogador só
+            (que não tem relógio) ficava sem o aviso de LANÇAMENTO NULO: os dados
+            paravam num 8, nada acontecia, e a tela não dizia por quê.
+          */}
+          {janelaAberta && (
             <FaixaDaJanela
               prazo={prazoDaJanela}
               lancesNulos={nulosAteAgora}
@@ -408,20 +572,30 @@ export function PanoDaBancaFrancesa({
           )}
 
           <View style={[styles.linhaDeBotoes, apertado && styles.linhaApertada]}>
-            <Pressable
-              onPress={apostar}
-              disabled={!podeApostar}
-              accessibilityRole="button"
-              accessibilityLabel={rotuloDoBotao()}
-              accessibilityState={{ disabled: !podeApostar }}
-              style={[styles.botaoPrincipal, !podeApostar && styles.desabilitado]}
-            >
-              {ocupado ? (
-                <ActivityIndicator color={colors.background} />
-              ) : (
-                <Text style={styles.botaoPrincipalTexto}>{rotuloDoBotao()}</Text>
-              )}
-            </Pressable>
+            {/*
+              O BOTÃO DE CONFIRMAR SÓ EXISTE QUANDO HÁ O QUE CONFIRMAR.
+              *
+              * Com a aposta já confirmada e nenhuma ficha nova encostada, ele ficava na
+              * tela dizendo "Encoste uma ficha no pano" — visível, aparentando ser a
+              * ação principal, e sem fazer nada. Depois de confirmar, a única ação
+              * válida é lançar; é essa que fica.
+              */}
+            {(total > 0 || !tenhoFichaNaMesa) && (
+              <Pressable
+                onPress={apostar}
+                disabled={!podeApostar}
+                accessibilityRole="button"
+                accessibilityLabel={rotuloDoBotao()}
+                accessibilityState={{ disabled: !podeApostar }}
+                style={[styles.botaoPrincipal, !podeApostar && styles.desabilitado]}
+              >
+                {ocupado ? (
+                  <ActivityIndicator color={colors.background} />
+                ) : (
+                  <Text style={styles.botaoPrincipalTexto}>{rotuloDoBotao()}</Text>
+                )}
+              </Pressable>
+            )}
 
             {/*
               * Só o anfitrião lança — é ele quem faz o papel do dealer nesta mesa.
@@ -436,12 +610,25 @@ export function PanoDaBancaFrancesa({
                 onPress={onGirar}
                 disabled={travado || !temApostaNaMesa}
                 accessibilityRole="button"
-                accessibilityLabel={temApostaNaMesa ? 'Lançar os dados' : 'Ninguém apostou ainda'}
+                accessibilityLabel={
+                  !temApostaNaMesa
+                    ? 'Ninguém apostou ainda'
+                    : esperandoDepoisDoNulo
+                      ? 'Jogar novamente, com a mesma aposta'
+                      : 'Lançar os dados'
+                }
                 accessibilityState={{ disabled: travado || !temApostaNaMesa }}
                 style={[styles.botaoLancar, (travado || !temApostaNaMesa) && styles.desabilitado]}
               >
-                <Ionicons name="dice" size={22} color={colors.goldBright} />
-                <Text style={styles.botaoLancarTexto}>Lançar</Text>
+                <Ionicons name={esperandoDepoisDoNulo ? 'refresh' : 'dice'} size={22} color={colors.goldBright} />
+                {/*
+                  Depois de um nulo o botão vira "Jogar novamente" — porque é isso que
+                  ele faz. "Lançar" ali sugeriria uma rodada nova, e a rodada é a mesma:
+                  as mesmas fichas, na mesma mesa, sem nada ter sido cobrado.
+                */}
+                <Text style={styles.botaoLancarTexto}>
+                  {esperandoDepoisDoNulo ? 'Jogar novamente' : 'Lançar'}
+                </Text>
               </Pressable>
             )}
           </View>
@@ -668,20 +855,32 @@ function useLancamento(mesa: TableView, saldo: number) {
  * continua de pé. Nada de "quase!" — não houve quase nenhum. Uma soma nula não chegou
  * perto de decidir; ela simplesmente não decide.
  */
+/**
+ * A faixa do LANÇAMENTO NULO.
+ *
+ * `prazo` é NULO na mesa de um jogador só, e é assim de propósito: ali não existe
+ * relógio. O lançamento nulo para a rodada e ela fica parada até a pessoa decidir — não
+ * há mais ninguém esperando, então não há por que apressar. Desenhar um contador onde
+ * não existe prazo seria inventar pressa, que é exatamente o que este jogo não faz.
+ *
+ * Na mesa com gente o prazo existe e é do SERVIDOR: os outros jogadores estão
+ * esperando, e o relógio é a única coisa justa entre eles.
+ */
 function FaixaDaJanela({
   prazo,
   lancesNulos,
   podeRetirar,
   onRetirar,
 }: {
-  prazo: number;
+  prazo: number | null;
   lancesNulos: number;
   podeRetirar: boolean;
   onRetirar: () => Promise<unknown>;
 }) {
-  const [restante, setRestante] = useState(() => Math.max(0, prazo - Date.now()));
+  const [restante, setRestante] = useState(() => (prazo === null ? 0 : Math.max(0, prazo - Date.now())));
 
   useEffect(() => {
+    if (prazo === null) return undefined;
     setRestante(Math.max(0, prazo - Date.now()));
     const relogio = setInterval(() => setRestante(Math.max(0, prazo - Date.now())), 250);
     return () => clearInterval(relogio);
@@ -692,14 +891,20 @@ function FaixaDaJanela({
   return (
     <View style={styles.faixaDaJanela}>
       <View style={styles.contagem}>
-        <Ionicons name="time-outline" size={16} color={colors.goldBright} />
-        <Text style={styles.contagemNumero}>{segundos}s</Text>
+        <Ionicons
+          name={prazo === null ? 'dice-outline' : 'time-outline'}
+          size={16}
+          color={colors.goldBright}
+        />
+        {prazo !== null && <Text style={styles.contagemNumero}>{segundos}s</Text>}
       </View>
 
-      <Text style={styles.faixaTexto} numberOfLines={2}>
-        {lancesNulos === 1
-          ? 'Os dados não decidiram. Sua aposta continua de pé — dá pra aumentar, mudar ou tirar.'
-          : `${lancesNulos} lançamentos sem decidir. Sua aposta continua de pé — dá pra aumentar, mudar ou tirar.`}
+      <Text style={styles.faixaTexto} numberOfLines={3}>
+        {prazo === null
+          ? `LANÇAMENTO NULO${lancesNulos > 1 ? ` (${lancesNulos}º)` : ''} — nada foi cobrado. Sua aposta continua na mesa: dá pra manter, aumentar, mudar ou tirar.`
+          : lancesNulos === 1
+            ? 'Os dados não decidiram. Sua aposta continua de pé — dá pra aumentar, mudar ou tirar.'
+            : `${lancesNulos} lançamentos sem decidir. Sua aposta continua de pé — dá pra aumentar, mudar ou tirar.`}
       </Text>
 
       {podeRetirar && (
@@ -974,6 +1179,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   linhaDeBotoes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md },
+  contasDaAposta: {
+    color: colors.goldBright,
+    fontFamily: fontFamily.displayBold,
+    fontSize: fontSize.xs,
+    textAlign: 'center',
+  },
   placaDaMesa: {
     fontFamily: fontFamily.body,
     fontSize: fontSize.xs,

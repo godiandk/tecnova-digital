@@ -1,15 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../../navigation/types';
-import { ApiError } from '../../api/client';
+import { ApiError, novaAcao } from '../../api/client';
 import {
+  confirmarApostas,
   fetchBancaFrancesaConfig,
-  playBancaFrancesaRound,
+  fetchRodadaDaBanca,
+  lancarDados,
+  retirarApostas,
   BancaFrancesaBet,
   BancaFrancesaConfig,
+  LancamentoDaBanca,
+  RodadaDaBanca,
 } from '../../api/bancaFrancesa';
-import { fetchMeuNivel, MeuNivel } from '../../api/niveis';
 import { LancamentoView, TableView } from '../../api/bancaFrancesaMesa';
 import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
 import { corDoJogador } from '../../data/fichasDeValor';
@@ -21,54 +25,48 @@ type Props = NativeStackScreenProps<RootStackParamList, 'BancaFrancesa'>;
 /**
  * Banca Francesa CONTRA A CASA — a mesa de um jogador só.
  *
- * Esta tela era outra coisa: uma lista rolável de cartões escritos ("Centro do Pequeno /
- * Soma 5, 6 ou 7"), um − e um + pra escolher o valor e três dados desenhados como
- * números dentro de quadradinhos. A mesa online já tinha virado mesa de verdade — pano,
- * fichas encostadas na casa, dados lançados na tigela de couro — e esta tinha ficado
- * pra trás. Duas telas para o mesmo jogo, com regras que pareciam diferentes só porque
- * eram desenhadas diferente.
+ * O LANÇAMENTO NULO VOLTOU A SER DO JOGADOR, e é a mudança que reorganiza esta tela
+ * inteira. Antes o servidor resolvia tudo numa chamada: debitava, relançava sozinho até
+ * sair um resultado decisivo e pagava. A tela recebia o fim pronto e ENCENAVA os nulos
+ * depois, como quem conta uma história que já acabou — a pessoa via os dados caírem num
+ * 8, mas não havia decisão nenhuma pra tomar ali, porque o próximo lance já tinha
+ * acontecido no servidor.
  *
- * Agora as duas usam O MESMO PANO. O que muda entre elas é só quem está na mesa e por
- * onde a jogada trafega:
+ * Agora cada lance é uma ação:
  *
- *   MESA ONLINE  — várias pessoas, cada uma com sua cor; as apostas ficam no servidor
- *                  (`pendingBets`) e os lances chegam pelo socket, um a um, com uma
- *                  janela de aposta de verdade entre eles.
+ *   1. A pessoa encosta as fichas e confirma. NADA é cobrado.
+ *   2. Ela toca em Lançar. Um lançamento, um só.
+ *   3. Se a soma não decidir, a rodada PARA. Os dados ficam na mesa, as fichas ficam na
+ *      mesa, e ninguém foi cobrado. Dá pra manter, aumentar, mudar de casa ou tirar.
+ *   4. Ela decide quando lançar de novo. Não existe relógio: não há mais ninguém
+ *      esperando numa mesa de um.
+ *   5. Só o lançamento que decide mexe no saldo.
  *
- *   AQUI         — uma pessoa só; as apostas ficam NA TELA até ela mandar lançar, e a
- *                  rodada inteira vem numa chamada só. Não há janela entre lances, e a
- *                  tela não finge que há: o pano recebe `esperandoDepoisDeNulo: false`.
- *
- * O QUE NÃO MUDA, e é o ponto: quem decide o resultado é o servidor, antes de qualquer
- * animação. Os dados que rolam na tigela são os dados que já saíram — inclusive os
- * lançamentos que não decidiram nada, que agora chegam junto (`lancamentosNulos`) e são
- * jogados um a um, no compasso do pano. A animação conta o que aconteceu; ela nunca
- * escolhe.
+ * O ESTADO É DO SERVIDOR. Esta tela não guarda "em que pé está a rodada": ela pergunta
+ * (`/rodada`) e desenha a resposta. É o que faz recarregar a página no meio de uma
+ * sequência de nulos devolver a mesa exatamente como estava.
  */
 export function BancaFrancesaScreen({ navigation }: Props) {
   const { jogador } = usePlayer();
   const meuId = usuarioLogadoId();
 
   const [config, setConfig] = useState<BancaFrancesaConfig | null>(null);
-  const [meuNivel, setMeuNivel] = useState<MeuNivel | null>(null);
+  const [rodada, setRodada] = useState<RodadaDaBanca | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
 
-  /*
-   * A rodada, montada aqui do jeito que o pano sabe ler.
+  /**
+   * Os lançamentos que o PANO já mostrou, e o que falta mostrar.
    *
-   * `apostas` são as fichas já confirmadas e ainda não lançadas. Elas ficam NA TELA e
-   * não custam nada até o lance: nesta mesa o servidor debita no mesmo pedido em que
-   * sorteia, então tirar as fichas antes de lançar é de graça — a mesma promessa que a
-   * mesa online faz, pelo mesmo motivo.
+   * O pano anima cada lance novo que aparece na lista. Como agora chega um lance por
+   * ação, a lista cresce de um em um e a animação sai naturalmente no compasso do jogo
+   * — não é mais uma encenação de coisas que já tinham acontecido.
    */
-  const [apostas, setApostas] = useState<BancaFrancesaBet[]>([]);
-  const [rodadaId, setRodadaId] = useState('rodada-1');
-  const [nulos, setNulos] = useState<LancamentoView[]>([]);
-  const [ultima, setUltima] = useState<TableView['lastRound']>(undefined);
+  const [nulosNaTela, setNulosNaTela] = useState<LancamentoView[]>([]);
+  const [ultimoDecisivo, setUltimoDecisivo] = useState<TableView['lastRound']>(undefined);
+  const [rodadaNaTela, setRodadaNaTela] = useState('inicio');
 
-  /** Cancela a encenação em curso se a tela sair no meio dela. */
   const vivo = useRef(true);
   useEffect(() => {
     vivo.current = true;
@@ -77,18 +75,34 @@ export function BancaFrancesaScreen({ navigation }: Props) {
     };
   }, []);
 
+  const recarregarRodada = useCallback(async () => {
+    try {
+      const r = await fetchRodadaDaBanca();
+      if (!vivo.current) return;
+      setRodada(r);
+      /* Reconexão: os nulos que já aconteceram voltam pra tela sem serem reanimados. */
+      setNulosNaTela(r.nulos.map(paraLancamentoDoPano));
+      setRodadaNaTela(r.rodadaId);
+    } catch {
+      /* Sem rodada não dá pra jogar, mas o erro de config já cobre a mesa fora do ar. */
+    }
+  }, []);
+
   useEffect(() => {
     fetchBancaFrancesaConfig()
       .then(setConfig)
       .catch((e: unknown) => setErro(e instanceof ApiError ? e.message : 'Não foi possível falar com o servidor.'));
-  }, []);
+    void recarregarRodada();
+  }, [recarregarRodada]);
 
-  /* O nível é relido a cada mudança de saldo: perder um degrau muda o mínimo e as fichas. */
-  const saldo = jogador?.chipBalance ?? 0;
-  useEffect(() => {
-    fetchMeuNivel().then(setMeuNivel).catch(() => undefined);
-  }, [saldo]);
+  const saldo = rodada?.saldo ?? jogador?.chipBalance ?? 0;
 
+  /**
+   * A mesa, no formato que o pano lê.
+   *
+   * O pano é o MESMO da mesa com gente — é o que garante que as duas jogam igual. O que
+   * muda é de onde vem o estado, e é isto que traduz.
+   */
   const mesa: TableView = useMemo(
     () => ({
       id: 'sozinho',
@@ -101,94 +115,125 @@ export function BancaFrancesaScreen({ navigation }: Props) {
           name: jogador?.name ?? 'Você',
           isBot: false,
           color: corDoJogador(meuId ?? undefined) ?? 'branco',
-          pendingBets: apostas,
+          pendingBets: rodada?.apostas ?? [],
           balance: saldo,
         },
       ],
-      lastRound: ultima,
-      /*
-       * `esperandoDepoisDeNulo` é sempre falso: aqui não existe janela de aposta entre
-       * lançamentos, porque a rodada inteira é resolvida numa chamada. Dizer que existe
-       * abriria um relógio contando pra nada — um prazo que não é prazo de coisa
-       * nenhuma.
-       */
-      rodada: { rodadaId, lancamentos: nulos, esperandoDepoisDeNulo: false },
+      lastRound: ultimoDecisivo,
+      rodada: {
+        rodadaId: rodadaNaTela,
+        lancamentos: nulosNaTela,
+        /*
+         * A janela abre depois de um nulo — e aqui ela NÃO TEM PRAZO, porque não há
+         * relógio numa mesa de um. `fase` fica de fora de propósito: sem ela o pano
+         * desenha a faixa de LANÇAMENTO NULO sem contador.
+         */
+        esperandoDepoisDeNulo: Boolean(rodada?.esperandoDepoisDoNulo),
+      },
     }),
-    [meuId, jogador?.name, apostas, saldo, ultima, rodadaId, nulos],
+    [meuId, jogador?.name, rodada, saldo, ultimoDecisivo, rodadaNaTela, nulosNaTela],
   );
 
-  /** Confirma a montagem. Não vai pro servidor: nesta mesa a ficha só sai no lance. */
+  /** Confirma a montagem no servidor. Ele confere limites e saldo e devolve a rodada. */
   const handleApostar = async (bets: BancaFrancesaBet[]) => {
-    const total = bets.reduce((t, b) => t + b.amount, 0);
-    if (total > saldo) {
-      setErro('Você não tem fichas suficientes pra essa aposta.');
-      return false;
-    }
-    setErro(null);
-    // Soma na montagem que já estava na mesa, casa por casa.
-    setApostas((atual) => {
-      const somado = new Map(atual.map((b) => [b.type, b.amount]));
+    if (ocupado) return false;
+    setOcupado(true);
+    try {
+      /*
+       * O pano manda a montagem NOVA; o servidor guarda a lista inteira da rodada.
+       * Somar aqui com o que já estava seria a tela decidindo quanto está apostado — e
+       * é o servidor que decide, porque é ele que confere o limite de cada casa.
+       */
+      const somado = new Map((rodada?.apostas ?? []).map((b) => [b.type, b.amount]));
       for (const b of bets) somado.set(b.type, (somado.get(b.type) ?? 0) + b.amount);
-      return [...somado.entries()].map(([type, amount]) => ({ type, amount }));
-    });
-    return true;
+
+      const r = await confirmarApostas([...somado.entries()].map(([type, amount]) => ({ type, amount })));
+      setRodada(r);
+      setErro(null);
+      setAviso(null);
+      return true;
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível confirmar a aposta.');
+      return false;
+    } finally {
+      if (vivo.current) setOcupado(false);
+    }
   };
 
   const handleRetirar = async () => {
     if (ocupado) return;
-    setApostas([]);
-    setErro(null);
+    setOcupado(true);
+    try {
+      setRodada(await retirarApostas());
+      setErro(null);
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível tirar as fichas.');
+    } finally {
+      if (vivo.current) setOcupado(false);
+    }
   };
 
   const espera = (ms: number) => new Promise<void>((ok) => setTimeout(ok, ms));
 
-  const handleGirar = async () => {
-    if (ocupado || apostas.length === 0) return;
+  /**
+   * UM lançamento.
+   *
+   * A ordem da revelação é a ordem do que aconteceu: o dado rola, e só quando ele
+   * assenta é que o texto e o saldo entram. O servidor já decidiu antes da primeira
+   * animação — é o que garante que o desenho conta o que houve em vez de escolher.
+   */
+  const handleLancar = async () => {
+    if (ocupado || !rodada || rodada.apostas.length === 0) return;
     setOcupado(true);
     setErro(null);
     setAviso(null);
     try {
-      const r = await playBancaFrancesaRound(apostas);
+      const r = await lancarDados(novaAcao());
 
-      /*
-       * A ORDEM DA ENCENAÇÃO É A ORDEM DO QUE ACONTECEU.
-       *
-       * Primeiro os lançamentos que não decidiram, um a um — o pano os desenha no ritmo
-       * dele e a espera daqui é feita da mesma medida (`PAUSA_DO_NULO`), pra que o
-       * decisivo não entre por cima de um dado ainda rolando. Depois a rodada vira, e é
-       * a virada do `rodadaId` com um `lastRound` novo que faz o pano lançar o decisivo.
-       *
-       * Nada disto escolhe nada: quando esta função começa, o resultado já está no `r`.
-       */
-      const lancamentosNulos: number[][] = r.lancamentosNulos ?? [];
-      if (lancamentosNulos.length > 0) {
-        setNulos(lancamentosNulos.map((dice) => ({ dice, sum: dice.reduce((t, d) => t + d, 0), outcome: null })));
-        await espera(lancamentosNulos.length * PAUSA_DO_NULO);
+      if (!r.decidiu) {
+        /* Nulo: um dado a mais na tigela, e a mesa volta pra quem apostou. */
+        setNulosNaTela((atual) => [...atual, paraLancamentoDoPano(r.lancamento)]);
+        await espera(PAUSA_DO_NULO);
         if (!vivo.current) return;
+        setRodada(r.rodada);
+        return;
       }
 
-      setNulos([]);
-      setRodadaId((n) => `rodada-${Number(n.split('-')[1]) + 1}`);
-      setUltima({
-        dice: r.dice,
-        sum: r.sum,
-        outcome: r.outcome,
-        rerolls: r.rerolls,
-        lancamentosNulos,
-        bySeat: {
-          [meuId ?? 'eu']: { results: r.results, totalStake: r.totalStake, totalReturn: r.totalReturn },
-        },
-        at: new Date().toISOString(),
-      });
-      setApostas([]);
       /*
-       * O saldo chega do servidor junto com o resultado, e é ele que vale. A tela não
-       * faz a conta sozinha: fazer a conta aqui é como o saldo passou a mentir uma vez,
-       * mostrando 10.000 pra quem já tinha perdido tudo.
+       * Decisivo: o pano encena quando a rodada VIRA — id novo mais um resultado novo.
+       * Por isso os nulos saem da lista junto, e não antes: tirá-los antes faria o pano
+       * ver a lista encolher e reencenar do zero.
+       */
+      setNulosNaTela([]);
+      setUltimoDecisivo({
+        dice: r.lancamento.dice,
+        sum: r.lancamento.sum,
+        outcome: r.lancamento.outcome as 'ases' | 'pequeno' | 'grande',
+        rerolls: rodada.nulos.length,
+        lancamentosNulos: rodada.nulos.map((n) => n.dice),
+        bySeat: {
+          [meuId ?? 'eu']: {
+            results: r.results,
+            totalStake: r.totalStake,
+            totalReturn: r.totalReturn,
+          },
+        },
+        at: r.lancamento.createdAt,
+      });
+      setRodadaNaTela(r.rodada.rodadaId);
+      setRodada(r.rodada);
+      setAviso(
+        r.lucroLiquido >= 0
+          ? `Retorno ${r.totalReturn.toLocaleString('pt-BR')} · lucro ${r.lucroLiquido.toLocaleString('pt-BR')}`
+          : `Perdeu ${Math.abs(r.lucroLiquido).toLocaleString('pt-BR')}`,
+      );
+      /*
+       * O saldo entra pelo caminho de fora, e o pano o segura até os dados assentarem —
+       * é o que impede a barra de contar o resultado antes da animação terminar.
        */
       saldoChegouDeFora(r.newBalance);
     } catch (e) {
-      setErro(e instanceof ApiError ? e.message : 'Não foi possível apostar agora.');
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível lançar agora.');
     } finally {
       if (vivo.current) setOcupado(false);
     }
@@ -202,19 +247,30 @@ export function BancaFrancesaScreen({ navigation }: Props) {
       ehAnfitriao
       ocupado={ocupado}
       saldo={saldo}
-      minimo={meuNivel?.nivel.minimo ?? config?.minBet ?? 50}
-      nomeDoNivel={meuNivel?.nivel.nome}
-      fichasDaMesa={meuNivel?.nivel.fichas}
+      minimo={rodada?.minimoDaMesa ?? config?.minBet ?? 50}
+      /* As fichas do degrau vêm com a rodada — uma fonte só, e ela é o servidor. */
+      fichasDaMesa={rodada?.fichas}
+      nomeDoNivel={rodada?.nomeDoNivel}
+      limites={rodada?.limites}
+      nomeDaCasa={config?.nomeDaCasa}
+      risco={rodada?.risco ?? 0}
+      retornoPossivel={rodada?.retornoPossivel ?? 0}
+      saldoDepoisDaAposta={rodada?.saldoDepoisDaAposta ?? saldo}
+      esperandoDepoisDoNulo={Boolean(rodada?.esperandoDepoisDoNulo)}
       config={config}
       onApostar={handleApostar}
-      onGirar={handleGirar}
+      onGirar={handleLancar}
       onRetirar={handleRetirar}
       onSair={() => navigation.goBack()}
-      /* O painel da mesa online (código, convites, bots) não existe numa mesa de um. */
       onAbrirPainel={() => navigation.navigate('BancaFrancesaMesa')}
       rotuloDoPainel="Jogar numa mesa com outras pessoas"
       erro={erro}
       aviso={aviso}
     />
   );
+}
+
+/** O lançamento do servidor no formato que o pano usa pra animar. */
+function paraLancamentoDoPano(l: LancamentoDaBanca): LancamentoView {
+  return { dice: l.dice, sum: l.sum, outcome: null };
 }

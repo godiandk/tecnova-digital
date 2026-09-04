@@ -8,6 +8,8 @@ import {
   JANELA_ENTRE_LANCAMENTOS_MS,
   LANCAMENTOS_MAXIMOS_COM_JANELA,
   MAX_SIMULTANEOUS_BETS,
+  problemaComApostaDaBanca,
+  riscoDaAposta,
 } from '../games/banca-francesa/banca-francesa.config';
 import { NIVEIS_DE_MESA, nivelPara, problemaComAAposta } from '../games/shared/niveis-de-mesa';
 import { MAX_SEATS, PLAYER_COLORS, PlayerColor } from './player-colors';
@@ -248,9 +250,18 @@ export class BancaFrancesaTableService {
      */
     const versaoPretendida = table.relogio.versao;
 
-    const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
-    if (saldo < totalStake) {
-      throw new BadRequestException('Saldo de fichas insuficiente pra essa aposta.');
+    /*
+     * O SALDO É CONFERIDO CONTRA O RISCO, não contra o valor cheio das fichas.
+     *
+     * Uma ficha de 100 na linha só pode custar 50 — é metade dela que está apostada.
+     * Exigindo os 100, a mesa recusaria uma aposta que cabe no bolso da pessoa, e a
+     * mensagem falaria de um dinheiro que ela não ia perder de jeito nenhum.
+     */
+    const riscoTotal = bets.reduce((soma, bet) => soma + riscoDaAposta(bet.type, bet.amount), 0);
+    if (saldo < riscoTotal) {
+      throw new BadRequestException(
+        `Você tem ${saldo.toLocaleString('pt-BR')} fichas — esta aposta arrisca ${riscoTotal.toLocaleString('pt-BR')}.`,
+      );
     }
 
     if (table.relogio.versao !== versaoPretendida) {
@@ -649,17 +660,16 @@ export class BancaFrancesaTableService {
       }
       seen.add(bet.type);
       /*
-       * A REGRA DE VALOR VEM DE UM LUGAR SÓ (`problemaComAAposta`), e não de uma cópia
-       * escrita aqui.
+       * A REGRA DE VALOR VEM DE UM LUGAR SÓ, e a mesa compartilhada usa a MESMA da mesa
+       * de um jogador: `problemaComApostaDaBanca`, que conhece o piso e o teto de cada
+       * casa (Ases vai até 6× o mínimo, os arcos até 200×, a linha começa no dobro).
        *
-       * Havia duas cópias — esta e a da mesa compartilhada — e as duas continuaram
-       * recusando aposta acima de vinte vezes o mínimo depois que o teto foi tirado do
-       * jogo. Quem tinha cem bilhões montava cinquenta bilhões no pano e a mesa
-       * respondia "cada aposta vai de 500.000.000 a 10.000.000.000": um limite que não
-       * existia mais em lugar nenhum, menos aqui. É exatamente o defeito que a função
-       * compartilhada foi criada pra impedir, e ela só impede se for a única a decidir.
+       * Esta linha já foi uma cópia da regra escrita aqui dentro, e a cópia ficou pra
+       * trás quando o teto mudou: a mesa recusava aposta por um limite que não existia
+       * mais em lugar nenhum. Duas mesas com a mesma regra escrita duas vezes é a mesma
+       * armadilha, um andar acima.
        */
-      const problema = problemaComAAposta(bet.amount, saldo);
+      const problema = problemaComApostaDaBanca(bet.type, bet.amount, nivel.minimo);
       if (problema) throw new BadRequestException(problema);
     }
   }
