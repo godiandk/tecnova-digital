@@ -14,6 +14,7 @@ import { ApiError } from '../../api/client';
 import { usuarioLogadoId } from '../../api/session';
 import { SocketError } from '../../api/socket';
 import { BancaFrancesaBet, BancaFrancesaConfig, fetchBancaFrancesaConfig } from '../../api/bancaFrancesa';
+import { MeuNivel, fetchMeuNivel } from '../../api/niveis';
 import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
 import { PanoDaBancaFrancesa } from './PanoDaBancaFrancesa';
 import { fetchFriends, Friend } from '../../api/friends';
@@ -48,6 +49,14 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [codeInput, setCodeInput] = useState('');
   const [config, setConfig] = useState<BancaFrancesaConfig | null>(null);
+  /*
+   * O nível DESTA pessoa — é dele que saem o mínimo, o máximo e as fichas do trilho.
+   *
+   * A configuração do jogo (`config`) é pública e traz os limites do nível de entrada,
+   * iguais pra todo mundo. Antes eram esses que a mesa usava, e por isso quem tinha cem
+   * milhões via um trilho de 5 a 1.000 e um teto de 5.000 por aposta.
+   */
+  const [meuNivel, setMeuNivel] = useState<MeuNivel | null>(null);
   const [painelAberto, setPainelAberto] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +79,17 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
   useEffect(() => {
     fetchBancaFrancesaConfig().then(setConfig).catch(() => undefined);
   }, []);
+
+  /*
+   * O nível é buscado de novo sempre que o SALDO muda — ganhar uma rodada grande, ou
+   * receber fichas pelo painel, pode subir a pessoa de mesa. Sem isto, o trilho ficaria
+   * no nível de quando a tela abriu, e a pessoa com dez milhões continuaria apostando
+   * com fichas de mil até sair e voltar.
+   */
+  const saldoAtual = jogador?.chipBalance ?? 0;
+  useEffect(() => {
+    fetchMeuNivel().then(setMeuNivel).catch(() => undefined);
+  }, [saldoAtual]);
 
   const refreshPublic = useCallback(async () => {
     try {
@@ -215,8 +235,9 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
           ehAnfitriao={isHost}
           ocupado={busy}
           saldo={jogador?.chipBalance ?? 0}
-          minimo={config?.minBet ?? 50}
-          maximo={config?.maxBet ?? 5000}
+          minimo={meuNivel?.nivel.minimo ?? config?.minBet ?? 50}
+          maximo={meuNivel?.nivel.maximo ?? config?.maxBet ?? 2000}
+          nomeDoNivel={meuNivel?.nivel.nome}
           config={config}
           onApostar={handlePlaceBets}
           onGirar={handleRoll}

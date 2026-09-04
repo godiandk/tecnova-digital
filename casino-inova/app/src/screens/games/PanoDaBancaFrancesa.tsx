@@ -5,14 +5,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { TAMPOS_16X9 } from '../../data/tamposDaMesa';
-import { MAPA_BANCA_FRANCESA } from '../../data/mapaDosTampos';
+import { MAPA_BANCA_FRANCESA, TIGELA_DA_BANCA } from '../../data/mapaDosTampos';
 import { dadoNaTigela, fichaNoPano, fichaNoTrilho, telaBaixa } from '../../theme/medidasDaMesa';
 import { TampoDaMesa, usePalco } from '../../components/TampoDaMesa';
 import { useJanela } from '../../theme/useJanela';
 import { CasaDeAposta, PilhaNaCasa } from '../../components/CasaDeAposta';
 import { TrilhoDeFichas } from '../../components/TrilhoDeFichas';
 import { PilhaDeFichas } from '../../components/Ficha';
-import { Dado } from '../../components/Dado';
+import { DadoFisico } from '../../components/DadoFisico';
+import { Arena, lancarDados } from '../../fisica/motorDeDados';
+import { DIE_FACE_IMAGES } from '../../data/gameAssets';
 import { ChipStack } from '../../components/ChipStack';
 import { QuadroDePagamentos, LinhaDePagamento } from '../../components/QuadroDePagamentos';
 import { decomporEmFichas, pilhaEmPalavras } from '../../data/fichasDeValor';
@@ -43,6 +45,9 @@ const soma = (fichas: number[]) => fichas.reduce((t, f) => t + f, 0);
 
 const NOME_DO_RESULTADO: Record<string, string> = { ases: 'Ases', pequeno: 'Pequeno', grande: 'Grande' };
 
+/** As seis faces em ordem, montadas uma vez: o dado troca de face 60 vezes por segundo. */
+const FACES_DO_DADO = [1, 2, 3, 4, 5, 6].map((n) => DIE_FACE_IMAGES[n]);
+
 interface PanoProps {
   mesa: TableView;
   meuId: string | null;
@@ -51,6 +56,8 @@ interface PanoProps {
   saldo: number;
   minimo: number;
   maximo: number;
+  /** O nome da mesa em que esta pessoa está jogando (Bronze, Ouro, Safira...). */
+  nomeDoNivel?: string;
   /** A configuração do motor — é dela que sai o quadro de pagamentos. */
   config: BancaFrancesaConfig | null;
   /** Devolve se a aposta foi aceita — é o que decide se a montagem some ou fica. */
@@ -85,6 +92,7 @@ export function PanoDaBancaFrancesa({
   saldo,
   minimo,
   maximo,
+  nomeDoNivel,
   config,
   onApostar,
   onGirar,
@@ -129,7 +137,7 @@ export function PanoDaBancaFrancesa({
 
   /* --- o lançamento: cada lance vira uma jogada na tigela, na hora em que acontece --- */
   const rodada = mesa.lastRound;
-  const { dados, lance, girando, duracaoDoVoo } = useLancamento(mesa);
+  const { dados, lance, girando, rapido: rapidoNaTela } = useLancamento(mesa);
 
   /*
    * A janela entre lançamentos: o dado saiu, não decidiu, e a mesa espera antes de
@@ -155,6 +163,14 @@ export function PanoDaBancaFrancesa({
   }, [marcaDaRodada]);
 
   const travado = ocupado || girando;
+
+  /*
+   * Tem ficha de alguém na mesa? Conta as apostas JÁ CONFIRMADAS no servidor
+   * (`pendingBets`) mais as que esta pessoa montou e ainda não confirmou — as duas
+   * valem, porque confirmar a montagem é um toque e o botão de lançar não deve ficar
+   * apagado enquanto a pessoa está com a ficha na mão.
+   */
+  const temApostaNaMesa = mesa.seats.some((assento) => assento.pendingBets.length > 0) || total > 0;
 
   /*
    * Enquanto os dados estão no ar, o app não se atualiza sozinho.
@@ -285,17 +301,7 @@ export function PanoDaBancaFrancesa({
       ))}
 
       {/* Os três dados dentro da tigela de couro, onde eles são lançados. */}
-      {dados.length > 0 &&
-        MAPA_BANCA_FRANCESA.dados.map((ponto, indice) => (
-          <DadoNaTigela
-            key={indice}
-            ponto={ponto}
-            face={dados[indice] ?? null}
-            indice={indice}
-            lance={lance}
-            duracaoDoVoo={duracaoDoVoo}
-          />
-        ))}
+      {dados.length > 0 && <DadosNaTigela faces={dados} lance={lance} rapido={rapidoNaTela} />}
 
       <SafeAreaView style={styles.frente} edges={['top', 'bottom']} pointerEvents="box-none">
         <View
@@ -350,6 +356,19 @@ export function PanoDaBancaFrancesa({
           </View>
 
           {/*
+            * Em que mesa se está jogando, e o que ela aceita.
+            *
+            * A placa na porta, como em cassino de verdade: o preço da rodada está
+            * escrito ANTES de sentar, e não descoberto no erro depois de montar a
+            * aposta. Some numa tela baixa, onde cada linha disputa espaço com o pano.
+            */}
+          {nomeDoNivel && !apertado && (
+            <Text style={styles.placaDaMesa} numberOfLines={1}>
+              Mesa {nomeDoNivel} · de {minimo.toLocaleString('pt-BR')} a {maximo.toLocaleString('pt-BR')} por casa
+            </Text>
+          )}
+
+          {/*
             * A faixa da janela fica no AVENTAL, junto das mãos, e não em cima do pano.
             * Em cima do pano ela taparia a mesa justamente no momento em que a pessoa
             * precisa olhar pra ela pra decidir onde pôr a ficha.
@@ -379,15 +398,22 @@ export function PanoDaBancaFrancesa({
               )}
             </Pressable>
 
-            {/* Só o anfitrião lança — é ele quem faz o papel do dealer nesta mesa. */}
+            {/*
+              * Só o anfitrião lança — é ele quem faz o papel do dealer nesta mesa.
+              *
+              * E só com aposta na mesa. O servidor recusa lançar numa mesa vazia (uma
+              * rodada inteira sem uma ficha em jogo suja o placar com um resultado que
+              * ninguém apostou), então o botão diz isso antes em vez de deixar tocar e
+              * devolver erro.
+              */}
             {ehAnfitriao && (
               <Pressable
                 onPress={onGirar}
-                disabled={travado}
+                disabled={travado || !temApostaNaMesa}
                 accessibilityRole="button"
-                accessibilityLabel="Lançar os dados"
-                accessibilityState={{ disabled: travado }}
-                style={[styles.botaoLancar, travado && styles.desabilitado]}
+                accessibilityLabel={temApostaNaMesa ? 'Lançar os dados' : 'Ninguém apostou ainda'}
+                accessibilityState={{ disabled: travado || !temApostaNaMesa }}
+                style={[styles.botaoLancar, (travado || !temApostaNaMesa) && styles.desabilitado]}
               >
                 <Ionicons name="dice" size={22} color={colors.goldBright} />
                 <Text style={styles.botaoLancarTexto}>Lançar</Text>
@@ -564,7 +590,7 @@ function useLancamento(mesa: TableView) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rodadaId, lancesFeitos, marcaDaApuracao]);
 
-  return { dados, lance, girando, duracaoDoVoo: rapido ? VOO_RAPIDO : VOO_CHEIO };
+  return { dados, lance, girando, rapido };
 }
 
 /**
@@ -633,13 +659,22 @@ function FaixaDaJanela({
  * agora cada lance CHEGA no momento em que acontece, e entre um e outro tem uma janela
  * de aposta de verdade. Mostrar todos deixou de ser um custo e passou a ser o jogo.
  */
-const VOO_CHEIO = 1150;
-const VOO_RAPIDO = 700;
-/** 2 × 150ms de atraso entre dados + o voo — quando o terceiro dado para. */
-const ATE_ASSENTAR = 300 + VOO_CHEIO;
-const ATE_ASSENTAR_RAPIDO = 300 + VOO_RAPIDO;
-/** Tempo pra ler o que saiu antes de os dados serem recolhidos. */
-const OLHADA_NO_NULO = 420;
+/*
+ * Quanto dura cada lançamento, em quadros de 60 por segundo.
+ *
+ * Os mesmos números vão pro motor de física e pro relógio da encenação — é o que
+ * mantém a tela e os dados combinados. Com duas fontes, ou a rodada seguiria com os
+ * dados ainda rolando, ou ficaria esperando dados já parados.
+ *
+ * O decisivo é mais longo porque tem que dar tempo de LER o que saiu; o nulo é curto
+ * porque não decide nada e pode acontecer três ou quatro vezes seguidas.
+ */
+const QUADROS_DO_DECISIVO = 132; // 2,2s
+const QUADROS_DO_NULO = 96; // 1,6s
+const ATE_ASSENTAR = (QUADROS_DO_DECISIVO / 60) * 1000;
+const ATE_ASSENTAR_RAPIDO = (QUADROS_DO_NULO / 60) * 1000;
+/** Respiro entre um lançamento nulo e o seguinte, pra ler a soma antes de recolher. */
+const OLHADA_NO_NULO = 380;
 
 function PilhaNoPano({
   fichas,
@@ -659,33 +694,79 @@ function PilhaNoPano({
   );
 }
 
-function DadoNaTigela({
-  ponto,
-  face,
-  indice,
-  lance,
-  duracaoDoVoo,
-}: {
-  ponto: { x: number; y: number };
-  face: number | null;
-  indice: number;
-  lance: number;
-  duracaoDoVoo: number;
-}) {
+/**
+ * Os três dados sendo lançados DENTRO da tigela de couro.
+ *
+ * A arena da física sai da tigela desenhada na arte, medida em `TIGELA_DA_BANCA.chao` —
+ * o couro útil, sem a moldura. Convertida pra a unidade do motor, que mede em meios
+ * dados: o dado tem raio 1, então uma tigela de 280 pixels com dado de 37 tem raio 7,6.
+ *
+ * A tigela é bem mais larga do que alta, porque é vista de cima e de viés. Os dados
+ * batem muito mais nas laterais do que em cima e embaixo — que é o que acontece numa
+ * tigela de verdade nesse ângulo, e é por isso que a arena não é redonda.
+ *
+ * A SEMENTE vem do número do lançamento. Dois efeitos: o mesmo lançamento redesenhado
+ * (uma remontagem da tela no meio da animação) continua idêntico em vez de saltar, e
+ * lançamentos diferentes caem diferente sem ninguém sortear nada à mão.
+ */
+function DadosNaTigela({ faces, lance, rapido }: { faces: number[]; lance: number; rapido: boolean }) {
   const palco = usePalco();
-  if (!palco) return null;
-  const tamanho = dadoNaTigela(palco.largura);
+
+  const preparado = useMemo(() => {
+    if (!palco || faces.length === 0) return null;
+
+    const tamanho = dadoNaTigela(palco.largura);
+    // O motor mede em meios dados; o dado desenhado tem `tamanho` pixels de lado.
+    const escalaDoMundo = tamanho / 2;
+
+    const { esquerda, direita, topo, base } = TIGELA_DA_BANCA.chao;
+    const larguraDoCouro = (direita - esquerda) * palco.largura;
+    const alturaDoCouro = (base - topo) * palco.altura;
+
+    const arena: Arena = {
+      formato: 'elipse',
+      raioX: larguraDoCouro / 2 / escalaDoMundo,
+      raioY: alturaDoCouro / 2 / escalaDoMundo,
+    };
+
+    const centro = {
+      x: palco.esquerda + ((esquerda + direita) / 2) * palco.largura,
+      y: palco.topo + ((topo + base) / 2) * palco.altura,
+    };
+
+    const lancamento = lancarDados({
+      faces,
+      arena,
+      semente: lance * 7919 + faces.reduce((soma, f, i) => soma + f * (i + 1) * 31, 0),
+      // Entram por cima e pela esquerda, como quem despeja o copo na beirada.
+      entrada: { x: -arena.raioX * 0.6, y: -arena.raioY * 0.5, z: 8 },
+      /*
+       * O lançamento nulo é mais curto: ele não decide nada, e a rodada pode ter três ou
+       * quatro deles seguidos. No tempo do decisivo, uma rodada azarada viraria dez
+       * segundos de dado rolando antes de qualquer resultado.
+       */
+      quadrosFixos: rapido ? QUADROS_DO_NULO : QUADROS_DO_DECISIVO,
+    });
+
+    return { lancamento, tamanho, escalaDoMundo, centro };
+  }, [palco, faces, lance]);
+
+  if (!preparado) return null;
+
   return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: 'absolute',
-        left: palco.esquerda + ponto.x * palco.largura - tamanho / 2,
-        top: palco.topo + ponto.y * palco.altura - tamanho / 2,
-      }}
-    >
-      <Dado face={face} rolando={false} indice={indice} tamanho={tamanho} lance={lance} duracaoDoVoo={duracaoDoVoo} />
-    </View>
+    <>
+      {preparado.lancamento.caminhos.map((caminho, indice) => (
+        <DadoFisico
+          key={indice}
+          caminho={caminho}
+          faces={FACES_DO_DADO}
+          tamanho={preparado.tamanho}
+          escalaDoMundo={preparado.escalaDoMundo}
+          centro={preparado.centro}
+          chave={lance}
+        />
+      ))}
+    </>
   );
 }
 
@@ -772,6 +853,13 @@ const styles = StyleSheet.create({
   linhaDoTrilho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
   ladoDoTrilho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minWidth: 104 },
   linhaDeBotoes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md },
+  placaDaMesa: {
+    fontFamily: fontFamily.body,
+    fontSize: fontSize.xs,
+    color: colors.textFaint,
+    textAlign: 'center',
+    marginTop: 2,
+  },
   /* A faixa da janela entre lançamentos: contagem, o que houve, e como desistir. */
   faixaDaJanela: {
     flexDirection: 'row',

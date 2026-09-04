@@ -2,11 +2,12 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { playRound as playBaccaratRound, resolveBet } from './baccarat.engine';
-import { BaccaratBetType, MAX_BET, MIN_BET, RANKS, Rank } from './baccarat.config';
+import { BaccaratBetType, RANKS, Rank } from './baccarat.config';
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
 import { CartaComNaipe, nomeDaCarta } from '../shared/naipes';
 import { Sapata } from '../shared/sapata';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
+import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 const VALID_BET_TYPES: BaccaratBetType[] = ['jogador', 'banca', 'empate'];
 /** 24 colunas de 6 no painel — 144 rodadas enchem a tela inteira. */
@@ -33,7 +34,7 @@ export class BaccaratService {
   ) {}
 
   getConfig() {
-    return { minBet: MIN_BET, maxBet: MAX_BET };
+    return { minBet: NIVEIS_DE_MESA[0].minimo, maxBet: NIVEIS_DE_MESA[0].maximo };
   }
 
   /**
@@ -50,9 +51,8 @@ export class BaccaratService {
    * igual a slots e roleta, diferente do blackjack.
    */
   async playRound(userId: string, betType: BaccaratBetType, amount: number, actionId?: string) {
-    if (!Number.isFinite(amount) || amount < MIN_BET || amount > MAX_BET) {
-      throw new BadRequestException(`A aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
-    }
+    const problema = problemaComAAposta(amount, await this.walletService.balanceOf(userId));
+    if (problema) throw new BadRequestException(problema);
     if (!VALID_BET_TYPES.includes(betType)) {
       throw new BadRequestException('Tipo de aposta inválido — use jogador, banca ou empate.');
     }

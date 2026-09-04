@@ -17,14 +17,13 @@ import {
   DEALER_STANDS_ON,
   INSURANCE_MAX_FRACTION,
   INSURANCE_PAYOUT_MULTIPLIER,
-  MAX_BET,
   MAX_HANDS,
-  MIN_BET,
   Rank,
   RANKS,
 } from './blackjack.config';
 import { CartaComNaipe, nomeDaCarta } from '../shared/naipes';
 import { Sapata } from '../shared/sapata';
+import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 type Carta = CartaComNaipe<Rank>;
 
@@ -86,8 +85,8 @@ export class BlackjackService {
 
   getConfig() {
     return {
-      minBet: MIN_BET,
-      maxBet: MAX_BET,
+      minBet: NIVEIS_DE_MESA[0].minimo,
+      maxBet: NIVEIS_DE_MESA[0].maximo,
       blackjackPayoutMultiplier: BLACKJACK_PAYOUT_MULTIPLIER,
       dealerStandsOn: DEALER_STANDS_ON,
       maxHands: MAX_HANDS,
@@ -111,9 +110,8 @@ export class BlackjackService {
     if (existente && !existente.finished) {
       throw new BadRequestException('Você já tem uma mão em andamento — termine ela antes de apostar de novo.');
     }
-    if (!Number.isFinite(bet) || bet < MIN_BET || bet > MAX_BET) {
-      throw new BadRequestException(`A aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
-    }
+    const problema = problemaComAAposta(bet, await this.walletService.balanceOf(userId));
+    if (problema) throw new BadRequestException(problema);
 
     await this.walletService.debit(userId, bet, 'aposta', GAME_ID);
 

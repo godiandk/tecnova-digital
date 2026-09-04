@@ -6,12 +6,11 @@ import {
   apostaDeLinhaEhValida,
   ehApostaDeLinha,
   BET_TYPES,
-  MAX_BET,
   MAX_SIMULTANEOUS_BETS,
-  MIN_BET,
   TOTAL_RETURN_MULTIPLIER,
   WINNING_SUMS,
 } from './banca-francesa.config';
+import { NIVEIS_DE_MESA, nivelPara } from '../shared/niveis-de-mesa';
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 
@@ -40,10 +39,15 @@ export class BancaFrancesaService {
     return this.roadmapService.build(this.history);
   }
 
+  /**
+   * A configuração do jogo. Os limites daqui são os do nível de entrada (Bronze):
+   * quem quiser saber o próprio limite pergunta em `/niveis/meu`, porque ele depende
+   * do saldo e esta rota é pública.
+   */
   getConfig() {
     return {
-      minBet: MIN_BET,
-      maxBet: MAX_BET,
+      minBet: NIVEIS_DE_MESA[0].minimo,
+      maxBet: NIVEIS_DE_MESA[0].maximo,
       maxSimultaneousBets: MAX_SIMULTANEOUS_BETS,
       betTypes: BET_TYPES,
       winningSums: WINNING_SUMS,
@@ -52,7 +56,15 @@ export class BancaFrancesaService {
     };
   }
 
-  validateBets(bets: BancaFrancesaBet[]) {
+  /**
+   * O mesmo limite por nível da mesa compartilhada.
+   *
+   * Precisa estar aqui também: o jogo contra a casa e a mesa com gente são dois
+   * caminhos até a mesma carteira, e um limite que só existe num deles é um limite que
+   * não existe — bastaria apostar pelo outro.
+   */
+  validateBets(bets: BancaFrancesaBet[], saldo: number) {
+    const nivel = nivelPara(saldo);
     if (!Array.isArray(bets) || bets.length === 0 || bets.length > MAX_SIMULTANEOUS_BETS) {
       throw new BadRequestException(`Aposte em 1 a ${MAX_SIMULTANEOUS_BETS} lugares da mesa.`);
     }
@@ -65,8 +77,10 @@ export class BancaFrancesaService {
         throw new BadRequestException(`Aposta em "${bet.type}" duplicada — some tudo numa aposta só.`);
       }
       seenTypes.add(bet.type);
-      if (!Number.isFinite(bet.amount) || bet.amount < MIN_BET || bet.amount > MAX_BET) {
-        throw new BadRequestException(`Cada aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
+      if (!Number.isFinite(bet.amount) || bet.amount < nivel.minimo || bet.amount > nivel.maximo) {
+        throw new BadRequestException(
+          `Na mesa ${nivel.nome}, cada aposta vai de ${nivel.minimo.toLocaleString('pt-BR')} a ${nivel.maximo.toLocaleString('pt-BR')} fichas.`,
+        );
       }
       /*
        * A aposta de linha é dividida ao meio, e ficha não se parte: o saldo é inteiro.
@@ -81,7 +95,7 @@ export class BancaFrancesaService {
   }
 
   async playRound(userId: string, bets: BancaFrancesaBet[], actionId?: string) {
-    this.validateBets(bets);
+    this.validateBets(bets, await this.walletService.balanceOf(userId));
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
 

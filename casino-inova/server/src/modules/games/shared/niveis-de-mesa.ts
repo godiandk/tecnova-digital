@@ -33,13 +33,19 @@
  * injusto: alguém preso num mínimo que não cabe no bolso dele.
  */
 export interface NivelDeMesa {
-  id: 'bronze' | 'prata' | 'ouro' | 'diamante';
+  id: 'bronze' | 'prata' | 'ouro' | 'diamante' | 'rubi' | 'safira';
   nome: string;
   /** Saldo a partir do qual este nível é o nível da pessoa. */
   saldoDeEntrada: number;
   minimo: number;
   maximo: number;
-  /** As fichas do trilho neste nível — cinco valores, do menor pro maior. */
+  /**
+   * As fichas do trilho neste nível, do menor pro maior.
+   *
+   * A menor é o mínimo da mesa e a maior é o máximo: o trilho é a faixa inteira do
+   * nível, e não uma amostra dela. Assim não existe aposta possível que não caiba nas
+   * fichas mostradas — quem quiser apostar o máximo pega a última e encosta uma vez.
+   */
   fichas: number[];
 }
 
@@ -76,9 +82,63 @@ export const NIVEIS_DE_MESA: NivelDeMesa[] = [
     saldoDeEntrada: 5_000_000,
     minimo: 50_000,
     maximo: 1_000_000,
-    fichas: [10_000, 50_000, 100_000, 500_000, 1_000_000],
+    fichas: [10_000, 25_000, 50_000, 100_000, 500_000, 1_000_000],
+  },
+  /*
+   * OS DOIS DEGRAUS DE CIMA existem porque a escada acabava cedo demais.
+   *
+   * Quem chegasse a cem milhões ficava no Diamante, apostando no máximo um milhão — 1%
+   * da banca. É o mesmo defeito que a escada inteira foi feita pra resolver, só que
+   * mais em cima: aposta que não muda nada no saldo não tem peso, e a mesa vira tela
+   * girando sozinha.
+   *
+   * A escada segue a mesma regra dos degraus de baixo, sem exceção: cada nível entra
+   * com dez vezes o anterior, o mínimo é 1% da entrada e o máximo é 20%.
+   */
+  {
+    id: 'rubi',
+    nome: 'Rubi',
+    saldoDeEntrada: 50_000_000,
+    minimo: 500_000,
+    maximo: 10_000_000,
+    fichas: [100_000, 250_000, 500_000, 1_000_000, 5_000_000, 10_000_000],
+  },
+  {
+    id: 'safira',
+    nome: 'Safira',
+    saldoDeEntrada: 500_000_000,
+    minimo: 5_000_000,
+    maximo: 100_000_000,
+    fichas: [1_000_000, 2_500_000, 5_000_000, 10_000_000, 50_000_000, 100_000_000],
   },
 ];
+
+/**
+ * A aposta cabe no nível de quem está apostando?
+ *
+ * Devolve a mensagem do problema, ou `null` quando está tudo certo. Não lança exceção
+ * de propósito: este arquivo é regra de economia e não conhece HTTP — quem chama é que
+ * decide se vira 400, se vira aviso na tela ou se vira nada.
+ *
+ * ESTE LUGAR EXISTE PORQUE A REGRA ESTAVA COPIADA EM SEIS JOGOS, cada um com o próprio
+ * par de números fixos no arquivo de configuração. Seis cópias significam seis lugares
+ * pra esquecer de atualizar, e foi o que aconteceu: a escada de níveis foi construída e
+ * conferida, e nenhum dos seis a lia. Quem tinha cem milhões continuava limitado a
+ * cinco mil por aposta em todas as mesas.
+ */
+export function problemaComAAposta(valor: number, saldo: number): string | null {
+  const nivel = nivelPara(saldo);
+  if (!Number.isFinite(valor) || !Number.isInteger(valor)) {
+    return 'Ficha não se parte — a aposta precisa ser um número inteiro.';
+  }
+  if (valor < nivel.minimo) {
+    return `Na mesa ${nivel.nome}, a aposta mínima é ${nivel.minimo.toLocaleString('pt-BR')} fichas.`;
+  }
+  if (valor > nivel.maximo) {
+    return `Na mesa ${nivel.nome}, a aposta máxima é ${nivel.maximo.toLocaleString('pt-BR')} fichas.`;
+  }
+  return null;
+}
 
 /** O nível de quem tem este saldo: o mais alto em que ele entra. */
 export function nivelPara(saldo: number): NivelDeMesa {

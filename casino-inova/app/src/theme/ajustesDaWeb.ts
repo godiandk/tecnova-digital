@@ -51,6 +51,26 @@ const CSS = `
   }
 `;
 
+/**
+ * Instruções pro iPhone quando o jogo é adicionado à tela de início.
+ *
+ * `apple-mobile-web-app-capable` é a que importa: SEM ELA, o atalho na tela de início
+ * abre dentro do Safari, com a barra de endereço em cima dos ícones da barra de baixo —
+ * que é exatamente o defeito que aparece. Com ela, o atalho abre em tela cheia, sem
+ * barra nenhuma, e o jogo ocupa o aparelho inteiro como um aplicativo instalado.
+ *
+ * `viewport-fit=cover` é o que faz o iPhone informar as margens seguras (o entalhe em
+ * cima, a barrinha de gesto embaixo). Sem ela essas margens chegam como zero, e a barra
+ * de abas nasce colada na borda de baixo, por cima da barrinha do sistema.
+ */
+const ETIQUETAS: Array<[string, string]> = [
+  ['apple-mobile-web-app-capable', 'yes'],
+  ['mobile-web-app-capable', 'yes'],
+  ['apple-mobile-web-app-status-bar-style', 'black-translucent'],
+  ['apple-mobile-web-app-title', 'Casino Inova'],
+  ['theme-color', '#0B0F0D'],
+];
+
 let jaAplicado = false;
 
 /** Chamado uma vez na subida do app. Fora da web não faz nada. */
@@ -63,5 +83,52 @@ export function aplicarAjustesDaWeb(): void {
   folha.setAttribute('id', 'casino-inova-ajustes');
   folha.textContent = CSS;
   documento.head.appendChild(folha);
+
+  for (const [nome, conteudo] of ETIQUETAS) {
+    if (documento.querySelector(`meta[name="${nome}"]`)) continue;
+    const etiqueta = documento.createElement('meta');
+    etiqueta.setAttribute('name', nome);
+    etiqueta.setAttribute('content', conteudo);
+    documento.head.appendChild(etiqueta);
+  }
+
+  /*
+   * `viewport-fit=cover` precisa entrar na etiqueta de viewport que JÁ EXISTE — criar uma
+   * segunda não adianta, o navegador usa a primeira.
+   */
+  const viewport = documento.querySelector('meta[name="viewport"]');
+  const conteudo = viewport?.getAttribute('content') ?? '';
+  if (viewport && !conteudo.includes('viewport-fit')) {
+    viewport.setAttribute('content', `${conteudo}, viewport-fit=cover`);
+  }
+
   jaAplicado = true;
+}
+
+/**
+ * Quanto reservar embaixo por causa da barra do navegador.
+ *
+ * O SINTOMA: no Safari do iPhone a barra de endereço flutua POR CIMA da página, e ela
+ * cobre justamente a barra de abas — os cinco ícones ficam atrás dela.
+ *
+ * As margens seguras do sistema não resolvem: a barra flutuante do Safari não entra
+ * nelas. Ela não é parte do aparelho, é parte do navegador, e o navegador não avisa.
+ *
+ * Então: quando o jogo está aberto DENTRO do navegador, reserva 34 pontos a mais embaixo.
+ * Quando está aberto pela tela de início (em tela cheia, sem barra nenhuma), reserva
+ * zero — ali a barra não existe e o espaço extra só faria a barra de abas flutuar.
+ *
+ * A solução de verdade continua sendo "Adicionar à Tela de Início": isto aqui é pra
+ * quem ainda não fez, e pra continuar utilizável no navegador do computador.
+ */
+export function folgaDaBarraDoNavegador(): number {
+  if (Platform.OS !== 'web') return 0;
+  const janela = globalThis as {
+    navigator?: { standalone?: boolean };
+    matchMedia?: (consulta: string) => { matches: boolean };
+  };
+  const emTelaCheia =
+    janela.navigator?.standalone === true ||
+    janela.matchMedia?.('(display-mode: standalone)').matches === true;
+  return emTelaCheia ? 0 : 34;
 }

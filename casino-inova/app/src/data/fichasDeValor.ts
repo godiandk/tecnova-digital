@@ -45,8 +45,59 @@ export const DENOMINACOES: Denominacao[] = [
   { valor: 25, chapa: '#1E7A46' },
   { valor: 100, chapa: '#14181B' },
   { valor: 500, chapa: '#2B4E8C' },
-  { valor: 1000, chapa: '#B8892E' },
+  { valor: 1_000, chapa: '#B8892E' },
+  /*
+   * DAQUI PRA CIMA são as fichas das mesas altas, e a escada continua no mesmo passo
+   * (1, 2,5 e 5 dentro de cada casa decimal) até cem milhões.
+   *
+   * A lista precisou crescer porque a escada de níveis cresceu: uma mesa Safira aposta
+   * de cinco a cem milhões, e com o trilho parando em mil a maior ficha disponível era
+   * 0,001% da aposta mínima da mesa. Ninguém monta uma aposta de cinco milhões
+   * encostando ficha de mil cinco mil vezes.
+   *
+   * Quem vê quais depende do saldo: o trilho mostra as fichas do NÍVEL da pessoa, que o
+   * servidor manda em `/niveis/meu`. Quem tem dez mil não vê ficha de um milhão — não
+   * por segredo, mas porque um trilho de quinze fichas em que doze são impossíveis é um
+   * trilho pior.
+   *
+   * As cores repetem de propósito, seguindo a convenção do cassino de subir de casa
+   * decimal com a mesma família de cor: o 5.000 é vermelho como o 5, o 25.000 é verde
+   * como o 25. Quem aprendeu a ler o trilho de baixo lê o de cima sem reaprender nada.
+   */
+  { valor: 2_500, chapa: '#1E7A46' },
+  { valor: 5_000, chapa: '#C4342C' },
+  { valor: 10_000, chapa: '#14181B' },
+  { valor: 25_000, chapa: '#1E7A46' },
+  { valor: 50_000, chapa: '#2B4E8C' },
+  { valor: 100_000, chapa: '#14181B' },
+  { valor: 250_000, chapa: '#1E7A46' },
+  { valor: 500_000, chapa: '#2B4E8C' },
+  { valor: 1_000_000, chapa: '#B8892E' },
+  { valor: 2_500_000, chapa: '#1E7A46' },
+  { valor: 5_000_000, chapa: '#C4342C' },
+  { valor: 10_000_000, chapa: '#14181B' },
+  { valor: 50_000_000, chapa: '#2B4E8C' },
+  { valor: 100_000_000, chapa: '#B8892E' },
 ];
+
+/**
+ * O número escrito na chapa, encurtado quando não cabe.
+ *
+ * "100.000.000" não cabe num disco de 40 pixels — e nem precisa: numa mesa de cassino a
+ * ficha grande diz "100M", e todo mundo entende. O corte segue a escrita que já se usa
+ * em ficha: mil vira "k", milhão vira "M".
+ */
+export function chapaEmTexto(valor: number): string {
+  if (valor >= 1_000_000) {
+    const milhoes = valor / 1_000_000;
+    return `${Number.isInteger(milhoes) ? milhoes : milhoes.toFixed(1).replace('.', ',')}M`;
+  }
+  if (valor >= 1_000) {
+    const milhares = valor / 1_000;
+    return `${Number.isInteger(milhares) ? milhares : milhares.toFixed(1).replace('.', ',')}k`;
+  }
+  return String(valor);
+}
 
 export function corDaChapa(valor: number): string {
   let escolhida = DENOMINACOES[0];

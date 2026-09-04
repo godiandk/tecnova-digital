@@ -2,8 +2,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { resolveBet, runRound, StockBet, theoreticalRtp } from './stock-market.engine';
-import { COMMISSION, MAX_BET, MAX_CHANGE_PERCENT, MIN_BET, StockDirection, TICKS_PER_ROUND } from './stock-market.config';
+import { COMMISSION, MAX_CHANGE_PERCENT, StockDirection, TICKS_PER_ROUND } from './stock-market.config';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
+import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 const DIRECTIONS: StockDirection[] = ['alta', 'baixa'];
 
@@ -23,8 +24,8 @@ export class StockMarketService {
 
   getConfig() {
     return {
-      minBet: MIN_BET,
-      maxBet: MAX_BET,
+      minBet: NIVEIS_DE_MESA[0].minimo,
+      maxBet: NIVEIS_DE_MESA[0].maximo,
       directions: DIRECTIONS,
       maxChangePercent: MAX_CHANGE_PERCENT,
       ticksPerRound: TICKS_PER_ROUND,
@@ -41,9 +42,8 @@ export class StockMarketService {
     if (!DIRECTIONS.includes(bet?.direction)) {
       throw new BadRequestException('Aposte em "alta" ou "baixa".');
     }
-    if (!Number.isFinite(bet.amount) || bet.amount < MIN_BET || bet.amount > MAX_BET) {
-      throw new BadRequestException(`A aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
-    }
+    const problema = problemaComAAposta(bet.amount, await this.walletService.balanceOf(userId));
+    if (problema) throw new BadRequestException(problema);
 
     /*
      * Daqui pra baixo é a rodada em si: debitar, sortear, pagar. Vai dentro de

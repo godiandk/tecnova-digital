@@ -2,8 +2,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { spin, theoreticalRtp } from './slots.engine';
-import { MAX_BET, MIN_BET, MIN_MATCH, PAYLINES, REELS, ROWS, SLOT_SYMBOLS } from './slots.config';
+import { MIN_MATCH, PAYLINES, REELS, ROWS, SLOT_SYMBOLS } from './slots.config';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
+import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 /** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
 const GAME_ID = 'slots';
@@ -24,8 +25,8 @@ export class SlotsService {
       rows: ROWS,
       paylines: PAYLINES,
       minMatch: MIN_MATCH,
-      minBet: MIN_BET,
-      maxBet: MAX_BET,
+      minBet: NIVEIS_DE_MESA[0].minimo,
+      maxBet: NIVEIS_DE_MESA[0].maximo,
       theoreticalRtp: theoreticalRtp(),
     };
   }
@@ -36,9 +37,8 @@ export class SlotsService {
    * só mostra o que o servidor sorteou.
    */
   async playSpin(userId: string, bet: number, actionId?: string) {
-    if (!Number.isFinite(bet) || bet < MIN_BET || bet > MAX_BET) {
-      throw new BadRequestException(`A aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
-    }
+    const problema = problemaComAAposta(bet, await this.walletService.balanceOf(userId));
+    if (problema) throw new BadRequestException(problema);
 
     /*
      * Daqui pra baixo é a rodada em si: debitar, sortear, pagar. Vai dentro de

@@ -7,10 +7,9 @@ import {
   BET_TYPES,
   JANELA_ENTRE_LANCAMENTOS_MS,
   LANCAMENTOS_MAXIMOS_COM_JANELA,
-  MAX_BET,
   MAX_SIMULTANEOUS_BETS,
-  MIN_BET,
 } from '../games/banca-francesa/banca-francesa.config';
+import { NIVEIS_DE_MESA, nivelPara } from '../games/shared/niveis-de-mesa';
 import { MAX_SEATS, PLAYER_COLORS, PlayerColor } from './player-colors';
 import { generateTableCode } from './table-code';
 import { umDe } from '../games/shared/rng';
@@ -230,7 +229,11 @@ export class BancaFrancesaTableService {
     if (!aceitaAposta(table.relogio.fase)) {
       throw new BadRequestException('As apostas desta rodada já fecharam.');
     }
-    this.validateBets(bets);
+
+    // O saldo é lido ANTES de validar, porque é ele que decide o nível e, com o nível,
+    // os limites desta pessoa. Cada um na mesa tem o limite do próprio bolso.
+    const saldo = await this.walletService.balanceOf(userId);
+    this.validateBets(bets, saldo);
 
     /*
      * Guarda em QUE ESTADO a mesa estava, porque a linha seguinte cede o controle (é
@@ -246,7 +249,7 @@ export class BancaFrancesaTableService {
     const versaoPretendida = table.relogio.versao;
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
-    if (await this.walletService.balanceOf(userId) < totalStake) {
+    if (saldo < totalStake) {
       throw new BadRequestException('Saldo de fichas insuficiente pra essa aposta.');
     }
 
@@ -272,6 +275,23 @@ export class BancaFrancesaTableService {
 
     if (!aceitaAposta(table.relogio.fase)) {
       throw new BadRequestException('Os dados já estão rolando.');
+    }
+
+    /*
+     * NÃO SE LANÇA DADO NUMA MESA SEM APOSTA. Antes dava, e o resultado era uma rodada
+     * inteira acontecendo — dados rolando, resultado apurado, placar registrado — sem
+     * uma ficha em jogo. Além de não fazer sentido, sujava o placar com resultados que
+     * ninguém apostou, e o placar é justamente o que as pessoas usam pra decidir.
+     *
+     * O primeiro lançamento exige aposta. Do segundo em diante (depois de um nulo) não
+     * exige: quem retirou as fichas na janela saiu da rodada, e a rodada continua pra
+     * quem ficou — inclusive quando sobrou ninguém, porque o resultado ainda precisa
+     * sair pra a rodada fechar.
+     */
+    const primeiroLance = table.lancamentos.length === 0;
+    const alguemApostou = table.seats.some((seat) => seat.pendingBets.length > 0 || seat.isBot);
+    if (primeiroLance && !alguemApostou) {
+      throw new BadRequestException('Ninguém apostou ainda — encoste uma ficha no pano antes de lançar.');
     }
 
     return await this.lancarNaMesa(table);
@@ -344,7 +364,7 @@ export class BancaFrancesaTableService {
       for (const seat of table.seats) {
         if (seat.isBot && seat.pendingBets.length === 0) {
           const type = umDe(BET_TYPES);
-          seat.pendingBets = [{ type, amount: MIN_BET }];
+          seat.pendingBets = [{ type, amount: NIVEIS_DE_MESA[0].minimo }];
         }
       }
     }
@@ -599,10 +619,26 @@ export class BancaFrancesaTableService {
     return free;
   }
 
-  private validateBets(bets: BancaFrancesaBet[]) {
+  /**
+   * Confere as apostas contra o NÍVEL DE MESA de quem está apostando.
+   *
+   * Antes eram dois números fixos no código — mínimo 50, máximo 5.000 — iguais pra
+   * quem acabou de criar a conta e pra quem tem cem milhões. Quem tinha cem milhões
+   * apostava no máximo cinco mil: 0,005% da banca, uma aposta que não mexe em nada.
+   *
+   * Agora o limite sai do saldo, pela escada de níveis (`niveis-de-mesa.ts`), onde o
+   * mínimo é 1% do saldo de entrada do nível e o máximo é 20%. A aposta pesa o mesmo
+   * pra quem tem cinquenta mil e pra quem tem cinco milhões.
+   *
+   * A conferência é aqui, no servidor, e não só na tela: o trilho de fichas que o
+   * aplicativo mostra é conveniência, e conveniência não é tranca.
+   */
+  private validateBets(bets: BancaFrancesaBet[], saldo: number) {
     if (!Array.isArray(bets) || bets.length === 0 || bets.length > MAX_SIMULTANEOUS_BETS) {
       throw new BadRequestException(`Aposte em 1 a ${MAX_SIMULTANEOUS_BETS} tipos (ases, pequeno, grande, linha).`);
     }
+
+    const nivel = nivelPara(saldo);
     const seen = new Set<string>();
     for (const bet of bets) {
       if (!BET_TYPES.includes(bet.type)) {
@@ -612,8 +648,10 @@ export class BancaFrancesaTableService {
         throw new BadRequestException(`Aposta em "${bet.type}" duplicada — some tudo numa aposta só.`);
       }
       seen.add(bet.type);
-      if (!Number.isFinite(bet.amount) || bet.amount < MIN_BET || bet.amount > MAX_BET) {
-        throw new BadRequestException(`Cada aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
+      if (!Number.isFinite(bet.amount) || bet.amount < nivel.minimo || bet.amount > nivel.maximo) {
+        throw new BadRequestException(
+          `Na mesa ${nivel.nome}, cada aposta vai de ${nivel.minimo.toLocaleString('pt-BR')} a ${nivel.maximo.toLocaleString('pt-BR')} fichas.`,
+        );
       }
     }
   }

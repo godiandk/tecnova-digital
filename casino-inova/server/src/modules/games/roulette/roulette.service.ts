@@ -2,8 +2,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { spin, theoreticalRtp } from './roulette.engine';
-import { colorOf, MAX_BET, MIN_BET, RED_NUMBERS, RouletteBet, TOTAL_MULTIPLIER } from './roulette.config';
+import { colorOf, RED_NUMBERS, RouletteBet, TOTAL_MULTIPLIER } from './roulette.config';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
+import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 /** Quantos números o painel da mesa guarda — mesa real costuma mostrar os últimos ~20. */
 const HISTORY_LIMIT = 40;
@@ -51,8 +52,8 @@ export class RouletteService {
 
   getConfig() {
     return {
-      minBet: MIN_BET,
-      maxBet: MAX_BET,
+      minBet: NIVEIS_DE_MESA[0].minimo,
+      maxBet: NIVEIS_DE_MESA[0].maximo,
       redNumbers: Array.from(RED_NUMBERS),
       totalMultiplier: TOTAL_MULTIPLIER,
       theoreticalRtp: theoreticalRtp(),
@@ -60,9 +61,8 @@ export class RouletteService {
   }
 
   async playSpin(userId: string, bet: RouletteBet, amount: number, actionId?: string) {
-    if (!Number.isFinite(amount) || amount < MIN_BET || amount > MAX_BET) {
-      throw new BadRequestException(`A aposta precisa estar entre ${MIN_BET} e ${MAX_BET} fichas.`);
-    }
+    const problema = problemaComAAposta(amount, await this.walletService.balanceOf(userId));
+    if (problema) throw new BadRequestException(problema);
     if (!TOTAL_MULTIPLIER[bet.type]) {
       throw new BadRequestException('Tipo de aposta inválido.');
     }

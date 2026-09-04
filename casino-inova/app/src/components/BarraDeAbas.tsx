@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { colors, fontFamily, LARGURA_MAXIMA, useJanela } from '../theme';
+import { folgaDaBarraDoNavegador } from '../theme/ajustesDaWeb';
 import { MOLA } from '../animation';
 import { Brilho } from '../animation/Brilho';
 
@@ -52,7 +53,7 @@ export function BarraDeAbas({ state, navigation }: BottomTabBarProps) {
   const largura = Math.min(janela.width, LARGURA_MAXIMA);
 
   return (
-    <View style={[styles.moldura, { paddingBottom: insets.bottom }]}>
+    <View style={[styles.moldura, { paddingBottom: insets.bottom + folgaDaBarraDoNavegador() }]}>
       <LinearGradient
         colors={['rgba(11,15,13,0.92)', colors.background]}
         style={StyleSheet.absoluteFillObject}

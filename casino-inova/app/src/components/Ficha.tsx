@@ -1,7 +1,7 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { PlayerColor } from '../data/chipImages';
-import { arteDaFicha, corDaChapa } from '../data/fichasDeValor';
+import { arteDaFicha, chapaEmTexto, corDaChapa } from '../data/fichasDeValor';
 import { FICHAS_VISIVEIS_NA_PILHA, PASSO_DA_PILHA } from '../theme/medidasDaMesa';
 import { colors, fontFamily } from '../theme';
 
@@ -26,13 +26,19 @@ export function Ficha({
   /** Na pilha do pano só a de cima mostra o valor: as de baixo estão tapadas. */
   mostrarValor?: boolean;
 }) {
-  const rotulo = valor >= 1000 ? `${valor / 1000}k` : String(valor);
+  /*
+   * O número curto vem de um lugar só (`chapaEmTexto`), e não de uma conta escrita aqui.
+   * A conta antiga (`valor / 1000 + 'k'`) escrevia "100000k" numa ficha de cem milhões e
+   * "2.5k" com ponto de inglês numa de 2.500.
+   */
+  const rotulo = chapaEmTexto(valor);
   /*
    * O corpo da letra cai conforme o número cresce. Sem isto, "100" e "500" não cabiam
    * na chapa e saíam cortados como "1…" — três dígitos precisam de mais largura do que
    * um, e a chapa é redonda, então quem cede é a letra.
    */
-  const corpoDaLetra = { 1: 0.34, 2: 0.3, 3: 0.24 }[rotulo.length] ?? 0.22;
+  const CORPO_POR_LETRAS: Record<number, number> = { 1: 0.34, 2: 0.3, 3: 0.24, 4: 0.22, 5: 0.19 };
+  const corpoDaLetra = CORPO_POR_LETRAS[rotulo.length] ?? 0.17;
 
   return (
     <View style={{ width: tamanho, height: tamanho }}>
