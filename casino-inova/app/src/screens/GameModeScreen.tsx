@@ -13,17 +13,27 @@ import { Fundo } from '../components/Fundo';
 
 /** Os cartazes de variante são 1200x600 — deitados, empilhados numa lista. */
 /*
- * A altura do cartaz sai da PROPORÇÃO, não de uma conta com a largura da tela.
+ * A altura do cartaz sai da largura MEDIDA, dividida pela proporção da arte (1000×500).
  *
- * Antes era `Dimensions.get('window').width / 2`, lido no topo do arquivo: a janela do
- * instante em que o arquivo carregou, e nunca mais. A largura do cartaz é 100% do que o
- * pai der, então bastava a janela mudar de tamanho — girar o telefone, redimensionar a
- * aba — pra a altura ficar de outro tamanho de tela e a arte esticar ou sobrar.
+ * Duas tentativas anteriores erraram, e vale registrar as duas porque a segunda parece
+ * certa e não é:
  *
- * Com `aspectRatio` quem decide a altura é a largura de verdade, medida pelo layout no
- * momento de desenhar. Acompanha qualquer tela sem ninguém precisar recalcular nada.
+ * 1. `Dimensions.get('window').width / 2`, lido no topo do arquivo. Isso é a janela do
+ *    instante em que o arquivo carregou, e nunca mais — girar o telefone ou
+ *    redimensionar a aba deixava a altura de outro tamanho de tela.
+ *
+ * 2. `aspectRatio` puro. NÃO FUNCIONA COM IMAGEM: uma imagem já tem altura própria, a
+ *    do arquivo, e ela ganha. O cartaz de 1000×500 saía 354 de largura por 500 de
+ *    altura — quase três vezes mais alto do que devia. Era o que fazia a tela de
+ *    escolha do dominó virar duas caixas pretas gigantes: como o recorte é `cover`, o
+ *    que aparecia era só o pedaço escuro da esquerda, sem o nome nem a mesa. Medido no
+ *    navegador: o `aspect-ratio: 2/1` estava lá no CSS e era ignorado, porque `height`
+ *    vinha em pixel junto.
+ *
+ * Com a largura medida por `onLayout` e a altura em número, o recorte é o mesmo em todo
+ * lugar e acompanha qualquer tela — que é a mesma solução já usada no Destaque.
  */
-const PROPORCAO_DO_CARTAZ = 2;
+const PROPORCAO_DO_CARTAZ = 1000 / 500;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GameMode'>;
 
@@ -39,6 +49,15 @@ export function GameModeScreen({ navigation, route }: Props) {
   const config = getGameMode(gameId);
 
   const [escolhas, setEscolhas] = useState<Record<string, GameModeOption>>({});
+  /*
+   * A largura de verdade do cartão, medida quando ele é desenhado.
+   *
+   * Nasce zerada e o cartaz só aparece depois da primeira medida — um quadro de atraso,
+   * imperceptível, e em troca a altura é sempre a certa em qualquer tela, inclusive
+   * depois de girar o telefone ou redimensionar a janela.
+   */
+  const [larguraDoCartao, setLarguraDoCartao] = useState(0);
+  const alturaDoCartaz = Math.round(larguraDoCartao / PROPORCAO_DO_CARTAZ);
 
   if (!config?.groups) {
     return (
@@ -111,6 +130,8 @@ export function GameModeScreen({ navigation, route }: Props) {
                         selecionado && styles.optionSelected,
                         option.comingSoon && styles.optionDisabled,
                       ]}
+                      // Todos os cartões da lista têm a mesma largura: medir um mede todos.
+                      onLayout={(e) => setLarguraDoCartao(e.nativeEvent.layout.width)}
                     >
                       {/*
                         O cartaz já traz o nome da opção escrito na arte. Quando não
@@ -119,9 +140,9 @@ export function GameModeScreen({ navigation, route }: Props) {
                         enquanto a arte dele não chega.
                       */}
                       {cartaz ? (
-                        <Image source={cartaz} style={styles.cartaz} resizeMode="cover" />
+                        <Image source={cartaz} style={[styles.cartaz, { height: alturaDoCartaz }]} resizeMode="cover" />
                       ) : (
-                        <View style={styles.cartazVazio}>
+                        <View style={[styles.cartazVazio, { height: alturaDoCartaz }]}>
                           <Text style={styles.optionLabel}>{option.label}</Text>
                         </View>
                       )}
@@ -183,10 +204,22 @@ const styles = StyleSheet.create({
   },
   optionSelected: { borderColor: colors.goldBright },
   optionDisabled: { opacity: 0.45 },
-  cartaz: { width: '100%', aspectRatio: PROPORCAO_DO_CARTAZ },
+  /*
+   * `height: undefined` NÃO É ENFEITE, é o que faz a proporção valer.
+   *
+   * Uma imagem no React Native já tem altura própria — a do arquivo. Com só
+   * `aspectRatio`, a altura natural ganha e a proporção é ignorada: o cartaz de
+   * 1000×500 saía 354 de largura por 500 de ALTURA, quase três vezes mais alto do que
+   * devia. Era o que fazia a tela de escolha do dominó virar duas caixas pretas
+   * gigantes, cada uma tomando meia tela — e como o recorte é `cover`, o que aparecia
+   * era o pedaço escuro da esquerda do cartaz, sem o nome nem a mesa.
+   *
+   * Anulando a altura, quem decide passa a ser a largura de verdade, medida no
+   * layout — e aí a proporção acompanha qualquer tela sem ninguém recalcular nada.
+   */
+  cartaz: { width: '100%' },
   cartazVazio: {
     width: '100%',
-    aspectRatio: PROPORCAO_DO_CARTAZ,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.felt,
