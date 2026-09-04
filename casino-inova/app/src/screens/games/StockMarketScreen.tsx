@@ -27,8 +27,37 @@ type Props = NativeStackScreenProps<RootStackParamList, 'StockMarket'>;
 const BET_STEP = 50;
 const CHART_HEIGHT = 160;
 
-/** Quanto cada tique da cotação demora a aparecer. 30 tiques × 45ms ≈ 1,4s de subida. */
-const MS_POR_TIQUE = 45;
+/**
+ * O RITMO DA COTAÇÃO, e por que ele não é constante.
+ *
+ * A linha andava a 45ms por tique, sempre igual: trinta tiques em 1,4 segundo. Rápido
+ * demais pra acompanhar, e monótono — a linha corria até o fim no mesmo passo e o
+ * resultado chegava sem nenhum momento.
+ *
+ * Agora ela COMEÇA no ritmo normal e VAI FREANDO conforme chega perto do fim. É o mesmo
+ * recurso da roda de roleta perdendo velocidade: os últimos tiques, que são os que
+ * decidem, demoram quase quatro vezes mais que os primeiros. Dá tempo de ver a linha
+ * hesitar antes de fechar.
+ *
+ * ISSO NÃO ESCONDE NEM INVENTA NADA. O caminho inteiro já chegou do servidor antes do
+ * primeiro pixel se mexer, e cada ponto desenhado é um ponto que aconteceu de verdade. O
+ * que muda é só o tempo de olhar — a mesma diferença entre um dado que rola e um número
+ * que aparece.
+ */
+const MS_POR_TIQUE = 62;
+const MS_NO_ULTIMO_TIQUE = 240;
+
+/** Quanto tempo o freio dura, em fração do caminho. Os últimos 30% andam devagar. */
+const TRECHO_QUE_FREIA = 0.3;
+
+function msDoTique(indice: number, total: number): number {
+  if (total <= 1) return MS_POR_TIQUE;
+  const restante = (total - indice) / total;
+  if (restante > TRECHO_QUE_FREIA) return MS_POR_TIQUE;
+  // Dentro do trecho final, o passo cresce suave até o último tique.
+  const dentro = 1 - restante / TRECHO_QUE_FREIA;
+  return MS_POR_TIQUE + (MS_NO_ULTIMO_TIQUE - MS_POR_TIQUE) * dentro * dentro;
+}
 
 export function StockMarketScreen({ navigation }: Props) {
   const tutorial = getTutorialByGameId('stock-market');
@@ -56,6 +85,14 @@ export function StockMarketScreen({ navigation }: Props) {
    * decide nada. É a mesma regra dos rolos e da roda.
    */
   const [tiqueVisivel, setTiqueVisivel] = useState(0);
+  /**
+   * O que o servidor já disse, esperando a linha chegar lá pra aparecer na tela.
+   *
+   * Não é informação escondida: é a mesma informação, mostrada na hora em que faz
+   * sentido. O caminho inteiro já está na tela sendo desenhado — o que espera é só o
+   * número do saldo e a marca no histórico, que de outro jeito contariam o fim antes.
+   */
+  const [pendente, setPendente] = useState<{ saldo: number; fechamento: number } | null>(null);
 
   useEffect(() => {
     fetchStockMarketConfig()
@@ -81,9 +118,20 @@ export function StockMarketScreen({ navigation }: Props) {
     try {
       const result = await playStockMarketRound(direction, amount, novaAcao());
       setRound(result);
-      setBalance(result.newBalance);
-      setHistory((current) => [...current, result.closePercent].slice(-30));
       setTiqueVisivel(0);
+      /*
+       * O SALDO E O HISTÓRICO SÓ MUDAM QUANDO A LINHA CHEGA AO FIM.
+       *
+       * Aqui estava o vazamento: os dois eram atualizados no instante em que a aposta
+       * saía. O contador de fichas no topo pulava pra o valor final e a fita de
+       * fechamentos ganhava o resultado da rodada — os dois entregavam se a pessoa
+       * ganhou ANTES de o gráfico começar a correr. Quem olhava o número no topo já
+       * sabia o fim e o gráfico virava enfeite.
+       *
+       * O resultado guardado aqui é o mesmo que o servidor mandou; ele só espera a linha
+       * terminar de desenhar (ver o efeito abaixo).
+       */
+      setPendente({ saldo: result.newBalance, fechamento: result.closePercent });
     } catch (error) {
       setPlayError(error instanceof ApiError ? error.message : 'Não foi possível apostar agora.');
     } finally {
@@ -99,17 +147,38 @@ export function StockMarketScreen({ navigation }: Props) {
   useEffect(() => {
     if (!round) return;
     const total = round.path.length;
-    const passo = setInterval(() => {
-      setTiqueVisivel((atual) => {
-        if (atual >= total) {
-          clearInterval(passo);
-          return total;
-        }
-        return atual + 1;
-      });
-    }, MS_POR_TIQUE);
-    return () => clearInterval(passo);
+    let atual = 0;
+    let vivo = true;
+    let relogio: ReturnType<typeof setTimeout>;
+
+    /*
+     * Um `setTimeout` que se reagenda, e não um `setInterval`: o intervalo é diferente a
+     * cada tique (ver `msDoTique`), e `setInterval` só sabe repetir sempre igual.
+     */
+    const andar = () => {
+      if (!vivo) return;
+      atual += 1;
+      setTiqueVisivel(atual);
+      if (atual < total) relogio = setTimeout(andar, msDoTique(atual, total));
+    };
+    relogio = setTimeout(andar, msDoTique(0, total));
+
+    return () => {
+      vivo = false;
+      clearTimeout(relogio);
+    };
   }, [round]);
+
+  /*
+   * A linha chegou ao fim: agora sim o saldo muda e o fechamento entra no histórico.
+   * Os dois juntos, no mesmo instante — é o momento do resultado.
+   */
+  useEffect(() => {
+    if (!pendente || !round || tiqueVisivel < round.path.length) return;
+    setBalance(pendente.saldo);
+    setHistory((current) => [...current, pendente.fechamento].slice(-30));
+    setPendente(null);
+  }, [pendente, round, tiqueVisivel]);
 
   const terminouDeDesenhar = !round || tiqueVisivel >= round.path.length;
   const won = round ? round.totalReturn > round.amount : false;
