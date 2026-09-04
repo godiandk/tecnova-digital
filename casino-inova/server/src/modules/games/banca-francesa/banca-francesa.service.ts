@@ -107,7 +107,7 @@ export class BancaFrancesaService {
     return this.acoes.umaVezSo(userId, actionId, async () => {
       await this.walletService.debit(userId, totalStake, 'aposta', GAME_ID, actionId);
 
-      const { dice, sum, outcome, rerolls } = rollUntilDecisive();
+      const { dice, sum, outcome, rerolls, nulos } = rollUntilDecisive();
       const results = resolveBets(outcome, bets);
       const totalReturn = results.reduce((total, result) => total + result.totalReturn, 0);
 
@@ -126,6 +126,16 @@ export class BancaFrancesaService {
         sum,
         outcome,
         rerolls,
+        /*
+         * Os dados dos lançamentos que NÃO decidiram, na ordem em que saíram.
+         *
+         * A mesa compartilhada já mandava isto, a mesa de um jogador só não. A diferença
+         * aparecia na tela: jogando sozinho, uma rodada com três nulos saltava direto pro
+         * resultado, porque a tela não tinha o que lançar na tigela. Só o número de nulos
+         * chegava, e número não se joga — vira um aviso escrito, que é o contrário de
+         * mostrar. Com os dados na mão, as duas mesas lançam a mesma hesitação.
+         */
+        lancamentosNulos: nulos,
         results,
         totalStake,
         totalReturn,

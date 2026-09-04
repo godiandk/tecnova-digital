@@ -236,8 +236,8 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
           ocupado={busy}
           saldo={jogador?.chipBalance ?? 0}
           minimo={meuNivel?.nivel.minimo ?? config?.minBet ?? 50}
-          maximo={meuNivel?.nivel.maximo ?? config?.maxBet ?? 2000}
           nomeDoNivel={meuNivel?.nivel.nome}
+          fichasDaMesa={meuNivel?.nivel.fichas}
           config={config}
           onApostar={handlePlaceBets}
           onGirar={handleRoll}

@@ -34,6 +34,14 @@ export interface BancaFrancesaRoundResponse {
   sum: number;
   outcome: BancaFrancesaOutcome;
   rerolls: number;
+  /**
+   * Os dados dos lançamentos que NÃO decidiram, na ordem em que saíram.
+   *
+   * Sem eles a tela só sabia QUANTOS nulos houve, e número não se joga: uma rodada com
+   * três relançamentos saltava direto pro resultado e virava um aviso escrito. Com os
+   * dados na mão, a mesa de um jogador só lança a mesma hesitação que a mesa cheia.
+   */
+  lancamentosNulos: number[][];
   results: BetResult[];
   totalStake: number;
   totalReturn: number;

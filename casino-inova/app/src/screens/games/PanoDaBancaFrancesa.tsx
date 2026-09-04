@@ -55,9 +55,10 @@ interface PanoProps {
   ocupado: boolean;
   saldo: number;
   minimo: number;
-  maximo: number;
   /** O nome da mesa em que esta pessoa está jogando (Bronze, Ouro, Safira...). */
   nomeDoNivel?: string;
+  /** As cinco fichas deste degrau, calculadas pelo servidor sobre o saldo. */
+  fichasDaMesa?: number[];
   /** A configuração do motor — é dela que sai o quadro de pagamentos. */
   config: BancaFrancesaConfig | null;
   /** Devolve se a aposta foi aceita — é o que decide se a montagem some ou fica. */
@@ -67,6 +68,15 @@ interface PanoProps {
   onRetirar: () => Promise<unknown>;
   onSair: () => void;
   onAbrirPainel: () => void;
+  /**
+   * O que o botão da direita faz, dito em palavras.
+   *
+   * A mesa online abre o painel de quem está sentado; a mesa de um jogador só não tem
+   * painel — ali o mesmo botão leva pra mesa online. O rótulo tem que acompanhar: um
+   * botão que anuncia "quem está na mesa, 1 pessoa" e leva pra outro lugar mente pra
+   * quem usa leitor de tela, que é justamente quem não pode conferir olhando.
+   */
+  rotuloDoPainel?: string;
   erro?: string | null;
   aviso?: string | null;
 }
@@ -91,14 +101,15 @@ export function PanoDaBancaFrancesa({
   ocupado,
   saldo,
   minimo,
-  maximo,
   nomeDoNivel,
+  fichasDaMesa,
   config,
   onApostar,
   onGirar,
   onRetirar,
   onSair,
   onAbrirPainel,
+  rotuloDoPainel,
   erro,
   aviso,
 }: PanoProps) {
@@ -137,7 +148,7 @@ export function PanoDaBancaFrancesa({
 
   /* --- o lançamento: cada lance vira uma jogada na tigela, na hora em que acontece --- */
   const rodada = mesa.lastRound;
-  const { dados, lance, girando, rapido: rapidoNaTela } = useLancamento(mesa);
+  const { dados, lance, girando, rapido: rapidoNaTela, saldoNaTela } = useLancamento(mesa, saldo);
 
   /*
    * A janela entre lançamentos: o dado saiu, não decidiu, e a mesa espera antes de
@@ -189,9 +200,12 @@ export function PanoDaBancaFrancesa({
   const encostar = (casa: BancaFrancesaBetType) => {
     if (travado) return;
     if (total + ficha > saldo) return setRecado('Você não tem fichas suficientes pra essa.');
-    if (soma(apostas[casa]) + ficha > maximo) {
-      return setRecado(`O máximo por casa é ${maximo.toLocaleString('pt-BR')}.`);
-    }
+    /*
+     * NÃO EXISTE MÁXIMO POR CASA. A única trava é o saldo, conferida na linha acima —
+     * é a mesma regra que o servidor aplica (`problemaComAAposta`), e as duas
+     * precisam dizer a mesma coisa: uma trava só na tela seria uma regra invisível,
+     * que recusa a aposta sem que exista motivo do outro lado.
+     */
     setRecado(null);
     setApostas((atual) => ({ ...atual, [casa]: [...atual[casa], ficha] }));
     setOrdem((atual) => [...atual, casa]);
@@ -310,12 +324,15 @@ export function PanoDaBancaFrancesa({
           onLayout={(e) => setAlturaDaBarra(e.nativeEvent.layout.height)}
         >
           <BotaoRedondo icone="chevron-back" rotulo="Sair da mesa" onPress={onSair} />
-          <ChipStack amount={saldo} />
+          <ChipStack amount={saldoNaTela} />
           <View style={styles.botoesDaDireita}>
             <BotaoRedondo icone="help-circle" rotulo="O que cada aposta paga" onPress={() => setQuadroAberto(true)} />
             <BotaoRedondo
               icone="people"
-              rotulo={`Quem está na mesa, ${mesa.seats.length} ${mesa.seats.length === 1 ? 'pessoa' : 'pessoas'}`}
+              rotulo={
+                rotuloDoPainel ??
+                `Quem está na mesa, ${mesa.seats.length} ${mesa.seats.length === 1 ? 'pessoa' : 'pessoas'}`
+              }
               onPress={onAbrirPainel}
             />
           </View>
@@ -353,7 +370,7 @@ export function PanoDaBancaFrancesa({
               saldo={saldo - total}
               travado={travado}
               minimo={minimo}
-              maximo={maximo}
+              fichas={fichasDaMesa}
             />
           </View>
 
@@ -372,7 +389,7 @@ export function PanoDaBancaFrancesa({
             */}
           {nomeDoNivel && !apertado && (
             <Text style={styles.placaDaMesa} numberOfLines={1}>
-              Mesa {nomeDoNivel} · de {minimo.toLocaleString('pt-BR')} a {maximo.toLocaleString('pt-BR')} por casa
+              Mesa {nomeDoNivel} · mínimo {minimo.toLocaleString('pt-BR')} por casa · sem teto
             </Text>
           )}
 
@@ -528,12 +545,22 @@ function venceu(casa: BancaFrancesaBetType, resultado: string | undefined, mostr
  * tela: eles não decidem nada, e a média real é de 3,4 tentativas até decidir. Mostrar
  * cada uma no tempo do decisivo faria uma rodada azarada custar dez segundos.
  */
-function useLancamento(mesa: TableView) {
+function useLancamento(mesa: TableView, saldo: number) {
   const [dados, setDados] = useState<number[]>([]);
   const [lance, setLance] = useState(0);
   const [rapido, setRapido] = useState(false);
   /** Um lance está sendo encenado agora: a mesa fica travada enquanto os dados voam. */
   const [girando, setGirando] = useState(false);
+  /*
+   * O MESMO "está no ar", mas em ref.
+   *
+   * `girando` é estado: quem lê num efeito lê o valor do desenho ANTERIOR. E o resultado
+   * chega no mesmo desenho em que a encenação começa — então um efeito que perguntasse
+   * "está girando?" ouviria "não" justamente no instante em que os dados saem da mão.
+   * A ref muda na hora, dentro do mesmo efeito que dispara a encenação, e é ela que o
+   * saldo consulta.
+   */
+  const noAr = useRef(false);
 
   /** Que rodada está em cena e quantos lances dela já foram pra tela. */
   const emCena = useRef({ rodadaId: '', mostrados: 0 });
@@ -554,6 +581,7 @@ function useLancamento(mesa: TableView) {
       const espera = (ms: number) => new Promise<void>((ok) => relogios.push(setTimeout(ok, ms)));
 
       (async () => {
+        noAr.current = true;
         setGirando(true);
         for (const item of lances) {
           if (!vivo) return;
@@ -562,11 +590,15 @@ function useLancamento(mesa: TableView) {
           setLance((n) => n + 1);
           await espera(rapidos ? ATE_ASSENTAR_RAPIDO + OLHADA_NO_NULO : ATE_ASSENTAR);
         }
-        if (vivo) setGirando(false);
+        if (vivo) {
+          noAr.current = false;
+          setGirando(false);
+        }
       })();
 
       return () => {
         vivo = false;
+        noAr.current = false;
         relogios.forEach(clearTimeout);
       };
     };
@@ -598,7 +630,31 @@ function useLancamento(mesa: TableView) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rodadaId, lancesFeitos, marcaDaApuracao]);
 
-  return { dados, lance, girando, rapido };
+  /*
+   * O SALDO NÃO SE MEXE ENQUANTO OS DADOS ESTÃO NO AR.
+   *
+   * O servidor apura ANTES de a tela desenhar — é assim que tem que ser, e é o que
+   * garante que a animação conta o que já aconteceu em vez de decidir. Só que o saldo
+   * chegava junto com a apuração e subia na barra de cima com os dados ainda rolando:
+   * dava pra saber que tinha ganhado dois segundos antes de o dado parar. A rolagem
+   * virava enfeite de um resultado que a tela já tinha contado.
+   *
+   * Então a barra segura o número que estava antes e só troca quando os dados assentam.
+   * Isto NÃO é esconder saldo: o valor certo já chegou, está aqui, e espera o dado parar
+   * — nunca mais que uma jogada. É o oposto daquele defeito em que a tela mostrava
+   * 10.000 pra quem já tinha perdido tudo: ali o número estava errado; aqui ele está
+   * certo e aparece no tempo do jogo.
+   *
+   * Este efeito fica DEPOIS do de cima de propósito. Efeitos rodam na ordem em que são
+   * declarados, então quando este roda a `noAr` já foi virada pela encenação que acabou
+   * de começar — que é exatamente o instante que o `girando` ainda não enxerga.
+   */
+  const [saldoNaTela, setSaldoNaTela] = useState(saldo);
+  useEffect(() => {
+    if (!noAr.current) setSaldoNaTela(saldo);
+  }, [saldo, girando]);
+
+  return { dados, lance, girando, rapido, saldoNaTela };
 }
 
 /**
@@ -683,6 +739,16 @@ const ATE_ASSENTAR = (QUADROS_DO_DECISIVO / 60) * 1000;
 const ATE_ASSENTAR_RAPIDO = (QUADROS_DO_NULO / 60) * 1000;
 /** Respiro entre um lançamento nulo e o seguinte, pra ler a soma antes de recolher. */
 const OLHADA_NO_NULO = 380;
+/**
+ * Quanto o pano leva pra encenar UM lançamento nulo, do copo até a soma lida.
+ *
+ * Sai daqui porque quem precisa dele é a mesa de um jogador só. Lá o servidor resolve a
+ * rodada inteira numa chamada — os nulos e o decisivo chegam juntos —, e a tela precisa
+ * entregá-los ao pano no compasso em que ele os desenha. Com um número copiado, o
+ * decisivo entraria por cima de um nulo ainda rolando, ou a mesa ficaria parada olhando
+ * dados já assentados.
+ */
+export const PAUSA_DO_NULO = ATE_ASSENTAR_RAPIDO + OLHADA_NO_NULO;
 
 function PilhaNoPano({
   fichas,
@@ -791,9 +857,9 @@ function Trilho({ apertado, ...resto }: {
   cor: PlayerColor | undefined;
   saldo: number;
   travado: boolean;
-  /** Os limites do nível: é o que decide quais fichas o trilho mostra. */
+  /** O mínimo do nível, e as fichas que o servidor calculou pra ele. */
   minimo: number;
-  maximo: number;
+  fichas?: number[];
 }) {
   const palco = usePalco();
   return <TrilhoDeFichas {...resto} tamanho={fichaNoTrilho(palco?.largura ?? 700, apertado)} />;

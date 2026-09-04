@@ -28,7 +28,7 @@ import { useJanela } from '../../theme/useJanela';
 import { CasaDeAposta } from '../../components/CasaDeAposta';
 import { TrilhoDeFichas } from '../../components/TrilhoDeFichas';
 import { PilhaDeFichas } from '../../components/Ficha';
-import { DENOMINACOES, corDoJogador, pilhaEmPalavras } from '../../data/fichasDeValor';
+import { corDoJogador, pilhaEmPalavras } from '../../data/fichasDeValor';
 import { Dado } from '../../components/Dado';
 import { ChipStack } from '../../components/ChipStack';
 import { RoadmapPanel, VocabularioDoPlacar } from '../../components/RoadmapPanel';
@@ -86,7 +86,9 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
     if (jogador) setSaldo(jogador.chipBalance);
   }, [jogador]);
 
-  const [ficha, setFicha] = useState(DENOMINACOES[1].valor);
+  /* Começa na ficha mínima da mesa; o valor certo chega com o nível e substitui este. */
+  const [ficha, setFicha] = useState(50);
+  const [fichaAjustada, setFichaAjustada] = useState(false);
   const [apostas, setApostas] = useState<ApostasNaMesa>(MESA_LIMPA);
   /** A ordem em que as fichas foram encostadas, pra desfazer uma de cada vez. */
   const [ordem, setOrdem] = useState<BacBoBetType[]>([]);
@@ -142,9 +144,26 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
     fetchMeuNivel().then(setMeuNivel).catch(() => undefined);
   }, [saldo]);
 
-  /** Os limites desta pessoa nesta mesa. Enquanto o nível não chega, os do nível de entrada. */
+  /*
+   * A ficha escolhida começa na MÍNIMA DA MESA quando o nível chega — e uma vez só.
+   *
+   * Sem isto, quem tem cem milhões abria a mesa com a ficha de 50 selecionada (o valor
+   * de partida) e precisava tocar no trilho antes de conseguir apostar, porque 50 está
+   * abaixo do mínimo do degrau dele. Uma vez só porque, depois disso, quem escolhe a
+   * ficha é a pessoa.
+   */
+  useEffect(() => {
+    if (!meuNivel || fichaAjustada) return;
+    setFicha(meuNivel.nivel.minimo);
+    setFichaAjustada(true);
+  }, [meuNivel, fichaAjustada]);
+
+  /**
+   * O piso desta pessoa nesta mesa. Enquanto o nível não chega, o do nível de entrada.
+   *
+   * Só o piso: teto não existe mais em lugar nenhum, nem aqui nem no servidor.
+   */
   const minimoDaMesa = meuNivel?.nivel.minimo ?? config?.minBet ?? 0;
-  const maximoDaMesa = meuNivel?.nivel.maximo ?? config?.maxBet ?? 0;
 
   const total = useMemo(() => CASAS.reduce((t, c) => t + soma(apostas[c]), 0), [apostas]);
 
@@ -164,10 +183,11 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
       setAviso('Você não tem fichas suficientes pra essa.');
       return;
     }
-    if (maximoDaMesa > 0 && soma(apostas[casa]) + ficha > maximoDaMesa) {
-      setAviso(`O máximo por casa é ${maximoDaMesa.toLocaleString('pt-BR')}.`);
-      return;
-    }
+    /*
+     * NÃO EXISTE MÁXIMO POR CASA — só o saldo, conferido logo acima. É a mesma regra
+     * do servidor (`problemaComAAposta`); uma trava que só existisse aqui recusaria a
+     * aposta sem que houvesse motivo do outro lado.
+     */
 
     setAviso(null);
     setApostas((atual) => ({ ...atual, [casa]: [...atual[casa], ficha] }));
@@ -353,7 +373,7 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
               saldo={saldo - total}
               travado={rolando}
               minimo={minimoDaMesa}
-              maximo={maximoDaMesa || undefined}
+              fichas={meuNivel?.nivel.fichas}
             />
           </View>
 
@@ -527,9 +547,9 @@ function Trilho({ apertado, ...resto }: {
   cor: PlayerColor | undefined;
   saldo: number;
   travado: boolean;
-  /** Os limites do NÍVEL de quem está jogando: é o que decide quais fichas aparecem. */
+  /** O mínimo do nível, e as fichas que o servidor calculou pra ele. */
   minimo?: number;
-  maximo?: number;
+  fichas?: number[];
 }) {
   const palco = usePalco();
   return <TrilhoDeFichas {...resto} tamanho={fichaNoTrilho(palco?.largura ?? 700, apertado)} />;

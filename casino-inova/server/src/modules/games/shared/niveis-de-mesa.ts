@@ -33,7 +33,12 @@
  * injusto: alguém preso num mínimo que não cabe no bolso dele.
  */
 export interface NivelDeMesa {
-  id: 'bronze' | 'prata' | 'ouro' | 'diamante' | 'rubi' | 'safira';
+  /**
+   * O identificador do degrau. É texto livre porque a escada é GERADA: travar num
+   * conjunto fixo de nomes traria de volta o defeito que a fórmula resolveu — a escada
+   * acabaria no último nome escrito.
+   */
+  id: string;
   nome: string;
   /** Saldo a partir do qual este nível é o nível da pessoa. */
   saldoDeEntrada: number;
@@ -49,69 +54,105 @@ export interface NivelDeMesa {
   fichas: number[];
 }
 
-export const NIVEIS_DE_MESA: NivelDeMesa[] = [
-  {
-    id: 'bronze',
-    nome: 'Bronze',
-    // O Bronze entra com zero, então a faixa dele é ancorada na banca inicial de
-    // 10.000 fichas: 0,5% de mínimo e 20% de máximo.
-    saldoDeEntrada: 0,
-    minimo: 50,
-    maximo: 2_000,
-    fichas: [5, 25, 100, 500, 1_000],
-  },
-  {
-    id: 'prata',
-    nome: 'Prata',
-    saldoDeEntrada: 50_000,
-    minimo: 500,
-    maximo: 10_000,
-    fichas: [100, 500, 1_000, 5_000, 10_000],
-  },
-  {
-    id: 'ouro',
-    nome: 'Ouro',
-    saldoDeEntrada: 500_000,
-    minimo: 5_000,
-    maximo: 100_000,
-    fichas: [1_000, 5_000, 10_000, 50_000, 100_000],
-  },
-  {
-    id: 'diamante',
-    nome: 'Diamante',
-    saldoDeEntrada: 5_000_000,
-    minimo: 50_000,
-    maximo: 1_000_000,
-    fichas: [10_000, 25_000, 50_000, 100_000, 500_000, 1_000_000],
-  },
-  /*
-   * OS DOIS DEGRAUS DE CIMA existem porque a escada acabava cedo demais.
-   *
-   * Quem chegasse a cem milhões ficava no Diamante, apostando no máximo um milhão — 1%
-   * da banca. É o mesmo defeito que a escada inteira foi feita pra resolver, só que
-   * mais em cima: aposta que não muda nada no saldo não tem peso, e a mesa vira tela
-   * girando sozinha.
-   *
-   * A escada segue a mesma regra dos degraus de baixo, sem exceção: cada nível entra
-   * com dez vezes o anterior, o mínimo é 1% da entrada e o máximo é 20%.
-   */
-  {
-    id: 'rubi',
-    nome: 'Rubi',
-    saldoDeEntrada: 50_000_000,
-    minimo: 500_000,
-    maximo: 10_000_000,
-    fichas: [100_000, 250_000, 500_000, 1_000_000, 5_000_000, 10_000_000],
-  },
-  {
-    id: 'safira',
-    nome: 'Safira',
-    saldoDeEntrada: 500_000_000,
-    minimo: 5_000_000,
-    maximo: 100_000_000,
-    fichas: [1_000_000, 2_500_000, 5_000_000, 10_000_000, 50_000_000, 100_000_000],
-  },
+/**
+ * A ESCADA É CALCULADA, e não escrita à mão.
+ *
+ * Ela era uma lista de seis níveis digitados um a um, e o defeito disso apareceu na
+ * prática: quem chegou a noventa e nove BILHÕES caía no último degrau (que entra com
+ * 500 milhões) e continuava com o mesmo mínimo de cinco milhões e as mesmas fichas de
+ * até cem milhões. Pra montar a aposta mínima ele precisava empilhar ficha atrás de
+ * ficha. Toda vez que a banca de alguém crescesse mais do que a lista previa, o mesmo
+ * problema voltaria — e uma lista sempre acaba antes.
+ *
+ * A REGRA, EM UMA LINHA: cada degrau entra com dez vezes o anterior, a aposta mínima é
+ * 1% da entrada e a máxima é 20 vezes a mínima. Nada mais.
+ *
+ *   entrada    mínimo    máximo
+ *   ────────────────────────────
+ *   50 mil        500     10 mil
+ *   500 mil     5 mil    100 mil
+ *   5 mi       50 mil       1 mi
+ *   50 mi     500 mil      10 mi
+ *   500 mi      5 mi      100 mi
+ *   5 bi       50 mi        1 bi
+ *   50 bi     500 mi       10 bi
+ *   500 bi      5 bi      100 bi
+ *   5 tri      50 bi        1 tri
+ *
+ * A ESCADA NÃO ACABA. Ela é gerada até um teto absurdo de propósito: nenhuma banca vai
+ * lá, e por isso nenhuma banca fica presa no último degrau.
+ *
+ * AS FICHAS SAEM DA MESMA CONTA. São cinco, sempre, em 1, 2, 5, 10 e 20 vezes o mínimo
+ * — e vinte vezes o mínimo é exatamente o máximo. Então a menor ficha É a aposta mínima
+ * (um toque basta) e a maior É o teto da mesa (um toque também). Nunca mais empilhar.
+ *
+ * E COMO TUDO SAI DO SALDO, a escada acompanha sozinha: quem tem noventa e nove bilhões
+ * e perde noventa e oito desce de degrau na hora, e as fichas que aparecem no trilho
+ * mudam junto.
+ */
+const NOMES_DOS_DEGRAUS = [
+  'Bronze',
+  'Prata',
+  'Ouro',
+  'Diamante',
+  'Rubi',
+  'Safira',
+  'Esmeralda',
+  'Ônix',
+  'Platina',
+  'Titânio',
+  'Cristal',
+  'Eclipse',
 ];
+
+/** As fichas de um degrau: a menor é a aposta mínima, a maior é o teto da mesa. */
+const MULTIPLOS_DA_FICHA = [1, 2, 5, 10, 20];
+
+function degrau(indice: number): NivelDeMesa {
+  /*
+   * O Bronze é o degrau de quem entra com zero, então ele não tem "saldo de entrada"
+   * pra ancorar a conta. Ele é ancorado na banca de boas-vindas (10 mil fichas), com a
+   * mesma proporção dos outros: mínimo em 0,5% e máximo em 20 vezes o mínimo.
+   */
+  if (indice === 0) {
+    return {
+      id: 'bronze',
+      nome: NOMES_DOS_DEGRAUS[0],
+      saldoDeEntrada: 0,
+      minimo: 50,
+      maximo: 1_000,
+      fichas: MULTIPLOS_DA_FICHA.map((m) => 50 * m),
+    };
+  }
+
+  // 50 mil, 500 mil, 5 milhões, 50 milhões... cada um dez vezes o anterior.
+  const entrada = 5 * 10 ** (indice + 3);
+  const minimo = entrada / 100;
+  return {
+    id: NOMES_DOS_DEGRAUS[indice]
+      ? (NOMES_DOS_DEGRAUS[indice].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') as NivelDeMesa['id'])
+      : (`degrau-${indice}` as NivelDeMesa['id']),
+    nome: NOMES_DOS_DEGRAUS[indice] ?? `Mesa ${indice}`,
+    saldoDeEntrada: entrada,
+    minimo,
+    /*
+     * `maximo` sobrou como REFERÊNCIA da faixa do degrau — é ele que define as fichas —
+     * e não como trava. A conferência da aposta não usa mais teto: ver
+     * `problemaComAAposta`.
+     */
+    maximo: minimo * 20,
+    fichas: MULTIPLOS_DA_FICHA.map((m) => minimo * m),
+  };
+}
+
+/**
+ * Doze degraus: do zero até uma entrada de 500 quatrilhões.
+ *
+ * O teto é absurdo de propósito. Ele não é uma promessa de que alguém vai chegar lá —
+ * é a garantia de que ninguém fica preso no último degrau, que foi exatamente o que
+ * aconteceu com a lista escrita à mão.
+ */
+export const NIVEIS_DE_MESA: NivelDeMesa[] = Array.from({ length: 12 }, (_, i) => degrau(i));
 
 /**
  * A aposta cabe no nível de quem está apostando?
@@ -131,11 +172,29 @@ export function problemaComAAposta(valor: number, saldo: number): string | null 
   if (!Number.isFinite(valor) || !Number.isInteger(valor)) {
     return 'Ficha não se parte — a aposta precisa ser um número inteiro.';
   }
+  if (valor <= 0) return 'A aposta precisa ser maior que zero.';
   if (valor < nivel.minimo) {
     return `Na mesa ${nivel.nome}, a aposta mínima é ${nivel.minimo.toLocaleString('pt-BR')} fichas.`;
   }
-  if (valor > nivel.maximo) {
-    return `Na mesa ${nivel.nome}, a aposta máxima é ${nivel.maximo.toLocaleString('pt-BR')} fichas.`;
+  /*
+   * NÃO EXISTE APOSTA MÁXIMA, e isso é decisão do dono do jogo.
+   *
+   * Numa mesa de verdade o teto existe pra proteger a CASA: ela não pode arriscar mais
+   * do que tem em caixa. Aqui a casa não tem caixa que possa quebrar — as fichas não
+   * viram dinheiro, não há saque, e nenhum jogo paga dinheiro de verdade (está nos
+   * termos). Então o teto não protegeria ninguém de nada.
+   *
+   * O QUE CONTINUA VALENDO, e é o que importa: a aposta nunca passa do saldo (a
+   * carteira recusa débito que deixaria o saldo negativo), o mínimo continua sendo
+   * definido pelo degrau, e as chances de cada jogo continuam publicadas na tela antes
+   * de apostar. Nada aqui mexe em quanto o jogo paga.
+   *
+   * O que a ausência de teto significa na prática, dito sem rodeio: uma aposta só pode
+   * zerar a conta. É escolha de quem joga, e é a mesma escolha que existe em qualquer
+   * mesa alta — a diferença é que aqui o que se perde é ficha de jogo.
+   */
+  if (valor > saldo) {
+    return `Você tem ${saldo.toLocaleString('pt-BR')} fichas — a aposta não pode passar disso.`;
   }
   return null;
 }

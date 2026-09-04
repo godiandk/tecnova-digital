@@ -1,360 +1,220 @@
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../../navigation/types';
-import { getTutorialByGameId } from '../../data/tutorials';
-import { TABLE_IMAGES } from '../../data/tableImages';
-import { DEALER_IMAGES } from '../../data/dealerImages';
-import { TutorialModal } from '../../components/TutorialModal';
-import { GameBackdrop } from '../../components/GameBackdrop';
-import { DealerBadge } from '../../components/DealerBadge';
-import { ChipStack } from '../../components/ChipStack';
-import { Dado, DadoVazio } from '../../components/Dado';
-import { RoadmapPanel } from '../../components/RoadmapPanel';
-import { DIE_FACE_IMAGES } from '../../data/gameAssets';
 import { ApiError } from '../../api/client';
-import { Roadmap } from '../../api/roadmap';
 import {
   fetchBancaFrancesaConfig,
-  fetchBancaFrancesaRoadmap,
   playBancaFrancesaRound,
-  BancaFrancesaBetType,
+  BancaFrancesaBet,
   BancaFrancesaConfig,
-  BancaFrancesaRoundResponse,
 } from '../../api/bancaFrancesa';
-import { usePlayer } from '../../data/usePlayer';
-import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
+import { fetchMeuNivel, MeuNivel } from '../../api/niveis';
+import { LancamentoView, TableView } from '../../api/bancaFrancesaMesa';
+import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
+import { corDoJogador } from '../../data/fichasDeValor';
+import { usuarioLogadoId } from '../../api/session';
+import { PanoDaBancaFrancesa, PAUSA_DO_NULO } from './PanoDaBancaFrancesa';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BancaFrancesa'>;
 
-/** Lado do dado na mesa. Três lado a lado num celular estreito. */
-const TAMANHO_DO_DADO = 62;
-
-const BET_STEP = 50;
-
-const BET_OPTIONS: { type: BancaFrancesaBetType; label: string; description: string; payoutLabel: string }[] = [
-  { type: 'pequeno', label: 'Centro do Pequeno', description: 'Soma 5, 6 ou 7', payoutLabel: 'paga 1 p/ 1' },
-  { type: 'grande', label: 'Centro do Grande', description: 'Soma 14, 15 ou 16', payoutLabel: 'paga 1 p/ 1' },
-  { type: 'ases', label: 'Ases', description: 'Soma 3 (raro!)', payoutLabel: 'paga 61 p/ 1' },
-  {
-    type: 'linha-pequeno',
-    label: 'Linha do Pequeno',
-    description: 'Soma 5, 6 ou 7 — metade do risco',
-    payoutLabel: 'ganha metade, perde metade',
-  },
-  {
-    type: 'linha-grande',
-    label: 'Linha do Grande',
-    description: 'Soma 14, 15 ou 16 — metade do risco',
-    payoutLabel: 'ganha metade, perde metade',
-  },
-];
-
-/** A linha é dividida ao meio, e ficha não se parte — o valor tem que ser par. */
-const LINHAS: BancaFrancesaBetType[] = ['linha-pequeno', 'linha-grande'];
-
-const OUTCOME_LABEL: Record<string, string> = { ases: 'Ases', pequeno: 'Pequeno', grande: 'Grande' };
-
-const CREW = [
-  { source: DEALER_IMAGES.bancaFrancesaBanqueiro, label: 'Banqueiro' },
-  { source: DEALER_IMAGES.bancaFrancesaTirador, label: 'Tirador' },
-  { source: DEALER_IMAGES.bancaFrancesaApontador, label: 'Apontador' },
-];
-
+/**
+ * Banca Francesa CONTRA A CASA — a mesa de um jogador só.
+ *
+ * Esta tela era outra coisa: uma lista rolável de cartões escritos ("Centro do Pequeno /
+ * Soma 5, 6 ou 7"), um − e um + pra escolher o valor e três dados desenhados como
+ * números dentro de quadradinhos. A mesa online já tinha virado mesa de verdade — pano,
+ * fichas encostadas na casa, dados lançados na tigela de couro — e esta tinha ficado
+ * pra trás. Duas telas para o mesmo jogo, com regras que pareciam diferentes só porque
+ * eram desenhadas diferente.
+ *
+ * Agora as duas usam O MESMO PANO. O que muda entre elas é só quem está na mesa e por
+ * onde a jogada trafega:
+ *
+ *   MESA ONLINE  — várias pessoas, cada uma com sua cor; as apostas ficam no servidor
+ *                  (`pendingBets`) e os lances chegam pelo socket, um a um, com uma
+ *                  janela de aposta de verdade entre eles.
+ *
+ *   AQUI         — uma pessoa só; as apostas ficam NA TELA até ela mandar lançar, e a
+ *                  rodada inteira vem numa chamada só. Não há janela entre lances, e a
+ *                  tela não finge que há: o pano recebe `esperandoDepoisDeNulo: false`.
+ *
+ * O QUE NÃO MUDA, e é o ponto: quem decide o resultado é o servidor, antes de qualquer
+ * animação. Os dados que rolam na tigela são os dados que já saíram — inclusive os
+ * lançamentos que não decidiram nada, que agora chegam junto (`lancamentosNulos`) e são
+ * jogados um a um, no compasso do pano. A animação conta o que aconteceu; ela nunca
+ * escolhe.
+ */
 export function BancaFrancesaScreen({ navigation }: Props) {
-  const tutorial = getTutorialByGameId('banca-francesa');
-
-  const [tutorialVisible, setTutorialVisible] = useState(true);
-  const [config, setConfig] = useState<BancaFrancesaConfig | null>(null);
-  const [configError, setConfigError] = useState<string | null>(null);
-  const [balance, setBalance] = useState(0);
   const { jogador } = usePlayer();
+  const meuId = usuarioLogadoId();
 
-  // Semeia o saldo com a carteira de verdade; a partir da primeira aposta quem manda é
-  // o `newBalance` que o servidor devolve.
+  const [config, setConfig] = useState<BancaFrancesaConfig | null>(null);
+  const [meuNivel, setMeuNivel] = useState<MeuNivel | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const [ocupado, setOcupado] = useState(false);
+
+  /*
+   * A rodada, montada aqui do jeito que o pano sabe ler.
+   *
+   * `apostas` são as fichas já confirmadas e ainda não lançadas. Elas ficam NA TELA e
+   * não custam nada até o lance: nesta mesa o servidor debita no mesmo pedido em que
+   * sorteia, então tirar as fichas antes de lançar é de graça — a mesma promessa que a
+   * mesa online faz, pelo mesmo motivo.
+   */
+  const [apostas, setApostas] = useState<BancaFrancesaBet[]>([]);
+  const [rodadaId, setRodadaId] = useState('rodada-1');
+  const [nulos, setNulos] = useState<LancamentoView[]>([]);
+  const [ultima, setUltima] = useState<TableView['lastRound']>(undefined);
+
+  /** Cancela a encenação em curso se a tela sair no meio dela. */
+  const vivo = useRef(true);
   useEffect(() => {
-    if (jogador) setBalance(jogador.chipBalance);
-  }, [jogador]);
-  const [amountPerBet, setAmountPerBet] = useState(100);
-  const [selected, setSelected] = useState<Set<BancaFrancesaBetType>>(new Set());
-  const [round, setRound] = useState<BancaFrancesaRoundResponse | null>(null);
-  const [playing, setPlaying] = useState(false);
-  const [playError, setPlayError] = useState<string | null>(null);
-  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
+    vivo.current = true;
+    return () => {
+      vivo.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     fetchBancaFrancesaConfig()
-      .then((data) => {
-        setConfig(data);
-        setAmountPerBet(Math.max(data.minBet, Math.min(100, data.maxBet)));
-      })
-      .catch((error: unknown) => {
-        setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
-      });
-    fetchBancaFrancesaRoadmap().then(setRoadmap).catch(() => undefined);
+      .then(setConfig)
+      .catch((e: unknown) => setErro(e instanceof ApiError ? e.message : 'Não foi possível falar com o servidor.'));
   }, []);
 
-  const adjustAmount = (delta: number) => {
-    if (!config) return;
-    setAmountPerBet((current) => Math.max(config.minBet, Math.min(config.maxBet, current + delta)));
-  };
+  /* O nível é relido a cada mudança de saldo: perder um degrau muda o mínimo e as fichas. */
+  const saldo = jogador?.chipBalance ?? 0;
+  useEffect(() => {
+    fetchMeuNivel().then(setMeuNivel).catch(() => undefined);
+  }, [saldo]);
 
-  const toggleBet = (type: BancaFrancesaBetType) => {
-    if (playing) return;
-    setSelected((current) => {
-      const next = new Set(current);
-      if (next.has(type)) {
-        next.delete(type);
-      } else if (config && next.size < config.maxSimultaneousBets) {
-        next.add(type);
-      }
-      return next;
+  const mesa: TableView = useMemo(
+    () => ({
+      id: 'sozinho',
+      code: '',
+      visibility: 'privada',
+      hostUserId: meuId ?? 'eu',
+      seats: [
+        {
+          userId: meuId ?? 'eu',
+          name: jogador?.name ?? 'Você',
+          isBot: false,
+          color: corDoJogador(meuId ?? undefined) ?? 'branco',
+          pendingBets: apostas,
+          balance: saldo,
+        },
+      ],
+      lastRound: ultima,
+      /*
+       * `esperandoDepoisDeNulo` é sempre falso: aqui não existe janela de aposta entre
+       * lançamentos, porque a rodada inteira é resolvida numa chamada. Dizer que existe
+       * abriria um relógio contando pra nada — um prazo que não é prazo de coisa
+       * nenhuma.
+       */
+      rodada: { rodadaId, lancamentos: nulos, esperandoDepoisDeNulo: false },
+    }),
+    [meuId, jogador?.name, apostas, saldo, ultima, rodadaId, nulos],
+  );
+
+  /** Confirma a montagem. Não vai pro servidor: nesta mesa a ficha só sai no lance. */
+  const handleApostar = async (bets: BancaFrancesaBet[]) => {
+    const total = bets.reduce((t, b) => t + b.amount, 0);
+    if (total > saldo) {
+      setErro('Você não tem fichas suficientes pra essa aposta.');
+      return false;
+    }
+    setErro(null);
+    // Soma na montagem que já estava na mesa, casa por casa.
+    setApostas((atual) => {
+      const somado = new Map(atual.map((b) => [b.type, b.amount]));
+      for (const b of bets) somado.set(b.type, (somado.get(b.type) ?? 0) + b.amount);
+      return [...somado.entries()].map(([type, amount]) => ({ type, amount }));
     });
+    return true;
   };
 
-  const totalStake = amountPerBet * selected.size;
+  const handleRetirar = async () => {
+    if (ocupado) return;
+    setApostas([]);
+    setErro(null);
+  };
 
-  const handlePlay = async () => {
-    if (!config || playing || selected.size === 0) return;
-    setPlaying(true);
-    setPlayError(null);
+  const espera = (ms: number) => new Promise<void>((ok) => setTimeout(ok, ms));
+
+  const handleGirar = async () => {
+    if (ocupado || apostas.length === 0) return;
+    setOcupado(true);
+    setErro(null);
+    setAviso(null);
     try {
-      const bets = Array.from(selected).map((type) => ({ type, amount: amountPerBet }));
-      const result = await playBancaFrancesaRound(bets);
-      setRound(result);
-      setBalance(result.newBalance);
-      setRoadmap(result.roadmap);
-    } catch (error) {
-      setPlayError(error instanceof ApiError ? error.message : 'Não foi possível apostar agora.');
+      const r = await playBancaFrancesaRound(apostas);
+
+      /*
+       * A ORDEM DA ENCENAÇÃO É A ORDEM DO QUE ACONTECEU.
+       *
+       * Primeiro os lançamentos que não decidiram, um a um — o pano os desenha no ritmo
+       * dele e a espera daqui é feita da mesma medida (`PAUSA_DO_NULO`), pra que o
+       * decisivo não entre por cima de um dado ainda rolando. Depois a rodada vira, e é
+       * a virada do `rodadaId` com um `lastRound` novo que faz o pano lançar o decisivo.
+       *
+       * Nada disto escolhe nada: quando esta função começa, o resultado já está no `r`.
+       */
+      const lancamentosNulos: number[][] = r.lancamentosNulos ?? [];
+      if (lancamentosNulos.length > 0) {
+        setNulos(lancamentosNulos.map((dice) => ({ dice, sum: dice.reduce((t, d) => t + d, 0), outcome: null })));
+        await espera(lancamentosNulos.length * PAUSA_DO_NULO);
+        if (!vivo.current) return;
+      }
+
+      setNulos([]);
+      setRodadaId((n) => `rodada-${Number(n.split('-')[1]) + 1}`);
+      setUltima({
+        dice: r.dice,
+        sum: r.sum,
+        outcome: r.outcome,
+        rerolls: r.rerolls,
+        lancamentosNulos,
+        bySeat: {
+          [meuId ?? 'eu']: { results: r.results, totalStake: r.totalStake, totalReturn: r.totalReturn },
+        },
+        at: new Date().toISOString(),
+      });
+      setApostas([]);
+      /*
+       * O saldo chega do servidor junto com o resultado, e é ele que vale. A tela não
+       * faz a conta sozinha: fazer a conta aqui é como o saldo passou a mentir uma vez,
+       * mostrando 10.000 pra quem já tinha perdido tudo.
+       */
+      saldoChegouDeFora(r.newBalance);
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : 'Não foi possível apostar agora.');
     } finally {
-      setPlaying(false);
+      if (vivo.current) setOcupado(false);
     }
   };
 
-  const resultByType = new Map(round?.results.map((result) => [result.type, result]));
-  const rtpLabel = config ? (config.theoreticalRtpByType.pequeno * 100).toFixed(1) : null;
-
   return (
-    <GameBackdrop source={TABLE_IMAGES['banca-francesa']}>
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.topBar}>
-          <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.iconButton} hitSlop={12}>
-            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-          </Pressable>
-          <ChipStack amount={balance} />
-          <View style={styles.topActions}>
-            <Pressable
-              onPress={() => navigation.navigate('BancaFrancesaMesa')}
-              accessibilityRole="button"
-              accessibilityLabel="Jogar numa mesa online"
-              style={styles.iconButton}
-              hitSlop={12}
-            >
-              <Ionicons name="people" size={22} color={colors.goldBright} />
-            </Pressable>
-            <Pressable onPress={() => setTutorialVisible(true)} accessibilityRole="button" accessibilityLabel="Como jogar" style={styles.iconButton} hitSlop={12}>
-              <Ionicons name="help-circle" size={24} color={colors.goldBright} />
-            </Pressable>
-          </View>
-        </View>
-
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Banca Francesa</Text>
-
-        <View style={styles.crewRow}>
-          {CREW.map((member) => (
-            <View key={member.label} style={styles.crewMember}>
-              <DealerBadge source={member.source} size={40} />
-              <Text style={styles.crewLabel}>{member.label}</Text>
-            </View>
-          ))}
-        </View>
-
-        {!config && !configError && <ActivityIndicator color={colors.goldBright} style={styles.loading} />}
-        {configError && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{configError}</Text>
-            <Text style={styles.errorHint}>Confira se o servidor (server/) está rodando em npm run start:dev.</Text>
-          </View>
-        )}
-
-        {config && (
-          <>
-            <Text style={styles.rtpLabel}>RTP divulgado: {rtpLabel}% (igual em todas as apostas)</Text>
-
-            <View style={styles.diceRow}>
-              {(round?.dice ?? [null, null, null]).map((die, index) =>
-                die || playing ? (
-                  <Dado key={index} face={die ?? null} rolando={playing} indice={index} tamanho={TAMANHO_DO_DADO} />
-                ) : (
-                  <DadoVazio key={index} tamanho={TAMANHO_DO_DADO} />
-                ),
-              )}
-            </View>
-            {round && (
-              <Text style={styles.outcomeLabel}>
-                Soma {round.sum} → {OUTCOME_LABEL[round.outcome]}
-                {round.rerolls > 0 ? ` (relançou ${round.rerolls}x até decidir)` : ''}
-              </Text>
-            )}
-
-            <View style={styles.betGrid}>
-              {BET_OPTIONS.map((option) => {
-                const isSelected = selected.has(option.type);
-                const result = resultByType.get(option.type);
-                return (
-                  <Pressable
-                    key={option.type}
-                    onPress={() => toggleBet(option.type)}
-                    style={[styles.betTile, isSelected && styles.betTileSelected, result?.won && styles.betTileWon]}
-                    disabled={playing}
-                  >
-                    <Text style={styles.betLabel}>{option.label}</Text>
-                    <Text style={styles.betDescription}>{option.description}</Text>
-                    <Text style={styles.betPayout}>{option.payoutLabel}</Text>
-                    {result && (
-                      <Text style={styles.betResult}>
-                        {result.won ? `+${result.totalReturn.toLocaleString('pt-BR')}` : '—'}
-                      </Text>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {playError && <Text style={styles.errorText}>{playError}</Text>}
-
-            <View style={styles.betRow}>
-              <Pressable onPress={() => adjustAmount(-BET_STEP)} style={styles.betButton} disabled={playing}>
-                <Ionicons name="remove" size={20} color={colors.textPrimary} />
-              </Pressable>
-              <View style={styles.betValue}>
-                <Text style={styles.betValueLabel}>Por aposta · {selected.size} escolhida(s)</Text>
-                <Text style={styles.betAmount}>{amountPerBet.toLocaleString('pt-BR')}</Text>
-              </View>
-              <Pressable onPress={() => adjustAmount(BET_STEP)} style={styles.betButton} disabled={playing}>
-                <Ionicons name="add" size={20} color={colors.textPrimary} />
-              </Pressable>
-            </View>
-
-            <Pressable
-              onPress={handlePlay}
-              disabled={playing || selected.size === 0}
-              style={[styles.primaryButton, (playing || selected.size === 0) && styles.buttonDisabled]}
-            >
-              {playing ? (
-                <ActivityIndicator color={colors.background} />
-              ) : (
-                <Text style={styles.primaryButtonLabel}>Apostar {totalStake.toLocaleString('pt-BR')}</Text>
-              )}
-            </Pressable>
-
-            {roadmap && roadmap.totals.total > 0 && <RoadmapPanel roadmap={roadmap} />}
-          </>
-        )}
-        </ScrollView>
-      </SafeAreaView>
-
-      <TutorialModal
-        visible={tutorialVisible}
-        gameName="Banca Francesa"
-        tutorial={tutorial}
-        onClose={() => setTutorialVisible(false)}
-      />
-    </GameBackdrop>
+    <PanoDaBancaFrancesa
+      mesa={mesa}
+      meuId={meuId}
+      /* Contra a casa quem lança é sempre quem está jogando: não há outro dealer aqui. */
+      ehAnfitriao
+      ocupado={ocupado}
+      saldo={saldo}
+      minimo={meuNivel?.nivel.minimo ?? config?.minBet ?? 50}
+      nomeDoNivel={meuNivel?.nivel.nome}
+      fichasDaMesa={meuNivel?.nivel.fichas}
+      config={config}
+      onApostar={handleApostar}
+      onGirar={handleGirar}
+      onRetirar={handleRetirar}
+      onSair={() => navigation.goBack()}
+      /* O painel da mesa online (código, convites, bots) não existe numa mesa de um. */
+      onAbrirPainel={() => navigation.navigate('BancaFrancesaMesa')}
+      rotuloDoPainel="Jogar numa mesa com outras pessoas"
+      erro={erro}
+      aviso={aviso}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, paddingHorizontal: spacing.xl },
-  scroll: { alignItems: 'center', paddingBottom: spacing.xxxl },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: spacing.sm,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.overlay,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  topActions: { flexDirection: 'row', gap: spacing.xs },
-  title: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xl, color: colors.textPrimary, marginTop: spacing.lg },
-  crewRow: { flexDirection: 'row', gap: spacing.xl, marginTop: spacing.sm },
-  crewMember: { alignItems: 'center', gap: spacing.xs },
-  crewLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
-  loading: { marginTop: spacing.xxxl },
-  errorBox: { marginTop: spacing.xxxl, alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg },
-  errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
-  errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  rtpLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, marginTop: spacing.md },
-  diceRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
-  die: { width: 56, height: 56 },
-  dieEmpty: {
-    borderRadius: radius.sm,
-    borderWidth: 2,
-    borderColor: colors.feltLine,
-    backgroundColor: colors.overlay,
-  },
-  outcomeLabel: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.goldBright, marginTop: spacing.sm },
-  betGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    justifyContent: 'center',
-    marginTop: spacing.xl,
-    maxWidth: 2 * 150 + spacing.sm,
-  },
-  betTile: {
-    width: 150,
-    height: 96,
-    borderRadius: radius.md,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 2,
-    borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    paddingHorizontal: spacing.xs,
-  },
-  betTileSelected: { borderColor: colors.goldBright, backgroundColor: colors.felt },
-  betTileWon: { borderColor: colors.success },
-  betLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.md, color: colors.textPrimary },
-  betDescription: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  betPayout: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  betResult: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.xs, color: colors.goldBright },
-  betRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: spacing.xl },
-  betButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  betValue: { alignItems: 'center', minWidth: 160 },
-  betValueLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
-  betAmount: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
-  primaryButton: {
-    backgroundColor: colors.goldBright,
-    borderRadius: radius.pill,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xxxl,
-    marginTop: spacing.xl,
-    marginBottom: spacing.xl,
-    minWidth: 200,
-    alignItems: 'center',
-  },
-  buttonDisabled: { opacity: 0.6 },
-  primaryButtonLabel: { fontFamily: fontFamily.displaySemiBold, fontSize: fontSize.md, color: colors.background },
-});

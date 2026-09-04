@@ -3,7 +3,6 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { PlayerColor } from '../data/chipImages';
-import { DENOMINACOES } from '../data/fichasDeValor';
 import { Ficha } from './Ficha';
 import { colors } from '../theme';
 
@@ -31,8 +30,9 @@ interface TrilhoDeFichasProps {
   /** Rodada em andamento: dá pra ver, não dá pra pegar. */
   travado?: boolean;
   /** Só as denominações que fazem sentido pros limites da mesa. */
+  /** As fichas deste degrau, calculadas pelo servidor. É a lista de verdade. */
+  fichas?: number[];
   minimo?: number;
-  maximo?: number;
 }
 
 export function TrilhoDeFichas({
@@ -42,10 +42,21 @@ export function TrilhoDeFichas({
   tamanho = 56,
   saldo,
   travado,
-  minimo = 0,
-  maximo = Number.MAX_SAFE_INTEGER,
+  fichas,
+  minimo = 50,
 }: TrilhoDeFichasProps) {
-  const cabem = DENOMINACOES.filter((d) => d.valor >= minimo && d.valor <= maximo);
+  /*
+   * AS FICHAS VÊM DA MESA, prontas. O servidor calcula as cinco do degrau em que a
+   * pessoa está — a menor É a aposta mínima, a maior É o teto — e este componente só
+   * desenha. Filtrar uma lista fixa por mínimo e máximo era o que fazia o trilho parar
+   * em cem milhões pra quem tinha noventa e nove bilhões: a lista acabava antes.
+   *
+   * O `cabem` de reserva existe só pro instante em que a resposta do servidor ainda não
+   * chegou, e é a mesma conta que o servidor faz.
+   */
+  const cabem = (fichas?.length ? fichas : [1, 2, 5, 10, 20].map((m) => minimo * m))
+    .filter((v) => v > 0)
+    .map((valor) => ({ valor }));
 
   /*
    * O TRILHO ROLA, COM SETAS NAS PONTAS.
