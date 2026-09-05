@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O meu mês — Vida Financeira</title>
+<meta name="description" content="Painel pessoal: lance entradas e saídas, veja o saldo do mês e para onde está a ir o dinheiro.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1512">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=1">
+<link rel="stylesheet" href="app-financas.css?v=1">
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="index.html">
+      <div class="logo-mark">VF</div>
+      <div class="logo-name">VIDA<small>FINANCEIRA</small></div>
+    </a>
+    <nav class="links" id="menu">
+      <a href="index.html">Início</a>
+      <a href="app.html" class="on">O meu mês</a>
+      <a href="sobre.html">Sobre</a>
+      <a href="conta.html" id="nav-conta">Entrar / Criar conta</a>
+    </nav>
+    <div class="nav-right">
+      <button class="burger" id="burger" aria-label="Abrir menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="app-main">
+  <div class="wrap">
+
+    <div class="mes-bar">
+      <button id="mes-antes" type="button" aria-label="Mês anterior">‹</button>
+      <b id="mes-nome">—</b>
+      <button id="mes-depois" type="button" aria-label="Mês seguinte">›</button>
+    </div>
+
+    <div class="aviso" id="aviso" hidden></div>
+
+    <div class="resumo">
+      <div class="card saldo">
+        <div class="rot">Saldo do mês</div>
+        <div class="val" id="v-saldo">—</div>
+      </div>
+      <div class="card entrada">
+        <div class="rot">Entradas</div>
+        <div class="val" id="v-entradas">—</div>
+      </div>
+      <div class="card saida">
+        <div class="rot">Saídas</div>
+        <div class="val" id="v-saidas">—</div>
+      </div>
+    </div>
+
+    <div class="painel">
+
+      <!-- ---------- lançar movimento ---------- -->
+      <div class="bloco">
+        <h3>Lançar movimento</h3>
+
+        <div class="tipo-sel">
+          <button type="button" data-tipo="saida" aria-pressed="true">− Saída</button>
+          <button type="button" data-tipo="entrada" aria-pressed="false">+ Entrada</button>
+        </div>
+
+        <form id="form" novalidate>
+          <div class="field">
+            <label for="f-valor">Valor</label>
+            <input id="f-valor" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off" required>
+          </div>
+          <div class="field">
+            <label for="f-categoria">Categoria</label>
+            <select id="f-categoria"></select>
+          </div>
+          <div class="field">
+            <label for="f-descricao">Descrição <span style="text-transform:none;letter-spacing:0">(opcional)</span></label>
+            <input id="f-descricao" type="text" placeholder="ex.: compras da semana" maxlength="120" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="f-data">Data</label>
+            <input id="f-data" type="date" required>
+          </div>
+          <button class="btn btn-gold" type="submit">Lançar</button>
+        </form>
+
+        <div class="field" style="margin-top:20px">
+          <label for="f-moeda">Moeda</label>
+          <select id="f-moeda">
+            <option value="EUR">€ Euro</option>
+            <option value="BRL">R$ Real</option>
+            <option value="USD">$ Dólar</option>
+            <option value="GBP">£ Libra</option>
+            <option value="AOA">Kz Kwanza</option>
+            <option value="CVE">$ Escudo cabo-verdiano</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ---------- movimentos + categorias ---------- -->
+      <div>
+        <div class="bloco" style="margin-bottom:22px">
+          <div class="lista-topo">
+            <h3>Movimentos do mês</h3>
+            <div class="filtro">
+              <button type="button" data-filtro="todos" aria-pressed="true">Todos</button>
+              <button type="button" data-filtro="entrada" aria-pressed="false">Entradas</button>
+              <button type="button" data-filtro="saida" aria-pressed="false">Saídas</button>
+            </div>
+          </div>
+
+          <ul class="movs" id="lista"></ul>
+
+          <div class="vazio" id="vazio" hidden>
+            <span class="em">🪶</span>
+            Ainda não há movimentos neste mês.<br>
+            Lance o primeiro no formulário ao lado.
+          </div>
+        </div>
+
+        <div class="bloco">
+          <h3>Para onde foi o dinheiro</h3>
+          <ul class="cat-lista" id="cats"></ul>
+          <div class="vazio" id="cats-vazio" hidden>
+            <span class="em">📊</span>
+            Sem saídas lançadas neste mês.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="painel-nota" id="nota-nuvem">
+      Os movimentos estão guardados só neste dispositivo.
+    </p>
+    <div class="acoes-dados">
+      <button class="mini-btn" id="exportar" type="button">⬇ Exportar para Excel (CSV)</button>
+      <button class="mini-btn danger" id="apagar-tudo" type="button">Apagar tudo</button>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-bottom">
+      © <span id="ano"></span> Vida Financeira · <a href="index.html">Início</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Firebase é opcional: se não estiver configurado, a app funciona na mesma,
+     só sem sincronização entre dispositivos. -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js?v=1"></script>
+<script src="site.js?v=1"></script>
+<script src="app-financas.js?v=1"></script>
+</body>
+</html>

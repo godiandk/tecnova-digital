@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A minha conta — Vida Financeira</title>
+<meta name="description" content="Entrar ou criar conta para sincronizar os movimentos entre o telemóvel e o computador.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1512">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=1">
+<style>
+.conta-wrap{max-width:440px;margin:0 auto;padding:120px 24px 100px}
+.caixa{background:var(--ink-2);border:1px solid rgba(217,178,110,.2);border-radius:22px;padding:32px 28px;box-shadow:0 30px 70px rgba(0,0,0,.5)}
+.caixa h1{font-size:1.7rem;margin-bottom:6px;text-align:center}
+.caixa .sub{color:var(--cream-dim);font-size:.9rem;text-align:center;margin-bottom:24px}
+.caixa .btn{width:100%;justify-content:center;margin-top:8px}
+.troca{text-align:center;margin-top:18px;font-size:.88rem;color:var(--cream-dim)}
+.troca button{background:none;border:none;color:var(--gold-soft);font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer;text-decoration:underline;padding:6px}
+.esqueci{display:block;margin:10px auto 0;background:none;border:none;color:var(--cream-dim);font-family:inherit;font-size:.82rem;cursor:pointer;text-decoration:underline}
+.sessao{text-align:center}
+.sessao .avatar{width:78px;height:78px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(160deg,var(--gold-soft),var(--gold));color:var(--ink);font-family:'Playfair Display',serif;font-weight:800;font-size:1.9rem}
+.sessao .email{color:var(--cream-dim);font-size:.9rem;margin-bottom:22px;word-break:break-all}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="index.html">
+      <div class="logo-mark">VF</div>
+      <div class="logo-name">VIDA<small>FINANCEIRA</small></div>
+    </a>
+    <nav class="links" id="menu">
+      <a href="index.html">Início</a>
+      <a href="app.html">O meu mês</a>
+      <a href="sobre.html">Sobre</a>
+      <a href="conta.html" class="on" id="nav-conta">Entrar / Criar conta</a>
+    </nav>
+    <div class="nav-right">
+      <button class="burger" id="burger" aria-label="Abrir menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="conta-wrap">
+    <div class="caixa">
+
+      <!-- ---------- sem sessão ---------- -->
+      <div id="area-form">
+        <h1 id="titulo">Entrar</h1>
+        <p class="sub" id="subtitulo">Para ter os mesmos movimentos em todos os dispositivos.</p>
+
+        <div class="aviso" id="aviso" hidden></div>
+
+        <form id="form-conta" novalidate>
+          <div class="field" id="campo-nome" hidden>
+            <label for="c-nome">Nome</label>
+            <input id="c-nome" type="text" autocomplete="name" placeholder="Como quer ser tratado">
+          </div>
+          <div class="field">
+            <label for="c-email">Email</label>
+            <input id="c-email" type="email" autocomplete="email" required placeholder="o.seu@email.com">
+          </div>
+          <div class="field">
+            <label for="c-pass">Palavra-passe</label>
+            <input id="c-pass" type="password" autocomplete="current-password" required placeholder="Mínimo 6 caracteres">
+          </div>
+          <button class="btn btn-gold" type="submit" id="botao">Entrar</button>
+        </form>
+
+        <button class="esqueci" id="esqueci" type="button">Esqueci-me da palavra-passe</button>
+
+        <p class="troca">
+          <span id="troca-texto">Ainda não tem conta?</span>
+          <button id="trocar" type="button">Criar conta</button>
+        </p>
+      </div>
+
+      <!-- ---------- com sessão ---------- -->
+      <div id="area-sessao" class="sessao" hidden>
+        <div class="avatar" id="s-inicial">?</div>
+        <h1 id="s-nome">—</h1>
+        <p class="email" id="s-email">—</p>
+        <a class="btn btn-gold" href="app.html">Ir para o meu mês</a>
+        <button class="btn btn-line" id="sair" type="button" style="margin-top:10px">Terminar sessão</button>
+      </div>
+
+      <!-- ---------- Firebase por configurar ---------- -->
+      <div id="area-off" hidden>
+        <h1>Conta indisponível</h1>
+        <p class="sub">
+          A ligação ao Firebase ainda não está configurada neste site.
+          A aplicação funciona na mesma — os movimentos ficam guardados
+          neste dispositivo.
+        </p>
+        <a class="btn btn-gold" href="app.html">Ir para o meu mês</a>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-bottom">
+      © <span id="ano"></span> Vida Financeira · <a href="index.html">Início</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js?v=1"></script>
+<script src="site.js?v=1"></script>
+<script>
+(function () {
+  const aviso = document.getElementById('aviso');
+  const areaForm = document.getElementById('area-form');
+  const areaSessao = document.getElementById('area-sessao');
+  const areaOff = document.getElementById('area-off');
+
+  // Sem Firebase configurado não vale mostrar um formulário que nunca
+  // vai funcionar — mostramos a explicação e o caminho para a app.
+  if (typeof firebase === 'undefined' || !window.auth) {
+    areaForm.hidden = true;
+    areaOff.hidden = false;
+    return;
+  }
+
+  let modo = 'entrar';   // 'entrar' | 'criar'
+
+  function dizer(texto, tipo) {
+    aviso.textContent = texto;
+    aviso.className = 'aviso ' + (tipo || 'info');
+    aviso.hidden = false;
+  }
+
+  // As mensagens do Firebase vêm em inglês e com códigos. Traduzimos as
+  // que uma pessoa real encontra no dia-a-dia.
+  function traduzir(codigo) {
+    const mapa = {
+      'auth/invalid-email': 'Esse email não parece válido.',
+      'auth/user-not-found': 'Não existe conta com esse email.',
+      'auth/wrong-password': 'Palavra-passe errada.',
+      'auth/invalid-credential': 'Email ou palavra-passe errados.',
+      'auth/email-already-in-use': 'Já existe uma conta com esse email.',
+      'auth/weak-password': 'A palavra-passe precisa de pelo menos 6 caracteres.',
+      'auth/too-many-requests': 'Demasiadas tentativas. Tente daqui a bocado.',
+      'auth/network-request-failed': 'Sem ligação à internet.',
+      'auth/operation-not-allowed': 'O método email/palavra-passe ainda não está activado no Firebase.'
+    };
+    return mapa[codigo] || 'Não foi possível concluir. Tente novamente.';
+  }
+
+  function pintarModo() {
+    const criar = modo === 'criar';
+    document.getElementById('titulo').textContent = criar ? 'Criar conta' : 'Entrar';
+    document.getElementById('subtitulo').textContent = criar
+      ? 'Leva menos de um minuto. Só precisa de um email.'
+      : 'Para ter os mesmos movimentos em todos os dispositivos.';
+    document.getElementById('botao').textContent = criar ? 'Criar conta' : 'Entrar';
+    document.getElementById('campo-nome').hidden = !criar;
+    document.getElementById('troca-texto').textContent = criar ? 'Já tem conta?' : 'Ainda não tem conta?';
+    document.getElementById('trocar').textContent = criar ? 'Entrar' : 'Criar conta';
+    document.getElementById('esqueci').hidden = criar;
+    document.getElementById('c-pass').autocomplete = criar ? 'new-password' : 'current-password';
+    aviso.hidden = true;
+  }
+
+  document.getElementById('trocar').addEventListener('click', () => {
+    modo = modo === 'criar' ? 'entrar' : 'criar';
+    pintarModo();
+  });
+
+  document.getElementById('form-conta').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const email = document.getElementById('c-email').value.trim();
+    const pass = document.getElementById('c-pass').value;
+    const nome = document.getElementById('c-nome').value.trim();
+    const botao = document.getElementById('botao');
+
+    if (!email || !pass) {
+      dizer('Preencha o email e a palavra-passe.', 'erro');
+      return;
+    }
+
+    botao.disabled = true;
+    try {
+      if (modo === 'criar') {
+        const cred = await auth.createUserWithEmailAndPassword(email, pass);
+        if (nome) await cred.user.updateProfile({ displayName: nome });
+      } else {
+        await auth.signInWithEmailAndPassword(email, pass);
+      }
+    } catch (e) {
+      dizer(traduzir(e.code), 'erro');
+    } finally {
+      botao.disabled = false;
+    }
+  });
+
+  document.getElementById('esqueci').addEventListener('click', async () => {
+    const email = document.getElementById('c-email').value.trim();
+    if (!email) {
+      dizer('Escreva primeiro o seu email, e depois carregue outra vez aqui.', 'info');
+      return;
+    }
+    try {
+      await auth.sendPasswordResetEmail(email);
+      dizer('Enviámos um email para redefinir a palavra-passe. Veja também o spam.', 'ok');
+    } catch (e) {
+      dizer(traduzir(e.code), 'erro');
+    }
+  });
+
+  document.getElementById('sair').addEventListener('click', () => auth.signOut());
+
+  auth.onAuthStateChanged(u => {
+    if (!u) {
+      areaSessao.hidden = true;
+      areaForm.hidden = false;
+      pintarModo();
+      return;
+    }
+    const nome = u.displayName || (u.email || '').split('@')[0];
+    document.getElementById('s-inicial').textContent = (nome || '?').charAt(0).toUpperCase();
+    document.getElementById('s-nome').textContent = nome;
+    document.getElementById('s-email').textContent = u.email || '';
+    areaForm.hidden = true;
+    areaSessao.hidden = false;
+  });
+
+  pintarModo();
+})();
+</script>
+</body>
+</html>
