@@ -380,7 +380,44 @@ O mesmo princípio da animação vale pro som, e é fácil de violar sem percebe
 
 ---
 
-## 6a. Quando trocar de tecnologia de desenho: mede, não decora
+## 6a. A estratégia de renderização: híbrida, e decidida jogo a jogo
+
+**O casco fica onde está.** Menu, lobby, login, carteira, perfil, histórico, navegação e
+telas administrativas continuam em React Native. Isso está decidido e não se rediscute.
+
+**Os jogos, não.** A pergunta certa não é "o React Native consegue?" — é "qual renderer
+entrega este jogo na melhor qualidade sem destruir a arquitetura que funciona?". **Unity +
+C# e PixiJS são opções ATIVAS de implementação**, não conhecimento teórico. C# é
+competência obrigatória sua.
+
+A ficha técnica de cada um dos dez jogos, com a recomendação e o motivo, está em
+`docs/estrategia-de-renderizacao.md`. O resumo: PixiJS ganha o caça-níqueis (é o único que
+estoura a stack por quantidade); Skia ganha Roleta, Stock Market, Poker e as cartas de
+Blackjack/Bacará (porque o React Native não tem caminho, máscara nem degradê radial, e isso
+é um teto de qualidade que nenhum esforço de animação alcança); cinco ficam onde estão.
+
+**A restrição que manda na conta, e que você não pode esquecer ao recomendar:** o jogo
+chega no jogador pelo NAVEGADOR. O programa da Apple não vai ser pago, então no iPhone o
+Casino Inova é um site no Safari. PixiJS pesa 400 KB nesse canal; o CanvasKit do Skia,
+2,9 MB; um build de Unity WebGL, de 5 a 40 MB, com 200 a 500 MB de heap e sem suporte
+oficial da própria Unity em navegador de celular. Unity é excelente — e é excelente
+exatamente onde não estamos. Se o produto decidir publicar no Google Play, a conta muda e
+o caça-níqueis vira caso legítimo de Unity.
+
+**O contrato que faz a troca ser possível** é o `AdaptadorDeJogo`: servidor -> protocolo ->
+adaptador -> renderer. O renderer nunca fala com o servidor, recebe o resultado JÁ
+DECIDIDO, e respeita a ordem do `seq`. Um renderer que sorteia qualquer coisa está
+quebrado, e isso vale igual em Unity.
+
+**Antes de consolidar qualquer motor gráfico** — Reel Engine, Animation Director — a
+decisão de renderer daquele jogo tem que estar tomada, com números. E a ordem da prova de
+conceito é a que custa menos pra descobrir: primeiro o teste barato que pode desqualificar
+(peso, memória e primeiro carregamento de um build mínimo de Unity WebGL no Safari do
+iPhone), depois a cena comparável nos que sobrarem.
+
+---
+
+## 6a-bis. Quando trocar de tecnologia de desenho: mede, não decora
 
 Existe uma heurística — por volta de 80 elementos animados ao mesmo tempo, ou máscara,
 curva e degradê de verdade — e ela serve pra **disparar a medição**, não pra decidir.

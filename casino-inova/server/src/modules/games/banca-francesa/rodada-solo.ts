@@ -87,6 +87,15 @@ export interface RodadaSolo {
    * relança é o jogador, sempre.
    */
   esperandoDepoisDoNulo: boolean;
+  /**
+   * Esta rodada já tem linha no Postgres.
+   *
+   * A rodada nasce em memória — é lá que ela é jogada — e só chega ao banco quando algo
+   * digno de registro acontece nela. Uma rodada aberta e abandonada sem uma única ficha
+   * não precisa de linha; a partir da primeira aposta, precisa. Esta marca é só pra não
+   * ir ao banco perguntar de novo a cada evento.
+   */
+  noBanco?: boolean;
   /** Quando a rodada começou. Serve pro cliente saber se o que ele tem é velho. */
   abertaEm: string;
 }

@@ -215,3 +215,91 @@ ALTER TABLE ledger_entries ADD COLUMN IF NOT EXISTS round_id       TEXT;
 
 CREATE INDEX IF NOT EXISTS ledger_entries_rodada_idx ON ledger_entries (round_id)
   WHERE round_id IS NOT NULL;
+
+-- ============================================================================
+-- AS RODADAS, E O QUE ACONTECEU DENTRO DELAS
+-- ============================================================================
+--
+-- O problema que estas duas tabelas resolvem: hoje, se alguém disser "sumiu uma ficha
+-- ontem", temos o extrato — sabemos que saiu 100 e entrou 0 — e não temos O QUE
+-- ACONTECEU. Não dá pra responder "por que", só "quanto". Uma reclamação vira palavra
+-- contra palavra, e um defeito de animação some sem deixar rastro.
+--
+-- COMO ELAS SE DIVIDEM. `rodadas` guarda o que precisa ser PROCURADO: por jogo, por
+-- data, por estado, por mesa. Isso vira coluna e vira índice. `eventos_da_rodada`
+-- guarda o que precisa ser LIDO EM ORDEM depois de já ter achado a rodada — e o
+-- conteúdo de cada evento é JSONB porque cada tipo carrega uma coisa diferente. A
+-- divisão é essa, e não "coluna é o que eu lembrei" contra "JSON é o resto": jogar tudo
+-- num JSON gigante faz toda pergunta virar varredura da tabela inteira.
+
+CREATE TABLE IF NOT EXISTS rodadas (
+  -- O id vem do servidor e é o mesmo que aparece no extrato (`ledger_entries.round_id`)
+  -- e nas mensagens pro cliente. É por ele que uma reclamação é investigada.
+  id                   TEXT PRIMARY KEY,
+  jogo                 TEXT NOT NULL,
+  -- NULL numa rodada solo; o código da mesa quando há gente junto.
+  mesa                 TEXT,
+  -- A fase em que a rodada está ou parou. Os valores são os de `protocolo/fases.ts`.
+  estado               TEXT NOT NULL,
+  --
+  -- AS VERSÕES EXISTEM PRA RODADA VELHA CONTINUAR LEGÍVEL.
+  --
+  -- Se daqui a seis meses a regra da Banca Francesa mudar, uma rodada de hoje tem que
+  -- continuar interpretável — e a única forma de saber COM QUAL REGRA ela foi decidida é
+  -- ter gravado isso junto. Sem estas duas colunas, o replay depende eternamente do
+  -- código de agora, e um dia passa a mentir em silêncio.
+  --
+  -- `versao_da_regra` muda quando o resultado ou o pagamento mudam de comportamento.
+  -- `versao_do_protocolo` muda quando o formato dos eventos muda.
+  versao_da_regra      TEXT NOT NULL,
+  versao_do_protocolo  INTEGER NOT NULL,
+  -- O que saiu: dados, número da roleta, cartas. Estrutura por jogo, por isso JSONB.
+  -- Fica NULL até a rodada decidir — e NULL aqui quer dizer "não decidiu", não "não sei".
+  resultado            JSONB,
+  aberta_em            TIMESTAMPTZ NOT NULL DEFAULT now(),
+  apostas_fechadas_em  TIMESTAMPTZ,
+  decidida_em          TIMESTAMPTZ,
+  fechada_em           TIMESTAMPTZ,
+  atualizada_em        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Procurar rodada de um jogo por data é a pergunta mais comum do suporte.
+CREATE INDEX IF NOT EXISTS rodadas_jogo_data_idx ON rodadas (jogo, aberta_em DESC);
+-- "O que ficou preso?" — só as que não fecharam, que são poucas. Índice parcial porque
+-- um índice sobre `estado` inteiro seria quase todo RODADA_FECHADA, e não serviria pra
+-- nada além de ocupar espaço.
+CREATE INDEX IF NOT EXISTS rodadas_abertas_idx ON rodadas (estado, atualizada_em)
+  WHERE fechada_em IS NULL;
+CREATE INDEX IF NOT EXISTS rodadas_mesa_idx ON rodadas (mesa, aberta_em DESC)
+  WHERE mesa IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS eventos_da_rodada (
+  rodada_id  TEXT    NOT NULL REFERENCES rodadas(id) ON DELETE CASCADE,
+  --
+  -- A ORDEM É A CHAVE PRIMÁRIA, e não um detalhe.
+  --
+  -- Horário não serve como ordem: dois eventos no mesmo milissegundo empatam, o relógio
+  -- da máquina anda pra trás no acerto de hora, e mensagem de rede chega fora de ordem.
+  -- `seq` é um contador por rodada, atribuído dentro da mesma transação que grava o
+  -- evento, com a linha da rodada travada. Assim "o 17 veio depois do 16" continua
+  -- verdade depois de o processo reiniciar, depois de um backup restaurado e depois de
+  -- duas conexões gravarem ao mesmo tempo — a chave primária recusa a duplicata.
+  seq        INTEGER NOT NULL,
+  tipo       TEXT    NOT NULL,
+  -- De quem foi o evento, quando foi de alguém. NULL nos eventos da mesa (abriu,
+  -- fechou, sorteou). É referência de verdade pra o dado sumir junto com a conta.
+  usuario_id TEXT    REFERENCES users(id) ON DELETE SET NULL,
+  em         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  --
+  -- O CONTEÚDO, e só o necessário pra reconstruir a rodada.
+  --
+  -- Nunca entra aqui: e-mail, senha, token, endereço de rede, nem carta privada de
+  -- outro jogador. Não é zelo abstrato — este log é lido no suporte e sai em backup, e
+  -- o que não foi gravado não vaza.
+  dados      JSONB   NOT NULL DEFAULT '{}'::jsonb,
+  PRIMARY KEY (rodada_id, seq)
+);
+
+-- "O que este jogador fez nesta rodada" e "onde ele estava quando reclamou".
+CREATE INDEX IF NOT EXISTS eventos_usuario_idx ON eventos_da_rodada (usuario_id, em DESC)
+  WHERE usuario_id IS NOT NULL;

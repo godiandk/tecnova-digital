@@ -17,6 +17,7 @@ import {
 } from './banca-francesa.config';
 import { NIVEIS_DE_MESA, nivelPara } from '../shared/niveis-de-mesa';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
+import { RodadasRepository } from '../core/rodadas.repository';
 import { LANCAMENTOS_GUARDADOS, LancamentoNoPlacar, montarPlacar } from './placar-da-banca';
 import { RodadaSolo, podeLancar, podeMexerNaAposta, rodadaNova } from './rodada-solo';
 
@@ -42,7 +43,30 @@ export class BancaFrancesaService {
     private readonly walletService: WalletService,
     private readonly tournaments: TournamentsService,
     private readonly acoes: AcoesRepetidas,
+    private readonly rodadasGuardadas: RodadasRepository,
   ) {}
+
+  /**
+   * Garante que a rodada existe no banco antes de anotar qualquer evento nela.
+   *
+   * A rodada nasce em memória (é lá que ela é jogada) e só chega ao banco quando algo
+   * digno de registro acontece. Uma rodada aberta e abandonada sem uma única ficha não
+   * precisa de linha no Postgres — mas a partir da primeira aposta, tudo que acontecer
+   * nela tem que ter onde ser gravado.
+   *
+   * `abrir` é idempotente (`ON CONFLICT DO NOTHING`), e a marca em memória evita a ida
+   * ao banco nas vezes seguintes.
+   */
+  private async garantirNoBanco(rodada: RodadaSolo): Promise<void> {
+    if (rodada.noBanco) return;
+    await this.rodadasGuardadas.abrir({
+      id: rodada.rodadaId,
+      jogo: GAME_ID,
+      mesa: null,
+      estado: 'APOSTAS_ABERTAS',
+    });
+    rodada.noBanco = true;
+  }
 
   /** O placar DESTA mesa: dados, somas e nulos. Ver placar-da-banca.ts. */
   getPlacar() {
@@ -132,6 +156,22 @@ export class BancaFrancesaService {
     const saldo = await this.walletService.balanceOf(userId);
     this.conferirApostas(bets, saldo);
 
+    await this.garantirNoBanco(rodada);
+    /*
+     * O QUE VAI PRO EVENTO: a casa e o valor de cada ficha, e nada mais. É o que
+     * responde "onde ele apostou e quanto" numa reclamação. Não vai e-mail, nem token,
+     * nem endereço de rede — este log é lido no suporte e sai em backup, e o que não foi
+     * gravado não vaza.
+     */
+    await this.rodadasGuardadas.anotar(rodada.rodadaId, {
+      tipo: 'APOSTAS_CONFIRMADAS',
+      usuarioId: userId,
+      dados: { apostas: bets.map((b) => ({ casa: b.type, valor: b.amount })) },
+    });
+    await this.rodadasGuardadas.mudarEstado(rodada.rodadaId, 'APOSTAS_FECHADAS', {
+      apostasFechadas: true,
+    });
+
     rodada.apostas = bets;
     rodada.estado = 'APOSTAS_CONFIRMADAS';
     /* Mexeu na aposta: o aviso do nulo sai da tela, porque a decisão já foi tomada. */
@@ -144,6 +184,13 @@ export class BancaFrancesaService {
     const rodada = this.rodadaDe(userId);
     if (!podeMexerNaAposta(rodada.estado)) {
       throw new BadRequestException('Esta rodada já foi liquidada. Comece uma nova.');
+    }
+    if (rodada.noBanco) {
+      await this.rodadasGuardadas.anotar(rodada.rodadaId, {
+        tipo: 'APOSTAS_RETIRADAS',
+        usuarioId: userId,
+      });
+      await this.rodadasGuardadas.mudarEstado(rodada.rodadaId, 'APOSTAS_ABERTAS');
     }
     rodada.apostas = [];
     rodada.estado = 'APOSTAS_ABERTAS';
@@ -203,6 +250,21 @@ export class BancaFrancesaService {
        * é permitido em CONFIRMADAS. Voltar pra ABERTAS obrigaria a reconfirmar uma
        * aposta que ninguém tirou da mesa, e "manter" viraria uma tarefa.
        */
+      await this.garantirNoBanco(rodada);
+      await this.rodadasGuardadas.anotar(rodada.rodadaId, {
+        tipo: 'LANCAMENTO_NULO',
+        usuarioId: userId,
+        dados: { rollId: lancamento.rollId, dados: lancamento.dice, soma: lancamento.sum },
+      });
+      /*
+       * O ESTADO VOLTA A APOSTAS_ABERTAS NO BANCO, mesmo continuando CONFIRMADAS em
+       * memória. Não é contradição: são dois vocabulários. Em memória, CONFIRMADAS quer
+       * dizer "as fichas estão na mesa e o botão de lançar existe". No banco, a fase é a
+       * da máquina compartilhada (`protocolo/fases.ts`), e o nulo é exatamente a
+       * transição SORTEIO -> APOSTAS_ABERTAS que ela prevê: a rodada é a mesma, ninguém
+       * foi cobrado, e a janela de mexer na aposta reabriu.
+       */
+      await this.rodadasGuardadas.mudarEstado(rodada.rodadaId, 'APOSTAS_ABERTAS');
       rodada.nulos.push(lancamento);
       rodada.esperandoDepoisDoNulo = true;
       return {
@@ -239,6 +301,33 @@ export class BancaFrancesaService {
       }
       /* O torneio pontua pelo RISCO, que é o que a pessoa de fato pôs em jogo. */
       await this.tournaments.recordRound(userId, GAME_ID, riscoTotal, totalReturn);
+
+      await this.garantirNoBanco(rodada);
+      await this.rodadasGuardadas.anotar(rodada.rodadaId, {
+        tipo: 'LANCAMENTO_DECISIVO',
+        usuarioId: userId,
+        dados: {
+          rollId: lancamento.rollId,
+          dados: lancamento.dice,
+          soma: lancamento.sum,
+          resultado: outcome,
+        },
+      });
+      await this.rodadasGuardadas.anotar(rodada.rodadaId, {
+        tipo: 'LIQUIDADA',
+        usuarioId: userId,
+        dados: {
+          apostado: totalStake,
+          risco: riscoTotal,
+          retorno: totalReturn,
+          porCasa: results.map((r) => ({ casa: r.type, valor: r.amount, ganhou: r.won, retorno: r.totalReturn })),
+        },
+      });
+      await this.rodadasGuardadas.mudarEstado(rodada.rodadaId, 'RODADA_FECHADA', {
+        decidida: true,
+        fechada: true,
+        resultado: { dados: lancamento.dice, soma: lancamento.sum, resultado: outcome },
+      });
 
       rodada.estado = 'LIQUIDADA';
       /*

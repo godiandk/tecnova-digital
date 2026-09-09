@@ -21,7 +21,7 @@ medida, está escrito que não tenho.
 | 7 | Renderização por tela | **Existe parcialmente** | tudo é React Native + Reanimated; sem Skia, sem Pixi |
 | 8 | Asset pipeline | **Não existe** | sem atlas, sem preload por jogo, sem descarregamento; as artes são WebP soltas |
 | 9 | Performance budget | **Não existe** | nada mede FPS, frame time, memória ou draw calls |
-| 10 | Replay determinístico | **Existe parcialmente** | `ledger_entries.round_id` liga dinheiro à rodada; não há tabela de rodadas nem de eventos |
+| 10 | Replay determinístico | **Existe e está bom** | `rodadas` + `eventos_da_rodada`, com `seq` por rodada e versão da regra gravada; `verifica-replay.ts` reconstrói uma rodada só do banco |
 | 11 | Reconexão | **Existe e está bom (nas salas)** | `core/reconexao.service.ts` + `verificacao/verifica-reconexao.mjs` |
 | 12 | Testes sem interface | **Existe e está bom** | 44 conferências; várias exaustivas (216 combinações, 37 casas × 13 apostas, fast-check) |
 | 13 | Testes visuais | **Existe parcialmente** | `verifica-arcos-da-banca.mjs` compara a arte medida; `verifica-tamanhos.mjs` cobre 5 telas; **não há linha de base de imagem com diff** |
@@ -34,7 +34,7 @@ medida, está escrito que não tenho.
 | 19b | Segurança da **aplicação** | **Não auditada** | autenticação, sessão, autorização, limite de taxa, validação de entrada, SQL, segredos, CORS, WebSocket, abuso e log de dado sensível — nada disso foi olhado ainda |
 | 20 | Idempotência | **Existe e está bom** | `acoes-repetidas.service.ts` + chave única no extrato; conferido sob concorrência |
 | 21 | Versionamento de protocolo | **Não existe** | `api/versao.ts` recarrega o app quando o servidor muda; não há versão de API nem de evento |
-| 22 | Slot engine | **Existe mas está ruim** | `slots.engine.ts` funciona, mas **RTP 89,17%** (medido agora) e sem reel engine |
+| 22 | Slot engine | **Matemática boa, apresentação não** | RTP corrigido pra 95,9715%; falta o reel engine, e o renderer dele será decidido antes (ver docs/estrategia-de-renderizacao.md) |
 | 23 | Card engine | **Existe parcialmente** | `shared/sapata.ts` e `naipes.ts` no servidor; `Carta.tsx` na tela; sem sistema de dar/virar/mover |
 | 24 | Dice engine | **Existe e está bom** | `fisica/motorDeDados.ts`; o servidor decide a face e a física só encena; `verifica-face-do-dado` prova em 240 dados |
 | 25 | Chip system | **Existe e está bom** | `Ficha.tsx`, `TrilhoDeFichas.tsx`, `fichasDeValor.ts`; usado por 3 jogos |
@@ -160,8 +160,8 @@ que reprova, e teste de estado que recusa transição inválida.
 
 | | Tarefa | Problema | Como se prova |
 |---|---|---|---|
-| P0.1 | **RTP dos caça-níqueis para 94–96%** | 89,17% medido, contra 97–99% dos outros jogos. É margem que o jogador não vê | `verify-rtp` com fórmula exata e 500 mil giros concordando; o número declarado na tela |
-| P0.2 | **Tabelas `rodadas` e `eventos_da_rodada` no Postgres** | Nenhuma rodada é reconstruível hoje | conferência que joga uma rodada, apaga o estado em memória e a reconstrói do banco |
+| ~~P0.1~~ **FEITO** | **RTP dos caça-níqueis: 95,9715%** | 89,17% medido, contra 97–99% dos outros jogos. É margem que o jogador não vê | `verify-rtp` com fórmula exata e 500 mil giros concordando; o número declarado na tela |
+| ~~P0.2~~ **FEITO** | **Tabelas `rodadas` e `eventos_da_rodada` no Postgres** | Nenhuma rodada é reconstruível hoje | conferência que joga uma rodada, apaga o estado em memória e a reconstrói do banco |
 | P0.3 | **Os outros nove jogos na máquina de fases** | "aposta depois do fechamento" e "liquidação dupla" só são impossíveis num jogo | conferência por jogo tentando cada transição inválida |
 
 ### P1 — jogo profissional
