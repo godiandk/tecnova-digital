@@ -30,7 +30,8 @@ medida, está escrito que não tenho.
 | 16 | Sistema de áudio | **Existe parcialmente** | `som/mesaSonora.ts` com mudo, movimento reduzido e força por batida; só na Banca Francesa; sem música, ambiente, prioridade ou fade |
 | 17 | Sistema de eventos | **Existe parcialmente** | `core/registro-de-eventos.ts` com `seq`; em memória, teto de 500 por mesa, só nas salas |
 | 18 | Observabilidade | **Não existe** | sem log estruturado, sem código de erro, sem correlação por rodada |
-| 19 | Segurança | **Existe e está bom** | servidor decide tudo; RNG do servidor (`shared/rng.ts`); nenhuma rota aceita valor calculado pelo cliente |
+| 19 | Segurança do **jogo** | **Existe e está bom** | servidor decide tudo; RNG do servidor (`shared/rng.ts`); nenhuma rota aceita valor calculado pelo cliente |
+| 19b | Segurança da **aplicação** | **Não auditada** | autenticação, sessão, autorização, limite de taxa, validação de entrada, SQL, segredos, CORS, WebSocket, abuso e log de dado sensível — nada disso foi olhado ainda |
 | 20 | Idempotência | **Existe e está bom** | `acoes-repetidas.service.ts` + chave única no extrato; conferido sob concorrência |
 | 21 | Versionamento de protocolo | **Não existe** | `api/versao.ts` recarrega o app quando o servidor muda; não há versão de API nem de evento |
 | 22 | Slot engine | **Existe mas está ruim** | `slots.engine.ts` funciona, mas **RTP 89,17%** (medido agora) e sem reel engine |
@@ -124,13 +125,23 @@ roleta, que também tem áreas não retangulares); o `TrilhoDeFichas`; o `motorD
   são três elipses porque não temos degradê).
 - **PixiJS na web**: só se um dia a web virar alvo único. Enquanto o mesmo código servir os
   dois, não.
-- **Regra prática:** acima de ~80 elementos animados ao mesmo tempo, ou qualquer máscara,
-  curva ou degradê de verdade, é Skia. Abaixo disso, React Native com Reanimated. Skia
-  entra **por tela**, com o resto continuando React Native por fora.
+- **Heurística, não lei:** por volta de 80 elementos animados, ou qualquer máscara, curva
+  ou degradê de verdade, é hora de *medir*. **Quem decide é o benchmark, não o número.**
+  Se 120 elementos em Reanimated estão segurando o orçamento de frame, não se migra por
+  causa de um número; se 40 estão estourando por causa de desfoque, máscara ou composição,
+  Skia entra antes. Skia entra **por tela**, com o resto continuando React Native por fora.
+  Performance medida ganha de regra numérica — sempre.
 
 **18. Existe justificativa para Unity hoje?** **Não.** Nenhum jogo nosso é 3D, nenhum tem
 personagem esqueletal, nenhum passa de algumas dezenas de objetos animados. Unity custaria
 toda a interface e o caminho web — que é o nosso alvo principal. **Não migrar.**
+
+**18b. Segurança está encerrada?** **Não.** O que está bom é a segurança *do jogo*:
+autoridade do servidor, RNG, saldo, idempotência, cálculo fora do cliente. A segurança *da
+aplicação* — autenticação, autorização, sessão, limite de taxa, validação de entrada, SQL,
+segredos, variáveis de ambiente, CORS, WebSocket, abuso e log de dado sensível — **nunca
+foi auditada**. Isso é uma auditoria própria, com o seu próprio relatório, e ela não
+interrompe o P0.
 
 **19. Benchmarks para provar melhora.** Frame time p50/p95 em cada mesa nos cinco tamanhos;
 tempo até a mesa jogável; bytes por jogo; número de nós animados; ausência de quadro acima

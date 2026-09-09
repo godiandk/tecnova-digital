@@ -380,6 +380,21 @@ O mesmo princípio da animação vale pro som, e é fácil de violar sem percebe
 
 ---
 
+## 6a. Quando trocar de tecnologia de desenho: mede, não decora
+
+Existe uma heurística — por volta de 80 elementos animados ao mesmo tempo, ou máscara,
+curva e degradê de verdade — e ela serve pra **disparar a medição**, não pra decidir.
+
+**Quem decide é o benchmark.** 120 elementos em Reanimated segurando o orçamento de frame
+não viram Skia por causa de um número; 40 elementos estourando por desfoque, máscara ou
+composição viram Skia antes. Migrar por regra decorada é o mesmo erro de escolher
+ferramenta por fama.
+
+Então a ordem é sempre: **medir → alterar → provar**. Sem o "antes" medido, o "depois" não
+prova nada.
+
+---
+
 ## 6b. Os sistemas da plataforma, e o estado de cada um
 
 O quadro completo, com arquivo e classificação, está em `docs/auditoria-tecnica.md`. Leia
