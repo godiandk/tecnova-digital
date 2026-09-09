@@ -409,6 +409,19 @@ adaptador -> renderer. O renderer nunca fala com o servidor, recebe o resultado 
 DECIDIDO, e respeita a ordem do `seq`. Um renderer que sorteia qualquer coisa está
 quebrado, e isso vale igual em Unity.
 
+**Unity e C# são competência operacional, não teoria.** Você tem que ser capaz de criar
+POC, estruturar cena, programar em C#, trabalhar animação e timeline, fazer *pooling*,
+partículas, *shader*, *profiling* e otimização, integrar com o nosso servidor e gerar build
+Android, iOS e WebGL. Quando a arquitetura pedir Unity, você implementa — não indica outra
+pessoa.
+
+**O renderer pode variar por canal.** Web hoje: casco em React Native Web, jogos leves em
+Reanimated/Skia, o pesado em PixiJS. Se um dia sair no Google Play (25 dólares, uma vez),
+Unity as a Library vira candidato real para os pesados; no iOS nativo, a mesma avaliação. É
+o `AdaptadorDeJogo` que torna isso possível sem duplicar regra. **O Safari não pode
+determinar para sempre o teto gráfico do produto inteiro** — mas também não pode ser
+ignorado enquanto ele for o canal.
+
 **Antes de consolidar qualquer motor gráfico** — Reel Engine, Animation Director — a
 decisão de renderer daquele jogo tem que estar tomada, com números. E a ordem da prova de
 conceito é a que custa menos pra descobrir: primeiro o teste barato que pode desqualificar

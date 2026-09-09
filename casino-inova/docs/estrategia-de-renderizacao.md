@@ -144,6 +144,61 @@ meio e de volta para o vencedor. Aí sim há contagem, e é Skia.
 
 ---
 
+## 1b. A tabela de decisão
+
+Nenhum jogo fica onde está "porque funciona": fica se o teto visual e técnico da stack
+atual for **suficiente para ele**, e isso está dito caso a caso. E nenhum jogo migra
+"porque a ferramenta é de jogo": migra se houver ganho real. O alvo é a melhor experiência
+possível com a menor complexidade necessária.
+
+| Jogo | Hoje | Recomendado | Motivo | Ganho esperado | Custo | Risco | POC? | Decisão |
+|---|---|---|---|---|---|---|---|---|
+| Caça-Níqueis | RN | **PixiJS** | 25–40 sprites contínuos + 300 partículas; é o único que estoura a stack por quantidade | alto — é a diferença entre um slot e uma lista que desce | alto: motor de rolos novo + ponte com o casco | médio: segundo renderer no projeto | **sim** | congela depois da POC |
+| Roleta | RN | **Skia** | precisa de caminho curvo, máscara, degradê radial e desfoque — o RN não tem | alto — a roda e a bola são o jogo | médio: uma tela redesenhada | baixo: mesmo TypeScript, mesmo projeto | sim, junto | congela depois da POC |
+| Bac Bo | RN + física nossa | **RN, com Skia no vidro** | 4 objetos; a física é nossa e provada (240 dados param na face sorteada) | médio — refração e reflexo do agitador | baixo | baixo | **sim, Unity avaliado explicitamente** | congela depois da POC |
+| Blackjack | RN | **RN + Skia na carta** | 10 cartas; a qualidade é timing, não potência; falta sombra e recorte de verdade | médio | baixo | baixo | não | decidido |
+| Bacará | RN | **RN + Skia na carta** | igual ao Blackjack, mais o *squeeze* (máscara e deformação) | médio | baixo | baixo | não | decidido |
+| Poker | RN | **RN + Skia no pote** | cartas são poucas; o pote são dezenas ou centenas de fichas voando | médio | baixo | baixo | não | decidido |
+| Stock Market | RN | **Skia** | caminho com centenas de pontos redesenhado por quadro; em `<View>` cada ponto é um nó de layout | alto | médio | baixo | não | decidido |
+| Banca Francesa | RN | **RN**, Skia no pagamento | 3 dados e fichas; o forte dela hoje é a disciplina (arte medida, trava contra retângulo chutado) | baixo hoje | — | — | não agora | reavaliar depois da POC |
+| Truco | RN | **RN** | cartas e uma mesa; falta timing e som, não potência | baixo | — | — | não | decidido |
+| Dominó | RN | **RN** | até 28 peças; a dificuldade é a geometria da corrente, que é conta | baixo | — | — | não | decidido |
+
+**Sobre Unity, jogo a jogo, sem enrolar:**
+
+- **Caça-níqueis** — é o único candidato de verdade. Entra na POC como terceiro braço se
+  passar no portão do §4.
+- **Bac Bo** — avaliado explicitamente, como pedido. O que a Unity traria são partículas,
+  *shader* de vidro com refração e um sistema de câmera. O que ela **não** traria: física
+  melhor, porque a nossa é determinística por exigência de projeto (o servidor decide a
+  face antes da animação) e a física da Unity é não determinística por natureza. Trocar
+  aqui seria pegar o motor da Unity e desligar justamente a parte dele que é boa. Um
+  *shader* de vidro em Skia custa uma tela; em Unity custa o canal.
+- **Blackjack, Bacará, Poker** — Unity traria **peso, não ganho**. Dez cartas não fazem uma
+  engine valer o download. Registrado como avaliado e recusado.
+- **Roleta** — Unity daria uma roda 3D com iluminação de verdade. É o segundo caso mais
+  defensável depois do slot, e entra na POC **se** o portão do §4 passar.
+- **Truco, Dominó, Stock Market, Banca Francesa** — sem caso.
+
+---
+
+## 1c. O renderer pode variar por canal
+
+O teto gráfico do produto **não** fica preso ao Safari para sempre. A tabela acima é a
+decisão para o canal de hoje; a arquitetura tem que deixar a porta aberta:
+
+| Canal | Casco | Jogos leves | Jogos pesados |
+|---|---|---|---|
+| **Web** (hoje) | React Native Web | RN + Reanimated / Skia | PixiJS |
+| **Android nativo** (Google Play, 25 dólares uma vez) | React Native | RN / Skia | **Unity as a Library** é candidato real |
+| **iOS nativo** (se o programa da Apple for pago) | React Native | RN / Skia | mesma avaliação do Android |
+
+É o `AdaptadorDeJogo` do §3 que torna isso possível sem duplicar regra: o mesmo protocolo,
+o mesmo servidor, o mesmo resultado — e um renderer diferente por plataforma quando isso
+for tecnicamente justificável.
+
+---
+
 ## 2. O resumo que essa análise produz
 
 - **PixiJS ganha um jogo: o caça-níqueis.** E ganha bem — é o único que estoura a stack
@@ -200,35 +255,66 @@ regra.
 
 ---
 
-## 4. A prova de conceito, na ordem que custa menos para descobrir
+## 4. POC DE RENDERIZAÇÃO — CASINO INOVA
 
-Você pediu três braços: Skia, PixiJS e Unity, numa cena comparável de slot. Concordo com a
-comparação, e proponho uma **ordem** — o teste que pode desqualificar vem primeiro, porque
-construir um slot em Unity para depois descobrir que ele não passa no nosso canal é a forma
-cara de aprender isso.
+Etapa formal, com nome e protocolo. Acontece **depois do P0.3** e **antes** de
+consolidarmos o Animation Director e o Reel Engine — porque congelar um motor de rolos em
+componentes de interface para depois trocar de renderer é o desperdício que esta etapa
+existe para evitar.
 
-**Passo 0 — o teste barato de Unity (1 a 2 dias).** Não um jogo: um *build* mínimo de
-Unity WebGL, medido no que decide:
+### Portão 0 — Unity WebGL é viável no nosso canal? (1 a 2 dias)
 
-- peso baixado, comprimido;
-- tempo até a primeira imagem, em rede de celular;
-- pico de memória no Safari do iPhone e no Chrome do Android;
-- se sobrevive a dez minutos aberto sem o navegador matar a aba.
+Não um jogo: um **build mínimo** de Unity WebGL, publicado no mesmo servidor, medido no
+que decide. O teste que pode desqualificar vem primeiro porque é o mais barato.
 
-Se passar, Unity entra na comparação como terceiro braço. Se não passar, está respondido —
-com número, não com opinião — e a decisão vira "Unity só se formos para a loja".
+| O que medir | Onde |
+|---|---|
+| Tamanho do build, comprimido | servidor |
+| Tempo até aparecer algo na tela | Safari iPhone, Chrome Android |
+| Tempo até ficar jogável | idem |
+| Pico de memória | idem |
+| Estabilidade depois de 10 minutos aberto | idem |
+| FPS, frame time, quadros perdidos | idem |
+| Ao alternar de aba e voltar | idem |
+| Ao bloquear e desbloquear o iPhone | iPhone |
+| Em 5G e em Wi-Fi | iPhone |
+| Impacto no carregamento do RESTO do aplicativo | comparar com e sem |
 
-**Passo 1 — a cena comparável, em Skia e em PixiJS.** A mesma cena nos dois: 5 rolos, 12
-símbolos, giro com antecipação no quinto rolo, parada, três linhas de prêmio acendendo em
-sequência, 300 partículas, multiplicador subindo, big win, e som sincronizado.
+**Se falhar:** fica registrado aqui, com os números, como **tecnicamente inadequado para o
+canal web atual** — e não como opinião. Unity continua na mesa para Android/iOS nativo
+(§1c).
+**Se passar:** entra como terceiro braço real da POC.
 
-**Passo 2 — medir.** Não "parece fluido": frame time p50 e p95 no iPhone e num Android
-modesto, pico de memória, peso baixado, tempo até jogável, e o tamanho do diff necessário
-para integrar. Os onze critérios que você listou, com peso — e qualidade visual pesando
-mais que FPS, desde que o orçamento de quadro seja respeitado.
+### Braços — a mesma cena, três vezes
 
-**Passo 3 — decidir, e escrever a decisão** em `RENDERING_STRATEGY.md`, com os números que
-a sustentaram. Uma decisão sem os números vira modismo em seis meses.
+Cena representativa do caça-níqueis, idêntica nos três: 5 rolos, 25–40 símbolos em
+movimento, antecipação no quinto rolo, parada, linhas de prêmio acendendo em sequência,
+300+ partículas no big win, glow, contador subindo, multiplicador, áudio sincronizado, e
+entrada e saída da cena.
+
+**A cena não sorteia nada.** Ela recebe o resultado pronto, como o `AdaptadorDeJogo`
+entrega — senão a POC compara três renderers fazendo coisas diferentes.
+
+1. **PixiJS** — candidato principal.
+2. **Skia** — a stack atual levada ao limite dela; é a linha de base que diz se a migração
+   se justifica.
+3. **Unity + C#** — se o Portão 0 passar.
+
+### Critérios, com peso
+
+Não é só FPS. Qualidade visual pesa mais que quadro por segundo, **desde que o orçamento
+de 16,67 ms seja respeitado** — um jogo lindo que trava não é um jogo lindo.
+
+qualidade visual · fluidez · estabilidade · tempo de desenvolvimento · manutenção ·
+integração · multiplataforma · tamanho · carregamento · capacidade futura · custo técnico.
+
+Uma tecnologia pode consumir mais e ainda ser a escolha certa se elevar muito a qualidade e
+permitir crescer.
+
+### Saída
+
+`RENDERING_STRATEGY.md` com a decisão de cada jogo e **os números que a sustentaram**.
+Decisão sem número vira modismo em seis meses.
 
 ---
 
