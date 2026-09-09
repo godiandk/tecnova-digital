@@ -101,16 +101,33 @@ export function CasaDeAposta({
   };
   const assento = area.alvo ? assentar(0, 1) : null;
 
-  return (
-    <Pressable
-      onPress={travada ? undefined : onPress}
-      disabled={travada}
-      accessibilityRole="button"
-      accessibilityLabel={area.rotulo}
-      accessibilityState={{ selected: valor > 0, disabled: Boolean(travada) }}
-      accessibilityHint={valor > 0 ? `${valor.toLocaleString('pt-BR')} apostados aqui: ${descricao ?? ''}`.trim() : undefined}
-      style={[caixa, styles.casa]}
-    >
+  /*
+   * O TOQUE SEGUE O DESENHO, quando o desenho não é retângulo.
+   *
+   * As casas da Banca Francesa são arcos, e a caixa envolvente de um arco invade a do
+   * vizinho: a do GRANDE desce até 0,4988 no meio da mesa enquanto a do PEQUENO já
+   * começa em 0,4821 nas pontas, embora os dois traços nunca se toquem. Com uma caixa
+   * só, quem fosse desenhado por último ficava com o toque no cruzamento.
+   *
+   * Então, quando a área traz `tiras`, o toque vai numa ESCADA de retângulos finos
+   * calculada a partir dos arcos medidos — e não numa caixa. A caixa continua sendo a
+   * envolvente, que é o que posiciona as pilhas e a luz de vitória.
+   *
+   * A PRIMEIRA TIRA É QUEM FALA. Ela leva o papel, o nome e o estado pro leitor de tela;
+   * as outras somem da árvore de acessibilidade. Uma casa é UMA aposta, e anunciar
+   * catorze botões "Apostar no centro do Grande" tornaria a mesa injogável de ouvido —
+   * que é o defeito oposto do que a escada veio consertar.
+   */
+  const aoTocar = travada ? undefined : onPress;
+  const acessibilidade = {
+    accessibilityRole: 'button' as const,
+    accessibilityLabel: area.rotulo,
+    accessibilityState: { selected: valor > 0, disabled: Boolean(travada) },
+    accessibilityHint: valor > 0 ? `${valor.toLocaleString('pt-BR')} apostados aqui: ${descricao ?? ''}`.trim() : undefined,
+  };
+
+  const conteudo = (
+    <>
       {vencedora && <LuzDeVitoria alvo={assento} largura={palco.largura} />}
       {pilhas
         ? pilhas.map((pilha, i) => (
@@ -122,7 +139,41 @@ export function CasaDeAposta({
       <View style={assento ?? styles.rodape} pointerEvents="none">
         {children}
       </View>
-    </Pressable>
+    </>
+  );
+
+  if (!area.tiras) {
+    return (
+      <Pressable onPress={aoTocar} disabled={travada} {...acessibilidade} style={[caixa, styles.casa]}>
+        {conteudo}
+      </Pressable>
+    );
+  }
+
+  return (
+    <View style={[caixa, styles.casa]} pointerEvents="box-none">
+      {area.tiras.map((tira, i) => {
+        const [tiraEsquerda, tiraTopo, tiraDireita, tiraBase] = tira;
+        return (
+          <Pressable
+            key={i}
+            onPress={aoTocar}
+            disabled={travada}
+            {...(i === 0
+              ? acessibilidade
+              : { importantForAccessibility: 'no-hide-descendants' as const, accessibilityElementsHidden: true })}
+            style={{
+              position: 'absolute',
+              left: (tiraEsquerda - esquerda) * palco.largura,
+              top: (tiraTopo - topo) * palco.altura,
+              width: (tiraDireita - tiraEsquerda) * palco.largura,
+              height: (tiraBase - tiraTopo) * palco.altura,
+            }}
+          />
+        );
+      })}
+      {conteudo}
+    </View>
   );
 }
 

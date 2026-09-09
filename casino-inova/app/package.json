@@ -15,7 +15,9 @@
     "verify:escada-do-truco": "node verificacao/verifica-escada-do-truco.mjs",
     "verify:face-do-dado": "cd ../server && npx ts-node ../app/verificacao/verifica-face-do-dado.ts  # o ts-node mora no servidor",
     "verify:tamanhos": "node verificacao/verifica-tamanhos.mjs  # precisa do servidor no ar e do playwright",
-    "verify:tudo": "npm run typecheck && npm run verify:barra-de-nivel && npm run verify:palco && npm run verify:escada-do-truco && npm run verify:face-do-dado"
+    "verify:arcos-da-banca": "node verificacao/verifica-arcos-da-banca.mjs",
+    "verify:sons": "node verificacao/verifica-sons.mjs",
+    "verify:tudo": "npm run typecheck && npm run verify:barra-de-nivel && npm run verify:palco && npm run verify:escada-do-truco && npm run verify:face-do-dado && npm run verify:arcos-da-banca && npm run verify:sons"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",

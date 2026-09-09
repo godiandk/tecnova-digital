@@ -23,9 +23,31 @@
  */
 
 import { DADO_NA_TIGELA, FICHA_NO_PANO } from '../theme/medidasDaMesa';
+import {
+  ARCOS_DA_BANCA,
+  ArcoMedido,
+  CIRCULOS_DA_LINHA,
+  PLAQUETA_DOS_ASES,
+  PONTAS_DAS_CASAS,
+  TIGELA_MEDIDA,
+  alturaDoArco,
+} from './arcosDaBanca';
 
 /** Uma área tocável do pano, em fração do tampo. */
 export interface AreaDaMesa {
+  /**
+   * FAIXAS QUE SEGUEM O CONTORNO IMPRESSO.
+   *
+   * Uma casa da Banca Francesa é um arco, e arco não é retângulo: a caixa envolvente do
+   * GRANDE desce até 0,4988 no meio, enquanto a do PEQUENO já começa em 0,4821 nas
+   * pontas — as duas se cruzam sem que os desenhos encostem. Com uma caixa só, quem
+   * fosse desenhado por último roubava o toque da outra no cruzamento.
+   *
+   * Quando existem, é NELAS que se toca: uma escada de retângulos finos calculada a
+   * partir dos arcos medidos, e não escrita à mão. A caixa continua existindo pra
+   * posicionar as pilhas e pra dizer onde a casa começa e acaba.
+   */
+  tiras?: Array<[number, number, number, number]>;
   /** Cantos, em fração: [esquerda, topo, direita, base]. */
   caixa: [number, number, number, number];
   /** O que anunciar pra leitor de tela. A arte tem o nome escrito, mas escrito não se ouve. */
@@ -61,7 +83,7 @@ export interface AreaDaMesa {
    * pontos são o traço de baixo do arco, medidos na arte, e a pilha de cada pessoa
    * acha o próprio y interpolando entre eles.
    */
-  arco?: PontoDaMesa[];
+  arco?: ArcoMedido;
 }
 
 /** Um ponto do tampo — onde uma carta pousa, onde um dado assenta. */
@@ -172,30 +194,6 @@ export const ORDEM_DE_PARAR_BAC_BO = [2, 0, 3, 1];
  * é desenhada DEPOIS de Pequeno pra ganhar o toque na parte em que as duas se cruzam.
  */
 /**
- * O traço de baixo de cada arco, medido de 0.02 em 0.02 na arte 1920x1080.
- *
- * A ficha do CENTRO assenta neste traço e cresce pra dentro do arco — é onde ela
- * ficaria numa mesa, encostada na borda de baixo da caixa. Como o arco é curvo, o y
- * muda com o x, e sem esta curva as pilhas das pontas caíam fora do desenho.
- *
- * A medição pegou o traço dourado mais baixo de cada coluna, pulando a faixa central
- * (0.45 a 0.55) onde o círculo impresso esconde a linha. Os dois arcos saíram
- * simétricos em torno de x=0.5, como a arte promete.
- */
-const ARCO_DO_GRANDE: PontoDaMesa[] = [
-  { x: 0.28, y: 0.4348 }, { x: 0.32, y: 0.458 }, { x: 0.36, y: 0.4756 }, { x: 0.4, y: 0.4885 },
-  { x: 0.44, y: 0.4969 }, { x: 0.5, y: 0.4975 }, { x: 0.56, y: 0.4959 }, { x: 0.6, y: 0.4876 },
-  { x: 0.64, y: 0.4746 }, { x: 0.68, y: 0.457 }, { x: 0.72, y: 0.433 },
-];
-
-const ARCO_DO_PEQUENO: PontoDaMesa[] = [
-  { x: 0.2, y: 0.6102 }, { x: 0.24, y: 0.6324 }, { x: 0.28, y: 0.6519 }, { x: 0.32, y: 0.6667 },
-  { x: 0.36, y: 0.6787 }, { x: 0.4, y: 0.688 }, { x: 0.44, y: 0.6935 }, { x: 0.5, y: 0.694 },
-  { x: 0.56, y: 0.6935 }, { x: 0.6, y: 0.687 }, { x: 0.64, y: 0.6787 }, { x: 0.68, y: 0.6667 },
-  { x: 0.72, y: 0.6509 }, { x: 0.76, y: 0.6324 }, { x: 0.8, y: 0.6093 },
-];
-
-/**
  * A TIGELA DE COURO onde os dados são lançados, medida na arte.
  *
  * A moldura inteira (latão + couro) vai de x 0.3245 a 0.6630 e de y 0.1630 a 0.2722 —
@@ -209,10 +207,19 @@ const ARCO_DO_PEQUENO: PontoDaMesa[] = [
  * arredondadas nas laterais, sobra a faixa abaixo.
  */
 export const TIGELA_DA_BANCA = {
-  /** A moldura inteira, pra quem precisar desenhar em volta. */
-  fora: { esquerda: 0.3245, topo: 0.163, direita: 0.663, base: 0.2722 },
-  /** O couro útil: onde o dado assenta sem encostar na moldura. */
-  chao: { esquerda: 0.355, topo: 0.185, direita: 0.635, base: 0.262 },
+  /*
+   * MEDIDA DE NOVO, e desta vez com componentes conectados em vez de cortes verticais.
+   * A medição antiga errava feio no topo — dizia 0,163 onde a bandeja começa em 0,1213
+   * (45 pixels em 1080) — e o `chao.base` de 0,262 passava 7 pixels por cima do aro de
+   * latão da frente, que é onde o dado às vezes parecia entrar na moldura.
+   *
+   * `fora` é a bandeja inteira com o aro; `chao` é a caixa do couro claro, que é onde o
+   * dado pode assentar. O motor usa `chao` como elipse: a elipse inscrita na caixa do
+   * couro fica inteira dentro do couro, porque o couro é um estádio (retângulo com
+   * pontas redondas) e estádio contém a elipse inscrita na sua caixa.
+   */
+  fora: TIGELA_MEDIDA.moldura,
+  chao: TIGELA_MEDIDA.couro,
 };
 
 
@@ -232,39 +239,152 @@ function assentosNaTigela(): PontoDaMesa[] {
   return [-1, 0, 1].map((k) => ({ x: centroX + k * passo, y: centroY }));
 }
 
+/**
+ * QUANTAS TIRAS APROXIMAM UM ARCO.
+ *
+ * Com 14, cada tira tem cerca de 0,04 da largura e o degrau entre uma e outra fica
+ * abaixo de 0,008 da altura — nove pixels na arte 1920x1080, menos que a espessura do
+ * traço dourado. Com menos, a escada aparece no toque perto das pontas, onde o arco
+ * sobe mais depressa.
+ */
+const TIRAS_POR_CASA = 14;
+
+/**
+ * A ESCADA QUE SEGUE A FAIXA.
+ *
+ * Para cada fatia de x, o topo é o arco de fora e o pé é o arco de dentro, avaliados nas
+ * duas bordas da fatia e tomados pelo lado generoso — assim a tira cobre a faixa inteira
+ * naquele pedaço, sem buraco entre uma tira e a seguinte. Ser generosa não custa nada:
+ * a folga cai no feltro limpo entre as duas casas, que na arte é enorme (de 0,499 a
+ * 0,604 no meio da mesa, e de 0,386 a 0,528 nas pontas).
+ */
+function tirasDaFaixa(fora: ArcoMedido, dentro: ArcoMedido, deX: number, ateX: number) {
+  const tiras: Array<[number, number, number, number]> = [];
+  for (let k = 0; k < TIRAS_POR_CASA; k += 1) {
+    const x0 = deX + ((ateX - deX) * k) / TIRAS_POR_CASA;
+    const x1 = deX + ((ateX - deX) * (k + 1)) / TIRAS_POR_CASA;
+    const topo = Math.min(alturaDoArco(fora, x0), alturaDoArco(fora, x1));
+    const base = Math.max(alturaDoArco(dentro, x0), alturaDoArco(dentro, x1));
+    tiras.push([x0, topo, x1, base]);
+  }
+  return tiras;
+}
+
+/** A caixa envolvente de uma escada — é ela que posiciona as pilhas. */
+function envolveAsTiras(tiras: Array<[number, number, number, number]>): [number, number, number, number] {
+  return [
+    Math.min(...tiras.map((t) => t[0])),
+    Math.min(...tiras.map((t) => t[1])),
+    Math.max(...tiras.map((t) => t[2])),
+    Math.max(...tiras.map((t) => t[3])),
+  ];
+}
+
+/** A caixa de um disco medido: exatamente o que está impresso, e nada além. */
+function caixaDoDisco(disco: ArcoMedido): [number, number, number, number] {
+  return [
+    disco.centro.x - disco.raioX,
+    disco.centro.y - disco.raioY,
+    disco.centro.x + disco.raioX,
+    disco.centro.y + disco.raioY,
+  ];
+}
+
+const TIRAS_DO_GRANDE = tirasDaFaixa(
+  ARCOS_DA_BANCA.grande.fora,
+  ARCOS_DA_BANCA.grande.dentro,
+  PONTAS_DAS_CASAS.grande.esquerda.x,
+  PONTAS_DAS_CASAS.grande.direita.x,
+);
+const TIRAS_DO_PEQUENO = tirasDaFaixa(
+  ARCOS_DA_BANCA.pequeno.fora,
+  ARCOS_DA_BANCA.pequeno.dentro,
+  PONTAS_DAS_CASAS.pequeno.esquerda.x,
+  PONTAS_DAS_CASAS.pequeno.direita.x,
+);
+
+/**
+ * ONDE A PILHA ASSENTA: entre o primeiro e o segundo algarismo, encostada no arco de
+ * dentro.
+ *
+ * Não é no meio da casa, e a razão está impressa no pano: no meio fica o disco da linha.
+ * Com a pilha no meio, a ficha do arco e a ficha da linha caíam uma em cima da outra e
+ * era impossível ver qual era qual.
+ *
+ * E não é em cima de algarismo nenhum. Os letreiros foram medidos: o "14" ocupa
+ * x 0,2938..0,3255 e o "15" começa em 0,4833; no PEQUENO o "5" vai até 0,2635 e o "6"
+ * começa em 0,4875. Uma ficha centrada em 0,36 ocupa de 0,333 a 0,387 — o vão entre os
+ * dois, nas duas casas. É a mesma escolha que um crupiê faz ao empurrar a ficha pro
+ * feltro limpo em vez de largá-la em cima do número.
+ *
+ * O `arco` faz o resto: numa mesa cheia, as pilhas dos outros jogadores se espalham
+ * seguindo a curva medida, e não numa reta.
+ */
+const X_DA_PILHA = 0.36;
+
 export const MAPA_BANCA_FRANCESA = {
   apostas: {
+    /*
+     * A PLAQUETA DOS ASES, medida na componente conexa da moldura (1.068 pixels
+     * dourados). Os cantos são chanfrados na arte, então a caixa é a envolvente deles.
+     * A ficha cobre a plaqueta quase inteira porque a plaqueta é pequena — 90 pixels de
+     * altura em 1080, menos que o diâmetro de uma ficha. Na mesa de verdade é igual: a
+     * casa das Ases é do tamanho de uma ficha.
+     */
     ases: {
-      caixa: [0.155, 0.23, 0.27, 0.345],
+      caixa: [
+        PLAQUETA_DOS_ASES.caixa.esquerda,
+        PLAQUETA_DOS_ASES.caixa.topo,
+        PLAQUETA_DOS_ASES.caixa.direita,
+        PLAQUETA_DOS_ASES.caixa.base,
+      ],
       rotulo: 'Apostar em Ases, soma 3',
-      alvo: { x: 0.2115, y: 0.322 },
+      alvo: {
+        x: (PLAQUETA_DOS_ASES.caixa.esquerda + PLAQUETA_DOS_ASES.caixa.direita) / 2,
+        y: PLAQUETA_DOS_ASES.caixa.base - 0.004,
+      },
     },
     grande: {
-      caixa: [0.226, 0.3, 0.771, 0.505],
+      caixa: envolveAsTiras(TIRAS_DO_GRANDE),
+      tiras: TIRAS_DO_GRANDE,
       rotulo: 'Apostar no centro do Grande, 14, 15 ou 16',
-      alvo: { x: 0.34, y: 0.4672 },
-      arco: ARCO_DO_GRANDE,
+      alvo: { x: X_DA_PILHA, y: alturaDoArco(ARCOS_DA_BANCA.grande.dentro, X_DA_PILHA) },
+      arco: ARCOS_DA_BANCA.grande.dentro,
     },
     pequeno: {
-      caixa: [0.118, 0.51, 0.877, 0.72],
+      caixa: envolveAsTiras(TIRAS_DO_PEQUENO),
+      tiras: TIRAS_DO_PEQUENO,
       rotulo: 'Apostar no centro do Pequeno, 5, 6 ou 7',
-      alvo: { x: 0.32, y: 0.6667 },
-      arco: ARCO_DO_PEQUENO,
+      alvo: { x: X_DA_PILHA, y: alturaDoArco(ARCOS_DA_BANCA.pequeno.dentro, X_DA_PILHA) },
+      arco: ARCOS_DA_BANCA.pequeno.dentro,
     },
+    /*
+     * A CAIXA DA LINHA É O DISCO IMPRESSO, e nada além dele.
+     *
+     * Era um retângulo de 0,120 x 0,125 em cima de um disco de 0,054 x 0,070 — duas
+     * vezes mais largo e quase duas vezes mais alto que o desenho. Como a linha é
+     * desenhada depois do arco, ela ganhava o toque em toda essa sobra: um dedo na
+     * barriga do GRANDE caía na aposta que paga metade, sem nada na tela avisando. Era
+     * isso o "quase chega a interferir".
+     *
+     * O disco encosta no arco de dentro de propósito (é onde a ficha fica a cavalo, como
+     * na mesa), e essa sobreposição continua — mas agora ela é do tamanho do desenho.
+     */
     'linha-grande': {
-      caixa: [0.44, 0.42, 0.56, 0.545],
+      caixa: caixaDoDisco(CIRCULOS_DA_LINHA.grande),
       rotulo: 'Apostar na linha do Grande, metade do risco e metade do prêmio',
-      alvo: { x: 0.499, y: 0.519 },
+      alvo: { x: CIRCULOS_DA_LINHA.grande.centro.x, y: CIRCULOS_DA_LINHA.grande.centro.y + CIRCULOS_DA_LINHA.grande.raioY },
     },
     'linha-pequeno': {
-      caixa: [0.44, 0.62, 0.56, 0.745],
+      caixa: caixaDoDisco(CIRCULOS_DA_LINHA.pequeno),
       rotulo: 'Apostar na linha do Pequeno, metade do risco e metade do prêmio',
-      alvo: { x: 0.4964, y: 0.718 },
+      alvo: { x: CIRCULOS_DA_LINHA.pequeno.centro.x, y: CIRCULOS_DA_LINHA.pequeno.centro.y + CIRCULOS_DA_LINHA.pequeno.raioY },
     },
   } satisfies Record<string, AreaDaMesa>,
   /** Onde os dados param depois de lançados. Ver TIGELA_DA_BANCA. */
   dados: assentosNaTigela(),
 };
+
 
 /**
  * Quantas pilhas cabem lado a lado dentro de uma casa, e onde cada uma assenta.
@@ -331,23 +451,9 @@ export function assentoDaPilha(
   const passo = Math.min(espacamento, larguraUtil / (quantas - 1));
   const larguraDoGrupo = passo * (quantas - 1);
   const x = alvo.x - larguraDoGrupo / 2 + indice * passo;
-  return { x, y: area.arco ? alturaNoArco(area.arco, x) : alvo.y };
+  return { x, y: area.arco ? alturaDoArco(area.arco, x) : alvo.y };
 }
 
-/** O y do arco num x qualquer, interpolando entre os pontos medidos. */
-function alturaNoArco(arco: PontoDaMesa[], x: number): number {
-  if (x <= arco[0].x) return arco[0].y;
-  const ultimo = arco[arco.length - 1];
-  if (x >= ultimo.x) return ultimo.y;
-  for (let i = 1; i < arco.length; i += 1) {
-    if (x <= arco[i].x) {
-      const a = arco[i - 1];
-      const b = arco[i];
-      return a.y + ((x - a.x) / (b.x - a.x)) * (b.y - a.y);
-    }
-  }
-  return ultimo.y;
-}
 
 /**
  * Bac Bo NO TAMPO EM PÉ — a arte de celular (1284x2778), que é outra composição.
