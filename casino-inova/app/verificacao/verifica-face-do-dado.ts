@@ -11,9 +11,42 @@
  * de quadros igualado entre os quatro. Qualquer diferença nesses parâmetros já mudaria o
  * que está sendo conferido.
  */
-import { Arena, faceVirada, lancarDados } from '../src/fisica/motorDeDados';
+import { Arena, GIRO_DA_FACE, faceVirada, lancarDados } from '../src/fisica/motorDeDados';
 
 const arena: Arena = { formato: 'caixa', emPe: true, raioX: 1.2, raioY: 3.4 };
+
+/* --- 0. o cubo é um cubo: faces opostas somam 7 --- */
+/*
+ * É a regra que define um dado de verdade, e é a que ninguém confere porque parece
+ * óbvia. Ela não é: o cubo aqui é descrito por uma tabela de orientações
+ * (`GIRO_DA_FACE`), e nada nessa tabela obriga o 1 a ficar do lado oposto ao 6 — obriga
+ * quem a escreveu. Um dado com 2 e 5 na mesma aresta pareceria certo parado e erraria
+ * em toda rolagem.
+ *
+ * A prova: girar 180° em torno de um eixo troca uma face pela oposta. Então a face que
+ * aparece ao virar o dado de cabeça pra baixo (rx + 180) tem que ser a que soma 7 com
+ * a de cima, e o mesmo ao virá-lo de lado (ry + 180).
+ */
+{
+  let erradas = 0;
+  for (const [face, giro] of Object.entries(GIRO_DA_FACE)) {
+    const n = Number(face);
+    const porCima = faceVirada(giro.rx + 180, giro.ry);
+    const porLado = faceVirada(giro.rx, giro.ry + 180);
+    /* Uma das duas viradas mostra a oposta; a outra mostra uma das quatro laterais. */
+    const opostas = [porCima, porLado].filter((f) => f + n === 7);
+    if (opostas.length === 0) {
+      erradas += 1;
+      console.log(`FALHA a face oposta ao ${n} não soma 7 (virando dá ${porCima} e ${porLado})`);
+    }
+  }
+  console.log(
+    erradas === 0
+      ? 'ok   faces opostas somam 7: 1-6, 2-5, 3-4 — o cubo é um cubo'
+      : `FALHA ${erradas} face(s) sem oposta correta`,
+  );
+  if (erradas > 0) process.exit(1);
+}
 
 let erros = 0;
 let conferidos = 0;

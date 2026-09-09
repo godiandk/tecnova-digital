@@ -5,16 +5,23 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { TAMPOS_16X9 } from '../../data/tamposDaMesa';
-import { MAPA_BANCA_FRANCESA, TIGELA_DA_BANCA } from '../../data/mapaDosTampos';
+import {
+  LARGURA_UTIL_EM_PE,
+  MAPA_BANCA_EM_PE,
+  MAPA_BANCA_FRANCESA,
+  TIGELA_DA_BANCA,
+  TIGELA_DA_BANCA_EM_PE,
+} from '../../data/mapaDosTampos';
 import { dadoNaTigela, fichaNoPano, fichaNoTrilho, telaBaixa } from '../../theme/medidasDaMesa';
-import { TampoDaMesa, usePalco } from '../../components/TampoDaMesa';
+import { LARGURA_MINIMA_PRO_TAMPO, TampoDaMesa, usePalco } from '../../components/TampoDaMesa';
+import { FeltroDaBancaEmPe } from '../../components/FeltroDaBancaEmPe';
 import { useJanela } from '../../theme/useJanela';
 import { CasaDeAposta, PilhaNaCasa } from '../../components/CasaDeAposta';
 import { TrilhoDeFichas } from '../../components/TrilhoDeFichas';
 import { PilhaDeFichas } from '../../components/Ficha';
 import { DadoFisico } from '../../components/DadoFisico';
 import { Arena, lancarDados } from '../../fisica/motorDeDados';
-import { DIE_FACE_IMAGES } from '../../data/gameAssets';
+import { CORES_DOS_DADOS, DADOS_DA_BANCA } from '../../data/gameAssets';
 import { ChipStack } from '../../components/ChipStack';
 import { QuadroDePagamentos, LinhaDePagamento } from '../../components/QuadroDePagamentos';
 import { decomporEmFichas, pilhaEmPalavras } from '../../data/fichasDeValor';
@@ -36,6 +43,15 @@ import { estouOcupado } from '../../api/versao';
  */
 const CASAS = ['ases', 'grande', 'pequeno', 'linha-grande', 'linha-pequeno'] as const;
 
+/**
+ * O menor alvo de toque aceitável, em pontos.
+ *
+ * 44 é o mínimo que a Apple e o Google publicam nas respectivas diretrizes, e é o que
+ * `verificacao/verifica-tamanhos.mjs` cobra nas cinco telas. Não é number mágico: é uma
+ * medida de dedo.
+ */
+const ALVO_DE_TOQUE = 44;
+
 /** Só estas são divididas ao meio, e por isso só estas precisam de valor par. */
 const LINHAS: BancaFrancesaBetType[] = ['linha-grande', 'linha-pequeno'];
 
@@ -52,7 +68,19 @@ const soma = (fichas: number[]) => fichas.reduce((t, f) => t + f, 0);
 const NOME_DO_RESULTADO: Record<string, string> = { ases: 'Ases', pequeno: 'Pequeno', grande: 'Grande' };
 
 /** As seis faces em ordem, montadas uma vez: o dado troca de face 60 vezes por segundo. */
-const FACES_DO_DADO = [1, 2, 3, 4, 5, 6].map((n) => DIE_FACE_IMAGES[n]);
+/**
+ * AS SEIS FACES DE CADA UM DOS TRÊS DADOS, montadas uma vez.
+ *
+ * A ordem é a mesma do servidor — `dice: [azul, verde, vermelho]` — e é o que deixa o
+ * jogador conferir olhando: o placar diz "azul 4, verde 5, vermelho 6", e na tigela o
+ * dado azul está mostrando 4. Com três dados iguais, os três números teriam que ser
+ * aceitos por confiança.
+ *
+ * Montado fora do componente porque o dado troca de face sessenta vezes por segundo.
+ */
+const FACES_POR_DADO = CORES_DOS_DADOS.map((cor) =>
+  [1, 2, 3, 4, 5, 6].map((n) => DADOS_DA_BANCA[cor][n]),
+);
 
 interface PanoProps {
   mesa: TableView;
@@ -423,16 +451,11 @@ export function PanoDaBancaFrancesa({
   const podeApostar = total > 0 && abaixoDoMinimo.length === 0 && linhaImpar.length === 0 && !travado;
 
   return (
-    <TampoDaMesa
-      computador={TAMPOS_16X9['banca-francesa'].computador}
-      tablet={TAMPOS_16X9['banca-francesa'].tablet}
-      reserva={{ topo: alturaDaBarra, base: alturaDoAvental }}
-    >
+    <AMesa reserva={{ topo: alturaDaBarra, base: alturaDoAvental }}>
       {CASAS.map((casa) => (
-        <CasaDeAposta
+        <CasaDaBanca
           key={casa}
-          nome={casa}
-          area={MAPA_BANCA_FRANCESA.apostas[casa]}
+          casa={casa}
           valor={soma(apostas[casa])}
           descricao={pilhaEmPalavras(apostas[casa])}
           pilhas={pilhasDe(casa)}
@@ -525,7 +548,16 @@ export function PanoDaBancaFrancesa({
             Os números vêm PRONTOS do servidor (`limites`). A tela não os recalcula.
           */}
           {!apertado && (
-            <Text style={styles.placaDaMesa} numberOfLines={2}>
+            /*
+             * SEM `numberOfLines`: a placa não pode ser cortada.
+             *
+             * Com duas linhas, num celular de 390 ela saía "linha a partir de
+             * 1.000.000.000 (va…" — a regra da casa terminando em reticências. É o mesmo
+             * defeito do "50…" na ficha, e aqui é pior: a pessoa monta a aposta sem saber
+             * o limite e descobre no erro. Preferimos a placa ocupando mais uma linha do
+             * avental a uma placa que mente por omissão.
+             */
+            <Text style={styles.placaDaMesa}>
               {nomeDoNivel ? `Mesa ${nomeDoNivel} · ` : ''}
               {limites
                 ? `Ases ${limites.ases.minimo.toLocaleString('pt-BR')}–${limites.ases.maximo.toLocaleString('pt-BR')} · ` +
@@ -648,7 +680,7 @@ export function PanoDaBancaFrancesa({
           'A aposta na linha precisa ser um valor par, porque ela é dividida ao meio e ficha não se parte.'
         }
       />
-    </TampoDaMesa>
+    </AMesa>
   );
 }
 
@@ -899,7 +931,12 @@ function FaixaDaJanela({
         {prazo !== null && <Text style={styles.contagemNumero}>{segundos}s</Text>}
       </View>
 
-      <Text style={styles.faixaTexto} numberOfLines={3}>
+      {/*
+        SEM `numberOfLines`: este recado é a explicação de por que NADA foi cobrado.
+        Cortado em "Sua apost…" — que foi o que apareceu num celular de 390 — ele vira o
+        contrário do que existe pra ser: um aviso pela metade sobre dinheiro.
+      */}
+      <Text style={styles.faixaTexto}>
         {prazo === null
           ? `LANÇAMENTO NULO${lancesNulos > 1 ? ` (${lancesNulos}º)` : ''} — nada foi cobrado. Sua aposta continua na mesa: dá pra manter, aumentar, mudar ou tirar.`
           : lancesNulos === 1
@@ -998,7 +1035,15 @@ function DadosNaTigela({ faces, lance, rapido }: { faces: number[]; lance: numbe
     // O motor mede em meios dados; o dado desenhado tem `tamanho` pixels de lado.
     const escalaDoMundo = tamanho / 2;
 
-    const { esquerda, direita, topo, base } = TIGELA_DA_BANCA.chao;
+    /*
+     * A TIGELA DEPENDE DA COMPOSIÇÃO QUE ESTÁ NA TELA.
+     *
+     * A tigela do tampo fotografado foi medida na arte; a do feltro em pé foi desenhada.
+     * Elas ficam em lugares diferentes da mesa, e usar a errada joga os dados fora do
+     * couro — que é exatamente o defeito que já apareceu uma vez ("o dado saía de dentro
+     * do pote"). O palco diz qual composição está no ar, então é ele quem escolhe.
+     */
+    const { esquerda, direita, topo, base } = (palco.emPe ? TIGELA_DA_BANCA_EM_PE : TIGELA_DA_BANCA).chao;
     const larguraDoCouro = (direita - esquerda) * palco.largura;
     const alturaDoCouro = (base - topo) * palco.altura;
 
@@ -1044,7 +1089,8 @@ function DadosNaTigela({ faces, lance, rapido }: { faces: number[]; lance: numbe
         <DadoFisico
           key={indice}
           caminho={caminho}
-          faces={FACES_DO_DADO}
+          /* Cada dado tem a cor do lugar dele: 0 azul, 1 verde, 2 vermelho. */
+          faces={FACES_POR_DADO[indice % FACES_POR_DADO.length]}
           tamanho={preparado.tamanho}
           escalaDoMundo={preparado.escalaDoMundo}
           centro={preparado.centro}
@@ -1052,6 +1098,59 @@ function DadosNaTigela({ faces, lance, rapido }: { faces: number[]; lance: numbe
         />
       ))}
     </>
+  );
+}
+
+/**
+ * A MESA — a fotografia deitada, ou o feltro desenhado quando a tela está em pé.
+ *
+ * A escolha é a mesma que o `<TampoDaMesa>` faz entre a arte deitada e a de celular: em
+ * pé E estreito é celular; um tablet em pé tem largura de sobra pra mesa deitada. A
+ * diferença é que aqui o lado de celular não é outra fotografia — é o feltro desenhado,
+ * porque desta mesa não existe (nem faria sentido) uma foto em pé: a mesa é oval.
+ *
+ * Os filhos são OS MESMOS nos dois caminhos. Quem se ajusta é o mapa que cada filho lê,
+ * e ele vem do palco (`palco.emPe`), não de um parâmetro passado à mão — assim não
+ * existe o estado errado em que a mesa é uma e as casas são de outra.
+ */
+function AMesa({ reserva, children }: { reserva: { topo: number; base: number }; children: ReactNode }) {
+  const janela = useJanela();
+  const emPe = janela.height > janela.width && janela.width < LARGURA_MINIMA_PRO_TAMPO;
+
+  if (emPe) return <FeltroDaBancaEmPe reserva={reserva}>{children}</FeltroDaBancaEmPe>;
+  return (
+    <TampoDaMesa
+      computador={TAMPOS_16X9['banca-francesa'].computador}
+      tablet={TAMPOS_16X9['banca-francesa'].tablet}
+      reserva={reserva}
+    >
+      {children}
+    </TampoDaMesa>
+  );
+}
+
+/** Uma casa de aposta, lendo o mapa da composição que está na tela. */
+function CasaDaBanca({
+  casa,
+  ...resto
+}: {
+  casa: BancaFrancesaBetType;
+  valor: number;
+  descricao?: string;
+  pilhas?: PilhaNaCasa[];
+  travada?: boolean;
+  vencedora?: boolean;
+  onPress?: () => void;
+}) {
+  const palco = usePalco();
+  const emPe = Boolean(palco?.emPe);
+  return (
+    <CasaDeAposta
+      nome={casa}
+      area={emPe ? MAPA_BANCA_EM_PE.apostas[casa] : MAPA_BANCA_FRANCESA.apostas[casa]}
+      larguraUtil={emPe ? LARGURA_UTIL_EM_PE[casa] : undefined}
+      {...resto}
+    />
   );
 }
 
@@ -1196,6 +1295,13 @@ const styles = StyleSheet.create({
   faixaDaJanela: {
     flexDirection: 'row',
     alignItems: 'center',
+    /*
+     * QUEBRA A LINHA NUM CELULAR. Sem isto o recado e o botão "Tirar minhas fichas"
+     * disputam a mesma linha de 390 pontos: o botão tem largura fixa e ganha, e o texto
+     * é que encolhe até virar reticências.
+     */
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -1213,7 +1319,7 @@ const styles = StyleSheet.create({
     // Largura fixa: sem isto o texto ao lado pula quando a contagem passa de 10 pra 9.
     minWidth: 34,
   },
-  faixaTexto: { flex: 1, fontFamily: fontFamily.body, fontSize: fontSize.sm, color: colors.textSecondary },
+  faixaTexto: { flex: 1, minWidth: 180, fontFamily: fontFamily.body, fontSize: fontSize.sm, color: colors.textSecondary },
   botaoRetirar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1226,7 +1332,17 @@ const styles = StyleSheet.create({
   },
   botaoRetirarTexto: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textPrimary },
   linhaApertada: { gap: spacing.sm, flexWrap: 'nowrap' },
+  /*
+   * ALVO DE TOQUE DE 44 PONTOS, que é o mínimo publicado pela Apple e pelo Google.
+   *
+   * Os dois botões da mesa saíam com 35 e 42 de altura — o `paddingVertical` sozinho
+   * não garante altura nenhuma, porque ele depende do corpo da letra que estiver
+   * dentro. Medido nas cinco telas (verificacao/verifica-tamanhos.mjs), os dois
+   * ficavam abaixo do mínimo em TODAS. Abaixo de 44 quem tem dedo grosso erra o alvo, e
+   * errar o alvo numa mesa de aposta é caro.
+   */
   botaoPrincipal: {
+    minHeight: ALVO_DE_TOQUE,
     minWidth: 210,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
@@ -1237,6 +1353,7 @@ const styles = StyleSheet.create({
   },
   botaoPrincipalTexto: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, color: colors.background },
   botaoLancar: {
+    minHeight: ALVO_DE_TOQUE,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,

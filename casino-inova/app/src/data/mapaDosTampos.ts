@@ -418,7 +418,108 @@ export const MAPA_BAC_BO_EM_PE = {
 
 /** Largura útil de cada casa no tampo em pé, pras pilhas de mesa cheia. */
 export const LARGURA_UTIL_EM_PE: Record<string, number> = {
+  // Bac Bo
   jogador: 0.3,
   empate: 0.15,
   banca: 0.3,
+  /*
+   * Banca Francesa. Mais folgado que no tampo deitado porque no feltro em pé as faixas
+   * atravessam a mesa inteira: as pilhas se espalham de lado sem chegar perto da borda,
+   * e a de cada um continua no mesmo lugar a rodada inteira. A dos Ases é apertada
+   * porque a casa é pequena — no feltro de verdade também é.
+   */
+  ases: 0.22,
+  grande: 0.62,
+  pequeno: 0.62,
+  'linha-grande': 0.62,
+  'linha-pequeno': 0.62,
 };
+
+/* ------------------------------------------------------------------------------------
+ * A BANCA FRANCESA EM PÉ — a mesma mesa, outra composição.
+ * ---------------------------------------------------------------------------------- */
+
+/**
+ * O mapa do feltro DESENHADO, o que entra num celular em pé.
+ *
+ * POR QUE EXISTE UMA SEGUNDA COMPOSIÇÃO. A arte 16:9 é a fotografia de uma mesa oval,
+ * e mesa oval é larga. Num celular de 390 por 844 ela cabe com 390 de largura e 219 de
+ * altura — uma tira de mesa no meio de duas faixas pretas, com o feltro ocupando um
+ * quarto da tela. Não é problema de escala, é de forma: nenhum recorte e nenhum zoom
+ * fazem uma elipse deitada caber bem numa tela em pé. Quem joga em cassino de celular
+ * conhece a solução, que é a mesma de sempre: no retrato, o pano é redesenhado em
+ * faixas empilhadas, de cima pra baixo, na ordem em que a mão alcança.
+ *
+ * O QUE ISSO CONSERTA DE QUEBRA. Aqui o desenho e a área de toque saem DO MESMO NÚMERO:
+ * a faixa do GRANDE é pintada com esta caixa e é tocada por esta caixa. No tampo
+ * fotografado as duas coisas são independentes — a arte foi pintada por um lado, as
+ * frações foram medidas por outro — e é por isso que lá elas precisam de conferência
+ * pra não se separarem. Aqui não há como se separarem.
+ *
+ * As frações são do PAINEL DESENHADO (o retângulo da mesa, couro incluído), do mesmo
+ * jeito que as do tampo 16:9 são da arte inteira.
+ */
+export const TIGELA_DA_BANCA_EM_PE = {
+  fora: { esquerda: 0.17, topo: 0.02, direita: 0.83, base: 0.135 },
+  chao: { esquerda: 0.205, topo: 0.037, direita: 0.795, base: 0.12 },
+};
+
+/**
+ * A CURVATURA DOS ARCOS, medida na arte.
+ *
+ * O arco do GRANDE na arte 1920x1080 desce 0,084 da altura entre a ponta e o meio, com
+ * meia-largura de 0,26 da largura — ou seja, uma flecha de 91 pixels para 499 de
+ * meia-corda. A razão flecha/meia-corda é 0,18, e é ela que dá o desenho: menos que isso
+ * vira faixa reta de aplicativo, mais que isso vira ferradura.
+ */
+export const FLECHA_DO_ARCO = 0.18;
+
+export const MAPA_BANCA_EM_PE = {
+  apostas: {
+    /*
+     * A CHAPA DOS ASES fica no alto e à ESQUERDA, como na arte: é a aposta de uma
+     * combinação só (três ases, soma 3), e no feltro ela é uma plaquinha separada, com o
+     * número em cima e o nome embaixo — não uma faixa como as outras.
+     */
+    ases: {
+      caixa: [0.055, 0.155, 0.26, 0.315],
+      rotulo: 'Apostar em Ases, soma 3',
+      alvo: { x: 0.157, y: 0.308 },
+    },
+    grande: {
+      caixa: [0.07, 0.335, 0.93, 0.515],
+      rotulo: 'Apostar no Grande, 14, 15 ou 16',
+      /* A pilha assenta no terço esquerdo, onde o arco está alto e sobra feltro. */
+      alvo: { x: 0.26, y: 0.508 },
+    },
+    'linha-grande': {
+      caixa: [0.395, 0.478, 0.605, 0.565],
+      rotulo: 'Apostar na linha do Grande, metade do risco e metade do prêmio',
+      alvo: { x: 0.5, y: 0.558 },
+    },
+    pequeno: {
+      caixa: [0.05, 0.635, 0.95, 0.815],
+      rotulo: 'Apostar no Pequeno, 5, 6 ou 7',
+      alvo: { x: 0.26, y: 0.808 },
+    },
+    'linha-pequeno': {
+      caixa: [0.395, 0.778, 0.605, 0.865],
+      rotulo: 'Apostar na linha do Pequeno, metade do risco e metade do prêmio',
+      alvo: { x: 0.5, y: 0.858 },
+    },
+  } satisfies Record<string, AreaDaMesa>,
+  dados: assentosNaTigelaEmPe(),
+};
+
+function assentosNaTigelaEmPe(): PontoDaMesa[] {
+  const { esquerda, direita, topo, base } = TIGELA_DA_BANCA_EM_PE.chao;
+  const centroX = (esquerda + direita) / 2;
+  const centroY = (topo + base) / 2;
+  /*
+   * O passo é maior que no tampo deitado (2,2) porque a tigela em pé é proporcionalmente
+   * mais larga: com 2,2 os três dados ficavam amontoados no meio de um couro comprido.
+   */
+  const passo = DADO_NA_TIGELA * 2.9;
+  return [-1, 0, 1].map((k) => ({ x: centroX + k * passo, y: centroY }));
+}
+

@@ -17,6 +17,7 @@
     "verify:domino-abertura": "ts-node src/modules/games/domino/verify-abertura.ts",
     "verify:banca-francesa": "ts-node src/modules/games/banca-francesa/verify-rtp.ts",
     "verify:banca-216": "ts-node src/modules/games/banca-francesa/verify-216.ts",
+    "verify:propriedades": "ts-node src/modules/games/banca-francesa/verify-propriedades.ts",
     "verify:banca-francesa-janela": "ts-node src/modules/games/banca-francesa/verify-janela.ts",
     "verify:banca-francesa-mesa": "node verificacao/verifica-janela-mesa.mjs",
     "verify:dinheiro": "node verificacao/verifica-dinheiro.mjs",
@@ -41,7 +42,7 @@
     "verify:stock-market": "ts-node src/modules/games/stock-market/verify-rtp.ts",
     "verify:rotas": "ts-node verificacao/verifica-rotas.ts",
     "verify:torneios": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" ts-node src/modules/tournaments/verify-tournaments.ts",
-    "verify:tudo": "npm run verify:bac-bo && npm run verify:bacara && npm run verify:bacara-regras && npm run verify:banca-francesa && npm run verify:banca-216 && npm run verify:domino-abertura && npm run verify:blackjack && npm run verify:nucleo && npm run verify:rng && npm run verify:recompensas && npm run verify:corrente && npm run verify:idempotencia && npm run verify:sapata && npm run verify:slots && npm run verify:persistencia && npm run verify:placar && npm run verify:poker-hands && npm run verify:roleta && npm run verify:rtp && npm run verify:stock-market && npm run verify:torneios",
+    "verify:tudo": "npm run verify:bac-bo && npm run verify:bacara && npm run verify:bacara-regras && npm run verify:banca-francesa && npm run verify:banca-216 && npm run verify:propriedades && npm run verify:domino-abertura && npm run verify:blackjack && npm run verify:nucleo && npm run verify:rng && npm run verify:recompensas && npm run verify:corrente && npm run verify:idempotencia && npm run verify:sapata && npm run verify:slots && npm run verify:persistencia && npm run verify:placar && npm run verify:poker-hands && npm run verify:roleta && npm run verify:rtp && npm run verify:stock-market && npm run verify:torneios",
     "verify:banca-nulos": "node verificacao/verifica-banca-nulos.mjs  # precisa do servidor no ar"
   },
   "dependencies": {
@@ -52,6 +53,7 @@
     "@nestjs/websockets": "^10.4.22",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/pg": "^8.23.1",
+    "fast-check": "^3.23.2",
     "firebase-admin": "^14.3.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.0",

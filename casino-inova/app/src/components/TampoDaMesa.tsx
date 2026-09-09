@@ -20,7 +20,7 @@ export const LARGURA_MINIMA_PRO_TAMPO = 700;
 /** Acima disso vale a versão de 1920; abaixo, a de 1600 basta e pesa menos. */
 export const LARGURA_DE_COMPUTADOR = 1280;
 
-interface Palco {
+export interface Palco {
   /** Onde a arte realmente ficou na tela, depois do `contain`. */
   esquerda: number;
   topo: number;
@@ -38,6 +38,19 @@ interface Palco {
 }
 
 const PalcoContext = createContext<Palco | null>(null);
+
+/**
+ * Diz a quem desenha por cima ONDE a mesa está, quando a mesa não é uma fotografia.
+ *
+ * O `<TampoDaMesa>` faz isso pra arte 16:9 e pra arte de celular. Mas o feltro em pé da
+ * Banca Francesa é DESENHADO, não fotografado, e mesmo assim as fichas, os dados e as
+ * casas de aposta precisam se ancorar nele do mesmo jeito. Sem isto, cada pano
+ * desenhado teria a própria cópia do contexto — e duas cópias de um contexto é o mesmo
+ * que nenhum: `usePalco` devolveria null pra metade dos filhos.
+ */
+export function ComPalco({ palco, children }: { palco: Palco; children: ReactNode }) {
+  return <PalcoContext.Provider value={palco}>{children}</PalcoContext.Provider>;
+}
 
 /**
  * Onde a mesa está, pra quem for desenhar por cima. Devolve null fora de um

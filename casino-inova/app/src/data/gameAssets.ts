@@ -140,6 +140,49 @@ export const DOMINO_TILE_IMAGES: Record<string, number> = {
 
 export const DOMINO_TILE_BACK = require('../../assets/images/domino/pecas-domino-verso.png');
 
+/**
+ * OS TRÊS DADOS DA BANCA FRANCESA — azul, verde e vermelho, seis faces cada.
+ *
+ * A ordem importa e é a mesma em todo lugar: o lançamento é guardado no servidor como
+ * `dice: [azul, verde, vermelho]` e a tela do resultado diz "azul 4, verde 5,
+ * vermelho 6". Sem cor, três números soltos teriam que ser aceitos por confiança; com
+ * cor, dá pra conferir olhando qual dado deu qual face.
+ *
+ * Os três saem do MESMO molde (tools/gera-dados-coloridos.py): mesmo feitio, mesma luz,
+ * mesmos pontos dourados. Só o corpo muda de matiz, e a distância de cor entre os três
+ * foi medida em CIELAB — a menor é dE 53, bem acima dos 25 em que duas cores começam a
+ * se confundir num relance.
+ */
+export const CORES_DOS_DADOS = ['azul', 'verde', 'vermelho'] as const;
+export type CorDoDado = (typeof CORES_DOS_DADOS)[number];
+
+export const DADOS_DA_BANCA: Record<CorDoDado, Record<number, number>> = {
+  azul: {
+    1: require('../../assets/images/dados/banca-francesa/azul/face-1.png'),
+    2: require('../../assets/images/dados/banca-francesa/azul/face-2.png'),
+    3: require('../../assets/images/dados/banca-francesa/azul/face-3.png'),
+    4: require('../../assets/images/dados/banca-francesa/azul/face-4.png'),
+    5: require('../../assets/images/dados/banca-francesa/azul/face-5.png'),
+    6: require('../../assets/images/dados/banca-francesa/azul/face-6.png'),
+  },
+  verde: {
+    1: require('../../assets/images/dados/banca-francesa/verde/face-1.png'),
+    2: require('../../assets/images/dados/banca-francesa/verde/face-2.png'),
+    3: require('../../assets/images/dados/banca-francesa/verde/face-3.png'),
+    4: require('../../assets/images/dados/banca-francesa/verde/face-4.png'),
+    5: require('../../assets/images/dados/banca-francesa/verde/face-5.png'),
+    6: require('../../assets/images/dados/banca-francesa/verde/face-6.png'),
+  },
+  vermelho: {
+    1: require('../../assets/images/dados/banca-francesa/vermelho/face-1.png'),
+    2: require('../../assets/images/dados/banca-francesa/vermelho/face-2.png'),
+    3: require('../../assets/images/dados/banca-francesa/vermelho/face-3.png'),
+    4: require('../../assets/images/dados/banca-francesa/vermelho/face-4.png'),
+    5: require('../../assets/images/dados/banca-francesa/vermelho/face-5.png'),
+    6: require('../../assets/images/dados/banca-francesa/vermelho/face-6.png'),
+  },
+};
+
 /** Faces do dado da marca, 1 a 6. */
 export const DIE_FACE_IMAGES: Record<number, number> = {
   1: require('../../assets/images/dados/marca/face-1.png'),

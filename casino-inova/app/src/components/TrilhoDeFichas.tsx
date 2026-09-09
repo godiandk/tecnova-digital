@@ -2,6 +2,9 @@ import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+/** O menor alvo de toque aceitável, em pontos — o mínimo publicado pela Apple e pelo Google. */
+const ALVO_DE_TOQUE = 44;
+
 import { PlayerColor } from '../data/chipImages';
 import { Ficha } from './Ficha';
 import { colors } from '../theme';
@@ -136,6 +139,21 @@ export function TrilhoDeFichas({
         ref={rolagem}
         horizontal
         showsHorizontalScrollIndicator={false}
+        /*
+         * `flex: 1` e `minWidth: 0` NO VISOR — não no conteúdo.
+         *
+         * No React Native o padrão é `flexShrink: 0`: uma caixa não encolhe abaixo do
+         * próprio conteúdo. Então o visor do trilho ficava com a largura natural da
+         * fileira (338 pontos) mesmo quando a linha só tinha 314 — e transbordava a tela
+         * por 28 pontos. Medido num iPhone de 390: a fileira ia de 60 a 418.
+         *
+         * Com `flex: 1` o visor pega o que sobra da linha, e o conteúdo continua com a
+         * largura natural DENTRO dele — que é exatamente o que faz a rolagem existir e as
+         * setas aparecerem. Isto é o oposto de pôr `flexGrow` no `contentContainerStyle`,
+         * que era o laço descrito acima: lá o conteúdo é que esticava, e aí nunca
+         * "não cabia".
+         */
+        style={styles.visor}
         onLayout={(e) => setLarguraVisivel(e.nativeEvent.layout.width)}
         onScroll={(e) => setPosicao(e.nativeEvent.contentOffset.x)}
         scrollEventThrottle={16}
@@ -201,14 +219,23 @@ function SetaDoTrilho({
   tamanho: number;
   onPress: () => void;
 }) {
-  if (!visivel) return <View style={{ width: tamanho * 0.52 }} />;
+  const LADO_DA_SETA = Math.max(ALVO_DE_TOQUE, tamanho * 0.52);
+  if (!visivel) return <View style={{ width: LADO_DA_SETA }} />;
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={lado === 'esquerda' ? 'Ver as fichas menores' : 'Ver as fichas maiores'}
       hitSlop={10}
-      style={[styles.seta, { width: tamanho * 0.52, height: tamanho * 0.52, borderRadius: tamanho * 0.26 }]}
+      /*
+       * O LADO DA SETA É O ALVO DE TOQUE, e não uma fração da ficha.
+       *
+       * Com 0,52 da ficha ela saía com 29 pontos numa mesa de ficha 56 — abaixo dos 44
+       * que a Apple e o Google publicam como mínimo. O vazio que fica no lugar dela
+       * quando não há mais ficha daquele lado tem a MESMA largura, senão o trilho pula
+       * de lado toda vez que a seta aparece ou some.
+       */
+      style={[styles.seta, { width: LADO_DA_SETA, height: LADO_DA_SETA, borderRadius: LADO_DA_SETA / 2 }]}
     >
       <Ionicons
         name={lado === 'esquerda' ? 'chevron-back' : 'chevron-forward'}
@@ -237,6 +264,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gold,
   },
+  visor: { flex: 1, minWidth: 0 },
   trilho: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   ficha: { borderWidth: 2, borderColor: 'transparent' },
   escolhida: { borderColor: colors.goldBright },

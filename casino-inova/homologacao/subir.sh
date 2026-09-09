@@ -70,4 +70,16 @@ if [ "${1:-}" = "--testes" ]; then
   echo
   echo "== o dinheiro entra e sai certo =="
   cd "$RAIZ/server" && node verificacao/verifica-dinheiro.mjs
+
+  # As conferências abaixo falam com o servidor que acabou de subir e com o navegador —
+  # por isso não estão no `verify:tudo`, que precisa rodar sem nada no ar.
+  echo
+  echo "== a banca aceita nulo sem mexer no saldo =="
+  cd "$RAIZ/server" && node verificacao/verifica-banca-nulos.mjs
+  echo
+  echo "== a mesa cabe nos cinco tamanhos =="
+  cd "$RAIZ/app" \
+    && PLAYWRIGHT="${PLAYWRIGHT:-/opt/node22/lib/node_modules/playwright/index.js}" \
+       CHROMIUM="${CHROMIUM:-/opt/pw-browsers/chromium-1194/chrome-linux/chrome}" \
+       node verificacao/verifica-tamanhos.mjs
 fi
