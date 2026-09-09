@@ -460,20 +460,38 @@ export const LARGURA_UTIL_EM_PE: Record<string, number> = {
  * jeito que as do tampo 16:9 são da arte inteira.
  */
 export const TIGELA_DA_BANCA_EM_PE = {
-  fora: { esquerda: 0.17, topo: 0.02, direita: 0.83, base: 0.135 },
-  chao: { esquerda: 0.205, topo: 0.037, direita: 0.795, base: 0.12 },
+  fora: { esquerda: 0.19, topo: 0.012, direita: 0.81, base: 0.118 },
+  chao: { esquerda: 0.222, topo: 0.028, direita: 0.778, base: 0.104 },
 };
 
 /**
- * A CURVATURA DOS ARCOS, medida na arte.
+ * O ARCO, EM FRAÇÕES DA PRÓPRIA CASA.
  *
- * O arco do GRANDE na arte 1920x1080 desce 0,084 da altura entre a ponta e o meio, com
- * meia-largura de 0,26 da largura — ou seja, uma flecha de 91 pixels para 499 de
- * meia-corda. A razão flecha/meia-corda é 0,18, e é ela que dá o desenho: menos que isso
- * vira faixa reta de aplicativo, mais que isso vira ferradura.
+ * A curvatura veio da arte: o arco do GRANDE em 1920x1080 desce 0,084 da altura entre a
+ * ponta e o meio, com meia-corda de 0,26 da largura. Mas guardar essa razão em cima da
+ * LARGURA não serve pro pano desenhado: a flecha sairia em pixels da largura e viraria
+ * uma fração diferente da ALTURA a cada formato de tela, e aí as frações deste mapa —
+ * que são de altura — não valeriam mais. Então a mesma curvatura está escrita em cima da
+ * altura da casa, que é a medida que o mapa usa.
+ *
+ * FLECHA: quanto a barriga do arco desce, em fração da altura da casa.
+ * ESPESSURA: da borda de cima do arco até a de baixo, na mesma unidade.
+ * NUMEROS: onde corre a linha dos algarismos, contada da borda de BAIXO pra cima — 0,65
+ * põe ela no terço de cima, que é onde ela está na arte, deixando o resto da faixa livre
+ * pra ficha. Foi isso que se perdeu quando a casa virou um retângulo com o nome no meio.
  */
-export const FLECHA_DO_ARCO = 0.18;
+export const ARCO_DA_CASA = { FLECHA: 0.3, ESPESSURA: 0.62, NUMEROS: 0.65 };
 
+/**
+ * A ALTURA DE UMA CASA É O QUE CABE DENTRO DELA, e não um número redondo.
+ *
+ * Cada arco tem que segurar, de cima pra baixo: o nome da casa, a linha dos números, e
+ * uma ficha inteira encostada sem cobrir nem um nem outro. A ficha no pano nunca desce
+ * abaixo de 44 pontos (é o mínimo em que a denominação ainda lê), então numa tela de
+ * celular, com o painel em torno de 450 pontos de altura, a casa precisa de perto de
+ * 0,22 da altura do painel. Foi disso que veio a reclamação que originou esta medida:
+ * com 0,16, a ficha cobria o 14 e encostava no círculo da linha logo abaixo.
+ */
 export const MAPA_BANCA_EM_PE = {
   apostas: {
     /*
@@ -482,30 +500,49 @@ export const MAPA_BANCA_EM_PE = {
      * número em cima e o nome embaixo — não uma faixa como as outras.
      */
     ases: {
-      caixa: [0.055, 0.155, 0.26, 0.315],
+      caixa: [0.05, 0.145, 0.28, 0.285],
       rotulo: 'Apostar em Ases, soma 3',
-      alvo: { x: 0.157, y: 0.308 },
+      alvo: { x: 0.165, y: 0.278 },
     },
+    /*
+     * ONDE A PILHA ASSENTA NUMA FAIXA CURVA.
+     *
+     * A ficha não vai no meio: no meio fica o círculo da linha, e as duas pilhas
+     * ficariam uma em cima da outra. Ela vai no terço esquerdo, encostada na borda de
+     * BAIXO do arco naquele ponto — que é onde há feltro limpo, abaixo dos algarismos.
+     *
+     * A conta, feita uma vez e escrita aqui pra ninguém precisar refazer: com a caixa de
+     * 0,05 a 0,95 a fração x = 0,30 cai a 0,278 da largura da casa, e o arco de baixo,
+     * que no meio desce até 0,92 da altura da casa, naquele ponto está a 0,863. Daí
+     * 0,305 + 0,863 x 0,225 = 0,499.
+     */
     grande: {
-      caixa: [0.07, 0.335, 0.93, 0.515],
+      caixa: [0.05, 0.305, 0.95, 0.53],
       rotulo: 'Apostar no Grande, 14, 15 ou 16',
-      /* A pilha assenta no terço esquerdo, onde o arco está alto e sobra feltro. */
-      alvo: { x: 0.26, y: 0.508 },
+      alvo: { x: 0.3, y: 0.499 },
     },
+    /*
+     * O CÍRCULO DA LINHA É A ÁREA DA LINHA — nada além dele.
+     *
+     * Era um retângulo largo que entrava 0,08 da altura pra dentro do arco, e por isso a
+     * aposta na linha "quase interferia" na do Grande: um toque na barriga do arco caía
+     * na linha, que paga metade. Agora a caixa é do tamanho do círculo desenhado, e o
+     * pedaço que ela divide com o arco é exatamente o pedaço onde o círculo está.
+     */
     'linha-grande': {
-      caixa: [0.395, 0.478, 0.605, 0.565],
+      caixa: [0.38, 0.505, 0.62, 0.605],
       rotulo: 'Apostar na linha do Grande, metade do risco e metade do prêmio',
-      alvo: { x: 0.5, y: 0.558 },
+      alvo: { x: 0.5, y: 0.598 },
     },
     pequeno: {
-      caixa: [0.05, 0.635, 0.95, 0.815],
+      caixa: [0.03, 0.615, 0.97, 0.84],
       rotulo: 'Apostar no Pequeno, 5, 6 ou 7',
-      alvo: { x: 0.26, y: 0.808 },
+      alvo: { x: 0.3, y: 0.809 },
     },
     'linha-pequeno': {
-      caixa: [0.395, 0.778, 0.605, 0.865],
+      caixa: [0.38, 0.815, 0.62, 0.915],
       rotulo: 'Apostar na linha do Pequeno, metade do risco e metade do prêmio',
-      alvo: { x: 0.5, y: 0.858 },
+      alvo: { x: 0.5, y: 0.908 },
     },
   } satisfies Record<string, AreaDaMesa>,
   dados: assentosNaTigelaEmPe(),
@@ -522,4 +559,5 @@ function assentosNaTigelaEmPe(): PontoDaMesa[] {
   const passo = DADO_NA_TIGELA * 2.9;
   return [-1, 0, 1].map((k) => ({ x: centroX + k * passo, y: centroY }));
 }
+
 
