@@ -136,7 +136,19 @@ export function SlotsScreen({ navigation }: Props) {
 
         {config && (
           <>
-            <Text style={styles.rtpLabel}>RTP divulgado: {(config.theoreticalRtp * 100).toFixed(1)}%</Text>
+            {/*
+              DUAS CASAS, e não uma.
+              Com uma casa, 95,97% aparecia como "96,0%" — arredondado pra cima, na
+              direção que favorece o anúncio. A diferença é pequena e o princípio não é:
+              o número que a tela mostra tem que ser o número que a tabela produz, e
+              quem quiser conferir tem que chegar no mesmo lugar.
+            */}
+            <Text style={styles.rtpLabel}>
+              RTP divulgado: {(config.theoreticalRtp * 100).toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}%
+            </Text>
 
             <View style={styles.gabinete}>
               <View style={styles.rolos}>
