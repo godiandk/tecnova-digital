@@ -38,6 +38,93 @@ casa) e alguns também em `server/src/modules/rooms` (mesa com gente).
 
 ---
 
+## 1b. O mapa das ferramentas — e qual usar quando
+
+Você conhece as ferramentas que a indústria de cassino e de jogo de carta usa de
+verdade, e sabe **por que** cada uma existe. Isto não é enciclopédia: é pra você não
+sugerir a ferramenta errada nem torcer a nossa até quebrar.
+
+### O que a indústria usa, por onde o jogo roda
+
+| Onde roda | Linguagem e motor | Quem usa | Por quê |
+|---|---|---|---|
+| Loja de aplicativo (cassino social, jogo de carta) | **C# com Unity** | Slotomania, Jackpot Party, Zynga Poker, Hearthstone, Marvel Snap, Magic Arena | Ferramental de animação maduro (Timeline, DOTween, Spine), um build pra iOS e Android, mercado enorme de assets |
+| Navegador — slot e cassino ao vivo | **TypeScript com PixiJS** (WebGL) | Pragmatic Play, Play'n GO, NetEnt, clientes da Evolution | Carrega na hora, sem loja, encaixa dentro do site do operador |
+| Servidor de dinheiro | **Java, C# ou Go** | quase todo operador regulado | Maturidade, auditoria, e o RNG certificado como módulo à parte |
+| Estúdio pequeno / indie | **Lua (LÖVE)**, **C++ (Cocos2d-x)**, **Godot** | Balatro é Lua com LÖVE | Leve, controle total, sem licença de motor |
+
+**A lição que importa:** a animação boa quase nunca vem da linguagem — vem do
+**runtime**. Unity e PixiJS ganham porque têm *scene graph* e *sprite batching*: mil
+objetos desenhados numa passada da GPU. Não é o C# nem o TypeScript sendo rápido; é o
+desenho ser em lote. Guarde isso antes de propor qualquer coisa.
+
+### O que NÓS usamos, e onde isso quebra
+
+Estamos em **TypeScript com React Native e Reanimated**, e isso **não é** o padrão da
+indústria pra cassino. Está funcionando porque as nossas mesas são, na maior parte,
+**interface**: feltro, fichas, arcos, botão, placa. O React Native é bom nisso. E a
+parte que tem física — o motor de dados em `app/src/fisica/motorDeDados.ts` — é
+TypeScript puro, roda sem tela nenhuma (a conferência `verifica-face-do-dado` lança 240
+dados no terminal) e sobreviveria a qualquer troca de camada de desenho.
+
+Onde ele quebra, e você tem que prever isto antes de aceitar uma tarefa:
+
+- **Cada `<View>` animada é um nó do layout do sistema.** Algumas dezenas, tudo bem.
+  Algumas centenas, não. Slot com cinco rolos, símbolos caindo e partículas de vitória é
+  sprite, não é `<View>`.
+- **Não existe scene graph nem batching.** Não há como desenhar 300 fichas caindo.
+- **Não há canvas 2D de verdade.** Curva, máscara, gradiente radial, sombra projetada —
+  tudo vira gambiarra de `borderRadius` e camadas (veja `LuzDeVitoria`, que são três
+  elipses concêntricas porque não temos degradê radial).
+
+### A saída, quando chegar a hora
+
+**`@shopify/react-native-skia`.** É o Skia (o mesmo motor de desenho do Chrome e do
+Flutter) dentro do React Native: canvas 2D acelerado por GPU, com caminho, máscara,
+degradê, sombra e *shader*. Mesma linguagem, mesmo projeto, funciona no celular e na web
+(CanvasKit em WebAssembly). É **acrescentar uma camada onde falta**, não refazer o
+aplicativo — e é o que você deve propor quando a tarefa for:
+
+- rolos de caça-níqueis, cascata de símbolos, partícula;
+- a roda da roleta com a bola (hoje são camadas com `transform`; em Skia vira um
+  desenho só, com a pista de verdade);
+- qualquer coisa com máscara, recorte curvo ou degradê radial;
+- mais de ~80 elementos animados ao mesmo tempo.
+
+**Regra pra não errar:** Skia entra POR TELA, e a tela continua sendo React Native por
+fora (barra de cima, avental, trilho de fichas). Nunca reescreva uma tela inteira em
+Skia só porque uma parte dela precisa.
+
+### O que você NÃO deve propor
+
+- **Trocar pra Unity.** Só compensaria com 3D pesado ou um catálogo grande de slots, e
+  custaria toda a interface. O servidor, as regras, o extrato e as conferências ficariam;
+  o resto ia fora. Se um dia isso for discutido, é decisão do dono, não sua.
+- **PixiJS ao lado do React Native.** Dois motores de desenho no mesmo aplicativo é o
+  pior dos dois mundos. Se um dia a web virar o alvo único, aí sim PixiJS é a escolha
+  certa — mas aí é outro aplicativo.
+- **Biblioteca de animação nova sem necessidade.** Reanimated já resolve o que ele
+  resolve, e cada dependência a mais é uma armadilha de plataforma a mais (esta pasta
+  inteira, seção 6, é a lista das que já pagamos).
+
+### Animação: o vocabulário que você precisa dominar
+
+- **Skeletal (Spine, DragonBones, Rive)** — personagem e interface animados por ossos,
+  não por quadro. É o que todo cassino usa pra crupiê, mascote e botão que respira. Rive
+  é o mais novo e tem runtime pra React Native.
+- **Sprite sheet / atlas** — dezenas de quadros numa imagem só, pra a GPU trocar de
+  quadro sem trocar de textura. É o que faz partícula ser barata.
+- **Tweening e curvas** (GSAP no mundo web, DOTween no Unity, `withTiming` no
+  Reanimated) — a curva importa mais que a duração: `easeOutBack` num prêmio, `linear`
+  numa contagem, `spring` numa ficha que assenta.
+- **Timeline** — animação composta com tempos relativos. É o que falta no Reanimated e
+  o que a gente resolve com `setTimeout` encadeado (ver `encenar` na Banca Francesa).
+- **Física** — o que fazemos no motor de dados: integrar velocidade, quique, atrito e
+  colisão, e a animação só DESENHA o resultado. É sempre melhor que animar "na mão",
+  porque a batida existe de verdade e o som pode sair dela (ver `Batida`).
+
+---
+
 ## 2. As regras que não se negociam
 
 Estas vieram de decisão do dono e de conversa sobre o que é honesto. Elas mandam em
@@ -168,6 +255,35 @@ Regra: se dá pra calcular em JavaScript comum uma vez (`useMemo`) e passar pron
 E outra: **estado lido dentro de um efeito é o do desenho anterior.** Quando dois efeitos
 precisam concordar no mesmo instante (a animação começou / o saldo pode mudar), o sinal
 tem que ser uma `ref`, virada dentro do próprio efeito que dispara a animação.
+
+---
+
+## 5b. Som: ele conta o que já aconteceu
+
+O mesmo princípio da animação vale pro som, e é fácil de violar sem perceber.
+
+- **O estalo sai da física, não de um relógio.** O motor de dados registra cada `Batida`
+  (quadro, força, tipo) e a tela toca cada uma no quadro em que ela aconteceu. Som
+  disparado a cada 150 ms parece som de jogo; som no quadro exato do toque **é** o dado
+  batendo. Se som e imagem discordam, o ouvido percebe antes de o olho saber o quê.
+- **A força manda no volume.** Um dado que roça o outro e um que cai de trinta
+  centímetros não podem soar igual (`volumeDaForca` em `src/som/mesaSonora.ts`).
+- **Nada é baixado.** Os seis sons são sintetizados em `tools/gera-sons-da-mesa.py` por
+  um modelo do que o objeto faz: soma de senoides amortecidas nos modos do corpo, mais o
+  estalo do primeiro contato. O que separa "dado no couro" de "dado no vidro" não é o
+  volume — é o tempo de queda de cada modo (couro absorve, vidro devolve).
+- **Não existe som de derrota.** Perder já é claro. Fanfarra por cima de perda é o
+  truque que faz perder parecer ganhar, e aqui isso é proibido pela seção 2.
+- **Mudo que fica, e movimento reduzido que cala.** O mudo é guardado no aparelho; quem
+  liga "movimento reduzido" no sistema só ouve o essencial (a ficha e o pagamento).
+- **`Audio.Sound` toca uma coisa por vez.** Pedir pra tocar de novo CORTA o anterior —
+  com três dados batendo junto vira um estalo só. Por isso há quatro cópias de cada som.
+- **Reposicione antes de tocar.** Um som que chegou ao fim fica parado no fim; sem
+  `positionMillis: 0` o segundo toque sai mudo.
+- **A conferência mede o som sem ouvir.** `verifica-sons.mjs`: formato, pico sem
+  estourar, sem componente contínua, começa e termina no zero, ataque nos primeiros
+  20 ms, e — por cruzamentos por zero — que o couro é mais grave que dado-com-dado. Ela
+  já reprovou quatro defeitos que ninguém veria lendo o código.
 
 ---
 

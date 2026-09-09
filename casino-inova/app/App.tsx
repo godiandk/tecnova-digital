@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { prepararOSom } from './src/som/mesaSonora';
 import { useFonts, Poppins_600SemiBold, Poppins_700Bold, Poppins_800ExtraBold } from '@expo-google-fonts/poppins';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 
@@ -48,6 +49,18 @@ export default function App() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+
+  /*
+   * O SOM É PREPARADO NA ABERTURA, e não na primeira mesa.
+   *
+   * Carregar seis arquivos no instante em que a pessoa encosta a primeira ficha faria a
+   * primeira ficha da sessão ser a única muda. São menos de 140 KB no total, então isto
+   * não atrasa a abertura — e se o aparelho não tiver áudio, a função engole o erro: o
+   * jogo continua, porque som é enfeite e mesa não é.
+   */
+  useEffect(() => {
+    void prepararOSom();
+  }, []);
 
   useEffect(() => {
     let ativo = true;

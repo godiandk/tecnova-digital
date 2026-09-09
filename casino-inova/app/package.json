@@ -30,6 +30,7 @@
     "@react-navigation/native-stack": "^6.9.26",
     "expo": "~51.0.0",
     "expo-auth-session": "~5.5.2",
+    "expo-av": "~13.10.6",
     "expo-crypto": "~13.0.2",
     "expo-font": "~12.0.9",
     "expo-linear-gradient": "~13.0.2",

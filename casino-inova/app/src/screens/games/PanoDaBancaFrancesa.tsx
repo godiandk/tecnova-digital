@@ -20,7 +20,7 @@ import { CasaDeAposta, PilhaNaCasa } from '../../components/CasaDeAposta';
 import { TrilhoDeFichas } from '../../components/TrilhoDeFichas';
 import { PilhaDeFichas } from '../../components/Ficha';
 import { DadoFisico } from '../../components/DadoFisico';
-import { Arena, lancarDados } from '../../fisica/motorDeDados';
+import { Arena, Lancamento, QUADROS_POR_SEGUNDO, lancarDados } from '../../fisica/motorDeDados';
 import { CORES_DOS_DADOS, DADOS_DA_BANCA } from '../../data/gameAssets';
 import { ChipStack } from '../../components/ChipStack';
 import { QuadroDePagamentos, LinhaDePagamento } from '../../components/QuadroDePagamentos';
@@ -30,6 +30,7 @@ import { BancaFrancesaBet, BancaFrancesaBetType, BancaFrancesaConfig } from '../
 import { TableView } from '../../api/bancaFrancesaMesa';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 import { estouOcupado } from '../../api/versao';
+import { prepararOSom, tocar, tocarAsBatidas, useMudo } from '../../som/mesaSonora';
 
 /*
  * A ordem importa duas vezes.
@@ -332,6 +333,14 @@ export function PanoDaBancaFrancesa({
      * inteira pra ouvir "não" depois. O servidor confere de novo de qualquer jeito, e é
      * ele quem manda; se um dia os dois discordarem, quem vale é o de lá.
      */
+    /*
+     * O SOM SAI DAQUI, e não do botão.
+     *
+     * É a ficha ENCOSTANDO que faz barulho, não o dedo tocando a tela: se a aposta for
+     * recusada logo abaixo (por teto da casa, por saldo), nada encostou e nada soa. Som
+     * de confirmação em cima de uma ação recusada é a interface dizendo uma coisa e
+     * fazendo outra.
+     */
     const limite = limites?.[casa];
     if (limite) {
       const depois = soma(apostas[casa]) + ficha;
@@ -359,6 +368,8 @@ export function PanoDaBancaFrancesa({
      * que recusa a aposta sem que exista motivo do outro lado.
      */
     setRecado(null);
+    /* Primeira ficha da casa cai no feltro; da segunda em diante, cai em cima de outra. */
+    tocar(apostas[casa].length === 0 ? 'ficha-no-pano' : 'ficha-na-pilha');
     setApostas((atual) => ({ ...atual, [casa]: [...atual[casa], ficha] }));
     setOrdem((atual) => [...atual, casa]);
   };
@@ -475,8 +486,18 @@ export function PanoDaBancaFrancesa({
           onLayout={(e) => setAlturaDaBarra(e.nativeEvent.layout.height)}
         >
           <BotaoRedondo icone="chevron-back" rotulo="Sair da mesa" onPress={onSair} />
-          <ChipStack amount={saldoNaTela} />
+          {/*
+            O SALDO CEDE, OS BOTÕES NÃO.
+            Num celular de 390 a barra tem 358 pontos úteis: o botão de sair, o saldo e
+            os três da direita. Com o saldo rígido, o último botão saía 34 pontos pra
+            fora da tela — foi o que apareceu quando o mudo entrou na barra. Botão que
+            vaza é botão que não existe; saldo apertado continua legível.
+          */}
+          <View style={styles.saldoNaBarra}>
+            <ChipStack amount={saldoNaTela} />
+          </View>
           <View style={styles.botoesDaDireita}>
+            <BotaoDoSom />
             <BotaoRedondo icone="help-circle" rotulo="O que cada aposta paga" onPress={() => setQuadroAberto(true)} />
             <BotaoRedondo
               icone="people"
@@ -785,6 +806,15 @@ function useLancamento(mesa: TableView, saldo: number) {
   const emCena = useRef({ rodadaId: '', mostrados: 0 });
   /** A última apuração encenada, pra o decisivo não ser jogado duas vezes. */
   const ultimaApuracao = useRef<string | undefined>(undefined);
+  /**
+   * O saldo de antes da encenação, pra saber se a casa pagou.
+   *
+   * O servidor credita no lançamento decisivo, então o saldo já subiu ANTES de o dado
+   * assentar na tela. Guardar o número de antes e comparar no fim da encenação é o que
+   * faz o som do pagamento sair junto com o resultado aparecendo, e não seis segundos
+   * antes dele.
+   */
+  const saldoAntesDaEncenacao = useRef(saldo);
 
   const rodada = mesa.rodada;
   const resultado = mesa.lastRound;
@@ -801,6 +831,7 @@ function useLancamento(mesa: TableView, saldo: number) {
 
       (async () => {
         noAr.current = true;
+        saldoAntesDaEncenacao.current = saldo;
         setGirando(true);
         for (const item of lances) {
           if (!vivo) return;
@@ -812,6 +843,13 @@ function useLancamento(mesa: TableView, saldo: number) {
         if (vivo) {
           noAr.current = false;
           setGirando(false);
+          /*
+           * A CASA PAGOU? A resposta é o saldo, e não o resultado do dado: quem apostou
+           * no Grande e saiu Pequeno vê o mesmo resultado de quem apostou no Pequeno, e
+           * só um dos dois foi pago. Não existe som de derrota — perder já é claro, e
+           * fanfarra por cima de perda é o truque que faz perder parecer ganhar.
+           */
+          if (saldo > saldoAntesDaEncenacao.current) tocar('pagou');
         }
       })();
 
@@ -1085,6 +1123,7 @@ function DadosNaTigela({ faces, lance, rapido }: { faces: number[]; lance: numbe
 
   return (
     <>
+      <BatidasDoLancamento lancamento={preparado.lancamento} chave={lance} />
       {preparado.lancamento.caminhos.map((caminho, indice) => (
         <DadoFisico
           key={indice}
@@ -1152,6 +1191,48 @@ function CasaDaBanca({
       {...resto}
     />
   );
+}
+
+/**
+ * O BOTÃO DO MUDO.
+ *
+ * Fica na barra de cima, ao lado da ajuda, e não escondido num menu de ajustes: som é a
+ * coisa que mais incomoda quando incomoda, e a pessoa costuma querer desligar AGORA —
+ * no ônibus, ao lado de alguém dormindo. O ícone diz o estado atual (alto-falante com
+ * som, alto-falante cortado), e o nome dito em voz alta diz o que o toque VAI fazer,
+ * que é o que um leitor de tela precisa anunciar.
+ */
+function BotaoDoSom() {
+  const { mudo, alternar } = useMudo();
+  return (
+    <BotaoRedondo
+      icone={mudo ? 'volume-mute' : 'volume-high'}
+      rotulo={mudo ? 'Ligar o som da mesa' : 'Desligar o som da mesa'}
+      onPress={alternar}
+    />
+  );
+}
+
+/**
+ * O SOM DO LANÇAMENTO, tirado da física.
+ *
+ * O copo estala assim que os dados saem; depois, cada batida que o motor registrou toca
+ * no quadro em que aconteceu, com o volume que a força daquela batida pede. Nada aqui é
+ * sorteado nem cronometrado à mão — se o dado bateu três vezes no couro e uma no outro
+ * dado, é isso que se ouve, nessa ordem.
+ *
+ * A limpeza do efeito cancela o que ainda não tocou: sair da mesa no meio de um
+ * lançamento tem que levar o barulho junto, senão os estalos da rodada abandonada caem
+ * por cima da seguinte.
+ */
+function BatidasDoLancamento({ lancamento, chave }: { lancamento: Lancamento; chave: number }) {
+  useEffect(() => {
+    tocar('copo');
+    return tocarAsBatidas(lancamento.batidas, QUADROS_POR_SEGUNDO);
+    // `chave` é o número do lance: é ele que diz que este é um lançamento NOVO.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chave]);
+  return null;
 }
 
 function Trilho({ apertado, ...resto }: {
@@ -1235,7 +1316,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(11,15,13,0.62)',
   },
-  botoesDaDireita: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  botoesDaDireita: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  saldoNaBarra: { flexShrink: 1, minWidth: 0, alignItems: 'center', paddingHorizontal: spacing.xs },
   /*
    * `width: '100%'` e `minWidth: 0` nos lados: sem os dois, esta linha ficava mais larga
    * que a tela e o trilho transbordava em vez de rolar.

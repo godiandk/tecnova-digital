@@ -87,6 +87,24 @@ export interface Quadro {
   rz: number;
 }
 
+/**
+ * UMA BATIDA: quando o dado encostou em alguma coisa, e com que força.
+ *
+ * Existe pra que o SOM saia da física, e não de um relógio. Um estalo disparado a cada
+ * 150 ms parece som de jogo; um estalo no quadro exato em que o dado tocou o couro é o
+ * dado batendo. A diferença aparece na hora: se o som e a imagem discordam, o ouvido
+ * percebe antes de o olho saber o que houve.
+ *
+ * `forca` é a velocidade de aproximação no instante do toque, em meios-dados por
+ * segundo — a mesma unidade do resto do motor. Quem toca o som decide o volume a partir
+ * dela; um roçar e uma queda de dez centímetros não podem soar igual.
+ */
+export interface Batida {
+  quadro: number;
+  forca: number;
+  tipo: 'chao' | 'dado';
+}
+
 export interface Lancamento {
   /** Um caminho por dado, cada um com a mesma quantidade de quadros. */
   caminhos: Quadro[][];
@@ -94,6 +112,8 @@ export interface Lancamento {
   quadros: number;
   /** Quantas vezes um dado bateu no outro. Só pra conferir que a colisão existe. */
   colisoes: number;
+  /** Toda batida do lançamento, em ordem de quadro. Ver `Batida`. */
+  batidas: Batida[];
   /** Em que quadro cada dado parou de andar. Serve pro Bac Bo revelar em ordem. */
   paradaDe: number[];
 }
@@ -235,6 +255,7 @@ export function lancarDados(opcoes: OpcoesDoLancamento): Lancamento {
   const caminhos: Quadro[][] = corpos.map(() => []);
   const paradaDe: number[] = corpos.map(() => -1);
   let colisoes = 0;
+  const batidas: Batida[] = [];
   let quadro = 0;
 
   while (quadro < QUADROS_MAXIMOS) {
@@ -308,6 +329,7 @@ export function lancarDados(opcoes: OpcoesDoLancamento): Lancamento {
         if (c.y >= fundo) {
           c.y = fundo;
           if (c.vy > 0) {
+            batidas.push({ quadro, forca: c.vy, tipo: 'chao' });
             /*
              * COM O AGITADOR DESLIGADO O DADO QUICA MENOS. Não é atalho: enquanto o ar
              * sopra, o dado é mantido no alto e volta com força; desligado, ele só cai
@@ -330,6 +352,7 @@ export function lancarDados(opcoes: OpcoesDoLancamento): Lancamento {
       if (!arena.emPe && c.z <= 0) {
         c.z = 0;
         if (c.vz < 0) {
+          batidas.push({ quadro, forca: -c.vz, tipo: 'chao' });
           c.vz = -c.vz * DEVOLUCAO_DO_CHAO;
           /*
            * A batida converte deslizamento em giro. É o que faz um dado jogado com
@@ -372,7 +395,11 @@ export function lancarDados(opcoes: OpcoesDoLancamento): Lancamento {
     // --- dado contra dado ---
     for (let i = 0; i < corpos.length; i += 1) {
       for (let j = i + 1; j < corpos.length; j += 1) {
-        if (colidir(corpos[i], corpos[j])) colisoes += 1;
+        const forca = colidir(corpos[i], corpos[j]);
+        if (forca > 0) {
+          colisoes += 1;
+          batidas.push({ quadro, forca, tipo: 'dado' });
+        }
       }
     }
 
@@ -430,7 +457,21 @@ export function lancarDados(opcoes: OpcoesDoLancamento): Lancamento {
    */
   assentarNasFaces(caminhos, faces, opcoes.agitarAte);
 
-  return { caminhos, quadros: caminhos[0]?.length ?? 0, colisoes, paradaDe };
+  /*
+   * As batidas depois do último quadro somem.
+   *
+   * `ajustarDuracao` não reamostra: ela corta o fim ou repete o último quadro. Então o
+   * quadro de cada batida continua valendo — só as que caíram fora do corte é que
+   * precisam sair, senão o som tocaria depois de o dado já estar parado na tela.
+   */
+  const ultimoQuadro = (caminhos[0]?.length ?? 0) - 1;
+  return {
+    caminhos,
+    quadros: caminhos[0]?.length ?? 0,
+    colisoes,
+    batidas: batidas.filter((b) => b.quadro <= ultimoQuadro),
+    paradaDe,
+  };
 }
 
 /**
@@ -504,13 +545,17 @@ function bater(c: Corpo, arena: Arena) {
  *
  * Cada esbarrão também joga giro nos dois — é o que o olho lê como "bateu no outro e
  * virou pro outro lado".
+ *
+ * DEVOLVE A VELOCIDADE DE APROXIMAÇÃO no instante do toque, ou 0 se não houve toque.
+ * Antes devolvia só sim ou não; o número é o que deixa o som ter força, porque dois
+ * dados que se roçam e dois que se batem de frente não podem estalar igual.
  */
-function colidir(a: Corpo, b: Corpo): boolean {
+function colidir(a: Corpo, b: Corpo): number {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const distancia = Math.hypot(dx, dy);
   const encosto = 2; // dois raios
-  if (distancia >= encosto || distancia === 0) return false;
+  if (distancia >= encosto || distancia === 0) return 0;
 
   const nx = dx / distancia;
   const ny = dy / distancia;
@@ -522,7 +567,7 @@ function colidir(a: Corpo, b: Corpo): boolean {
 
   const va = a.vx * nx + a.vy * ny;
   const vb = b.vx * nx + b.vy * ny;
-  if (va - vb <= 0) return false; // já estão se afastando
+  if (va - vb <= 0) return 0; // já estão se afastando
 
   const troca = va - vb;
   a.vx -= troca * nx; a.vy -= troca * ny;
@@ -531,7 +576,7 @@ function colidir(a: Corpo, b: Corpo): boolean {
   const tranco = Math.min(900, Math.abs(troca) * 90);
   a.wx += ny * tranco; a.wy -= nx * tranco; a.wz -= tranco * 0.4;
   b.wx -= ny * tranco; b.wy += nx * tranco; b.wz += tranco * 0.4;
-  return true;
+  return va - vb;
 }
 
 /**
