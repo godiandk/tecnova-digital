@@ -364,6 +364,17 @@ os quatro conflitos entre o que existe e o que foi pedido estão nesse documento
 5. não recriar sistema que já existe;
 6. aproveitar os assets de recompensa que já temos.
 
+> **A proposta econômica está pronta e aguardando aprovação: `docs/economia.md`.**
+> O modelo que produziu os números está em `tools/economia-proposta.py`, para poder ser
+> refeito e contestado.
+>
+> O achado principal: **a recompensa diária de hoje é uma catraca de juros compostos** que
+> leva qualquer conta ao topo da escada de doze degraus em **171 dias sem jogar nada**, e
+> a economia está invertida — quem joga muito fica no Bronze, quem só coleta chega ao
+> Eclipse. Três decisões ficaram para o produto, e a mais importante é a curva de XP:
+> hoje **apostar o mínimo é estritamente a melhor estratégia** (29× mais XP por ficha e
+> 29× menos perda), o que anula qualquer freio baseado em nível.
+
 **Antes de congelar qualquer valor de ficha da recompensa diária**, o produto pediu uma
 proposta econômica com recompensa base, crescimento diário, multiplicadores por nível,
 marcos 7/14/21/fim de mês, e o total que um jogador de nível baixo, médio e alto receberia
