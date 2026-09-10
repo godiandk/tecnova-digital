@@ -155,8 +155,13 @@ export function ProfileScreen() {
           xpToNextLevel={jogador?.xpToNextLevel ?? 500}
           width={larguraDaBarra(janela.width)}
         />
+        {/*
+          O XP agora é escrito DENTRO da barra, pela própria LevelBar — o mesmo
+          componente do lobby, com o mesmo número nos dois lugares. Aqui embaixo fica só
+          o que o lobby não diz: pra qual nível esse XP está indo.
+        */}
         <Text style={styles.levelLabel}>
-          {jogador?.xp ?? 0} de {jogador?.xpToNextLevel ?? 500} XP pro nível {(jogador?.level ?? 1) + 1}
+          {`rumo ao nível ${(jogador?.level ?? 1) + 1}`}
         </Text>
       </CasinoCard>
 

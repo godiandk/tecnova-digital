@@ -220,6 +220,21 @@ obrigando a pessoa a tocar no `+` dezenas de vezes. **Isso não pode existir.**
 `fichas: [1, 2, 5, 10, 20] × mínimo` por degrau — a régua de valores por mesa já está
 calculada e versionada. O `TrilhoDeFichas` do aplicativo já é o componente do trilho.
 
+**Uma decisão em aberto, criada pela própria correção: o "Tudo" em UM toque.**
+
+Não existe aposta máxima neste jogo (decisão registrada em `niveis-de-mesa.ts`: a casa não
+tem caixa que possa quebrar, então o teto não protegeria ninguém). Com o `+` de 50 em 50,
+apostar o saldo inteiro exigia milhares de toques — havia uma proteção acidental contra o
+gesto irreversível. Agora "Tudo" é um botão, ao lado das fichas.
+
+Isso não é engano nem manipulação: o valor está escrito no próprio botão. Mas é um toque
+que pode zerar a conta, e ele mora a um dedo de distância dos botões normais.
+
+Duas saídas, e a escolha é do produto: deixar como está (rápido, e coerente com "é escolha
+de quem joga"), ou fazer o "Tudo" pedir um segundo toque pra confirmar — o que preserva os
+dois ou três toques das apostas normais e põe uma batida antes da irreversível. **Não foi
+implementado sem decisão**, porque adicionar atrito é exatamente o oposto do que a F1 pediu.
+
 ### F2 — urgente: barra de nível (XP)
 
 O asset existe. Falta a barra funcionar:
@@ -260,6 +275,75 @@ webhook, idempotência e validação no servidor.
 
 **Sem NFT nem cripto agora** — pagamentos tradicionais primeiro; blockchain vira estudo
 separado, depois.
+
+#### F4b — quanta ficha cada pacote dá (pedido do produto: variar por nível)
+
+O produto pediu: preços fixos, e a QUANTIDADE de fichas de cada pacote variando conforme o
+nível do jogador, com faixas de 50 em 50 até o nível 500, de 100 em 100 até 1.000, e
+seguindo daí em diante; mais pacotes promocionais em alguns dias, com bônus de 40% a 80%.
+
+**Duas medidas que precisam ser lidas antes de desenhar essa tabela.**
+
+**1. O problema não é o nível — é a mesa.** Quantas apostas mínimas cada pacote compra hoje:
+
+| | R$ 9,90 | R$ 24,90 | R$ 59,90 | R$ 149,90 |
+|---|---|---|---|---|
+| Bronze (mín. 50) | 100 | 300 | 800 | 2.400 |
+| Prata (500) | 10 | 30 | 80 | 240 |
+| Ouro (5.000) | 1 | 3 | 8 | 24 |
+| Diamante (50.000) | 0 | 0 | 0 | **2** |
+| Rubi (500.000) | 0 | 0 | 0 | **0** |
+
+O maior pacote pago compra **duas apostas** na mesa Diamante e **nenhuma** na Rubi. Como o
+mínimo da mesa vem do SALDO, multiplicar o pacote por um fator de nível não resolve: um
+multiplicador de 2,5× no Diamante leva de 2 para 5 apostas.
+
+**2. Os níveis pedidos não são alcançáveis com a curva de XP de hoje.** A curva é
+`1 + √(aposta/10)` com teto de 50 XP por rodada, e o nível N custa `500 + (N−1)×250`.
+Mesmo jogando sempre no teto:
+
+| Nível | Rodadas | Jogando sem parar |
+|---|---|---|
+| 50 | 6.370 | 9 h |
+| 100 | 25.245 | 1,5 dia |
+| 200 | 100.495 | 6 dias |
+| 500 | 626.245 | **36 dias** |
+| 1.000 | 2,5 milhões | **145 dias** |
+| 10.000 | 250 milhões | **40 anos** |
+
+Faixas de 100 em 100 até 1.000 desenham uma tabela para jogadores que não existem.
+
+#### A recomendação
+
+**O pacote deve vender RODADAS, não fichas:**
+
+```
+fichas do pacote = k(preço) × mínimo da mesa do jogador × multiplicadorDeNível(nível)
+```
+
+- **`k(preço)` é fixo** — por exemplo R$ 9,90 = 100 rodadas, R$ 149,90 = 2.400 rodadas. É o
+  que mantém o poder de compra igual em toda mesa, e é o que faz a loja voltar a existir
+  acima do Ouro.
+- **O mínimo da mesa entra aqui, e não entra na recompensa diária** — e a diferença é o
+  ponto: a recompensa é de graça, então escalá-la pelo saldo é presentear quem já é rico
+  (o pedido 19 recusa isso, com razão). O pacote é **pago**. Dar proporcionalmente mais
+  fichas por real a quem joga em mesa alta não é privilégio: é o mesmo produto pelo mesmo
+  dinheiro.
+- **O multiplicador de nível é a regalia por tempo de casa**, como o produto pediu — mas
+  modesto, 1,0× a 2,5×, na mesma forma da tabela de recompensa diária. Ele não precisa
+  carregar o peso econômico, porque quem já carrega é o mínimo da mesa.
+
+**As faixas de nível**, dadas as rodadas acima: de 50 em 50 até 300, e uma última faixa
+aberta ("300 ou mais"). Faixas acima disso só fazem sentido se a curva de XP mudar — e
+mudar a curva é decisão de produto à parte, não efeito colateral da loja.
+
+**Pacotes promocionais** entram como bônus percentual sobre o `k(preço)`, com data de
+início e fim no servidor, versionados junto com o resto da configuração. O bônus é sobre a
+quantidade, nunca sobre o preço — assim a promoção não cria um preço que precise existir
+em três moedas.
+
+**Nada disso entra no código antes da proposta econômica** (§ recompensa diária §4), porque
+`k(preço)` e o multiplicador saem da mesma conta.
 
 ### F5 — recompensa diária (calendário)
 

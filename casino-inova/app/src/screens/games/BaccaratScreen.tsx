@@ -18,14 +18,13 @@ import { ApiError } from '../../api/client';
 import { Roadmap } from '../../api/roadmap';
 import { fetchBaccaratConfig, fetchBaccaratRoadmap, playBaccaratRound, BaccaratConfig, BaccaratBetType, BaccaratRoundResponse } from '../../api/baccarat';
 import { usePlayer } from '../../data/usePlayer';
+import { SeletorDeAposta, ajustar, apostaInicial, useFaixaDeAposta } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Baccarat'>;
 
 /** Largura da carta. Três por lado, que é o máximo no bacará. */
 const LARGURA_DA_CARTA = 58;
-
-const BET_STEP = 50;
 
 const BET_OPTIONS: { type: BaccaratBetType; label: string; multiplier: string }[] = [
   { type: 'jogador', label: 'Jogador', multiplier: '×2' },
@@ -68,7 +67,8 @@ export function BaccaratScreen({ navigation }: Props) {
   useEffect(() => {
     if (jogador) setBalance(jogador.chipBalance);
   }, [jogador]);
-  const [amount, setAmount] = useState(100);
+  /* Abre em ZERO: quem decide o valor inicial é o degrau da mesa, não um número fixo. */
+  const [amount, setAmount] = useState(0);
   const [betType, setBetType] = useState<BaccaratBetType>('banca');
   const [round, setRound] = useState<BaccaratRoundResponse | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -77,23 +77,28 @@ export function BaccaratScreen({ navigation }: Props) {
 
   useEffect(() => {
     fetchBaccaratConfig()
-      .then((data) => {
-        setConfig(data);
-        setAmount(Math.max(data.minBet, Math.min(100, data.maxBet)));
-      })
+      .then(setConfig)
       .catch((error: unknown) => {
         setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
       });
     fetchBaccaratRoadmap().then(setRoadmap).catch(() => undefined);
   }, []);
 
-  const adjustAmount = (delta: number) => {
-    if (!config) return;
-    setAmount((current) => Math.max(config.minBet, Math.min(config.maxBet, current + delta)));
-  };
+  /*
+   * A faixa vem do DEGRAU da pessoa, e não da configuração do jogo: o `minBet` da
+   * configuração é sempre o do Bronze, enquanto o servidor valida a aposta contra o
+   * degrau de verdade. Quem tinha saldo de mesa alta tomava 400 em toda aposta.
+   */
+  const faixa = useFaixaDeAposta(balance);
+
+  /* Quando o saldo muda de degrau, a aposta é reancorada na faixa nova. */
+  useEffect(() => {
+    if (!faixa) return;
+    setAmount((atual) => (atual > 0 ? ajustar(faixa, atual) : apostaInicial(faixa)));
+  }, [faixa?.minimo, faixa?.saldo]);
 
   const handlePlay = async () => {
-    if (!config || playing) return;
+    if (!config || playing || amount <= 0) return;
     setPlaying(true);
     setPlayError(null);
     try {
@@ -173,18 +178,9 @@ export function BaccaratScreen({ navigation }: Props) {
               ))}
             </View>
 
-            <View style={styles.betRow}>
-              <Pressable onPress={() => adjustAmount(-BET_STEP)} style={styles.betButton} disabled={playing}>
-                <Ionicons name="remove" size={20} color={colors.textPrimary} />
-              </Pressable>
-              <View style={styles.betValue}>
-                <Text style={styles.betLabel}>Aposta</Text>
-                <Text style={styles.betAmount}>{amount.toLocaleString('pt-BR')}</Text>
-              </View>
-              <Pressable onPress={() => adjustAmount(BET_STEP)} style={styles.betButton} disabled={playing}>
-                <Ionicons name="add" size={20} color={colors.textPrimary} />
-              </Pressable>
-            </View>
+            {faixa && (
+              <SeletorDeAposta faixa={faixa} valor={amount} aoMudar={setAmount} travado={playing} />
+            )}
 
             <Pressable onPress={handlePlay} disabled={playing} style={[styles.primaryButton, playing && styles.buttonDisabled]}>
               {playing ? <ActivityIndicator color={colors.background} /> : <Text style={styles.primaryButtonLabel}>Apostar</Text>}
@@ -260,20 +256,6 @@ const styles = StyleSheet.create({
   betTypeChipActive: { backgroundColor: colors.feltBright, borderColor: colors.feltBright },
   betTypeLabel: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.textSecondary },
   betTypeLabelActive: { color: colors.textPrimary },
-  betRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: spacing.xl },
-  betButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 20,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  betValue: { alignItems: 'center', minWidth: 100 },
-  betLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
-  betAmount: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
   primaryButton: {
     backgroundColor: colors.goldBright,
     borderRadius: radius.pill,

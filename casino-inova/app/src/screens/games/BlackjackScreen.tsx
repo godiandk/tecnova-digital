@@ -27,11 +27,10 @@ import {
   MaoDeBlackjack,
 } from '../../api/blackjack';
 import { usePlayer } from '../../data/usePlayer';
+import { SeletorDeAposta, ajustar, apostaInicial, useFaixaDeAposta } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing, useJanela } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Blackjack'>;
-
-const BET_STEP = 50;
 
 /**
  * A largura da carta acompanha a tela: quatro cartas lado a lado, com folga pro selo do
@@ -114,17 +113,15 @@ export function BlackjackScreen({ navigation }: Props) {
     if (jogador) setBalance(jogador.chipBalance);
   }, [jogador]);
 
-  const [bet, setBet] = useState(100);
+  /* Abre em ZERO: quem decide o valor inicial é o degrau da mesa, não um número fixo. */
+  const [bet, setBet] = useState(0);
   const [hand, setHand] = useState<BlackjackHandResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBlackjackConfig()
-      .then((data) => {
-        setConfig(data);
-        setBet(Math.max(data.minBet, Math.min(100, data.maxBet)));
-      })
+      .then(setConfig)
       .catch((error: unknown) => {
         setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
       });
@@ -132,10 +129,18 @@ export function BlackjackScreen({ navigation }: Props) {
 
   const emJogo = Boolean(hand && !hand.finished);
 
-  const adjustBet = (delta: number) => {
-    if (!config) return;
-    setBet((atual) => Math.max(config.minBet, Math.min(config.maxBet, atual + delta)));
-  };
+  /*
+   * A faixa vem do DEGRAU da pessoa, e não da configuração do jogo: o `minBet` da
+   * configuração é sempre o do Bronze, enquanto o servidor valida a aposta contra o degrau
+   * de verdade. Quem tinha saldo de mesa alta tomava 400 em toda aposta.
+   */
+  const faixa = useFaixaDeAposta(balance);
+
+  /* Quando o saldo muda de degrau, a aposta é reancorada na faixa nova. */
+  useEffect(() => {
+    if (!faixa) return;
+    setBet((atual) => (atual > 0 ? ajustar(faixa, atual) : apostaInicial(faixa)));
+  }, [faixa?.minimo, faixa?.saldo]);
 
   const run = async (acao: () => Promise<BlackjackHandResponse>) => {
     setBusy(true);
@@ -152,6 +157,9 @@ export function BlackjackScreen({ navigation }: Props) {
   };
 
   const distribuir = () => {
+    /* Sem aposta válida não se distribui: `bet` é 0 enquanto a faixa da mesa não chegou,
+       e continua 0 pra quem não tem saldo nem pro mínimo. */
+    if (bet <= 0) return;
     // Um id por toque: se esta mão precisar ser reenviada, o servidor devolve a que já
     // existe em vez de cobrar de novo.
     const acao = novaAcao();
@@ -332,30 +340,9 @@ export function BlackjackScreen({ navigation }: Props) {
             {/* --- Aposta: só entre mãos --- */}
             {!emJogo && (
               <View style={styles.areaDeAposta}>
-                <View style={styles.linhaDeAposta}>
-                  <Pressable
-                    onPress={() => adjustBet(-BET_STEP)}
-                    disabled={busy}
-                    accessibilityRole="button"
-                    accessibilityLabel="Diminuir a aposta"
-                    style={styles.botaoRedondo}
-                  >
-                    <Ionicons name="remove" size={20} color={colors.textPrimary} />
-                  </Pressable>
-                  <View style={styles.valorDaAposta}>
-                    <Text style={styles.rotuloDaAposta}>{hand ? 'APOSTA DA PRÓXIMA' : 'APOSTA'}</Text>
-                    <Text style={styles.numeroDaAposta}>{bet.toLocaleString('pt-BR')}</Text>
-                  </View>
-                  <Pressable
-                    onPress={() => adjustBet(BET_STEP)}
-                    disabled={busy}
-                    accessibilityRole="button"
-                    accessibilityLabel="Aumentar a aposta"
-                    style={styles.botaoRedondo}
-                  >
-                    <Ionicons name="add" size={20} color={colors.textPrimary} />
-                  </Pressable>
-                </View>
+                {faixa && (
+                  <SeletorDeAposta faixa={faixa} valor={bet} aoMudar={setBet} travado={busy} />
+                )}
 
                 {hand?.finished && (
                   <Text style={styles.totalDaMao}>
@@ -530,7 +517,6 @@ const styles = StyleSheet.create({
   desabilitado: { opacity: 0.45 },
 
   areaDeAposta: { gap: spacing.sm },
-  linhaDeAposta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
   botaoRedondo: {
     width: 44,
     height: 44,
@@ -541,9 +527,6 @@ const styles = StyleSheet.create({
     borderColor: colors.gold,
     backgroundColor: 'rgba(11,15,13,0.6)',
   },
-  valorDaAposta: { alignItems: 'center', minWidth: 120 },
-  rotuloDaAposta: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textSecondary, letterSpacing: 1 },
-  numeroDaAposta: { fontFamily: fontFamily.displayBold, fontSize: fontSize.xl, color: colors.textPrimary },
   totalDaMao: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textSecondary, textAlign: 'center' },
 
   sapata: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },

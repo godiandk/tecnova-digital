@@ -130,10 +130,18 @@ function grupos(img, passa) {
   return achados.sort((a, b) => b.area - a.area);
 }
 
+/*
+ * Lê uma constante do componente, aceitando tanto `0.325` quanto `39 / 120`.
+ *
+ * A forma com divisão existe porque ela mostra DE ONDE o número veio — "39 de 120" é a
+ * medida na arte, e `0.325` é só um número. Ler só o primeiro grupo devolvia 39 e a
+ * conferência acusava uma diferença de trinta e nove contra zero vírgula três.
+ */
 function constante(fonte, nome) {
-  const achado = fonte.match(new RegExp(`const ${nome} = ([\\d.]+)`));
+  const achado = fonte.match(new RegExp(`const ${nome} = ([\\d.]+)\\s*(?:/\\s*([\\d.]+))?`));
   if (!achado) throw new Error(`não achei ${nome} no LevelBar.tsx`);
-  return Number(achado[1]);
+  const valor = Number(achado[1]);
+  return achado[2] ? valor / Number(achado[2]) : valor;
 }
 
 let falhas = 0;
@@ -184,13 +192,58 @@ console.log(
 );
 if (!simetrico) falhas += 1;
 
+/*
+ * O CANAL NA VERTICAL, e a fita dourada dentro dele.
+ *
+ * Isto era só informativo, e o informativo apontava o defeito: a fita opaca tem 13 px
+ * dentro de um canal de 45. Desenhada no tamanho natural ela vira uma tirinha fina
+ * flutuando no meio da calha — a barra parece vazia mesmo cheia, porque o ouro não
+ * encosta em cima nem embaixo.
+ *
+ * O componente agora ESTICA a fita até cobrir o canal, e estas conferências travam as
+ * quatro medidas que essa conta usa. Se a arte mudar, elas param o build em vez de
+ * deixar o ouro cair fora do canal.
+ */
 const faixa = lerPng(PREENCHIMENTO);
-const opaco = (r, g, b, a) => a > 10;
+const opaco = (r, g, b, a) => a > 40;
 const [tinta] = grupos(faixa, opaco);
-console.log(
-  `\ninformativo — a faixa de preenchimento ocupa x ${tinta.x0}..${tinta.x1}, y ${tinta.y0}..${tinta.y1} ` +
-    `(${tinta.y1 - tinta.y0 + 1}px de altura dentro de um canal de ${canal.y1 - canal.y0 + 1}px)`,
+
+console.log('');
+confere('topo do canal', canal.y0 / calha.altura, constante(fonte, 'CANAL_TOPO'), 0.01);
+confere(
+  'altura do canal',
+  (canal.y1 - canal.y0 + 1) / calha.altura,
+  constante(fonte, 'CANAL_ALTURA'),
+  0.01,
 );
+confere('topo da fita dourada', tinta.y0 / faixa.altura, constante(fonte, 'FITA_TOPO'), 0.01);
+confere(
+  'altura da fita dourada',
+  (tinta.y1 - tinta.y0 + 1) / faixa.altura,
+  constante(fonte, 'FITA_ALTURA'),
+  0.01,
+);
+
+/*
+ * E a conta do componente tem que POR A FITA EM CIMA DO CANAL. Refeita aqui com os
+ * mesmos números, numa barra de tamanho plausível: o ouro tem que começar onde o canal
+ * começa e acabar onde ele acaba, com um pixel de folga.
+ */
+{
+  const alturaDaBarra = 120;
+  const canalTopo = alturaDaBarra * constante(fonte, 'CANAL_TOPO');
+  const canalAltura = alturaDaBarra * constante(fonte, 'CANAL_ALTURA');
+  const alturaDaImagem = canalAltura / constante(fonte, 'FITA_ALTURA');
+  const deslocamento = -(constante(fonte, 'FITA_TOPO') / constante(fonte, 'FITA_ALTURA')) * canalAltura;
+  const ouroTopo = canalTopo + deslocamento + constante(fonte, 'FITA_TOPO') * alturaDaImagem;
+  const ouroFundo = ouroTopo + constante(fonte, 'FITA_ALTURA') * alturaDaImagem;
+  const cobre = Math.abs(ouroTopo - canalTopo) < 1 && Math.abs(ouroFundo - (canalTopo + canalAltura)) < 1;
+  console.log(
+    `${cobre ? 'ok  ' : 'FALHA'} o ouro cobre o canal inteiro: canal ${canalTopo.toFixed(1)}..` +
+      `${(canalTopo + canalAltura).toFixed(1)}, ouro ${ouroTopo.toFixed(1)}..${ouroFundo.toFixed(1)}`,
+  );
+  if (!cobre) falhas += 1;
+}
 
 console.log(falhas === 0 ? '\nOK: a barra de nível bate com a arte dela.' : `\n${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);

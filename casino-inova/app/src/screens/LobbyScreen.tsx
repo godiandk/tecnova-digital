@@ -138,10 +138,16 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centrado: { maxWidth: LARGURA_MAXIMA, width: '100%', alignSelf: 'center' },
   header: {
-    paddingHorizontal: spacing.xl,
+    /*
+     * MAIS FOLGA AQUI EM CIMA, e menos aperto entre as quatro coisas que moram no topo:
+     * nome, saldo, nível e XP. O recuo lateral menor também deixa a barra usar mais
+     * largura — e, como a calha tem proporção fixa, largura é a única forma de a barra
+     * ficar mais alta sem deformar o brasão.
+     */
+    paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    gap: spacing.sm,
+    paddingBottom: spacing.lg,
+    gap: spacing.md,
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   greeting: { fontFamily: fontFamily.body, fontSize: fontSize.sm, color: colors.textFaint },

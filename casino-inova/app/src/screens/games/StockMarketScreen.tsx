@@ -20,11 +20,11 @@ import {
   StockMarketRoundResponse,
 } from '../../api/stockMarket';
 import { usePlayer } from '../../data/usePlayer';
+import { SeletorDeAposta, ajustar, apostaInicial, useFaixaDeAposta } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'StockMarket'>;
 
-const BET_STEP = 50;
 const CHART_HEIGHT = 160;
 
 /**
@@ -73,7 +73,8 @@ export function StockMarketScreen({ navigation }: Props) {
   useEffect(() => {
     if (jogador) setBalance(jogador.chipBalance);
   }, [jogador]);
-  const [amount, setAmount] = useState(100);
+  /* Abre em ZERO: quem decide o valor inicial é o degrau da mesa, não um número fixo. */
+  const [amount, setAmount] = useState(0);
   const [direction, setDirection] = useState<StockDirection | null>(null);
   const [round, setRound] = useState<StockMarketRoundResponse | null>(null);
   const [history, setHistory] = useState<number[]>([]);
@@ -96,23 +97,28 @@ export function StockMarketScreen({ navigation }: Props) {
 
   useEffect(() => {
     fetchStockMarketConfig()
-      .then((data) => {
-        setConfig(data);
-        setAmount(Math.max(data.minBet, Math.min(100, data.maxBet)));
-      })
+      .then(setConfig)
       .catch((error: unknown) => {
         setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
       });
     fetchStockMarketHistory().then((data) => setHistory(data.closes)).catch(() => undefined);
   }, []);
 
-  const adjustAmount = (delta: number) => {
-    if (!config) return;
-    setAmount((current) => Math.max(config.minBet, Math.min(config.maxBet, current + delta)));
-  };
+  /*
+   * A faixa vem do DEGRAU da pessoa, e não da configuração do jogo: o `minBet` da
+   * configuração é sempre o do Bronze, enquanto o servidor valida a aposta contra o
+   * degrau de verdade. Quem tinha saldo de mesa alta tomava 400 em toda aposta.
+   */
+  const faixa = useFaixaDeAposta(balance);
+
+  /* Quando o saldo muda de degrau, a aposta é reancorada na faixa nova. */
+  useEffect(() => {
+    if (!faixa) return;
+    setAmount((atual) => (atual > 0 ? ajustar(faixa, atual) : apostaInicial(faixa)));
+  }, [faixa?.minimo, faixa?.saldo]);
 
   const handlePlay = async () => {
-    if (!config || playing || !direction) return;
+    if (!config || playing || !direction || amount <= 0) return;
     setPlaying(true);
     setPlayError(null);
     try {
@@ -282,18 +288,9 @@ export function StockMarketScreen({ navigation }: Props) {
 
               {playError && <Text style={styles.errorText}>{playError}</Text>}
 
-              <View style={styles.betRow}>
-                <Pressable onPress={() => adjustAmount(-BET_STEP)} style={styles.stepButton} disabled={playing}>
-                  <Ionicons name="remove" size={20} color={colors.textPrimary} />
-                </Pressable>
-                <View style={styles.betValue}>
-                  <Text style={styles.betValueLabel}>Sua aposta</Text>
-                  <Text style={styles.betAmount}>{amount.toLocaleString('pt-BR')}</Text>
-                </View>
-                <Pressable onPress={() => adjustAmount(BET_STEP)} style={styles.stepButton} disabled={playing}>
-                  <Ionicons name="add" size={20} color={colors.textPrimary} />
-                </Pressable>
-              </View>
+              {faixa && (
+                <SeletorDeAposta faixa={faixa} valor={amount} aoMudar={setAmount} travado={playing} />
+              )}
 
               <Pressable
                 onPress={handlePlay}
@@ -556,20 +553,6 @@ const styles = StyleSheet.create({
   },
   receiptLine: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
   receiptTotal: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, marginTop: 2 },
-  betRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
-  stepButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 20,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  betValue: { alignItems: 'center', minWidth: 140 },
-  betValueLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
-  betAmount: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
   primaryButton: {
     backgroundColor: colors.goldBright,
     borderRadius: radius.pill,

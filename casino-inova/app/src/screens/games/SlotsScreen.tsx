@@ -14,11 +14,10 @@ import { Rolo } from '../../components/Rolo';
 import { ApiError, novaAcao } from '../../api/client';
 import { fetchSlotsConfig, spinSlots, SlotsConfig, WinningLineDto } from '../../api/slots';
 import { usePlayer } from '../../data/usePlayer';
+import { SeletorDeAposta, apostaInicial, ajustar, useFaixaDeAposta } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Slots'>;
-
-const BET_STEP = 50;
 
 /**
  * Tamanho de uma célula do gabinete, em pixel. Cinco rolos cabem numa tela de celular
@@ -62,7 +61,13 @@ export function SlotsScreen({ navigation }: Props) {
   useEffect(() => {
     if (jogador) setBalance(jogador.chipBalance);
   }, [jogador]);
-  const [bet, setBet] = useState(100);
+  /*
+   * A aposta começa em ZERO e só ganha valor quando a faixa da mesa chega.
+   *
+   * Antes era `useState(100)` — um número inventado, que numa mesa cujo mínimo é 500
+   * milhões nem era aposta válida. Agora quem decide onde ela abre é o degrau da pessoa.
+   */
+  const [bet, setBet] = useState(0);
   const [grid, setGrid] = useState<string[] | null>(null);
   const [winningLines, setWinningLines] = useState<WinningLineDto[]>([]);
   const [lastWin, setLastWin] = useState<number | null>(null);
@@ -71,22 +76,34 @@ export function SlotsScreen({ navigation }: Props) {
 
   useEffect(() => {
     fetchSlotsConfig()
-      .then((data) => {
-        setConfig(data);
-        setBet(Math.max(data.minBet, Math.min(100, data.maxBet)));
-      })
+      .then(setConfig)
       .catch((error: unknown) => {
         setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
       });
   }, []);
 
-  const adjustBet = (delta: number) => {
-    if (!config) return;
-    setBet((current) => Math.max(config.minBet, Math.min(config.maxBet, current + delta)));
-  };
+  /*
+   * A faixa de aposta vem do DEGRAU da pessoa, não da configuração do jogo.
+   *
+   * `fetchSlotsConfig()` devolve `minBet` do Bronze pra todo mundo — é a configuração da
+   * REGRA do jogo, e não da mesa em que esta pessoa senta. Quem tinha saldo de mesa alta
+   * via um seletor de 50 a 1.000 e tomava 400 do servidor em toda aposta, porque lá a
+   * validação usa o degrau de verdade.
+   */
+  const faixa = useFaixaDeAposta(balance);
+
+  /*
+   * Quando a faixa chega (ou o saldo muda de degrau), a aposta é reancorada: se ainda
+   * não havia aposta, abre no mínimo; se havia, é apertada na faixa nova. Sem isto, uma
+   * vitória grande que sobe de degrau deixaria a aposta abaixo do novo mínimo.
+   */
+  useEffect(() => {
+    if (!faixa) return;
+    setBet((atual) => (atual > 0 ? ajustar(faixa, atual) : apostaInicial(faixa)));
+  }, [faixa?.minimo, faixa?.saldo]);
 
   const handleSpin = async () => {
-    if (!config || spinning) return;
+    if (!config || spinning || bet <= 0) return;
     setSpinning(true);
     setSpinError(null);
     /*
@@ -197,20 +214,20 @@ export function SlotsScreen({ navigation }: Props) {
 
             {spinError && <Text style={styles.errorText}>{spinError}</Text>}
 
-            <View style={styles.betRow}>
-              <Pressable onPress={() => adjustBet(-BET_STEP)} style={styles.betButton} disabled={spinning}>
-                <Ionicons name="remove" size={20} color={colors.textPrimary} />
-              </Pressable>
-              <View style={styles.betValue}>
-                <Text style={styles.betLabel}>Aposta</Text>
-                <Text style={styles.betAmount}>{bet.toLocaleString('pt-BR')}</Text>
-              </View>
-              <Pressable onPress={() => adjustBet(BET_STEP)} style={styles.betButton} disabled={spinning}>
-                <Ionicons name="add" size={20} color={colors.textPrimary} />
-              </Pressable>
-            </View>
+            {faixa && (
+              <SeletorDeAposta faixa={faixa} valor={bet} aoMudar={setBet} travado={spinning} />
+            )}
 
-            <Pressable onPress={handleSpin} disabled={spinning} style={[styles.spinButton, spinning && styles.spinButtonDisabled]}>
+            {/*
+              Sem aposta válida, o botão não gira. `bet` é 0 enquanto a faixa da mesa não
+              chegou, e continua 0 pra quem não tem saldo nem pro mínimo — nos dois casos,
+              girar mandaria uma aposta de zero pro servidor só pra tomar 400 de volta.
+            */}
+            <Pressable
+              onPress={handleSpin}
+              disabled={spinning || bet <= 0}
+              style={[styles.spinButton, (spinning || bet <= 0) && styles.spinButtonDisabled]}
+            >
               {spinning ? (
                 <ActivityIndicator color={colors.background} />
               ) : (
@@ -301,20 +318,6 @@ const styles = StyleSheet.create({
   resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, marginTop: spacing.lg, textAlign: 'center' },
   resultWin: { color: colors.goldBright },
   resultLoss: { color: colors.textFaint },
-  betRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: spacing.xl },
-  betButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 20,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  betValue: { alignItems: 'center', minWidth: 100 },
-  betLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
-  betAmount: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
   spinButton: {
     backgroundColor: colors.goldBright,
     borderRadius: radius.pill,

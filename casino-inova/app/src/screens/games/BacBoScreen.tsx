@@ -23,14 +23,13 @@ import {
   BacBoRoundResponse,
 } from '../../api/bacBo';
 import { usePlayer } from '../../data/usePlayer';
+import { SeletorDeAposta, ajustar, apostaInicial, useFaixaDeAposta } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BacBo'>;
 
 /** Lado do dado na mesa. Dois cabem folgados na coluna de cada lado. */
 const TAMANHO_DO_DADO = 52;
-
-const BET_STEP = 50;
 
 const BET_OPTIONS: { type: BacBoBetType; label: string; hint: string }[] = [
   { type: 'jogador', label: 'Player', hint: 'paga 1 por 1' },
@@ -58,7 +57,8 @@ export function BacBoScreen({ navigation }: Props) {
   useEffect(() => {
     if (jogador) setBalance(jogador.chipBalance);
   }, [jogador]);
-  const [amountPerBet, setAmountPerBet] = useState(100);
+  /* Abre em ZERO: quem decide o valor inicial é o degrau da mesa, não um número fixo. */
+  const [amountPerBet, setAmountPerBet] = useState(0);
   const [selected, setSelected] = useState<Set<BacBoBetType>>(new Set());
   const [round, setRound] = useState<BacBoRoundResponse | null>(null);
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
@@ -67,20 +67,25 @@ export function BacBoScreen({ navigation }: Props) {
 
   useEffect(() => {
     fetchBacBoConfig()
-      .then((data) => {
-        setConfig(data);
-        setAmountPerBet(Math.max(data.minBet, Math.min(100, data.maxBet)));
-      })
+      .then(setConfig)
       .catch((error: unknown) => {
         setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
       });
     fetchBacBoRoadmap().then(setRoadmap).catch(() => undefined);
   }, []);
 
-  const adjustAmount = (delta: number) => {
-    if (!config) return;
-    setAmountPerBet((current) => Math.max(config.minBet, Math.min(config.maxBet, current + delta)));
-  };
+  /*
+   * A faixa vem do DEGRAU da pessoa, e não da configuração do jogo: o `minBet` da
+   * configuração é sempre o do Bronze, enquanto o servidor valida a aposta contra o
+   * degrau de verdade. Quem tinha saldo de mesa alta tomava 400 em toda aposta.
+   */
+  const faixa = useFaixaDeAposta(balance);
+
+  /* Quando o saldo muda de degrau, a aposta é reancorada na faixa nova. */
+  useEffect(() => {
+    if (!faixa) return;
+    setAmountPerBet((atual) => (atual > 0 ? ajustar(faixa, atual) : apostaInicial(faixa)));
+  }, [faixa?.minimo, faixa?.saldo]);
 
   const toggleBet = (type: BacBoBetType) => {
     if (playing) return;
@@ -93,7 +98,7 @@ export function BacBoScreen({ navigation }: Props) {
   };
 
   const handlePlay = async () => {
-    if (!config || playing || selected.size === 0) return;
+    if (!config || playing || selected.size === 0 || amountPerBet <= 0) return;
     setPlaying(true);
     setPlayError(null);
     try {
@@ -199,18 +204,9 @@ export function BacBoScreen({ navigation }: Props) {
 
               {playError && <Text style={styles.errorText}>{playError}</Text>}
 
-              <View style={styles.betRow}>
-                <Pressable onPress={() => adjustAmount(-BET_STEP)} style={styles.stepButton} disabled={playing}>
-                  <Ionicons name="remove" size={20} color={colors.textPrimary} />
-                </Pressable>
-                <View style={styles.betValue}>
-                  <Text style={styles.betValueLabel}>Por aposta · {selected.size} escolhida(s)</Text>
-                  <Text style={styles.betAmount}>{amountPerBet.toLocaleString('pt-BR')}</Text>
-                </View>
-                <Pressable onPress={() => adjustAmount(BET_STEP)} style={styles.stepButton} disabled={playing}>
-                  <Ionicons name="add" size={20} color={colors.textPrimary} />
-                </Pressable>
-              </View>
+              {faixa && (
+                <SeletorDeAposta faixa={faixa} valor={amountPerBet} aoMudar={setAmountPerBet} travado={playing} />
+              )}
 
               <Pressable
                 onPress={handlePlay}
@@ -346,20 +342,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
   },
-  betRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg, marginTop: spacing.sm },
-  stepButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 20,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  betValue: { alignItems: 'center', minWidth: 160 },
-  betValueLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
-  betAmount: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
   primaryButton: {
     backgroundColor: colors.goldBright,
     borderRadius: radius.pill,
