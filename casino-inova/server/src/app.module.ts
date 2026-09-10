@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { DatabaseModule } from './database/database.module';
+import { ObservabilidadeModule } from './observabilidade/observabilidade.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthGuard } from './modules/auth/auth.guard';
 import { UsersModule } from './modules/users/users.module';
@@ -32,6 +33,8 @@ import { CoreDeSalasModule } from './modules/games/core/core.module';
 
 @Module({
   imports: [
+    // Global: uma linha de JSON por requisição, com número de pedido, quem e quanto tempo.
+    ObservabilidadeModule,
     DatabaseModule,
     // Global: os dez jogos compartilham o mesmo registro de ações já executadas.
     SharedGamesModule,

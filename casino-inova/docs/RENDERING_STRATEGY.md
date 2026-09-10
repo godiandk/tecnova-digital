@@ -320,6 +320,34 @@ alternando de aba e voltando; bloqueando e desbloqueando a tela; com o aparelho 
 É na terceira execução com o telefone quente que a diferença aparece — e é essa que decide,
 não a primeira com o aparelho frio.
 
+### 6a-bis. O mesmo medidor, dentro do aplicativo de verdade
+
+A POC mede uma cena de laboratório. O que decide o renderer é o jogo de verdade, com a
+troca de tela, a lista do lobby, o socket aberto e o telefone morno — e para isso o
+medidor precisa morar dentro do aplicativo, não num teste ao lado.
+
+Ele mora: `app/src/desempenho/`. **A conta é a mesma da POC** (mesmos percentis, mesma
+definição de virada perdida), de propósito — se fossem calculadas de jeitos diferentes,
+os dois números não poderiam ser comparados, e comparar é justamente o que fecha a decisão.
+
+Como ligar, sem recompilar nada:
+
+| Onde | Como |
+|---|---|
+| web | acrescente `?quadros=1` ao endereço |
+| celular nativo | `globalThis.__MEDIR_QUADROS__ = true` no console do depurador |
+
+Aparece um painel no canto com o quadro típico, p95, p99, o pior quadro e quantas viradas
+de tela passaram em branco — e uma frase dizendo se aquilo está fluido, quase, ou travando.
+Toque nele para esconder. **Em produção não liga de jeito nenhum**: `__DEV__` é falso lá.
+
+O `?quadros=1` na web é o caminho mais curto para o §6a: dá para mandar UM link para
+alguém abrir no telefone dela e ler o número, sem instalar nada.
+
+A conta do medidor é conferida contra sequências de quadros inventadas à mão, com a
+resposta certa conhecida de antemão — inclusive a armadilha do limiar em cima da linha que
+esta POC cometeu: `npm run verify:medidor-de-quadros`.
+
 ### 6b. O que só o aparelho responde
 
 | Pergunta | Como |

@@ -15,6 +15,8 @@ import { recuperarSessao } from './src/api/auth';
 import { colors } from './src/theme';
 import { aplicarAjustesDaWeb } from './src/theme/ajustesDaWeb';
 import { vigiarVersao } from './src/api/versao';
+import { PainelDeQuadros } from './src/desempenho/PainelDeQuadros';
+import { medirQuadrosNaAbertura } from './src/desempenho/ligaOMedidor';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -39,6 +41,16 @@ export default function App() {
    * tela de login piscar em todo abrir de app pra quem já está logado.
    */
   const [logado, setLogado] = useState<boolean | null>(null);
+
+  /*
+   * O painel de quadros. Desligado sempre, menos quando alguém pede — `?quadros=1` na
+   * web, `__MEDIR_QUADROS__` no depurador — e nunca em produção.
+   *
+   * Mora aqui em cima, e não dentro de cada jogo, porque o que interessa medir é o
+   * aplicativo INTEIRO: a troca de tela, a lista do lobby e a mesa, com o mesmo medidor,
+   * pra os números serem comparáveis entre si e com os da POC de renderização.
+   */
+  const [medindoQuadros, setMedindoQuadros] = useState(medirQuadrosNaAbertura);
 
   const [fontsLoaded] = useFonts({
     Poppins_600SemiBold,
@@ -117,6 +129,7 @@ export default function App() {
         ) : (
           <LoginScreen aoEntrar={() => setLogado(true)} />
         )}
+        <PainelDeQuadros ligado={medindoQuadros} aoTocar={() => setMedindoQuadros(false)} />
       </View>
     </SafeAreaProvider>
   );

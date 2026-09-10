@@ -40,6 +40,14 @@ const ROTAS: { caminho: string; publica?: boolean }[] = [
   { caminho: '/amigos' },
   { caminho: '/amigos/pendentes' },
   { caminho: '/store/pacotes', publica: true },
+  /*
+   * As rotas de suporte. Entram aqui pelo mesmo motivo de todas: se um módulo for
+   * registrado depois do SiteModule, elas passam a responder 200 com HTML em vez de 401,
+   * e quem for investigar uma reclamação vai receber a página inicial achando que é
+   * resposta da API.
+   */
+  { caminho: '/admin/rodadas/qualquer-id' },
+  { caminho: '/admin/rodadas-abertas' },
 ];
 
 async function main() {

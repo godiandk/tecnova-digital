@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
 import type { FaseDaRodada } from '../../../protocolo';
+import { acrescentarAoContexto } from '../../../observabilidade/contexto-do-pedido';
+import { registro } from '../../../observabilidade/registro';
 import { podeIrPara } from './fases';
 import { RodadasRepository } from './rodadas.repository';
 
@@ -94,6 +96,14 @@ export class MaquinaDeRodada {
     });
     await this.rodadas.mudarEstado(id, 'APOSTAS_FECHADAS', { apostasFechadas: true });
 
+    /*
+     * A partir daqui, TODA linha deste pedido carrega o jogo e o número da rodada — sem
+     * ninguém precisar passar nada adiante. É o que liga uma reclamação ("girei às 14h32
+     * e não pagou") às tabelas do P0.2, que contam a rodada por dentro.
+     */
+    acrescentarAoContexto({ jogo: entrada.jogo, rodada: id });
+    registro.info('rodada', 'aberta', { apostas: entrada.apostas });
+
     const rodadas = this.rodadas;
     return {
       id,
@@ -120,6 +130,12 @@ export class MaquinaDeRodada {
           decidida: true,
           fechada: true,
           resultado: fim.resultado,
+        });
+        registro.info('rodada', 'liquidada', {
+          apostado: fim.apostado,
+          retorno: fim.retorno,
+          /* O saldo do jogador NÃO entra: quem quer saldo lê o extrato, que é a fonte. */
+          comAcoesDoJogador: fim.comAcoesDoJogador === true,
         });
       },
     };

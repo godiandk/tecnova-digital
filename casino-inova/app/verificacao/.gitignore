@@ -1,0 +1,7 @@
+# Os retratos de agora são regerados a cada execução; o que vale versionar é a BASE
+# aprovada (base-visual/), que é o "certo" contra o qual se compara.
+visual-agora/
+retratos/
+
+# Cache do Python — o comparador é carregado por caminho e deixa isto pra trás.
+__pycache__/

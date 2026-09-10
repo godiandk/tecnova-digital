@@ -71,6 +71,12 @@ if [ "${1:-}" = "--testes" ]; then
   echo "== o dinheiro entra e sai certo =="
   cd "$RAIZ/server" && node verificacao/verifica-dinheiro.mjs
 
+  # Esta sobe o PRÓPRIO servidor, numa porta separada, porque precisa LER a saída dele.
+  # Não dá pra conferir o registro falando com um servidor cuja saída a gente não vê.
+  echo
+  echo "== o registro escreve o que precisa =="
+  cd "$RAIZ/server" && node verificacao/verifica-registro-http.mjs
+
   # As conferências abaixo falam com o servidor que acabou de subir e com o navegador —
   # por isso não estão no `verify:tudo`, que precisa rodar sem nada no ar.
   # TODAS as conferências de ponta a ponta, e não só duas.
@@ -92,6 +98,24 @@ if [ "${1:-}" = "--testes" ]; then
       grep -iE 'FALHOU|Error:' "/tmp/$v.log" | head -2
     fi
   done
+  # Esta estava dentro do `verify:tudo` do aplicativo, que roda SEM servidor no ar — e
+  # ela precisa de servidor. Resultado: ela estourava, e as três conferências depois dela
+  # na corrente (dado, medidor de quadros, arcos, sons) nunca chegavam a rodar. Conferência
+  # que não roda não é conferência.
+  echo
+  echo "== a escada do truco vem do servidor =="
+  cd "$RAIZ/app" && node verificacao/verifica-escada-do-truco.mjs
+
+  # Compara as telas com a base aprovada. Não diz "cabe" nem "alcança" — diz se ALGUMA
+  # COISA MUDOU sem ninguém ter pedido, e mostra onde.
+  echo
+  echo "== nenhuma tela mudou sem querer =="
+  cd "$RAIZ/app" \
+    && PLAYWRIGHT="${PLAYWRIGHT:-/opt/node22/lib/node_modules/playwright/index.js}" \
+       CHROMIUM="${CHROMIUM:-/opt/pw-browsers/chromium-1194/chrome-linux/chrome}" \
+       node verificacao/verifica-visual.mjs \
+    || echo "   (se a mudança era esperada: npm run aprovar:visual, DEPOIS de olhar os diagnósticos)"
+
   echo
   echo "== a mesa cabe nos cinco tamanhos =="
   cd "$RAIZ/app" \

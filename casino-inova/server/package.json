@@ -43,7 +43,9 @@
     "verify:torneios": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" ts-node src/modules/tournaments/verify-tournaments.ts",
     "verify:replay": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" ts-node src/modules/games/core/verifica-replay.ts",
     "verify:fases": "ts-node src/modules/games/core/verifica-fases-dos-jogos.ts",
-    "verify:tudo": "npm run verify:bac-bo && npm run verify:bacara && npm run verify:bacara-regras && npm run verify:banca-francesa && npm run verify:banca-216 && npm run verify:propriedades && npm run verify:domino-abertura && npm run verify:blackjack && npm run verify:nucleo && npm run verify:replay && npm run verify:fases && npm run verify:rng && npm run verify:recompensas && npm run verify:corrente && npm run verify:idempotencia && npm run verify:sapata && npm run verify:slots && npm run verify:persistencia && npm run verify:placar && npm run verify:poker-hands && npm run verify:roleta && npm run verify:stock-market && npm run verify:torneios",
+    "verify:registro": "ts-node src/observabilidade/verifica-registro.ts",
+    "verify:registro-http": "node verificacao/verifica-registro-http.mjs  # sobe o próprio servidor",
+    "verify:tudo": "npm run verify:bac-bo && npm run verify:bacara && npm run verify:bacara-regras && npm run verify:banca-francesa && npm run verify:banca-216 && npm run verify:propriedades && npm run verify:domino-abertura && npm run verify:blackjack && npm run verify:nucleo && npm run verify:replay && npm run verify:fases && npm run verify:registro && npm run verify:rng && npm run verify:recompensas && npm run verify:corrente && npm run verify:idempotencia && npm run verify:sapata && npm run verify:slots && npm run verify:persistencia && npm run verify:placar && npm run verify:poker-hands && npm run verify:roleta && npm run verify:stock-market && npm run verify:torneios",
     "verify:banca-nulos": "node verificacao/verifica-banca-nulos.mjs  # precisa do servidor no ar"
   },
   "dependencies": {
