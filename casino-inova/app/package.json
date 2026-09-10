@@ -16,12 +16,13 @@
     "verify:face-do-dado": "cd ../server && npx ts-node ../app/verificacao/verifica-face-do-dado.ts  # o ts-node mora no servidor",
     "verify:medidor-de-quadros": "cd ../server && npx ts-node ../app/verificacao/verifica-medidor-de-quadros.ts  # o ts-node mora no servidor",
     "verify:comparador": "python3 verificacao/verifica-comparador.py",
+    "verify:mistura": "cd ../server && npx ts-node ../app/verificacao/verifica-mistura.ts  # o ts-node mora no servidor",
     "verify:visual": "node verificacao/verifica-visual.mjs  # precisa do servidor no ar e do playwright",
     "aprovar:visual": "node verificacao/verifica-visual.mjs --aprovar  # grava a base: olhe os retratos antes",
     "verify:tamanhos": "node verificacao/verifica-tamanhos.mjs  # precisa do servidor no ar e do playwright",
     "verify:arcos-da-banca": "node verificacao/verifica-arcos-da-banca.mjs",
     "verify:sons": "node verificacao/verifica-sons.mjs",
-    "verify:tudo": "npm run typecheck && npm run verify:barra-de-nivel && npm run verify:palco && npm run verify:face-do-dado && npm run verify:medidor-de-quadros && npm run verify:comparador && npm run verify:arcos-da-banca && npm run verify:sons"
+    "verify:tudo": "npm run typecheck && npm run verify:barra-de-nivel && npm run verify:palco && npm run verify:face-do-dado && npm run verify:medidor-de-quadros && npm run verify:comparador && npm run verify:mistura && npm run verify:arcos-da-banca && npm run verify:sons"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",

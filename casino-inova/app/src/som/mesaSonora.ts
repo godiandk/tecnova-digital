@@ -3,6 +3,8 @@ import { AccessibilityInfo, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 
+import { criarMistura, type Camada, type Prioridade } from './mistura';
+
 /**
  * O SOM DA MESA.
  *
@@ -61,6 +63,45 @@ const ARQUIVOS: Record<NomeDoSom, number> = {
 /** Os que continuam tocando com movimento reduzido: confirmam um gesto da pessoa. */
 const ESSENCIAIS = new Set<NomeDoSom>(['ficha-no-pano', 'ficha-na-pilha', 'pagou']);
 
+/**
+ * Quanto cada som importa, pra mesa de som saber quem cede lugar quando faltar voz.
+ *
+ * `pagou` é destaque por dois motivos: ele anuncia dinheiro, e é ele que manda a música
+ * e o ambiente descerem pra ser ouvido. As batidas são o corpo da cena; o copo é
+ * textura, e some primeiro sem ninguém sentir falta.
+ */
+const PRIORIDADE: Record<NomeDoSom, Prioridade> = {
+  'batida-no-couro': 'normal',
+  'batida-no-dado': 'normal',
+  copo: 'fundo',
+  'ficha-no-pano': 'destaque',
+  'ficha-na-pilha': 'destaque',
+  pagou: 'destaque',
+};
+
+/** Em que camada cada som vive. Hoje são todos efeito; música e ambiente ainda não têm conteúdo. */
+const CAMADA: Record<NomeDoSom, Camada> = {
+  'batida-no-couro': 'efeitos',
+  'batida-no-dado': 'efeitos',
+  copo: 'efeitos',
+  'ficha-no-pano': 'efeitos',
+  'ficha-na-pilha': 'efeitos',
+  pagou: 'efeitos',
+};
+
+/**
+ * A MESA DE SOM.
+ *
+ * Ela não toca nada: decide volume, quem cede voz e quando a música desce. Está em
+ * `mistura.ts`, separada de propósito — decisão de mixagem misturada com código de áudio
+ * só se confere com placa de som e ouvido, e aí não se confere nunca. Lá é aritmética
+ * com relógio de mentira, e a conferência roda em qualquer lugar.
+ */
+export const mistura = criarMistura();
+
+/** Um número por voz tocada, pra a mesa de som saber quem é quem. */
+let proximaVoz = 0;
+
 type Voz = { som: Audio.Sound; ocupadaAte: number };
 
 const vozes = new Map<NomeDoSom, Voz[]>();
@@ -108,6 +149,7 @@ export async function prepararOSom(): Promise<void> {
   try {
     const guardado = await AsyncStorage.getItem(CHAVE_DO_MUDO);
     mudo = guardado === 'sim';
+    mistura.definirMudo(mudo);
   } catch {
     /* Sem armazenamento (janela anônima, por exemplo), começa com som. */
   }
@@ -139,10 +181,40 @@ export function tocar(nome: NomeDoSom, forca?: number): void {
   if (!copias) return;
 
   const agora = Date.now();
+  const prioridade = PRIORIDADE[nome];
+
+  /*
+   * A MESA DE SOM DECIDE ANTES DE QUALQUER SOM SAIR.
+   *
+   * Doze batidas ao mesmo tempo não podem virar doze sons: viram um borrão alto. Se não
+   * houver voz e este som não for mais importante que o menos importante que já está
+   * tocando, ele simplesmente não sai — e é melhor assim do que sair por cima.
+   */
+  const { pode, roubarId } = mistura.pedirVoz(prioridade, agora);
+  if (!pode) return;
+  /*
+   * A voz roubada sai da conta AGORA, senão o orçamento se fecharia sozinho: a mesa
+   * mandaria roubar, ninguém tiraria a antiga da lista, e no toque seguinte o teto
+   * continuaria estourado. O corte sonoro em si já acontece por outro caminho — as
+   * quatro cópias de cada som são reaproveitadas em ordem, então a mais antiga é a que
+   * cede o alto-falante.
+   */
+  if (roubarId !== null) mistura.acabou(roubarId);
+
+  /* Um destaque manda a música e o ambiente descerem pra ele ser ouvido. */
+  if (prioridade === 'destaque') mistura.abaixarOFundo(agora);
+
   const livre = copias.find((v) => v.ocupadaAte <= agora) ?? copias[0];
   livre.ocupadaAte = agora + 220;
 
-  const volume = forca === undefined ? 0.9 : Math.min(1, 0.25 + (0.75 * forca) / FORCA_CHEIA);
+  const pedido = forca === undefined ? 0.9 : volumeDaForca(forca);
+  const volume = mistura.volumeDe(CAMADA[nome], pedido, agora);
+  if (volume <= 0) return;
+
+  const id = proximaVoz;
+  proximaVoz += 1;
+  mistura.comecou(id, prioridade, agora);
+
   /*
    * Reposicionar antes de tocar é obrigatório: um som que chegou ao fim fica parado no
    * fim, e mandar tocar de novo não rebobina sozinho — o segundo toque sairia mudo.
@@ -151,6 +223,7 @@ export function tocar(nome: NomeDoSom, forca?: number): void {
     .setStatusAsync({ positionMillis: 0, volume, shouldPlay: true })
     .catch(() => {
       /* Navegador que ainda não liberou áudio, ou som descarregado: silêncio, e pronto. */
+      mistura.acabou(id);
     });
 }
 
@@ -190,6 +263,8 @@ export function useMudo(): { mudo: boolean; alternar: () => void } {
 
   const alternar = useCallback(() => {
     mudo = !mudo;
+    /* A mesa de som precisa saber: no mudo ela não concede voz nenhuma. */
+    mistura.definirMudo(mudo);
     ouvintesDoMudo.forEach((avisar) => avisar(mudo));
     AsyncStorage.setItem(CHAVE_DO_MUDO, mudo ? 'sim' : 'nao').catch(() => {});
     /*
