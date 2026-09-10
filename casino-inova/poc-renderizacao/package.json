@@ -1,0 +1,16 @@
+{
+  "name": "poc-renderizacao",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "canvaskit-wasm": "^0.42.0",
+    "pixi.js": "^8.20.1"
+  }
+}

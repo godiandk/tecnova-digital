@@ -1,0 +1,295 @@
+<meta charset="utf-8">
+<title>POC · Skia (CanvasKit)</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b0f0d; overflow: hidden; }
+  canvas { display: block; }
+</style>
+<canvas id="tela"></canvas>
+<!--
+  O CANVASKIT NÃO É MÓDULO ESM: ele é um script clássico que pendura `CanvasKitInit` no
+  `window` (o arquivo termina com `module.exports = CanvasKitInit`, pra Node, e nada de
+  `export`). Importar com `import CanvasKitInit from ...` estoura com "does not provide an
+  export named 'default'".
+
+  É um detalhe de empacotamento e não de renderização — mas vale registrar, porque é o
+  primeiro atrito prático de trazer o Skia pra web: ele não vem no formato que o
+  navegador moderno espera, e quem for embutir isso num aplicativo de verdade vai tropeçar
+  aqui antes de desenhar o primeiro pixel.
+-->
+<script src="../node_modules/canvaskit-wasm/bin/canvaskit.js"></script>
+<script type="module">
+/**
+ * O BRAÇO SKIA DA POC.
+ *
+ * Usa o CanvasKit — o Skia compilado pra WebAssembly, que é EXATAMENTE o motor que o
+ * `@shopify/react-native-skia` usa quando roda na web. Medir o CanvasKit direto é medir
+ * o desenho sem o custo da ponte React, e isso está dito no relatório: se o Skia ganhar,
+ * a ponte precisa ser medida à parte antes de decidir.
+ *
+ * A cena é a MESMA de `comum/cena.js`. O que muda é o modelo: o Skia não tem cena, não
+ * tem sprite e não tem lote automático — ele é uma API de DESENHO. Cada quadro é
+ * redesenhado do zero, e o que ele oferece em troca é o que falta no React Native:
+ * caminho, máscara, degradê radial, sombra e desfoque de verdade.
+ *
+ * A cena aproveita isso onde faz sentido — o brilho das linhas de prêmio é um degradê
+ * radial de verdade, e não três elipses concêntricas fingindo de degradê.
+ */
+import { CONFIG, RESULTADO, TEMPOS, brilhoDaLinha, deslocamentoDoRolo, medidasDaGrade,
+         opacidadeDaCena, particula, premioNaTela } from '../comum/cena.js';
+import { criarMedidor, memoriaAgora, mostrarNaTela, quemEstaDesenhando } from '../comum/medidor.js';
+
+/* As mesmas chaves do braço Pixi, pra a ablação poder ser feita dos dois lados. */
+const OPCOES = new URLSearchParams(location.search);
+const SEM = new Set((OPCOES.get('sem') || '').split(',').filter(Boolean));
+/*
+ * `?t=5600` — CONGELA A CENA num instante exato, pra o retrato.
+ *
+ * Sem isso a comparação visual sai torta. O retrato é tirado quando a página avisa que
+ * passou do instante pedido, mas quem está a 13 quadros por segundo demora mais pra
+ * avisar E mais pra entregar a captura: os dois retratos saíram com o contador em 3.233 e
+ * 2.746, ou seja, meio segundo de diferença de animação, postos lado a lado como se
+ * fossem o mesmo momento. Com o tempo fixo, os dois braços desenham EXATAMENTE o mesmo
+ * quadro, e o que sobra na imagem é só diferença de renderização — que é o que se quer ver.
+ *
+ * A medição de desempenho NUNCA usa esta chave: ali o tempo tem que correr de verdade.
+ */
+const T_FIXO = OPCOES.has('t') ? Number(OPCOES.get('t')) : null;
+
+const CK = await window.CanvasKitInit({ locateFile: (f) => `../node_modules/canvaskit-wasm/bin/${f}` });
+
+const tela = document.getElementById('tela');
+const escala = window.devicePixelRatio || 1;
+tela.width = window.innerWidth * escala;
+tela.height = window.innerHeight * escala;
+tela.style.width = `${window.innerWidth}px`;
+tela.style.height = `${window.innerHeight}px`;
+
+window.__CK = CK;
+const superficie = CK.MakeWebGLCanvasSurface(tela);
+if (!superficie) throw new Error('sem WebGL — o CanvasKit não sobe');
+
+/*
+ * O CANVASKIT NÃO TEM NENHUMA FONTE DENTRO.
+ *
+ * `new CK.Font(null, tamanho)` compila e roda sem reclamar, mas todo caractere vira o
+ * glifo 0 — o `.notdef` — e o texto sai como uma fileira de retângulos vazios, ou nada.
+ * Foi assim que este braço quebrou na primeira execução: `fonte.measureText` nem existe
+ * nesta versão, e mesmo depois de somar as larguras dos glifos, todas davam zero.
+ *
+ * A "fonte do sistema", que no React Native e no DOM vem de graça, aqui é um arquivo que
+ * alguém precisa baixar. Está contabilizado nos bytes do relatório: 414.568 bytes crus,
+ * 212.921 comprimidos, e este é o custo de UM peso de UMA família. É um preço real do
+ * Skia na web, e some quase todo se a fonte for reduzida só aos glifos usados — o que
+ * não foi medido aqui por falta de ferramenta no ambiente.
+ *
+ * Usamos a Liberation Sans Bold (SIL OFL 1.1, redistribuível; licença ao lado do arquivo).
+ */
+const fonteBytes = await fetch('../fonte/LiberationSans-Bold.ttf').then((r) => r.arrayBuffer());
+const tipo = CK.Typeface.MakeFreeTypeFaceFromData(fonteBytes);
+if (!tipo) throw new Error('o CanvasKit não aceitou a fonte');
+
+const atlasJson = await fetch('../atlas/simbolos.json').then((r) => r.json());
+const bytes = await fetch('../atlas/simbolos.png').then((r) => r.arrayBuffer());
+const atlas = CK.MakeImageFromEncoded(bytes);
+const nomes = Object.keys(atlasJson.quadros).sort(
+  (a, b) => atlasJson.quadros[a].indice - atlasJson.quadros[b].indice,
+);
+const recorte = nomes.map((n) => {
+  const q = atlasJson.quadros[n];
+  return CK.XYWHRect(q.x, q.y, q.w, q.h);
+});
+
+const M = medidasDaGrade(window.innerWidth, window.innerHeight);
+const tinta = new CK.Paint();
+tinta.setAntiAlias(true);
+const tintaImagem = new CK.Paint();
+tintaImagem.setAntiAlias(true);
+const amostragem = { filter: CK.FilterMode.Linear, mipmap: CK.MipmapMode.None };
+/*
+ * O tamanho vai em unidades da CENA, não em pixels do dispositivo: o canvas já leva
+ * `c.scale(escala, escala)` no começo de cada quadro, então multiplicar por `escala`
+ * aqui de novo elevava a fonte ao quadrado da densidade — texto gigante no celular 2x
+ * e certo no monitor 1x, que é o tipo de erro que só aparece num tamanho de tela.
+ */
+const fonte = new CK.Font(tipo, Math.round(M.celula * 0.42));
+const fonteGrande = new CK.Font(tipo, Math.round(M.celula * 0.55));
+
+/**
+ * A largura de um texto, somando a largura de cada glifo.
+ *
+ * O `Font` desta versão do CanvasKit não tem `measureText` — tem `getGlyphIDs` e
+ * `getGlyphWidths`, que é a mesma conta feita à mão. Não trata ligadura nem kerning, e
+ * pra dígitos e um "x" isso não muda nada.
+ */
+function larguraDoTexto(qualFonte, texto) {
+  const larguras = qualFonte.getGlyphWidths(qualFonte.getGlyphIDs(texto));
+  let soma = 0;
+  for (let i = 0; i < larguras.length; i += 1) soma += larguras[i];
+  return soma;
+}
+
+const medidor = criarMedidor();
+const inicio = performance.now();
+let acabou = false;
+
+function desenhar() {
+  const agora = performance.now();
+  medidor.quadro(agora);
+  const t = T_FIXO ?? (agora - inicio);
+  window.__t = t;
+  window.__quadrosDesenhados = (window.__quadrosDesenhados ?? 0) + 1;
+
+  const c = superficie.getCanvas();
+  c.clear(CK.Color(11, 15, 13, 1));
+  c.save();
+  c.scale(escala, escala);
+
+  const opacidade = opacidadeDaCena(t);
+
+  /* `sem=palco`: só limpa e apresenta, pra medir o custo fixo do quadro do CanvasKit. */
+  if (SEM.has('palco')) {
+    c.restore();
+    superficie.flush();
+    if (t > TEMPOS.fim) { if (!acabou) { acabou = true; window.__resultado = { renderizador: 'skia', ajustes: 'sem=palco', ...medidor.resultado(), memoriaMB: memoriaAgora() }; } return; }
+    requestAnimationFrame(desenhar);
+    return;
+  }
+
+  /* --- o feltro --- */
+  tinta.setColor(CK.Color(18, 39, 24, opacidade));
+  tinta.setStyle(CK.PaintStyle.Fill);
+  const moldura = CK.RRectXY(
+    CK.XYWHRect(M.esquerda - M.celula * 0.2, M.topo - M.celula * 0.2,
+                M.largura + M.celula * 0.4, M.altura + M.celula * 0.4),
+    M.celula * 0.18, M.celula * 0.18);
+  c.drawRRect(moldura, tinta);
+  tinta.setColor(CK.Color(204, 155, 101, 0.6 * opacidade));
+  tinta.setStyle(CK.PaintStyle.Stroke);
+  tinta.setStrokeWidth(2);
+  c.drawRRect(moldura, tinta);
+
+  /* --- os rolos, cada um recortado na sua janela --- */
+  tintaImagem.setAlphaf(opacidade);
+  if (!SEM.has('simbolos')) for (let r = 0; r < CONFIG.rolos; r += 1) {
+    c.save();
+    if (!SEM.has('mascara')) {
+      c.clipRect(CK.XYWHRect(M.esquerda + r * M.celula, M.topo, M.celula, M.altura), CK.ClipOp.Intersect, true);
+    }
+    const desloc = deslocamentoDoRolo(r, t);
+    const quantos = CONFIG.fileiras + CONFIG.folgaPorRolo * 2;
+    for (let k = 0; k < quantos; k += 1) {
+      const pos = ((k - desloc) % quantos + quantos) % quantos;
+      const y = M.topo + (pos - CONFIG.folgaPorRolo) * M.celula + M.celula * 0.07;
+      const fileira = Math.round(pos - CONFIG.folgaPorRolo);
+      const parado = t > TEMPOS.paradaDoRolo[r] + 600;
+      const idx = parado && fileira >= 0 && fileira < CONFIG.fileiras
+        ? RESULTADO.grade[fileira][r]
+        : (k * 7 + r * 3 + Math.floor(desloc)) % recorte.length;
+      c.drawImageRectOptions(
+        atlas, recorte[idx],
+        CK.XYWHRect(M.esquerda + r * M.celula + M.celula * 0.07, y, M.celula * 0.86, M.celula * 0.86),
+        amostragem.filter, amostragem.mipmap, tintaImagem,
+      );
+    }
+    c.restore();
+  }
+
+  /* --- as linhas de prêmio, com brilho de verdade --- */
+  if (!SEM.has('linhas')) RESULTADO.linhas.forEach((linha, n) => {
+    const brilho = brilhoDaLinha(n, t) * opacidade;
+    if (brilho <= 0) return;
+    const pontos = linha.celulas.map(([fileira, rolo]) => [
+      M.esquerda + rolo * M.celula + M.celula / 2,
+      M.topo + fileira * M.celula + M.celula / 2,
+    ]);
+    /*
+     * Segmento a segmento com `drawLine`, e não um `Path`.
+     *
+     * Esta versão do CanvasKit não expõe `moveTo`/`lineTo` no `Path` (o objeto vem só
+     * com consulta e transformação; a construção migrou pra outra API entre versões).
+     * Pra uma linha de prêmio, que são três segmentos retos, `drawLine` faz o mesmo
+     * trabalho sem prender a POC a uma versão. Onde o Skia brilha de verdade é logo
+     * abaixo, no halo — e aquilo não tem equivalente no React Native.
+     */
+    tinta.setStyle(CK.PaintStyle.Stroke);
+    tinta.setStrokeWidth(6 * brilho);
+    tinta.setColor(CK.Color(255, 217, 138, 0.9 * brilho));
+    for (let i = 1; i < pontos.length; i += 1) {
+      c.drawLine(pontos[i - 1][0], pontos[i - 1][1], pontos[i][0], pontos[i][1], tinta);
+    }
+
+    /*
+     * O HALO É DEGRADÊ RADIAL DE VERDADE — a coisa que o React Native não tem e que hoje
+     * a gente finge com três elipses concêntricas. Aqui é uma chamada.
+     */
+    for (const [x, y] of pontos) {
+      const halo = new CK.Paint();
+      halo.setAntiAlias(true);
+      halo.setShader(CK.Shader.MakeRadialGradient(
+        [x, y], M.celula * 0.62,
+        [CK.Color(255, 217, 138, 0.55 * brilho), CK.Color(255, 217, 138, 0)],
+        [0, 1], CK.TileMode.Clamp,
+      ));
+      c.drawCircle(x, y, M.celula * 0.62, halo);
+      halo.delete();
+      tinta.setStrokeWidth(3);
+      tinta.setColor(CK.Color(255, 217, 138, brilho));
+      c.drawCircle(x, y, M.celula * 0.46, tinta);
+    }
+  });
+
+  /* --- as partículas --- */
+  const centro = [window.innerWidth / 2, M.topo + M.altura / 2];
+  tinta.setStyle(CK.PaintStyle.Fill);
+  if (!SEM.has('particulas')) for (let i = 0; i < CONFIG.particulas; i += 1) {
+    const p = particula(i, t);
+    if (!p) continue;
+    const [vr, vg, vb] = hsl(p.matiz);
+    tinta.setColor(CK.Color(vr, vg, vb, p.opacidade * opacidade));
+    c.drawCircle(centro[0] + p.dx, centro[1] + p.dy, p.tamanho, tinta);
+  }
+
+  /* --- contador e multiplicador --- */
+  const premio = SEM.has('texto') ? 0 : premioNaTela(t);
+  if (premio > 0) {
+    tinta.setColor(CK.Color(255, 217, 138, opacidade));
+    const texto = premio.toLocaleString('pt-BR');
+    const largura = larguraDoTexto(fonte, texto);
+    c.drawText(texto, window.innerWidth / 2 - largura / 2,
+               M.topo + M.altura + M.celula * 0.75, tinta, fonte);
+  }
+  if (t > TEMPOS.bigWin && !SEM.has('texto')) {
+    tinta.setColor(CK.Color(255, 255, 255, opacidade));
+    const rotulo = `x${RESULTADO.multiplicador}`;
+    c.drawText(rotulo, window.innerWidth / 2 - larguraDoTexto(fonteGrande, rotulo) / 2,
+               M.topo - M.celula * 0.5, tinta, fonteGrande);
+  }
+
+  c.restore();
+  superficie.flush();
+
+  if (t > TEMPOS.fim) {
+    if (!acabou) {
+      acabou = true;
+      window.__resultado = {
+        renderizador: 'skia',
+        ajustes: 'aa=analitico texto=glifo' + (SEM.size ? ` sem=${[...SEM].join('+')}` : ''),
+        ...medidor.resultado(), memoriaMB: memoriaAgora(),
+      };
+      mostrarNaTela(window.__resultado, { desenhando: quemEstaDesenhando() });
+    }
+    return;
+  }
+  requestAnimationFrame(desenhar);
+}
+
+/** HSL simplificado, só o que a partícula precisa: matiz cheia, meio claro. */
+function hsl(matiz) {
+  const h = matiz / 60;
+  const x = 255 * (1 - Math.abs((h % 2) - 1));
+  const tabela = [[255, x, 0], [x, 255, 0], [0, 255, x], [0, x, 255], [x, 0, 255], [255, 0, x]];
+  return tabela[Math.floor(h) % 6].map(Math.round);
+}
+
+requestAnimationFrame(desenhar);
+</script>

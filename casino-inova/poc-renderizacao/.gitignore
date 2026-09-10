@@ -1,0 +1,6 @@
+node_modules/
+
+# Os retratos em resolução cheia são 15 MB e servem só para gerar as folhas de
+# comparação, que ficam versionadas ao lado (`comparacao-*.png`). Rode `medir.mjs`
+# para produzi-los de novo.
+resultados/*.png

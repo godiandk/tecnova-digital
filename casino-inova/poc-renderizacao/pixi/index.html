@@ -1,0 +1,368 @@
+<meta charset="utf-8">
+<title>POC · PixiJS</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b0f0d; overflow: hidden; }
+  canvas { display: block; }
+</style>
+<script type="module">
+/**
+ * O BRAÇO PIXIJS DA POC.
+ *
+ * Desenha a MESMA cena que o braço Skia — os tempos, o resultado e a contagem de
+ * partículas vêm de `comum/cena.js`, e nada aqui sorteia coisa nenhuma. O que este
+ * arquivo mostra é COMO o PixiJS põe isso na tela.
+ *
+ * O que ele explora, e que é a razão de existir do Pixi:
+ *   - um ATLAS só, então os 30 símbolos e as 320 partículas saem em poucas chamadas de
+ *     desenho em vez de centenas;
+ *   - `ParticleContainer`, que é um contêiner que abre mão de coisas que partícula não
+ *     precisa (filtro, hierarquia, rotação individual) pra desenhar milhares de sprites
+ *     num lote só;
+ *   - máscara de rolo por retângulo, que no WebGL é recorte de tesoura e não custa nada.
+ */
+import * as PIXI from '../node_modules/pixi.js/dist/pixi.min.mjs';
+import { CONFIG, RESULTADO, TEMPOS, brilhoDaLinha, deslocamentoDoRolo, medidasDaGrade,
+         opacidadeDaCena, particula, premioNaTela } from '../comum/cena.js';
+import { criarMedidor, memoriaAgora, mostrarNaTela, quemEstaDesenhando } from '../comum/medidor.js';
+
+/*
+ * CHAVES DA MEDIÇÃO, pela barra de endereço — `?aa=0`, `?texto=bitmap`.
+ *
+ * Não são enfeite: sem elas a comparação com o Skia não vale. O Pixi liga `antialias`
+ * no framebuffer (MSAA de verdade, 4 amostras) e o Skia faz suavização analítica por
+ * forma; são técnicas diferentes pro mesmo fim, com custos MUITO diferentes num
+ * rasterizador de software. Medir os dois lados desse interruptor é a única forma de
+ * separar "o Pixi é mais lento" de "o MSAA é caro sem GPU".
+ */
+const OPCOES = new URLSearchParams(location.search);
+const COM_MSAA = OPCOES.get('aa') !== '0';
+const TEXTO_BITMAP = OPCOES.get('texto') === 'bitmap';
+/*
+ * `?sem=mascara,linhas,particulas,rolos,texto` — desliga pedaços da cena, um a um.
+ *
+ * É a única forma de responder "quem está custando caro". Sem isso a POC produz um
+ * número por braço e uma conclusão sobre o RENDERIZADOR que na verdade é sobre uma
+ * escolha nossa dentro dele.
+ */
+const SEM = new Set((OPCOES.get('sem') || '').split(',').filter(Boolean));
+/*
+ * `?t=5600` — CONGELA A CENA num instante exato, pra o retrato.
+ *
+ * Sem isso a comparação visual sai torta. O retrato é tirado quando a página avisa que
+ * passou do instante pedido, mas quem está a 13 quadros por segundo demora mais pra
+ * avisar E mais pra entregar a captura: os dois retratos saíram com o contador em 3.233 e
+ * 2.746, ou seja, meio segundo de diferença de animação, postos lado a lado como se
+ * fossem o mesmo momento. Com o tempo fixo, os dois braços desenham EXATAMENTE o mesmo
+ * quadro, e o que sobra na imagem é só diferença de renderização — que é o que se quer ver.
+ *
+ * A medição de desempenho NUNCA usa esta chave: ali o tempo tem que correr de verdade.
+ */
+const T_FIXO = OPCOES.has('t') ? Number(OPCOES.get('t')) : null;
+
+const medidor = criarMedidor();
+const app = new PIXI.Application();
+/*
+ * `resolution` É OBRIGATÓRIO PRA COMPARAÇÃO SER JUSTA.
+ *
+ * Sem ele o Pixi desenha a 1 pixel por ponto e o CanvasKit a 2 (o `devicePixelRatio` do
+ * celular), ou seja, o Skia estaria pintando QUATRO VEZES mais pixels que o Pixi e ainda
+ * assim os números iam parecer comparáveis. Na primeira medição foi exatamente isso que
+ * aconteceu — e o Pixi, mesmo pintando um quarto da área, saiu mais lento; o motivo
+ * estava no MSAA acima, não no renderizador.
+ */
+await app.init({
+  background: '#0b0f0d', resizeTo: window,
+  antialias: COM_MSAA,
+  resolution: window.devicePixelRatio || 1,
+  autoDensity: true,
+});
+document.body.appendChild(app.canvas);
+
+const atlasJson = await fetch('../atlas/simbolos.json').then((r) => r.json());
+const textura = await PIXI.Assets.load('../atlas/simbolos.png');
+const nomes = Object.keys(atlasJson.quadros).sort(
+  (a, b) => atlasJson.quadros[a].indice - atlasJson.quadros[b].indice,
+);
+/* Um recorte por símbolo, todos da MESMA textura: é isso que permite o lote. */
+const recortes = nomes.map((n) => {
+  const q = atlasJson.quadros[n];
+  return new PIXI.Texture({ source: textura.source, frame: new PIXI.Rectangle(q.x, q.y, q.w, q.h) });
+});
+
+const M = medidasDaGrade(app.screen.width, app.screen.height);
+const palco = new PIXI.Container();
+app.stage.addChild(palco);
+
+/* --- o feltro --- */
+const fundo = new PIXI.Graphics()
+  .roundRect(M.esquerda - M.celula * 0.2, M.topo - M.celula * 0.2,
+             M.largura + M.celula * 0.4, M.altura + M.celula * 0.4, M.celula * 0.18)
+  .fill({ color: 0x122718 })
+  .stroke({ width: 2, color: 0xcc9b65, alpha: 0.6 });
+palco.addChild(fundo);
+
+/* --- os rolos --- */
+const rolos = [];
+for (let r = 0; r < CONFIG.rolos; r += 1) {
+  const janela = new PIXI.Container();
+  janela.x = M.esquerda + r * M.celula;
+  janela.y = M.topo;
+  /* Máscara retangular: no WebGL vira recorte de tesoura, custo praticamente zero. */
+  if (!SEM.has('mascara')) {
+    const mascara = new PIXI.Graphics().rect(0, 0, M.celula, M.altura).fill(0xffffff);
+    janela.addChild(mascara);
+    janela.mask = mascara;
+  }
+
+  const simbolos = [];
+  const quantos = CONFIG.fileiras + CONFIG.folgaPorRolo * 2;
+  for (let k = 0; k < quantos; k += 1) {
+    const s = new PIXI.Sprite(recortes[0]);
+    s.width = s.height = M.celula * 0.86;
+    s.x = M.celula * 0.07;
+    janela.addChild(s);
+    simbolos.push(s);
+  }
+  palco.addChild(janela);
+  rolos.push({ janela, simbolos, quantos });
+}
+
+/*
+ * O HALO DA LINHA DE PRÊMIO, ASSADO UMA VEZ.
+ *
+ * O braço Skia desenha o halo com um degradê radial de verdade, uma chamada por ponto.
+ * O Pixi não tem degradê radial barato em tempo de execução — a resposta idiomática dele
+ * é ASSAR o degradê numa textura, uma vez, e depois só carimbar o sprite. É mais trabalho
+ * de programação e o resultado na tela é o mesmo.
+ *
+ * Isto entrou depois da primeira comparação visual, que flagrou o problema: o Skia estava
+ * desenhando halo e o Pixi não. Os números diziam que o Skia era mais rápido enquanto ele
+ * desenhava MAIS coisa — uma comparação que favorecia o Pixi e mesmo assim ele perdia.
+ * Melhor acertar a cena e medir de novo do que publicar um número com asterisco.
+ */
+const LADO_DO_HALO = 128;
+const haloCanvas = document.createElement('canvas');
+haloCanvas.width = haloCanvas.height = LADO_DO_HALO;
+{
+  const g = haloCanvas.getContext('2d');
+  const meio = LADO_DO_HALO / 2;
+  const grad = g.createRadialGradient(meio, meio, 0, meio, meio, meio);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, LADO_DO_HALO, LADO_DO_HALO);
+}
+const texturaDoHalo = PIXI.Texture.from(haloCanvas);
+
+/* --- as linhas de prêmio --- */
+const linhas = RESULTADO.linhas.map(() => {
+  const g = new PIXI.Graphics();
+  palco.addChild(g);
+  return g;
+});
+/* Um sprite de halo por célula de cada linha, escondido até a linha acender. */
+const halos = RESULTADO.linhas.map((linha) => linha.celulas.map(() => {
+  const sp = new PIXI.Sprite(texturaDoHalo);
+  sp.anchor.set(0.5);
+  sp.tint = 0xffd98a;
+  sp.alpha = 0;
+  sp.blendMode = 'add';
+  palco.addChild(sp);
+  return sp;
+}));
+
+/* --- as partículas, num contêiner que desenha em lote --- */
+/*
+ * A PARTÍCULA PRECISA SER A MESMA COISA NOS DOIS BRAÇOS.
+ *
+ * A primeira versão deste arquivo usava `recortes[8]` — o símbolo do jackpot, 192 por 192
+ * — como partícula, encolhido pra caber. O braço Skia, do outro lado, desenhava um
+ * círculo cheio de raio 3 a 9. Ou seja: o Pixi estava amostrando uma textura reduzida
+ * treze vezes, sem mipmap, numa área umas seis vezes maior, e ainda por cima sem a cor
+ * de cada partícula; o Skia desenhava um disco liso e colorido. A comparação de
+ * partículas não estava medindo renderizador nenhum — estava medindo dois desenhos
+ * diferentes, e o mais pesado por acaso era o do Pixi.
+ *
+ * Agora os dois desenham o mesmo disco, do mesmo tamanho, na mesma cor: aqui um disco
+ * branco gerado uma vez e TINGIDO por partícula, que é como se faz no Pixi; lá um
+ * `drawCircle` colorido, que é como se faz no Skia. É a mesma imagem por dois caminhos
+ * idiomáticos, que é exatamente o que a POC deveria estar comparando desde o começo.
+ */
+const RAIO_DO_DISCO = 32;
+const discoCanvas = document.createElement('canvas');
+discoCanvas.width = discoCanvas.height = RAIO_DO_DISCO * 2;
+{
+  const g = discoCanvas.getContext('2d');
+  g.fillStyle = '#fff';
+  g.beginPath();
+  g.arc(RAIO_DO_DISCO, RAIO_DO_DISCO, RAIO_DO_DISCO - 1, 0, Math.PI * 2);
+  g.fill();
+}
+const disco = PIXI.Texture.from(discoCanvas);
+
+const particulas = new PIXI.ParticleContainer({
+  dynamicProperties: { position: true, scale: true, alpha: true, color: true, rotation: false },
+});
+palco.addChild(particulas);
+const bolinhas = [];
+for (let i = 0; i < CONFIG.particulas; i += 1) {
+  const p = new PIXI.Particle({ texture: disco, anchorX: 0.5, anchorY: 0.5 });
+  p.alpha = 0;
+  p.scaleX = p.scaleY = 0;
+  particulas.addParticle(p);
+  bolinhas.push(p);
+}
+
+/** A cor de uma matiz, no formato 0xRRGGBB que o `tint` do Pixi quer. */
+function corDaMatiz(matiz) {
+  const h = matiz / 60;
+  const x = Math.round(255 * (1 - Math.abs((h % 2) - 1)));
+  const tabela = [[255, x, 0], [x, 255, 0], [0, 255, x], [0, x, 255], [x, 0, 255], [255, 0, x]];
+  const [r, g, b] = tabela[Math.floor(h) % 6];
+  return (r << 16) | (g << 8) | b;
+}
+
+/* --- contador e multiplicador --- */
+/*
+ * O CONTADOR DE PRÊMIO É A ARMADILHA CLÁSSICA DO PIXI.
+ *
+ * `PIXI.Text` desenha o texto num canvas 2D à parte e sobe o resultado como textura. Se
+ * a string muda, ele refaz tudo — e um contador subindo de 0 a 3.360 muda a string em
+ * TODO quadro, o que dá um desenho de texto e um envio de textura por quadro, durante
+ * dois segundos, bem no auge da cena, quando as partículas também estão no ar.
+ *
+ * `BitmapText` não tem esse custo: os glifos já são um atlas, e trocar a string só
+ * remonta os quads. É por isso que jogo sério nunca põe `Text` num número que anda.
+ * As duas versões estão aqui porque a diferença entre elas é um número que o relatório
+ * precisa ter — senão a POC estaria medindo um erro de implementação e chamando de
+ * característica do renderizador.
+ */
+const estilo = { fontFamily: 'system-ui', fontSize: Math.round(M.celula * 0.42), fill: 0xffd98a, fontWeight: '700' };
+const estiloGrande = { ...estilo, fontSize: Math.round(M.celula * 0.55), fill: 0xffffff };
+
+let contador; let multi;
+if (TEXTO_BITMAP) {
+  PIXI.BitmapFont.install({ style: estilo, name: 'contador', chars: [['0', '9'], '.,x'] });
+  PIXI.BitmapFont.install({ style: estiloGrande, name: 'multi', chars: [['0', '9'], '.,x'] });
+  contador = new PIXI.BitmapText({ text: '', style: { fontFamily: 'contador', fontSize: estilo.fontSize } });
+  multi = new PIXI.BitmapText({ text: '', style: { fontFamily: 'multi', fontSize: estiloGrande.fontSize } });
+} else {
+  contador = new PIXI.Text({ text: '', style: estilo });
+  multi = new PIXI.Text({ text: '', style: estiloGrande });
+}
+contador.anchor.set(0.5);
+contador.x = app.screen.width / 2;
+contador.y = M.topo + M.altura + M.celula * 0.75;
+palco.addChild(contador);
+
+multi.anchor.set(0.5);
+multi.x = app.screen.width / 2;
+multi.y = M.topo - M.celula * 0.5;
+palco.addChild(multi);
+
+/* --- o laço --- */
+const inicio = performance.now();
+let acabou = false;
+
+app.ticker.add(() => {
+  const agora = performance.now();
+  medidor.quadro(agora);
+  const t = T_FIXO ?? (agora - inicio);
+  /* Pra o retrato sair no MESMO instante da CENA nos dois braços, e não no mesmo
+   * instante de relógio de parede — que depende de quanto cada um demorou pra carregar. */
+  window.__t = t;
+  window.__quadrosDesenhados = (window.__quadrosDesenhados ?? 0) + 1;
+  if (t > TEMPOS.fim) {
+    if (!acabou) {
+      acabou = true;
+      window.__resultado = {
+        renderizador: 'pixi',
+        ajustes: `msaa=${COM_MSAA ? 'sim' : 'nao'} texto=${TEXTO_BITMAP ? 'bitmap' : 'canvas'}`
+          + (SEM.size ? ` sem=${[...SEM].join('+')}` : ''),
+        ...medidor.resultado(), memoriaMB: memoriaAgora(),
+      };
+      mostrarNaTela(window.__resultado, { desenhando: quemEstaDesenhando() });
+    }
+    return;
+  }
+
+  /* `sem=palco`: nada é desenhado, e o que sobra é o custo fixo do quadro do Pixi. */
+  palco.visible = !SEM.has('palco');
+  /* `sem=simbolos`: as janelas dos rolos somem, e sobra só o feltro. */
+  if (SEM.has('simbolos')) for (const rolo of rolos) rolo.janela.visible = false;
+  palco.alpha = opacidadeDaCena(t);
+
+  if (!SEM.has('rolos')) for (let r = 0; r < CONFIG.rolos; r += 1) {
+    const rolo = rolos[r];
+    const desloc = deslocamentoDoRolo(r, t);
+    for (let k = 0; k < rolo.quantos; k += 1) {
+      const s = rolo.simbolos[k];
+      const pos = ((k - desloc) % rolo.quantos + rolo.quantos) % rolo.quantos;
+      s.y = (pos - CONFIG.folgaPorRolo) * M.celula + M.celula * 0.07;
+      /*
+       * QUAL SÍMBOLO ESTÁ NESTA CÉLULA. Parado, é o resultado que o servidor mandou;
+       * girando, é uma sequência qualquer — o olho não lê símbolo a 28 células por
+       * segundo, e ninguém aposta no que passou borrado.
+       */
+      const fileira = Math.round(pos - CONFIG.folgaPorRolo);
+      const parado = t > TEMPOS.paradaDoRolo[r] + 600;
+      const idx = parado && fileira >= 0 && fileira < CONFIG.fileiras
+        ? RESULTADO.grade[fileira][r]
+        : (k * 7 + r * 3 + Math.floor(desloc)) % recortes.length;
+      if (s.texture !== recortes[idx]) s.texture = recortes[idx];
+    }
+  }
+
+  if (!SEM.has('linhas')) RESULTADO.linhas.forEach((linha, n) => {
+    const brilho = brilhoDaLinha(n, t);
+    const g = linhas[n];
+    g.clear();
+    if (brilho <= 0) { for (const sp of halos[n]) sp.alpha = 0; return; }
+    const pontos = linha.celulas.map(([fileira, rolo]) => ({
+      x: M.esquerda + rolo * M.celula + M.celula / 2,
+      y: M.topo + fileira * M.celula + M.celula / 2,
+    }));
+    g.moveTo(pontos[0].x, pontos[0].y);
+    for (const p of pontos.slice(1)) g.lineTo(p.x, p.y);
+    g.stroke({ width: 6 * brilho, color: 0xffd98a, alpha: 0.9 * brilho });
+    for (const p of pontos) {
+      g.circle(p.x, p.y, M.celula * 0.46).stroke({ width: 3, color: 0xffd98a, alpha: brilho });
+    }
+    /* O halo: mesmo raio e mesma opacidade de pico do braço Skia. */
+    pontos.forEach((p, k) => {
+      const sp = halos[n][k];
+      sp.x = p.x; sp.y = p.y;
+      sp.width = sp.height = M.celula * 0.62 * 2;
+      sp.alpha = 0.55 * brilho;
+    });
+  });
+  if (SEM.has('linhas')) for (const fila of halos) for (const sp of fila) sp.alpha = 0;
+
+  const centro = { x: app.screen.width / 2, y: M.topo + M.altura / 2 };
+  if (!SEM.has('particulas')) for (let i = 0; i < CONFIG.particulas; i += 1) {
+    const p = particula(i, t);
+    const b = bolinhas[i];
+    /*
+     * Escondida é escala ZERO, não só transparência: um sprite transparente ainda ocupa
+     * o rasterizador, e foi assim que a primeira ablação saiu ao contrário — desligar as
+     * partículas deixava as 320 paradas no canto, em tamanho natural, e ficava MAIS lento
+     * do que com elas ligadas.
+     */
+    if (!p) { b.alpha = 0; b.scaleX = b.scaleY = 0; continue; }
+    b.x = centro.x + p.dx;
+    b.y = centro.y + p.dy;
+    b.alpha = p.opacidade;
+    /* `tamanho` é RAIO, igual ao do braço Skia; o disco tem `RAIO_DO_DISCO` de raio. */
+    b.scaleX = b.scaleY = p.tamanho / RAIO_DO_DISCO;
+    b.tint = corDaMatiz(p.matiz);
+  }
+  if (SEM.has('particulas')) for (const b of bolinhas) { b.alpha = 0; b.scaleX = b.scaleY = 0; }
+  particulas.update();
+
+  if (!SEM.has('texto')) {
+    const premio = premioNaTela(t);
+    contador.text = premio > 0 ? premio.toLocaleString('pt-BR') : '';
+    multi.text = t > TEMPOS.bigWin ? `x${RESULTADO.multiplicador}` : '';
+  }
+});
+</script>

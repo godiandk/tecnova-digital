@@ -153,8 +153,8 @@ possível com a menor complexidade necessária.
 
 | Jogo | Hoje | Recomendado | Motivo | Ganho esperado | Custo | Risco | POC? | Decisão |
 |---|---|---|---|---|---|---|---|---|
-| Caça-Níqueis | RN | **PixiJS** | 25–40 sprites contínuos + 300 partículas; é o único que estoura a stack por quantidade | alto — é a diferença entre um slot e uma lista que desce | alto: motor de rolos novo + ponte com o casco | médio: segundo renderer no projeto | **sim** | congela depois da POC |
-| Roleta | RN | **Skia** | precisa de caminho curvo, máscara, degradê radial e desfoque — o RN não tem | alto — a roda e a bola são o jogo | médio: uma tela redesenhada | baixo: mesmo TypeScript, mesmo projeto | sim, junto | congela depois da POC |
+| Caça-Níqueis | RN | **PixiJS ou Skia** | 25–40 sprites contínuos + 300 partículas; é o único que estoura a stack por quantidade | alto — é a diferença entre um slot e uma lista que desce | alto: motor de rolos novo + ponte com o casco | médio: segundo renderer no projeto | **feita, sem GPU** | **em aberto** — falta aparelho (`RENDERING_STRATEGY.md` §6) |
+| Roleta | RN | **Skia** | precisa de caminho curvo, máscara, degradê radial e desfoque — o RN não tem | alto — a roda e a bola são o jogo | médio: uma tela redesenhada | baixo: mesmo TypeScript, mesmo projeto | feita, junto | **decide junto com o caça-níqueis** — os 2,9 MB do CanvasKit são pagos uma vez só |
 | Bac Bo | RN + física nossa | **RN, com Skia no vidro** | 4 objetos; a física é nossa e provada (240 dados param na face sorteada) | médio — refração e reflexo do agitador | baixo | baixo | **sim, Unity avaliado explicitamente** | congela depois da POC |
 | Blackjack | RN | **RN + Skia na carta** | 10 cartas; a qualidade é timing, não potência; falta sombra e recorte de verdade | médio | baixo | baixo | não | decidido |
 | Bacará | RN | **RN + Skia na carta** | igual ao Blackjack, mais o *squeeze* (máscara e deformação) | médio | baixo | baixo | não | decidido |
@@ -256,6 +256,23 @@ regra.
 ---
 
 ## 4. POC DE RENDERIZAÇÃO — CASINO INOVA
+
+> **Estado: executada em parte. A saída está em `RENDERING_STRATEGY.md`.**
+>
+> Os braços PixiJS e Skia rodaram a mesma cena e estão medidos. O **Portão 0 (Unity WebGL)
+> não foi executado** — a Unity não está instalada no ambiente e o portão pede medidas que
+> só existem em aparelho físico.
+>
+> E o ambiente da medição **não tem GPU**: o que foi colhido é custo de CPU por quadro, não
+> desempenho de celular. Por isso **o renderer do caça-níqueis continua não congelado** —
+> falta rodar os mesmos dois braços num aparelho de verdade, e o roteiro para isso está no
+> §6 do `RENDERING_STRATEGY.md`, pronto para ser executado sem ferramenta nenhuma no
+> telefone.
+>
+> O que a POC já mudou: a qualidade visual **empatou** entre os dois (deixou de ser
+> argumento a favor do Skia), o peso do Skia virou número medido (**+2,9 MB**), e o Skia
+> passou a ser candidato real também para o caça-níqueis. O que ela desmentiu do nosso
+> próprio material está listado lá.
 
 Etapa formal, com nome e protocolo. Acontece **depois do P0.3** e **antes** de
 consolidarmos o Animation Director e o Reel Engine — porque congelar um motor de rolos em

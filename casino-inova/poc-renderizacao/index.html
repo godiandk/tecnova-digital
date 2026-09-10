@@ -1,0 +1,61 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>POC de renderização — Casino Inova</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 20px 16px 40px; background: #0b0f0d; color: #e8dfd0;
+         font: 16px/1.55 ui-sans-serif, system-ui, sans-serif; }
+  h1 { font-size: 19px; margin: 0 0 4px; color: #ffd98a; }
+  h2 { font-size: 15px; margin: 26px 0 8px; color: #cc9b65;
+       border-bottom: 1px solid #24301f; padding-bottom: 5px; }
+  p { margin: 8px 0; max-width: 62ch; }
+  .aviso { background: #1b1206; border: 1px solid #7a5a20; border-radius: 10px;
+           padding: 12px 14px; margin: 14px 0; }
+  a.braco { display: block; padding: 13px 15px; margin: 8px 0; background: #12241a;
+            border: 1px solid #2e4a35; border-radius: 10px; color: #e8dfd0;
+            text-decoration: none; }
+  a.braco:active { background: #1a3325; }
+  a.braco b { color: #ffd98a; display: block; }
+  a.braco span { font-size: 13px; color: #9fb3a4; }
+  code { background: #12241a; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  #onde { font: 12px/1.5 ui-monospace, monospace; color: #9fb3a4; word-break: break-all; }
+</style>
+
+<h1>POC de renderização — Casino Inova</h1>
+<p>A mesma cena de caça-níqueis, desenhada por dois motores diferentes. Nada aqui sorteia:
+o resultado já vem decidido, como o servidor entregaria.</p>
+
+<div class="aviso">
+  <b>Este aparelho está desenhando com:</b>
+  <div id="onde">medindo…</div>
+  <div id="veredito"></div>
+</div>
+
+<h2>Rode e leia o número no rodapé</h2>
+<a class="braco" href="pixi/index.html?aa=0&texto=bitmap"><b>PixiJS — afinado</b>
+  <span>sem MSAA, contador em BitmapText. É como um jogo de verdade seria escrito.</span></a>
+<a class="braco" href="pixi/index.html"><b>PixiJS — ingênuo</b>
+  <span>MSAA 4x e contador em Text. Mostra o preço de duas escolhas ruins.</span></a>
+<a class="braco" href="skia/index.html"><b>Skia (CanvasKit)</b>
+  <span>O mesmo motor que o react-native-skia usa na web, sem a ponte React.</span></a>
+
+<h2>Retratos, com o tempo parado</h2>
+<p>Para comparar imagem com imagem, e não de memória. Acrescente <code>&amp;t=5600</code>
+(ou <code>2000</code>, <code>4000</code>) a qualquer link acima: a cena congela naquele
+instante exato, igual nos dois motores.</p>
+
+<h2>O que anotar</h2>
+<p>Rode cada braço <b>três vezes</b> e anote o quadro típico, o p95 e o pior quadro.
+Depois: alterne de aba e volte, bloqueie e desbloqueie a tela, e rode com o aparelho já
+morno. É na terceira execução com o telefone quente que a diferença aparece — não na
+primeira.</p>
+
+<script type="module">
+  import { quemEstaDesenhando } from './comum/medidor.js';
+  const quem = quemEstaDesenhando();
+  document.getElementById('onde').textContent = quem;
+  const software = /swiftshader|llvmpipe|software/i.test(quem);
+  document.getElementById('veredito').textContent = software
+    ? '⚠ Renderização por SOFTWARE. Os números daqui são custo de CPU, não desempenho de aparelho.'
+    : '✓ Aceleração por hardware. Os números daqui valem como medida de verdade.';
+</script>
