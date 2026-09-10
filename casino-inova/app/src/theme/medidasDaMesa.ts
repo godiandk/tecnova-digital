@@ -42,6 +42,22 @@ import { LARGURA_MINIMA_PRO_TAMPO } from '../components/TampoDaMesa';
  */
 export const FICHA_NO_PANO = 0.054;
 
+/**
+ * O MENOR ALVO DE TOQUE ACEITÁVEL, em pixels.
+ *
+ * 44 é o mínimo que a Apple e o Google publicam, e abaixo dele quem tem dedo grosso erra.
+ *
+ * VALE ESPECIALMENTE NA WEB, e por um motivo que custou nove telas: os botões redondos
+ * das mesas eram 40 e passavam `hitSlop={12}` esperando virar 64. **O
+ * `react-native-web` não implementa `hitSlop`** — ele simplesmente não existe no
+ * `Pressable` de lá. No celular nativo o alvo era 64; no navegador, que é o canal por
+ * onde o Casino Inova chega hoje, era 40 e ponto.
+ *
+ * Por isso o tamanho vem do ESTILO, e não de uma propriedade que pode não existir na
+ * plataforma. `verifica-tamanhos.mjs` reprova quem ficar abaixo.
+ */
+export const ALVO_DE_TOQUE = 44;
+
 /** Abaixo de 44px o número impresso na ficha some, e fração não protege disso. */
 export const FICHA_NO_PANO_MINIMA = 44;
 

@@ -376,8 +376,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   botaoRedondo: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
@@ -405,8 +405,8 @@ const styles = StyleSheet.create({
   placaDaMesa: { color: colors.textSecondary, fontSize: fontSize.xs, textAlign: 'center' },
   botoesDaMesa: { flexDirection: 'row', gap: spacing.lg, justifyContent: 'center' },
   botaoDaMesa: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',

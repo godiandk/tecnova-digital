@@ -479,8 +479,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1, paddingHorizontal: spacing.lg },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },
   iconButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     backgroundColor: colors.overlay,
     alignItems: 'center',

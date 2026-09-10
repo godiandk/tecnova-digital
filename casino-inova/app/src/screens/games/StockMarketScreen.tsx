@@ -452,8 +452,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1, paddingHorizontal: spacing.lg },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },
   iconButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     backgroundColor: colors.overlay,
     alignItems: 'center',
@@ -558,8 +558,8 @@ const styles = StyleSheet.create({
   receiptTotal: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, marginTop: 2 },
   betRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
   stepButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     backgroundColor: colors.backgroundElevated,
     borderWidth: 1,

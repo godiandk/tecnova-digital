@@ -276,8 +276,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   iconButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     backgroundColor: colors.overlay,
     alignItems: 'center',
@@ -348,8 +348,8 @@ const styles = StyleSheet.create({
   },
   betRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg, marginTop: spacing.sm },
   stepButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     backgroundColor: colors.backgroundElevated,
     borderWidth: 1,

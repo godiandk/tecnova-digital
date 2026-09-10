@@ -272,8 +272,8 @@ const styles = StyleSheet.create({
   },
   topActions: { flexDirection: 'row', gap: spacing.xs },
   iconButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     backgroundColor: colors.overlay,
     alignItems: 'center',
@@ -300,8 +300,8 @@ const styles = StyleSheet.create({
   resultDraw: { color: colors.textSecondary },
   betRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   betButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     backgroundColor: colors.backgroundElevated,
     borderWidth: 1,

@@ -232,8 +232,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   iconButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     backgroundColor: colors.overlay,
     alignItems: 'center',
@@ -255,8 +255,8 @@ const styles = StyleSheet.create({
   handLabelText: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
   betRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   betButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 20,
     backgroundColor: colors.backgroundElevated,
     borderWidth: 1,

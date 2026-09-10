@@ -17,6 +17,7 @@ import { MeuNivel, fetchMeuNivel } from '../../api/niveis';
 import { Arena, lancarDados } from '../../fisica/motorDeDados';
 import { BACBO_DIE_IMAGES } from '../../data/gameAssets';
 import {
+  ALVO_DE_TOQUE,
   dadoDentroDoVidro,
   fichaNoPano,
   fichaNoTrilho,
@@ -809,6 +810,15 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   botaoJogar: {
+    /*
+     * O BOTÃO PRINCIPAL NUNCA ENCOLHE ABAIXO DO ALVO DE TOQUE.
+     *
+     * A variante `botaoJogarApertado`, usada em tela baixa, corta o `paddingVertical` pra
+     * 8 — e o botão ia a 35 px de altura. É o controle mais importante da mesa: se ele
+     * não puder ser acertado com o dedo, não dá pra jogar. O `minHeight` vale pras duas
+     * variantes, então apertar a mesa não pode mais empurrar o botão abaixo do mínimo.
+     */
+    minHeight: ALVO_DE_TOQUE,
     minWidth: 210,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
