@@ -226,9 +226,7 @@ Com a proposta isso fica pior: quem otimiza sobe de nível rápido, **libera as 
 nunca joga nelas**. O nível deixa de significar "joga nessa escala", e o freio de nível
 deixa de frear.
 
-**Precisa ser corrigido junto.** A forma natural: XP proporcional ao **volume apostado em
-unidades do mínimo da mesa** (`XP = c × aposta / mínimo`), com teto — assim o nível mede
-quanto se jogou *na escala em que se joga*, e apostar o mínimo deixa de ser ótimo.
+**Corrigido — a curva nova está no §H.**
 
 ### 4. A fronteira de degrau na loja
 Uma ficha separa Diamante de Rubi, e o pacote grande vai de 300 mi para 3 bi. Convida a
@@ -277,3 +275,179 @@ que a proposta acima é o conserto *dentro* da escada atual, não o conserto *da
 
 **Nenhum destes números entra no código antes da sua aprovação.** Depois dela, a ordem é:
 economia → loja → recompensa diária → apostas, sobre a mesma fundação.
+
+
+---
+
+# H. A curva de XP nova
+
+## A tensão que precisa ser dita antes da fórmula
+
+Dois dos requisitos são **matematicamente incompatíveis** ao pé da letra:
+
+- *"deve existir retorno decrescente"* → a função é côncava;
+- *"apostar pouco não pode ser exploit"* → XP por ficha não pode cair com a aposta.
+
+Se a função é côncava, **XP por ficha cai sempre** — é a definição de concavidade. A única
+função com XP/ficha constante é a linear, que o próprio pedido proíbe (*"não quero XP
+simplesmente 100% proporcional à aposta"*).
+
+Então a pergunta certa não é *por ficha*, é **por rodada** — porque o que limita uma pessoa
+é **tempo**, não fichas. Quem aposta o mínimo precisa de muito mais rodadas.
+
+A curva escolhida trata os três eixos separadamente:
+
+| Eixo | O que acontece | Por quê |
+|---|---|---|
+| por **rodada** | apostar grande ganha 4,5× | é o eixo de quem joga com o dedo |
+| por **ficha** | apostar pequeno ainda ganha, mas **4×** em vez de **29×** | é o preço do retorno decrescente |
+| por **dia** | **teto** | é o que trava robô e automação |
+
+## A fórmula
+
+```
+r  = aposta / mínimo do economicTier DA PESSOA     ← em unidades da mesa, nunca em fichas
+XP = min(60 ; 50 × ln(1 + r) / ln(21))
+teto diário: 60.000 XP
+```
+
+**`r` em unidades da mesa é o que impede pay-to-level.** Um Bronze apostando 20× o mínimo
+(1.000 fichas) e um Eclipse apostando 20× o mínimo (100 trilhões) ganham **exatamente o
+mesmo XP**. Dinheiro compra fichas → fichas compram mesa alta → **mas mesa alta não dá XP**.
+O que dá XP é jogar grande *para a sua mesa*, e isso todo mundo pode fazer.
+
+| Aposta | XP/rodada | XP por 1.000 fichas | vs mínimo | Rodadas p/ 1.000 XP |
+|---|---|---|---|---|
+| 1× (mínimo) | 11 | 220,00 | 100% | 91 |
+| 2× | 18 | 180,00 | 82% | 56 |
+| 5× | 29 | 116,00 | 53% | 34 |
+| 10× | 39 | 78,00 | 35% | 26 |
+| 25× | 53 | 42,40 | 19% | 19 |
+| 50× | 60 (teto) | 24,00 | 11% | 17 |
+| 100× | 60 | 12,00 | 5% | 17 |
+| 500× | 60 | 2,40 | 1% | 17 |
+| 1.000× | 60 | 1,20 | 1% | 17 |
+
+## O custo de cada nível
+
+`custo(N) = 197 × √N` — calibrado para o hardcore alcançar o nível 10.000 em **6 anos**.
+
+| Nível | Custo do nível | XP acumulado | casual | regular | ativo | hardcore |
+|---|---|---|---|---|---|---|
+| 10 | 623 | 3.804 | 1 dia | 5 h | 2 h | 2 h |
+| 50 | 1.393 | 45.698 | 13 dias | 3 dias | 23 h | 18 h |
+| 100 | 1.970 | 130.309 | 36 dias | 7 dias | 3 dias | 2 dias |
+| 250 | 3.115 | 517.550 | 4,7 meses | 30 dias | 11 dias | 9 dias |
+| 500 | 4.405 | 1.466.112 | 13,4 meses | 2,8 meses | 31 dias | 24 dias |
+| 1.000 | 6.230 | 4.149.977 | 3,2 anos | 7,8 meses | 2,9 meses | 2,3 meses |
+| 2.500 | 9.850 | 16.411.709 | 12,5 anos | 2,6 anos | 11,5 meses | 9,0 meses |
+| 5.000 | 13.930 | 46.426.355 | 35,3 anos | 7,3 anos | 2,7 anos | 2,1 anos |
+| **10.000** | 19.700 | 131.323.444 | 99,9 anos | 20,7 anos | 7,7 anos | **6,0 anos** |
+
+*perfis: casual 200 rodadas/dia a 2× · regular 600 a 5× · ativo 1.200 a 10× · hardcore 2.400 a 20×
+(o hardcore bate no teto diário — é ele que impede o robô de correr mais que o humano)*
+
+**O nível 10.000 existe e é prestígio de verdade**: seis anos de jogo pesado, vinte para o
+regular. E as faixas caem onde você descreveu:
+
+| Faixa | Nome | regular | ativo | hardcore |
+|---|---|---|---|---|
+| 1–20 | onboarding | 16 h | 6 h | 5 h |
+| 21–100 | progressão normal | 7 dias | 3 dias | 2 dias |
+| 101–500 | experiente | 2,8 meses | 31 dias | 24 dias |
+| 501–1.000 | veterano | 7,8 meses | 2,9 meses | 2,3 meses |
+| 1.001–2.500 | elite | 2,6 anos | 11,5 meses | 9,0 meses |
+| 2.501–5.000 | extremamente raro | 7,3 anos | 2,7 anos | 2,1 anos |
+| 5.001–10.000 | prestígio | 20,7 anos | 7,7 anos | 6,0 anos |
+
+## Os degraus econômicos passam a abrir pelo nível
+
+Doze degraus, dez mil níveis — e o Eclipse no topo dos dois:
+
+| Degrau | Nível | regular | ativo | hardcore |
+|---|---|---|---|---|
+| Bronze | 1 | — | — | — |
+| Prata | 20 | 16 h | 6 h | 5 h |
+| Ouro | 50 | 3 dias | 23 h | 18 h |
+| Diamante | 100 | 7 dias | 3 dias | 2 dias |
+| Rubi | 200 | 21 dias | 8 dias | 6 dias |
+| Safira | 400 | 2,0 meses | 22 dias | 17 dias |
+| Esmeralda | 700 | 4,6 meses | 52 dias | 40 dias |
+| Ônix | 1.200 | 10,3 meses | 3,8 meses | 3,0 meses |
+| Platina | 2.000 | 22,2 meses | 8,3 meses | 6,4 meses |
+| Titânio | 3.500 | 4,3 anos | 19,1 meses | 14,9 meses |
+| Cristal | 6.000 | 9,6 anos | 3,6 anos | 2,8 anos |
+| **Eclipse** | **10.000** | 20,7 anos | 7,7 anos | 6,0 anos |
+
+## Exploits da curva nova
+
+| | Situação | Estado |
+|---|---|---|
+| **A** | **Sentar numa mesa abaixo da sua.** Se o XP usasse o mínimo da *mesa*, um Rubi apostando 500.000 numa mesa Diamante ganharia 39 XP em vez de 11 — **3,5× de graça** | **fechado**: o XP usa o mínimo do `economicTier` **da pessoa**, não o da mesa onde ela sentou |
+| **B** | **Empobrecer de propósito.** Num degrau baixo, o mesmo XP custa menos fichas (Ouro: 100 mil por 60 XP; Rubi: 10 milhões) | **contido**: `economicTier = min(saldo, nível)`. Quem fica pobre tem nível alto e degrau baixo — o ganho para no bônus, com teto de 3× |
+| **C** | **Robô no mínimo.** 5.455 rodadas/dia para bater o teto, contra 1.200 do humano na ficha maior | **contido pelo teto diário**: os dois batem no mesmo teto de 60.000 XP. O robô gasta menos fichas mas **não sobe mais rápido** |
+| **D** | **Comprar nível com aposta gigante.** Teto de 60 XP/rodada; um nível de prestígio custa 19.700 XP | **fechado**: são 328 rodadas no mínimo, aposte-se o que for |
+| **E** | **Resultado da partida.** O XP sai da aposta feita, nunca do prêmio | **já era assim**, e precisa continuar. Em blackjack, `double` e `split` contam como volume apostado |
+
+---
+
+# I. O número que governa o produto inteiro
+
+Com a recompensa entregando 1.874 mínimos/mês e a casa ficando com 4,01% de cada aposta,
+**quantas rodadas por dia a economia grátis banca:**
+
+| Aposta | nível 1 | nível 100 | nível 1.000 | nível 10.000 |
+|---|---|---|---|---|
+| 1× o mínimo | 1.559 | 3.117 | 3.897 | 4.676 |
+| 2× | 779 | 1.559 | 1.948 | 2.338 |
+| **5×** | **312** | **623** | **779** | **935** |
+| 10× | 156 | 312 | 390 | 468 |
+| 20× | 78 | 156 | 195 | 234 |
+
+É o **mesmo número em qualquer degrau** — os dois lados são múltiplos do mínimo da mesa.
+
+> **A economia grátis banca cerca de 300 rodadas por dia apostando 5× o mínimo.
+> Acima disso, o jogador precisa ganhar ou comprar.**
+
+Esse é o modelo de negócio, e agora ele está **escrito em número** em vez de suposto.
+
+E é isso que explica a inversão da simulação:
+
+| Perfil | Perde por mês | Recompensa por mês | |
+|---|---|---|---|
+| casual | 481 mín | 4.685 mín | sobra |
+| regular | 3.607 mín | 4.685 mín | sobra |
+| ativo | 14.428 mín | 4.685 mín | **falta** |
+| hardcore | 57.712 mín | 4.685 mín | **falta** |
+
+Não é defeito de fórmula: é a margem da casa encontrando um subsídio fixo.
+
+---
+
+# J. A decisão que sobra, e é sua
+
+**Onde a recompensa diária é ancorada.** As duas saídas são defensáveis e dão jogos
+diferentes:
+
+### Âncora A — no **Bronze** (o piso)
+- Jogador grátis vive no Bronze/Prata **para sempre**, em qualquer nível.
+- Degraus 3 a 12 são para quem **ganha grande ou compra**.
+- **Zero inflação.** A loja fica sendo o caminho, e vale muito.
+- Custo: o bônus de nível (teto 3×) **nunca** alcança um degrau que está 10× acima, então
+  a progressão de nível não muda onde a pessoa joga.
+
+### Âncora B — no **`economicTier`** (limitado pelo nível)
+- A recompensa acompanha o degrau que a progressão liberou.
+- Jogador casual chega a **Platina em 10 anos**; o nível é o freio, não o saldo.
+- Custo: **a catraca volta em versão fraca** — quem joga pouco acumula. Medido: casual
+  chega a 423 trilhões em 10 anos, enquanto ativo e hardcore quebram.
+
+**Recomendo a Âncora A**, por três razões: não inflaciona, faz a loja ter função, e mantém
+a recompensa sendo o que ela foi criada para ser — *o caminho de volta para quem zerou*, e
+não um salário. Se a Âncora B for a escolhida, recomendo cortar os multiplicadores de dia
+pela metade, senão a inversão fica pior.
+
+---
+
+**Nada disto está implementado.** Aprovando, a ordem é: XP → `economicTier` → apostas →
+loja → recompensa diária, sobre a mesma fundação.
