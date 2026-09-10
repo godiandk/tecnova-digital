@@ -34,7 +34,7 @@ medida, está escrito que não tenho.
 | 19b | Segurança da **aplicação** | **Não auditada** | autenticação, sessão, autorização, limite de taxa, validação de entrada, SQL, segredos, CORS, WebSocket, abuso e log de dado sensível — nada disso foi olhado ainda |
 | 20 | Idempotência | **Existe e está bom** | `acoes-repetidas.service.ts` + chave única no extrato; conferido sob concorrência |
 | 21 | Versionamento de protocolo | **Não existe** | `api/versao.ts` recarrega o app quando o servidor muda; não há versão de API nem de evento |
-| 22 | Slot engine | **Matemática boa, apresentação não** | RTP corrigido pra 95,9715%; falta o reel engine, e o renderer dele será decidido antes (ver docs/estrategia-de-renderizacao.md) |
+| 22 | Slot engine | **Matemática boa, apresentação não** | RTP corrigido pra 95,9922%; falta o reel engine, e o renderer dele será decidido antes (ver docs/estrategia-de-renderizacao.md) |
 | 23 | Card engine | **Existe parcialmente** | `shared/sapata.ts` e `naipes.ts` no servidor; `Carta.tsx` na tela; sem sistema de dar/virar/mover |
 | 24 | Dice engine | **Existe e está bom** | `fisica/motorDeDados.ts`; o servidor decide a face e a física só encena; `verifica-face-do-dado` prova em 240 dados |
 | 25 | Chip system | **Existe e está bom** | `Ficha.tsx`, `TrilhoDeFichas.tsx`, `fichasDeValor.ts`; usado por 3 jogos |
@@ -59,7 +59,7 @@ O design system (tokens sim, inventário não). O replay (o extrato sabe a rodad
 tabela de rodadas nem de eventos).
 
 **3. O que está mal implementado?** Uma coisa só, e é séria: **o RTP dos caça-níqueis está
-em 89,17%** — medido agora, fórmula exata e 500 mil giros concordando. Todos os nossos
+em 89,17%** — medido agora, fórmula exata e cinco milhões de giros concordando. Todos os nossos
 outros jogos entregam entre 97% e 99%. Isso é uma diferença de margem que o jogador não
 tem como saber, e o nosso compromisso é RTP real e declarado.
 
@@ -160,7 +160,7 @@ que reprova, e teste de estado que recusa transição inválida.
 
 | | Tarefa | Problema | Como se prova |
 |---|---|---|---|
-| ~~P0.1~~ **FEITO** | **RTP dos caça-níqueis: 95,9715%** | 89,17% medido, contra 97–99% dos outros jogos. É margem que o jogador não vê | `verify-rtp` com fórmula exata e 500 mil giros concordando; o número declarado na tela |
+| ~~P0.1~~ **FEITO** | **RTP dos caça-níqueis: 95,9922%** | 89,17% medido, contra 97–99% dos outros jogos. É margem que o jogador não vê | `verify-rtp` com fórmula exata e cinco milhões de giros concordando; o número declarado na tela |
 | ~~P0.2~~ **FEITO** | **Tabelas `rodadas` e `eventos_da_rodada` no Postgres** | Nenhuma rodada é reconstruível hoje | conferência que joga uma rodada, apaga o estado em memória e a reconstrói do banco |
 | ~~P0.3~~ **FEITO** | **Os outros nove jogos na máquina de fases** | "aposta depois do fechamento" e "liquidação dupla" só são impossíveis num jogo | conferência por jogo tentando cada transição inválida |
 
@@ -168,11 +168,29 @@ que reprova, e teste de estado que recusa transição inválida.
 
 | | Tarefa | Problema | Como se prova |
 |---|---|---|---|
-| P1.1 | **Animation Director** (eventos → apresentação, com sequência, paralelo, cancelar, pular) | animação encadeada por `setTimeout` dentro da tela; trava e não cancela | teste que dispara a sequência, desmonta no meio e prova que nada ficou marcado |
-| P1.2 | **Linha de base visual com diff** | "funciona mas não parece com a referência" já aconteceu três vezes | `tira-retratos` guarda a base; a conferência reprova acima da tolerância |
-| P1.3 | **Medição de frame time** | hoje a resposta é "parece fluido" | Playwright com trace: p50/p95 por mesa, e teto que reprova |
-| P1.4 | **Audio Manager** (música, ambiente, prioridade, fade, ducking) | o áudio atual serve a um jogo e não tem hierarquia | conferência de mistura: efeito nunca abaixo da música; mudo cala tudo |
-| P1.5 | **Log estruturado** com `gameId`, `roundId`, `sessionId`, fase anterior e nova | quando quebrar em produção, não saberemos por quê | conferência que provoca erro e acha a linha pelo `roundId` |
+| P1.1 **SEGURA** | **Animation Director** (eventos → apresentação, com sequência, paralelo, cancelar, pular) | animação encadeada por `setTimeout` dentro da tela; trava e não cancela | teste que dispara a sequência, desmonta no meio e prova que nada ficou marcado |
+| ~~P1.2~~ **FEITO** | **Linha de base visual com diff** | "funciona mas não parece com a referência" já aconteceu três vezes | `verifica-visual.mjs`: duas execuções iguais dão 0% a 0,001%; um deslocamento de 4 px acusa 22% |
+| ~~P1.3~~ **FEITO** | **Medição de frame time** | hoje a resposta é "parece fluido" | `app/src/desempenho/`, mesma conta da POC; `?quadros=1` liga na web. Conferido contra sequências de quadro inventadas à mão |
+| ~~P1.4~~ **FEITO** | **Audio Manager** (música, ambiente, prioridade, fade, ducking) | o áudio atual serve a um jogo e não tem hierarquia | `verifica-mistura`: 15 conferências. **Música e ambiente ainda não têm conteúdo** — as camadas existem e estão vazias |
+| ~~P1.5~~ **FEITO** | **Log estruturado** com `gameId`, `roundId`, `sessionId`, fase anterior e nova | quando quebrar em produção, não saberemos por quê | `verifica-registro` (18) e `verifica-registro-http` (8, num servidor de verdade) |
+
+**P1.1 está SEGURA de propósito, e não esquecida.** Congelar um diretor de animação em
+componentes de interface antes de saber qual renderizador vai desenhá-los é exatamente o
+desperdício que a POC existe pra evitar. Ela sai da espera quando o §6 do
+`RENDERING_STRATEGY.md` for executado num aparelho de verdade.
+
+**O que o P1 achou de quebrado no caminho, e que ninguém sabia:**
+
+- o servidor tinha **cinco** chamadas de `console` no código inteiro, e três só dizem a
+  porta. Reclamação de jogador não tinha o que ler;
+- a primeira versão do registro perdia **todo 401 do guard** — no Nest o guard roda antes
+  do interceptor. Justamente as linhas que mais importam;
+- `verifica-escada-do-truco` precisava de servidor no ar mas estava dentro do `verify:tudo`
+  do aplicativo, que roda sem nada no ar: ela estourava e **as quatro conferências
+  seguintes na corrente nunca rodavam**;
+- as tabelas do P0.2 não tinham porta nenhuma: pra ler uma rodada era preciso abrir o
+  banco na mão. Agora há `/admin/rodadas/:id` e `/admin/rodadas-abertas`, e o caminho
+  inteiro está em `como-investigar-uma-reclamacao.md`.
 
 ### P2 — qualidade
 

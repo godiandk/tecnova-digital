@@ -44,7 +44,7 @@ export const VERSAO_DO_PROTOCOLO = 1;
  * banca-francesa 2 — a rodada solo passou a existir: o lançamento nulo mantém as apostas
  *                    de pé e não cobra nada, e a cobrança acontece só no lançamento
  *                    decisivo. Antes cada lançamento era uma rodada.
- * slots          2 — tabela recalibrada: RTP de 89,1673% pra 95,9715%, com pesos e
+ * slots          2 — tabela recalibrada: RTP de 89,1673% pra 95,9922%, com pesos e
  *                    prêmios novos (ver docs/matematica-dos-slots.md).
  * os demais      1 — primeira versão registrada.
  */

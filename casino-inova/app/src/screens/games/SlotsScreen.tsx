@@ -138,7 +138,7 @@ export function SlotsScreen({ navigation }: Props) {
           <>
             {/*
               DUAS CASAS, e não uma.
-              Com uma casa, 95,97% aparecia como "96,0%" — arredondado pra cima, na
+              Com uma casa, 95,99% aparecia como "96,0%" — arredondado pra cima, na
               direção que favorece o anúncio. A diferença é pequena e o princípio não é:
               o número que a tela mostra tem que ser o número que a tabela produz, e
               quem quiser conferir tem que chegar no mesmo lugar.

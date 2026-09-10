@@ -28,15 +28,21 @@ RTP calculável em **fórmula fechada**, e não só estimável por simulação.
 
 | | Antes | Depois |
 |---|---|---|
-| RTP | **89,1673%** | **95,9715%** |
-| Margem da casa | 10,8327% | 4,0285% |
-| Frequência de vitória | 13,73% (1 em 7,3) | **21,72%** (1 em 4,6) |
-| Desvio padrão do retorno | 5,32× | 9,97× |
-| Volatilidade | média-baixa | média |
-| Maior prêmio de uma linha | Jackpot 5.000× | Jackpot 8.500× |
-| Frequência dele | 1 em 320 bilhões | **1 em 8,2 milhões** |
-| Contribuição do Jackpot | 0,013 ponto | 4,66 pontos |
-| Repartição do RTP | 80% nos 4 comuns | 70% comuns / 20% médios / 10% altos |
+| RTP | **89,1673%** | **95,9922%** |
+| Margem da casa | 10,8327% | **4,0078%** |
+| Frequência de vitória | 13,73% (1 em 7,3) | **19,4579%** (1 em 5,1) |
+| Desvio padrão do retorno | 5,32× | 17,096× |
+| Volatilidade | média-baixa | média-alta |
+| Maior prêmio de uma linha | Jackpot 5.000× | Jackpot **16.000×** |
+| Frequência dele | 1 em 320 bilhões | **1 em 38,2 milhões** |
+| Contribuição do Jackpot | 0,013 ponto | **11,26 pontos** |
+| Repartição do RTP | 80% nos 4 comuns | 51% comuns / 20% médios / 29% altos |
+| Menor prêmio | 1× | **1× — nunca abaixo da aposta** |
+
+*(A coluna "Antes" é a tabela original, de peso 22/20/18/14/12/7/4/2,5/0,5. Entre ela e a
+de hoje houve uma calibração intermediária, com multiplicadores de 0,35× e 1,8×, que foi
+**descartada** — ver "A tabela" abaixo. Onde este documento falava em 95,9715%, 21,72% de
+vitória ou prêmio de 8.500×, eram números daquela tentativa, não desta.)*
 
 O problema não era só o número baixo. Era a **forma**:
 
@@ -54,28 +60,40 @@ A combinação das três é a pior possível: come o saldo devagar e sem emoçã
 
 **Pesos mais concentrados nos comuns.** A frequência de vitória depende da soma dos `p³`
 dos símbolos, e essa soma sobe quando a distribuição é *menos* uniforme — não quando ela é
-mais generosa. Ferradura foi de 22 para 33 e Sino de 20 para 22. A soma dos `p³` foi de
-0,0294 para 0,0502, e a frequência de vitória de 13,73% para 21,72%.
+mais generosa. A soma dos `p³` foi de 0,0294 para 0,0439, e a frequência de vitória de
+13,73% para 19,46%.
 
-**Prêmios de cima alcançáveis.** O Jackpot foi de peso 0,5 (p = 0,5%) para 3 (p = 3%).
-Cinco Jackpots numa linha passaram de uma vez a cada 320 bilhões de giros para uma a cada
-8,2 milhões. Continua raro — é um jackpot — mas agora existe.
+**Prêmios de cima alcançáveis.** O Jackpot foi de peso 0,5 (p = 0,5%) para 6 num total de
+197 (p = 3,05%). Cinco Jackpots numa linha passaram de uma vez a cada 320 bilhões de giros
+para uma a cada 38,2 milhões. Continua raro — é um jackpot — mas agora existe.
 
-**Escada real.** Cada símbolo passou a contribuir entre 4,7 e 27 pontos de RTP.
+**Escada real.** Cada símbolo passou a contribuir entre 4,9 e 19,7 pontos de RTP. Antes,
+Barras sozinho carregava 25,3 pontos e o Jackpot 0,013.
 
 ### A tabela
 
+**Todos os 27 multiplicadores são inteiros**, e isso não é estética. A primeira calibração
+usou 0,35× e 1,8× para segurar o símbolo mais comum: a matemática fechava e a mesa
+quebrava, porque numa aposta de 50 um prêmio de 0,35× vale 17,5 fichas e a carteira recusa
+fração de ficha — é a regra que impede margem escondida em arredondamento. A conferência
+de ponta a ponta pegou isso com um 400 na cara do jogador. Esta tabela não pode repetir o
+problema, e há uma trava que reprova se alguém tentar.
+
 | Símbolo | Peso | p | 3 iguais | 4 iguais | 5 iguais | Contribuição |
 |---|---|---|---|---|---|---|
-| Ferradura | 33 | 33,00% | 0,35× | 1,8× | 8× | 27,02 pontos |
-| Sino | 22 | 22,00% | 1,5× | 7× | 35× | 21,64 |
-| Barras | 13 | 13,00% | 5× | 25× | 140× | 10,48 |
-| Estrela | 9 | 9,00% | 15× | 70× | 350× | 8,10 |
-| Moeda | 7 | 7,00% | 30× | 150× | 700× | 7,05 |
-| Coroa | 5,5 | 5,50% | 60× | 300× | 1.400× | 6,37 |
-| Diamante | 4 | 4,00% | 150× | 700× | 3.500× | 5,65 |
-| Sete | 3,5 | 3,50% | 200× | 1.000× | 5.500× | 5,01 |
-| Jackpot | 3 | 3,00% | 300× | 1.600× | 8.500× | 4,66 |
+| Ferradura | 60 | 30,46% | 1× | 2× | 3× | 19,74 pontos |
+| Sino | 44 | 22,34% | 2× | 5× | 15× | 17,65 |
+| Barras | 28 | 14,21% | 4× | 20× | 100× | 11,33 |
+| Jackpot | 6 | 3,05% | 700× | 3.500× | 16.000× | 11,26 |
+| Sete | 7 | 3,55% | 400× | 2.000× | 10.000× | 10,48 |
+| Estrela | 20 | 10,15% | 10× | 50× | 250× | 8,44 |
+| Moeda | 14 | 7,11% | 25× | 125× | 600× | 6,19 |
+| Diamante | 8 | 4,06% | 150× | 750× | 3.500× | 5,99 |
+| Coroa | 10 | 5,08% | 60× | 300× | 1.500× | 4,92 |
+
+*(Ordenada por contribuição, não por raridade — é assim que se vê que a escada é real: os
+três de cima somam 27,7 pontos, e nenhum símbolo está lá só de enfeite. Soma dos pesos:
+197.)*
 
 ---
 
@@ -91,22 +109,30 @@ Foi decisão de produto, não de programação.
 
 ---
 
-## A coisa desconfortável, dita em voz alta
+## A coisa desconfortável — que deixou de existir
 
-**9,59% dos giros devolvem alguma coisa abaixo da aposta** — a média dessa faixa é 0,39×.
-Devolver 40 numa aposta de 100 é como todo slot funciona, e não dá pra evitar sem derrubar
-a frequência de vitória.
+Esta seção dizia, sobre a calibração intermediária: *"9,59% dos giros devolvem alguma coisa
+abaixo da aposta"*. Devolver 40 numa aposta de 100 e comemorar como vitória é derrota
+disfarçada de vitória — a coisa que este projeto decidiu não fazer —, e a nota dizia que a
+matemática estava resolvida e a apresentação ficaria pra depois.
 
-Mas **isso não é ganhar**, e a tela não pode comemorar como se fosse. Luz, som e a palavra
-"ganhou" em cima de um giro que devolveu menos que a aposta é derrota disfarçada de
-vitória — a coisa que este projeto decidiu não fazer. A matemática está resolvida; a
-apresentação disso é tarefa da interface, e fica anotada como P1.
+**Não ficou pra depois: sumiu.** Ao trocar os multiplicadores fracionários por inteiros
+(pelo motivo prático da fração de ficha), o menor multiplicador da tabela voltou a ser 1.
+Como todo prêmio é `aposta × multiplicador`, **nenhum retorno fica abaixo da aposta**: se
+acendeu, no mínimo empatou.
+
+A distribuição exata confirma: 7,34% dos giros devolvem exatamente 1× — o empate — e nada
+cai entre 0 e 1. Isso caiu no colo junto com os inteiros, e é melhor do que parece: todo
+slot comercial paga fração da aposta o tempo todo e comemora como vitória. Aqui não há o
+que disfarçar, porque não há perda disfarçada de ganho.
+
+Há uma trava para isso não voltar (item 7 abaixo).
 
 ---
 
 ## A trava
 
-`verify-rtp.ts` **reprova** (sai com 1), e confere seis coisas:
+`verify-rtp.ts` **reprova** (sai com 1), e confere oito coisas:
 
 1. **Fórmula bate com simulação** — cinco milhões de giros pelo motor de verdade, com
    folga de três erros padrão calculados da própria variância observada. Uma folga fixa
@@ -120,3 +146,7 @@ apresentação disso é tarefa da interface, e fica anotada como P1.
 5. **O maior prêmio sai pelo menos uma vez a cada 50 milhões de giros.**
 6. **Nenhum símbolo contribui menos de 0,5 ponto de RTP** — símbolo que não move o retorno
    só serve pra criar expectativa que a matemática não sustenta.
+7. **Todo multiplicador é inteiro** — nenhum prêmio pode dar fração de ficha. É a trava do
+   defeito que a primeira calibração produziu.
+8. **O menor prêmio devolve pelo menos 1×** — se acendeu, no mínimo empatou. É esta que
+   impede a volta da "derrota disfarçada de vitória".
