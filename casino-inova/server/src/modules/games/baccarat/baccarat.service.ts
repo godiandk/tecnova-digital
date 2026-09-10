@@ -7,6 +7,7 @@ import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
 import { CartaComNaipe, nomeDaCarta } from '../shared/naipes';
 import { Sapata } from '../shared/sapata';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
+import { MaquinaDeRodada } from '../core/maquina-de-rodada';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 const VALID_BET_TYPES: BaccaratBetType[] = ['jogador', 'banca', 'empate'];
@@ -31,6 +32,7 @@ export class BaccaratService {
     private readonly tournaments: TournamentsService,
     private readonly roadmapService: RoadmapService,
     private readonly acoes: AcoesRepetidas,
+    private readonly maquina: MaquinaDeRodada,
   ) {}
 
   getConfig() {
@@ -63,7 +65,13 @@ export class BaccaratService {
      * carteira ser idempotente deixava o jogador pagar uma rodada e ganhar várias.
      */
     return this.acoes.umaVezSo(userId, actionId, async () => {
-      await this.walletService.debit(userId, amount, 'aposta', GAME_ID, actionId);
+      /*
+       * A RODADA É REGISTRADA ANTES DE O DINHEIRO SE MEXER. Ver MaquinaDeRodada: se o
+       * processo morrer entre o débito e o registro, sobra dinheiro movido sem nada que
+       * o explique.
+       */
+      const rodada = await this.maquina.comecar({ jogo: GAME_ID, usuarioId: userId, apostas: { tipo: betType, valor: amount } });
+      await this.walletService.debit(userId, amount, 'aposta', GAME_ID, actionId, rodada.id);
 
       // Embaralhar acontece ENTRE rodadas, nunca no meio de uma.
       const embaralhou = this.sapata.embaralharSePassouDoCorte();
@@ -82,9 +90,14 @@ export class BaccaratService {
       const totalReturn = resolveBet(betType, round.winner, amount);
 
       if (totalReturn > 0) {
-        await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
+        await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID, undefined, rodada.id);
       }
       await this.tournaments.recordRound(userId, GAME_ID, amount, totalReturn);
+      await rodada.terminar({
+        resultado: { vencedor: round.winner, jogador: round.playerTotal, banca: round.bankerTotal },
+        apostado: amount,
+        retorno: totalReturn,
+      });
 
       this.history.push({ outcome: round.winner });
       if (this.history.length > HISTORY_LIMIT) this.history.shift();

@@ -13,7 +13,7 @@ const post = async (rota, corpo, token) => {
   return { ok: r.ok, status: r.status, corpo: JSON.parse(t) };
 };
 
-const conta = await post('/auth/cadastrar', { email: `dm-${Date.now()}@teste.local`, senha: 'senha-de-teste-123', nome: 'Auditor DM' });
+const conta = await post('/auth/cadastrar', { email: `dm-${Date.now()}@teste.local`, senha: 'senha-de-teste-123', nome: 'Auditor DM' , nomeCompleto: 'Conta De Vistoria', nascimento: '1990-01-01', aceitouTermos: true });
 const token = conta.corpo.token ?? conta.corpo.accessToken;
 
 let abriuJogador = 0, abriuBot = 0, recusas = 0, problemas = 0;

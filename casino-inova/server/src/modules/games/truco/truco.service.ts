@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
+import { LanceRegistrado, MaquinaDeRodada } from '../core/maquina-de-rodada';
 import {
   buildDeck,
   botShouldCallTruco,
@@ -68,10 +69,19 @@ const GAME_ID = 'truco';
 @Injectable()
 export class TrucoService {
   private readonly matches = new Map<string, TrucoMatch>();
+  /**
+   * A rodada registrada de cada partida em andamento.
+   *
+   * Fica fora do objeto da partida de propósito: aquele objeto é o ESTADO DO JOGO e vira
+   * resposta pro cliente. A rodada guardada é infraestrutura, e não tem por que
+   * atravessar a rede.
+   */
+  private readonly rodadaDaPartida = new Map<string, LanceRegistrado>();
 
   constructor(
     private readonly walletService: WalletService,
     private readonly tournaments: TournamentsService,
+    private readonly maquina: MaquinaDeRodada,
   ) {}
 
   getConfig() {
@@ -102,7 +112,10 @@ export class TrucoService {
       throw new BadRequestException('Estilo inválido — use "sujo" ou "limpo".');
     }
 
-    await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID, actionId);
+    /* A RODADA É REGISTRADA ANTES DE O DINHEIRO SE MEXER. Ver MaquinaDeRodada. */
+    const rodada = await this.maquina.comecar({ jogo: GAME_ID, usuarioId: userId, apostas: { entrada: buyIn, variante: variant, estilo: style } });
+    this.rodadaDaPartida.set(userId, rodada);
+    await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID, actionId, rodada.id);
     const match: TrucoMatch = {
       buyIn,
       variant,
@@ -305,10 +318,28 @@ export class TrucoService {
       match.matchOutcome = match.playerScore >= target ? 'jogador' : 'bot';
       const retorno = match.matchOutcome === 'jogador' ? match.buyIn * MATCH_WIN_TOTAL_MULTIPLIER : 0;
       if (retorno > 0) {
-        await this.walletService.credit(userId, retorno, 'premio', GAME_ID);
+        await this.walletService.credit(
+          userId,
+          retorno,
+          'premio',
+          GAME_ID,
+          undefined,
+          this.rodadaDaPartida.get(userId)?.id,
+        );
       }
       // No truco a rodada de torneio é a partida inteira: o buy-in é a aposta.
       await this.tournaments.recordRound(userId, GAME_ID, match.buyIn, retorno);
+
+      const rodada = this.rodadaDaPartida.get(userId);
+      if (rodada) {
+        await rodada.terminar({
+          resultado: { vencedor: match.matchOutcome, placar: { jogador: match.playerScore, bot: match.botScore } },
+          apostado: match.buyIn,
+          retorno,
+          comAcoesDoJogador: true,
+        });
+        this.rodadaDaPartida.delete(userId);
+      }
       return;
     }
 

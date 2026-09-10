@@ -34,20 +34,27 @@ export const VERSAO_DO_PROTOCOLO = 1;
 /**
  * A versão da regra de cada jogo.
  *
+ * AS CHAVES SÃO OS `GAME_ID` DE VERDADE, lidos dos `*.config.ts` — e não os nomes das
+ * pastas nem uma tradução deles. A pasta do bacará se chama `baccarat` e o jogo se chama
+ * `bacara`; a da roleta se chama `roulette` e o jogo, `roleta`. Chutar aqui derruba o
+ * jogo na primeira rodada, com a mensagem lá de baixo — o que é o comportamento certo,
+ * mas é melhor não precisar dele. A conferência `verifica-fases-dos-jogos.ts` compara
+ * esta lista com os `GAME_ID` do código e reprova se divergirem.
+ *
  * banca-francesa 2 — a rodada solo passou a existir: o lançamento nulo mantém as apostas
  *                    de pé e não cobra nada, e a cobrança acontece só no lançamento
  *                    decisivo. Antes cada lançamento era uma rodada.
- * caca-niqueis   2 — tabela recalibrada: RTP de 89,1673% pra 95,9715%, com pesos e
+ * slots          2 — tabela recalibrada: RTP de 89,1673% pra 95,9715%, com pesos e
  *                    prêmios novos (ver docs/matematica-dos-slots.md).
  * os demais      1 — primeira versão registrada.
  */
 export const VERSAO_DA_REGRA: Record<string, number> = {
   'banca-francesa': 2,
-  'caca-niqueis': 2,
+  slots: 2,
   'bac-bo': 1,
   bacara: 1,
   blackjack: 1,
-  dominio: 1,
+  domino: 1,
   poker: 1,
   roleta: 1,
   'stock-market': 1,

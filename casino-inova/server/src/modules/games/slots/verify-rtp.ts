@@ -1,4 +1,4 @@
-import { PAYLINES, SLOT_SYMBOLS } from './slots.config';
+import { MIN_BET, PAYLINES, SLOT_SYMBOLS } from './slots.config';
 import { spin, theoreticalRtp } from './slots.engine';
 
 /**
@@ -26,7 +26,12 @@ import { spin, theoreticalRtp } from './slots.engine';
  * 5. O MAIOR PRÊMIO É ALCANÇÁVEL. Ele já esteve a uma vez em 3,3 x 10^34 giros — mais
  *    raro que qualquer coisa que já aconteceu no universo. Prêmio que não sai não é
  *    prêmio: é enfeite, e enfeite anunciado como prêmio é propaganda enganosa.
- * 6. NENHUM SÍMBOLO É INÚTIL. O Jackpot chegou a contribuir 0,013 ponto de RTP. Um
+ * 6. MULTIPLICADOR INTEIRO. Um prêmio de 0,35x numa aposta de 50 vale 17,5 fichas, e a
+ *    carteira recusa fração — o jogador leva um erro no lugar do prêmio. Já aconteceu, e
+ *    quem pegou foi a conferência de ponta a ponta, não esta; agora esta pega antes.
+ * 7. NENHUM PRÊMIO ABAIXO DA APOSTA. Um "ganho" que devolve menos do que saiu é derrota
+ *    disfarçada de vitória.
+ * 8. NENHUM SÍMBOLO É INÚTIL. O Jackpot chegou a contribuir 0,013 ponto de RTP. Um
  *    símbolo que não move o retorno é um símbolo que só serve pra ocupar espaço na
  *    tela e criar expectativa que a matemática não sustenta.
  *
@@ -165,7 +170,29 @@ umEmQuantos <= GIROS_MAXIMOS_PRO_MAIOR_PREMIO
         'nesse ritmo ele não é prêmio, é enfeite',
     );
 
-/* --- 6. nenhum símbolo é inútil --- */
+/* --- 6. multiplicador inteiro: fração de ficha não existe nesta casa --- */
+const fracionarios = SLOT_SYMBOLS.flatMap((s) =>
+  ([3, 4, 5] as const)
+    .filter((n) => !Number.isInteger(s.payout[n]))
+    .map((n) => `${s.label} com ${n} iguais paga ${s.payout[n]}x`),
+);
+fracionarios.length === 0
+  ? ok('todo multiplicador é inteiro — nenhum prêmio pode dar fração de ficha')
+  : falhar(
+      `multiplicador fracionário em: ${fracionarios.join(', ')}. Numa aposta de ${MIN_BET} isso vira ` +
+        'fração de ficha, e a carteira recusa — o jogador leva um erro na cara em vez do prêmio.',
+    );
+
+/* --- 7. nenhum prêmio devolve menos do que foi apostado --- */
+const menorMultiplicador = Math.min(...SLOT_SYMBOLS.map((s) => s.payout[3]));
+menorMultiplicador >= 1
+  ? ok(`o menor prêmio devolve ${menorMultiplicador}x — se acendeu, no mínimo empatou`)
+  : falhar(
+      `o menor prêmio devolve ${menorMultiplicador}x da aposta. Um "ganho" que devolve menos do ` +
+        'que saiu é derrota disfarçada de vitória, e esta casa não faz isso.',
+    );
+
+/* --- 8. nenhum símbolo é inútil --- */
 let todosContribuem = true;
 for (const s of SLOT_SYMBOLS) {
   const p = s.weight / pesoTotal;

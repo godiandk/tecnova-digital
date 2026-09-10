@@ -62,9 +62,45 @@ const JOGOS = [
   { nome: 'Roleta', rota: '/games/roleta/girar', monta: (v, id) => ({ bets: [{ type: 'vermelho', amount: v }], actionId: id }) },
   { nome: 'Bacará', rota: '/games/bacara/apostar', monta: (v, id) => ({ betType: 'jogador', amount: v, actionId: id }) },
   { nome: 'Bac Bo', rota: '/games/bac-bo/apostar', monta: (v, id) => ({ bets: [{ type: 'jogador', amount: v }], actionId: id }) },
-  { nome: 'Banca Francesa', rota: '/games/banca-francesa/apostar', monta: (v, id) => ({ bets: [{ type: 'grande', amount: v }], actionId: id }) },
   { nome: 'Stock Market', rota: '/games/stock-market/apostar', monta: (v, id) => ({ direction: 'alta', amount: v, actionId: id }) },
+  { nome: 'Banca Francesa', emVariosLances: true },
 ];
+
+/**
+ * A BANCA FRANCESA NÃO É JOGO DE UMA CHAMADA SÓ, e por isso saiu da lista de cima.
+ *
+ * Ela ficou lá por um tempo e reprovava — "saldo 10000 − 50 + 0 devia dar 9950, deu
+ * 10000" —, e o certo era o servidor: `apostar` CONFIRMA a aposta e não cobra nada. Quem
+ * cobra é o lançamento DECISIVO, e uma rodada pode ter vários lançamentos nulos antes
+ * dele, em que nada de dinheiro acontece.
+ *
+ * Isso não é detalhe de implementação: é a regra do jogo, e é o que faz o nulo não
+ * custar nada ao jogador. Uma conferência que espera cobrança no `apostar` está pedindo
+ * pro jogo voltar a cobrar por lançamento nulo.
+ *
+ * Então aqui a rodada é jogada como se joga: confirma, e lança até decidir.
+ */
+async function rodadaDaBancaFrancesa(token, valor, chave) {
+  const confirmou = await chamar('/games/banca-francesa/apostar', {
+    metodo: 'POST',
+    token,
+    corpo: { bets: [{ type: 'grande', amount: valor }] },
+  });
+  if (!confirmou.ok) return { ok: false, corpo: confirmou.corpo };
+
+  /* Um lançamento pode sair nulo; a rodada continua até um decidir. Vinte é folga
+     enorme: a chance de vinte nulos seguidos é de um em três bilhões. */
+  for (let tentativa = 0; tentativa < 20; tentativa += 1) {
+    const lance = await chamar('/games/banca-francesa/lancar', {
+      metodo: 'POST',
+      token,
+      corpo: { actionId: `${chave}-${tentativa}` },
+    });
+    if (!lance.ok) return { ok: false, corpo: lance.corpo };
+    if (lance.corpo.decidiu) return { ok: true, corpo: lance.corpo };
+  }
+  return { ok: false, corpo: { message: 'vinte lançamentos sem decidir — improvável demais pra ser acaso' } };
+}
 
 /**
  * Quanto voltou pro jogador, seja qual for o nome do campo naquele jogo.
@@ -94,7 +130,10 @@ for (const jogo of JOGOS) {
     const antes = await saldo(token);
     if (antes < valor) break;
 
-    const r = await chamar(jogo.rota, { metodo: 'POST', token, corpo: jogo.monta(valor, `vist-${marca}-${jogo.nome}-${i}`) });
+    const chave = `vist-${marca}-${jogo.nome}-${i}`;
+    const r = jogo.emVariosLances
+      ? await rodadaDaBancaFrancesa(token, valor, chave)
+      : await chamar(jogo.rota, { metodo: 'POST', token, corpo: jogo.monta(valor, chave) });
     if (!r.ok) { falhar(`rodada recusada: ${JSON.stringify(r.corpo).slice(0, 120)}`); break; }
 
     const depois = await saldo(token);
@@ -185,7 +224,15 @@ console.log('\n=== 4. O mesmo pedido duas vezes cobra uma vez só ===');
     chamar('/games/slots/girar', { metodo: 'POST', token, corpo }),
   ]);
   const depois = await saldo(token);
-  const recebido = a.corpo.totalReturn ?? 0;
+  /*
+   * Lê o retorno pelo MESMO helper que o resto do arquivo usa.
+   *
+   * Aqui estava `a.corpo.totalReturn ?? 0` escrito à mão — e o slots devolve `totalWin`.
+   * Num giro premiado, a conta esperada saía 100 fichas menor que a real e a conferência
+   * acusava cobrança dupla que não existia. O arquivo já tinha o `quantoVoltou`
+   * justamente por causa disso; este trecho é que não usava.
+   */
+  const recebido = quantoVoltou(a.corpo);
   const esperado = antes - nivel.nivel.minimo + recebido;
 
   if (depois !== esperado) falhar(`dois pedidos iguais cobraram: ${antes} -> ${depois}, esperava ${esperado}`);

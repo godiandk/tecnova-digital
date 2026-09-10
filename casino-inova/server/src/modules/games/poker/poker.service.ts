@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
+import { LanceRegistrado, MaquinaDeRodada } from '../core/maquina-de-rodada';
 import { bestHandOf, botDecision, buildDeck, compareHandValues, handLabel, PokerAction, shuffle } from './poker.engine';
 import { BIG_BET, BIG_BLIND, Card, MAX_BUY_IN, MAX_RAISES_PER_STREET, MIN_BUY_IN, SMALL_BET, SMALL_BLIND } from './poker.config';
 
@@ -47,10 +48,19 @@ const GAME_ID = 'poker';
 @Injectable()
 export class PokerService {
   private readonly hands = new Map<string, PokerHand>();
+  /**
+   * A rodada registrada de cada partida em andamento.
+   *
+   * Fica fora do objeto da partida de propósito: aquele objeto é o ESTADO DO JOGO e vira
+   * resposta pro cliente. A rodada guardada é infraestrutura, e não tem por que
+   * atravessar a rede.
+   */
+  private readonly rodadaDaPartida = new Map<string, LanceRegistrado>();
 
   constructor(
     private readonly walletService: WalletService,
     private readonly tournaments: TournamentsService,
+    private readonly maquina: MaquinaDeRodada,
   ) {}
 
   getConfig() {
@@ -66,7 +76,10 @@ export class PokerService {
       throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
     }
 
-    await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID, actionId);
+    /* A RODADA É REGISTRADA ANTES DE O DINHEIRO SE MEXER. Ver MaquinaDeRodada. */
+    const rodada = await this.maquina.comecar({ jogo: GAME_ID, usuarioId: userId, apostas: { entrada: buyIn } });
+    this.rodadaDaPartida.set(userId, rodada);
+    await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID, actionId, rodada.id);
     const deck = shuffle(buildDeck());
     const match: PokerHand = {
       userId,
@@ -228,10 +241,28 @@ export class PokerService {
     };
 
     if (match.playerStack > 0) {
-      await this.walletService.credit(match.userId, match.playerStack, 'premio', GAME_ID);
+      await this.walletService.credit(
+        match.userId,
+        match.playerStack,
+        'premio',
+        GAME_ID,
+        undefined,
+        this.rodadaDaPartida.get(match.userId)?.id,
+      );
     }
     // O buy-in virou o stack da mão; o que sobrou dele é o retorno.
     await this.tournaments.recordRound(match.userId, GAME_ID, match.buyIn, match.playerStack);
+
+    const rodada = this.rodadaDaPartida.get(match.userId);
+    if (rodada) {
+      await rodada.terminar({
+        resultado: { vencedor: winner, potWon, maoDoJogador: playerHandLabel, maoDoBot: botHandLabel },
+        apostado: match.buyIn,
+        retorno: match.playerStack,
+        comAcoesDoJogador: true,
+      });
+      this.rodadaDaPartida.delete(match.userId);
+    }
   }
 
   private runBotIfNeeded(match: PokerHand, depth = 0) {

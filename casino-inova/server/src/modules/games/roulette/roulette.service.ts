@@ -9,6 +9,7 @@ import {
   TOTAL_MULTIPLIER,
 } from './roulette.config';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
+import { MaquinaDeRodada } from '../core/maquina-de-rodada';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 /** Quantos números o painel da mesa guarda — mesa real costuma mostrar os últimos ~20. */
@@ -25,6 +26,7 @@ export class RouletteService {
     private readonly walletService: WalletService,
     private readonly tournaments: TournamentsService,
     private readonly acoes: AcoesRepetidas,
+    private readonly maquina: MaquinaDeRodada,
   ) {}
 
   /**
@@ -114,15 +116,31 @@ export class RouletteService {
      * carteira ser idempotente deixava o jogador pagar uma rodada e ganhar várias.
      */
     return this.acoes.umaVezSo(userId, actionId, async () => {
-      await this.walletService.debit(userId, total, 'aposta', GAME_ID, actionId);
+      /*
+       * A RODADA É REGISTRADA ANTES DE O DINHEIRO SE MEXER.
+       *
+       * Se o processo morrer entre o débito e o registro, sobra dinheiro movido sem nada
+       * que o explique. Registrando primeiro, o pior caso é uma rodada aberta sem
+       * resultado — visível na lista das que não fecharam, achável e honesta.
+       */
+      const rodada = await this.maquina.comecar({ jogo: GAME_ID, usuarioId: userId, apostas });
+      await this.walletService.debit(userId, total, 'aposta', GAME_ID, actionId, rodada.id);
 
       const pocket = spinWheel();
       const results = resolverApostas(pocket, apostas);
       const totalReturn = results.reduce((soma, r) => soma + r.totalReturn, 0);
 
       if (totalReturn > 0) {
-        await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
+        await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID, undefined, rodada.id);
       }
+      await rodada.terminar({
+        resultado: { casa: pocket, cor: colorOf(pocket) },
+        apostado: total,
+        retorno: totalReturn,
+        detalhe: {
+          porAposta: results.map((r) => ({ tipo: r.type, valor: r.amount, retorno: r.totalReturn })),
+        },
+      });
       await this.tournaments.recordRound(userId, GAME_ID, total, totalReturn);
 
       this.history.push(pocket);

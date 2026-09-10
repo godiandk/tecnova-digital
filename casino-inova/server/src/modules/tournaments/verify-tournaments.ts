@@ -164,11 +164,23 @@ async function main() {
   {
     const { db, wallet, tournaments } = await novoServico();
 
-    // Rodadas de ontem, gravadas direto com a data antiga pra cair na janela fechada.
+    /*
+     * Rodadas de ONTEM, no meio do dia de ontem.
+     *
+     * Antes isto era `now() - interval '26 hours'`, e funcionava — exceto entre
+     * meia-noite e duas da manhã. Às 00:12 UTC, 26 horas atrás é às 22:12 de ANTEONTEM,
+     * que cai na janela do dia retrasado e não na de ontem; a apuração diária, que só
+     * fecha a janela imediatamente anterior, não achava nada e a conferência reprovava.
+     *
+     * Uma conferência que passa vinte e duas horas por dia e reprova nas outras duas é
+     * pior que uma que reprova sempre: ela ensina a equipe a ignorar o vermelho. Agora a
+     * data é CALCULADA a partir do início do dia de hoje, e não medida no relógio: meio
+     * dia de ontem cai no meio da janela de ontem em qualquer hora que isto rode.
+     */
     for (let i = 0; i < 10; i += 1) {
       await db.query(
         `INSERT INTO tournament_rounds (user_id, game_id, stake, returned, played_at)
-         VALUES ('u1','slots',100,300, now() - interval '26 hours')`,
+         VALUES ('u1','slots',100,300, date_trunc('day', now() AT TIME ZONE 'UTC') - interval '12 hours')`,
       );
     }
 

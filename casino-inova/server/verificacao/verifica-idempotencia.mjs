@@ -14,7 +14,7 @@ const post = async (rota, corpo, token) => {
 const saldo = async (token) =>
   (await fetch(`${BASE}/wallet/saldo`, { headers: { authorization: `Bearer ${token}` } }).then((r) => r.json())).balance;
 
-const conta = await post('/auth/cadastrar', { email: `idem-${Date.now()}@teste.local`, senha: 'senha-de-teste-123', nome: 'Auditor Idem' });
+const conta = await post('/auth/cadastrar', { email: `idem-${Date.now()}@teste.local`, senha: 'senha-de-teste-123', nome: 'Auditor Idem' , nomeCompleto: 'Conta De Vistoria', nascimento: '1990-01-01', aceitouTermos: true });
 const token = conta.corpo.token ?? conta.corpo.accessToken;
 
 let problemas = 0;

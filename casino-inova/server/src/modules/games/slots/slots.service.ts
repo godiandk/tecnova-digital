@@ -4,6 +4,7 @@ import { TournamentsService } from '../../tournaments/tournaments.service';
 import { spin, theoreticalRtp } from './slots.engine';
 import { MIN_MATCH, PAYLINES, REELS, ROWS, SLOT_SYMBOLS } from './slots.config';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
+import { MaquinaDeRodada } from '../core/maquina-de-rodada';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 /** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
@@ -15,6 +16,7 @@ export class SlotsService {
     private readonly walletService: WalletService,
     private readonly tournaments: TournamentsService,
     private readonly acoes: AcoesRepetidas,
+    private readonly maquina: MaquinaDeRodada,
   ) {}
 
   getConfig() {
@@ -46,13 +48,24 @@ export class SlotsService {
      * carteira ser idempotente deixava o jogador pagar uma rodada e ganhar várias.
      */
     return this.acoes.umaVezSo(userId, actionId, async () => {
-      await this.walletService.debit(userId, bet, 'aposta', GAME_ID, actionId);
+      /*
+       * A RODADA É REGISTRADA ANTES DE O DINHEIRO SE MEXER. Ver MaquinaDeRodada: se o
+       * processo morrer entre o débito e o registro, sobra dinheiro movido sem nada que
+       * o explique.
+       */
+      const rodada = await this.maquina.comecar({ jogo: GAME_ID, usuarioId: userId, apostas: { valor: bet } });
+      await this.walletService.debit(userId, bet, 'aposta', GAME_ID, actionId, rodada.id);
       const result = spin(bet);
 
       if (result.totalWin > 0) {
-        await this.walletService.credit(userId, result.totalWin, 'premio', GAME_ID);
+        await this.walletService.credit(userId, result.totalWin, 'premio', GAME_ID, undefined, rodada.id);
       }
       await this.tournaments.recordRound(userId, GAME_ID, bet, result.totalWin);
+      await rodada.terminar({
+        resultado: { grade: result.grid, linhas: result.winningLines.map((l) => l.payline) },
+        apostado: bet,
+        retorno: result.totalWin,
+      });
 
       return { ...result, bet, newBalance: await this.walletService.balanceOf(userId) };
     });

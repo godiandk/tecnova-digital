@@ -5,6 +5,7 @@ import { BacBoBet, resolveBets, roll, theoreticalRtp } from './bac-bo.engine';
 import { SIDE_TOTAL_MULTIPLIER, TIE_PROFIT_ODDS, TIE_REFUND_MULTIPLIER } from './bac-bo.config';
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
+import { MaquinaDeRodada } from '../core/maquina-de-rodada';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 const BET_TYPES: BacBoBet['type'][] = ['jogador', 'banca', 'empate'];
@@ -23,6 +24,7 @@ export class BacBoService {
     private readonly tournaments: TournamentsService,
     private readonly roadmapService: RoadmapService,
     private readonly acoes: AcoesRepetidas,
+    private readonly maquina: MaquinaDeRodada,
   ) {}
 
   /** As cinco estradas do placar, calculadas a partir do histórico da mesa. */
@@ -72,16 +74,28 @@ export class BacBoService {
      * carteira ser idempotente deixava o jogador pagar uma rodada e ganhar várias.
      */
     return this.acoes.umaVezSo(userId, actionId, async () => {
-      await this.walletService.debit(userId, totalStake, 'aposta', GAME_ID, actionId);
+      /*
+       * A RODADA É REGISTRADA ANTES DE O DINHEIRO SE MEXER. Ver MaquinaDeRodada: se o
+       * processo morrer entre o débito e o registro, sobra dinheiro movido sem nada que
+       * o explique.
+       */
+      const rodada = await this.maquina.comecar({ jogo: GAME_ID, usuarioId: userId, apostas: bets.map((b) => ({ casa: b.type, valor: b.amount })) });
+      await this.walletService.debit(userId, totalStake, 'aposta', GAME_ID, actionId, rodada.id);
 
       const result = roll();
       const results = resolveBets(result, bets);
       const totalReturn = results.reduce((sum, item) => sum + item.totalReturn, 0);
 
       if (totalReturn > 0) {
-        await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID);
+        await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID, undefined, rodada.id);
       }
       await this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn);
+      await rodada.terminar({
+        resultado: { resultado: result.outcome, jogador: result.playerTotal, banca: result.bankerTotal },
+        apostado: totalStake,
+        retorno: totalReturn,
+        detalhe: { porCasa: results.map((r) => ({ casa: r.type, valor: r.amount, retorno: r.totalReturn })) },
+      });
 
       this.history.push({ outcome: result.outcome });
       if (this.history.length > HISTORY_LIMIT) this.history.shift();

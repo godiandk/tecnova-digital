@@ -15,7 +15,7 @@ const post = async (rota, corpo, token) => {
   return JSON.parse(t);
 };
 
-const conta = await post('/auth/cadastrar', { email: `bj-${Date.now()}@teste.local`, senha: 'senha-de-teste-123', nome: 'Auditor BJ' });
+const conta = await post('/auth/cadastrar', { email: `bj-${Date.now()}@teste.local`, senha: 'senha-de-teste-123', nome: 'Auditor BJ' , nomeCompleto: 'Conta De Vistoria', nascimento: '1990-01-01', aceitouTermos: true });
 const token = conta.token ?? conta.accessToken;
 
 let viuSplit = 0, viuDouble = 0, viuSeguro = 0, viuBJ = 0, maos = 0, problemas = 0;

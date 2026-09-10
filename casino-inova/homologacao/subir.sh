@@ -73,9 +73,25 @@ if [ "${1:-}" = "--testes" ]; then
 
   # As conferências abaixo falam com o servidor que acabou de subir e com o navegador —
   # por isso não estão no `verify:tudo`, que precisa rodar sem nada no ar.
+  # TODAS as conferências de ponta a ponta, e não só duas.
+  #
+  # Quatro delas estavam quebradas há tempos e ninguém sabia, porque não rodavam em
+  # lugar nenhum: a rota de cadastro passou a exigir data de nascimento e elas não
+  # mandavam. Conferência que não roda não é conferência — é arquivo.
   echo
-  echo "== a banca aceita nulo sem mexer no saldo =="
-  cd "$RAIZ/server" && node verificacao/verifica-banca-nulos.mjs
+  echo "== ponta a ponta, jogo por jogo =="
+  cd "$RAIZ/server"
+  for v in verifica-banca-nulos verifica-slots verifica-blackjack verifica-domino \
+           verifica-idempotencia verifica-reconexao verifica-queda-truco \
+           verifica-janela-mesa verifica-perfil-e-admin; do
+    printf '   %-26s ' "$v"
+    if node "verificacao/$v.mjs" >"/tmp/$v.log" 2>&1; then
+      echo "ok"
+    else
+      echo "FALHOU — veja /tmp/$v.log"
+      grep -iE 'FALHOU|Error:' "/tmp/$v.log" | head -2
+    fi
+  done
   echo
   echo "== a mesa cabe nos cinco tamanhos =="
   cd "$RAIZ/app" \

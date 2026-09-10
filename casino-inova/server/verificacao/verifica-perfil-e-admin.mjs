@@ -26,7 +26,7 @@ const chamar = async (rota, { metodo = 'GET', corpo, token } = {}) => {
   return { ok: r.ok, status: r.status, corpo: json };
 };
 const cadastrar = async (email, nome) =>
-  (await chamar('/auth/cadastrar', { metodo: 'POST', corpo: { email, senha: 'senha-de-teste-123', nome } })).corpo;
+  (await chamar('/auth/cadastrar', { metodo: 'POST', corpo: { email, senha: 'senha-de-teste-123', nome , nomeCompleto: 'Conta De Vistoria', nascimento: '1990-01-01', aceitouTermos: true } })).corpo;
 
 const marca = Date.now();
 
@@ -98,11 +98,28 @@ let codigoDoComum;
 // --- 4. jogar dá XP ---
 {
   const antes = (await chamar('/users/me', { token: tokenComum })).corpo;
+  /*
+   * JOGAR DE VERDADE, e não só confirmar a aposta.
+   *
+   * Isto chamava só `/apostar` e reprovava com "o XP não mexeu" — e o certo era o
+   * servidor: na Banca Francesa, `apostar` CONFIRMA e não cobra nada; quem cobra, paga e
+   * pontua é o lançamento decisivo. É a regra que faz o lançamento nulo não custar ao
+   * jogador, e uma conferência que espera XP no `apostar` está pedindo pro jogo voltar a
+   * cobrar por nulo.
+   */
   for (let i = 0; i < 12; i += 1) {
-    await chamar('/games/banca-francesa/apostar', {
+    const confirmou = await chamar('/games/banca-francesa/apostar', {
       metodo: 'POST', token: tokenComum,
-      corpo: { bets: [{ type: 'grande', amount: 500 }], actionId: `xp-${marca}-${i}` },
+      corpo: { bets: [{ type: 'grande', amount: 500 }] },
     });
+    if (!confirmou.ok) break;
+    /* Lança até decidir: o nulo mantém a aposta de pé e não pontua. */
+    for (let tentativa = 0; tentativa < 20; tentativa += 1) {
+      const lance = await chamar('/games/banca-francesa/lancar', {
+        metodo: 'POST', token: tokenComum, corpo: { actionId: `xp-${marca}-${i}-${tentativa}` },
+      });
+      if (!lance.ok || lance.corpo.decidiu) break;
+    }
   }
   const depois = (await chamar('/users/me', { token: tokenComum })).corpo;
   const ganho = (depois.level - antes.level) * antes.xpToNextLevel + (depois.xp - antes.xp);

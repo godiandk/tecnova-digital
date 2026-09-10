@@ -18,7 +18,7 @@ const falhar = (m) => { problemas += 1; console.log(`FALHOU: ${m}`); };
 const criarConta = async (nome) => {
   const r = await fetch(`${BASE}/auth/cadastrar`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email: `tq-${nome}-${Date.now()}@teste.local`, senha: 'senha-de-teste-123', nome }),
+    body: JSON.stringify({ email: `tq-${nome}-${Date.now()}@teste.local`, senha: 'senha-de-teste-123', nome, nomeCompleto: 'Conta De Vistoria', nascimento: '1990-01-01', aceitouTermos: true }),
   });
   const d = await r.json();
   return { token: d.token, userId: d.user.id };

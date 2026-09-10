@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
+import { LanceRegistrado, MaquinaDeRodada } from '../core/maquina-de-rodada';
 import { BoardEnd, canPlay, chooseBotMove, otherEnd, quemAbre, shuffle, tileMatches, tileSum } from './domino.engine';
 import { buildTileSet, HAND_SIZE, MATCH_WIN_TOTAL_MULTIPLIER, MAX_BUY_IN, MIN_BUY_IN, Tile } from './domino.config';
 
@@ -30,10 +31,19 @@ const GAME_ID = 'domino';
 @Injectable()
 export class DominoService {
   private readonly matches = new Map<string, DominoMatch>();
+  /**
+   * A rodada registrada de cada partida em andamento.
+   *
+   * Fica fora do objeto da partida de propósito: aquele objeto é o ESTADO DO JOGO e vira
+   * resposta pro cliente. A rodada guardada é infraestrutura, e não tem por que
+   * atravessar a rede.
+   */
+  private readonly rodadaDaPartida = new Map<string, LanceRegistrado>();
 
   constructor(
     private readonly walletService: WalletService,
     private readonly tournaments: TournamentsService,
+    private readonly maquina: MaquinaDeRodada,
   ) {}
 
   getConfig() {
@@ -49,7 +59,10 @@ export class DominoService {
       throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
     }
 
-    await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID, actionId);
+    /* A RODADA É REGISTRADA ANTES DE O DINHEIRO SE MEXER. Ver MaquinaDeRodada. */
+    const rodada = await this.maquina.comecar({ jogo: GAME_ID, usuarioId: userId, apostas: { entrada: buyIn } });
+    this.rodadaDaPartida.set(userId, rodada);
+    await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID, actionId, rodada.id);
     const deck = shuffle(buildTileSet());
     const match: DominoMatch = {
       buyIn,
@@ -192,11 +205,29 @@ export class DominoService {
     const retorno =
       winner === 'jogador' ? match.buyIn * MATCH_WIN_TOTAL_MULTIPLIER : winner === 'empate' ? match.buyIn : 0;
     if (winner === 'jogador') {
-      await this.walletService.credit(userId, retorno, 'premio', GAME_ID);
+      await this.walletService.credit(
+        userId,
+        retorno,
+        'premio',
+        GAME_ID,
+        undefined,
+        this.rodadaDaPartida.get(userId)?.id,
+      );
     } else if (winner === 'empate') {
       await this.walletService.credit(userId, match.buyIn, 'ajuste', GAME_ID);
     }
     await this.tournaments.recordRound(userId, GAME_ID, match.buyIn, retorno);
+
+    const rodada = this.rodadaDaPartida.get(userId);
+    if (rodada) {
+      await rodada.terminar({
+        resultado: { vencedor: winner },
+        apostado: match.buyIn,
+        retorno,
+        comAcoesDoJogador: true,
+      });
+      this.rodadaDaPartida.delete(userId);
+    }
   }
 
   private requireMatch(userId: string): DominoMatch {

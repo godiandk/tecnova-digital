@@ -17,7 +17,7 @@ const post = async (rota, corpo, token) => {
   return JSON.parse(t);
 };
 
-const conta = await post('/auth/cadastrar', { email, senha: 'senha-de-teste-123', nome: 'Auditor' });
+const conta = await post('/auth/cadastrar', { email, senha: 'senha-de-teste-123', nome: 'Auditor' , nomeCompleto: 'Conta De Vistoria', nascimento: '1990-01-01', aceitouTermos: true });
 const token = conta.token ?? conta.accessToken ?? conta.access_token;
 if (!token) throw new Error(`sem token no cadastro: ${JSON.stringify(conta).slice(0, 200)}`);
 
@@ -27,10 +27,30 @@ const premio = Object.fromEntries(config.symbols.map((s) => [s.id, s.payout]));
 let giros = 0, comPremio = 0, problemas = 0;
 const vistos = { 3: 0, 4: 0, 5: 0 };
 
+/*
+ * A APOSTA É A MÍNIMA DA MESA DE AGORA, e não a mínima do jogo.
+ *
+ * O mínimo sobe com o saldo: quem ganha o bastante muda de mesa. Isto apostava
+ * `config.minBet` (50) do começo ao fim, e num prêmio grande o jogador subia pra mesa
+ * Prata — cujo mínimo é 500 — e a conferência morria com "Na mesa Prata, a aposta
+ * mínima é 500 fichas". Não era defeito do jogo: era a conferência ignorando uma regra
+ * que o jogo tem.
+ */
+const minimoDaMesa = async () =>
+  (await fetch(`${BASE}/niveis/meu`, { headers: { authorization: `Bearer ${token}` } })
+    .then((r) => r.json())).nivel.minimo;
+
+let aposta = await minimoDaMesa();
+
 while (giros < 220) {
   let r;
-  try { r = await post('/games/slots/girar', { bet: config.minBet }, token); }
-  catch (e) { if (String(e).includes('saldo')) break; throw e; }
+  try { r = await post('/games/slots/girar', { bet: aposta }, token); }
+  catch (e) {
+    if (String(e).includes('saldo')) break;
+    /* Mudou de mesa: pega o mínimo novo e continua, em vez de morrer. */
+    if (String(e).includes('aposta mínima')) { aposta = await minimoDaMesa(); continue; }
+    throw e;
+  }
   giros += 1;
 
   // Conta as linhas por fora, do jeito que a regra manda: começa no rolo 1 e anda.
@@ -40,7 +60,7 @@ while (giros < 220) {
     let n = 1;
     while (n < linha.cells.length && r.grid[linha.cells[n]] === primeiro) n += 1;
     if (n >= config.minMatch) {
-      esperado.push({ payline: linha.name, symbolId: primeiro, matched: n, win: config.minBet * premio[primeiro][n] });
+      esperado.push({ payline: linha.name, symbolId: primeiro, matched: n, win: aposta * premio[primeiro][n] });
     }
   }
   const total = esperado.reduce((s, l) => s + l.win, 0);
@@ -68,7 +88,7 @@ while (giros < 220) {
   if (r.totalWin > 0) comPremio += 1;
 }
 
-console.log(`\n${giros} giros de ${config.minBet} fichas`);
+console.log(`\n${giros} giros (aposta atual: ${aposta} fichas)`);
 console.log(`giros premiados: ${comPremio} (${((comPremio / giros) * 100).toFixed(1)}%)`);
 console.log(`combinações vistas — 3 iguais: ${vistos[3] ?? 0}, 4 iguais: ${vistos[4] ?? 0}, 5 iguais: ${vistos[5] ?? 0}`);
 console.log(problemas === 0 ? '\nOK: cada ficha paga bate com o que a grade mostra.' : `\n${problemas} divergência(s).`);

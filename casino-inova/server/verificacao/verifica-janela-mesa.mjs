@@ -33,7 +33,7 @@ const saldoDe = async (token) => {
 };
 
 const marca = Date.now();
-const conta = await post('/auth/cadastrar', { email: `janela-${marca}@teste.local`, senha: 'senha-de-teste-123', nome: 'Janela' });
+const conta = await post('/auth/cadastrar', { email: `janela-${marca}@teste.local`, senha: 'senha-de-teste-123', nome: 'Janela' , nomeCompleto: 'Conta De Vistoria', nascimento: '1990-01-01', aceitouTermos: true });
 const token = conta.corpo.token;
 if (!token) { console.log('FALHOU: não consegui criar a conta de teste'); process.exit(1); }
 

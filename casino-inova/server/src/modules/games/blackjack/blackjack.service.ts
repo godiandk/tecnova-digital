@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
+import { LanceRegistrado, MaquinaDeRodada } from '../core/maquina-de-rodada';
 import {
   canDouble,
   canSplit,
@@ -75,12 +76,22 @@ const GAME_ID = 'blackjack';
 @Injectable()
 export class BlackjackService {
   private readonly mesas = new Map<string, EstadoDaMesa>();
+  /**
+   * A rodada registrada de cada mesa em jogo.
+   *
+   * Fica fora de `EstadoDaMesa` de propósito: aquele objeto é o ESTADO DO JOGO, e vira
+   * resposta pro cliente. A rodada guardada é infraestrutura — ela não tem por que
+   * atravessar a rede, e misturar as duas coisas acabaria com o id da rodada aparecendo
+   * numa tela que não precisa dele.
+   */
+  private readonly rodadaDaMesa = new Map<string, LanceRegistrado>();
   /** Uma sapata por jogador: cada um tem a sua mesa, como em cassino online. */
   private readonly sapatas = new Map<string, Sapata<Rank>>();
 
   constructor(
     private readonly walletService: WalletService,
     private readonly tournaments: TournamentsService,
+  private readonly maquina: MaquinaDeRodada,
   ) {}
 
   getConfig() {
@@ -113,7 +124,16 @@ export class BlackjackService {
     const problema = problemaComAAposta(bet, await this.walletService.balanceOf(userId));
     if (problema) throw new BadRequestException(problema);
 
-    await this.walletService.debit(userId, bet, 'aposta', GAME_ID);
+    /*
+     * A RODADA É REGISTRADA ANTES DE O DINHEIRO SE MEXER. Ver MaquinaDeRodada.
+     *
+     * No blackjack ela dura VÁRIAS requisições — pedir carta, dobrar, dividir e o seguro
+     * são pedidos separados —, então o registro fica guardado por jogador e é fechado lá
+     * no `encerrarTudo`.
+     */
+    const rodada = await this.maquina.comecar({ jogo: GAME_ID, usuarioId: userId, apostas: { valor: bet } });
+    this.rodadaDaMesa.set(userId, rodada);
+    await this.walletService.debit(userId, bet, 'aposta', GAME_ID, undefined, rodada.id);
 
     // Embaralhar acontece ENTRE mãos, nunca no meio de uma.
     const sapata = this.sapataDe(userId);
@@ -173,7 +193,21 @@ export class BlackjackService {
       if (!Number.isFinite(pedido) || pedido <= 0 || pedido > maximo) {
         throw new BadRequestException(`O seguro pode ser de 1 a ${maximo} fichas (metade da aposta).`);
       }
-      await this.walletService.debit(userId, pedido, 'aposta', GAME_ID);
+      /*
+       * O SEGURO É DINHEIRO DA MESMA RODADA, e por isso carrega o mesmo id.
+       *
+       * Sem ele, o extrato mostrava um débito de seguro solto: dava pra ver que saiu,
+       * não dava pra ligar à mão que o motivou. A conferência de fases pegou isso — e
+       * pegou também no dobrar e no dividir, pela mesma razão.
+       */
+      await this.walletService.debit(
+        userId,
+        pedido,
+        'aposta',
+        GAME_ID,
+        undefined,
+        this.rodadaDaMesa.get(userId)?.id,
+      );
       mesa.seguro = pedido;
     }
 
@@ -187,6 +221,7 @@ export class BlackjackService {
       }
       return this.encerrarTudo(userId, mesa);
     }
+    await this.rodadaDaMesa.get(userId)?.anotar('SEGURO', { aceitou: aceitar, valor: valor ?? 0 });
     return this.aposDistribuir(userId, mesa);
   }
 
@@ -217,11 +252,19 @@ export class BlackjackService {
       throw new BadRequestException('Só dá pra dobrar nas duas primeiras cartas da mão.');
     }
 
-    await this.walletService.debit(userId, mao.aposta, 'aposta', GAME_ID);
+    await this.walletService.debit(
+      userId,
+      mao.aposta,
+      'aposta',
+      GAME_ID,
+      undefined,
+      this.rodadaDaMesa.get(userId)?.id,
+    );
     mao.aposta *= 2;
     mao.dobrada = true;
     mao.cartas.push(this.sapataDe(userId).comprar());
     mao.encerrada = true;
+    await this.rodadaDaMesa.get(userId)?.anotar('DOBROU', {});
     return this.avancar(userId, mesa);
   }
 
@@ -242,7 +285,14 @@ export class BlackjackService {
       );
     }
 
-    await this.walletService.debit(userId, mesa.apostaInicial, 'aposta', GAME_ID);
+    await this.walletService.debit(
+      userId,
+      mesa.apostaInicial,
+      'aposta',
+      GAME_ID,
+      undefined,
+      this.rodadaDaMesa.get(userId)?.id,
+    );
     const sapata = this.sapataDe(userId);
     const eramAses = mao.cartas[0].rank === 'A';
     const segundaCarta = mao.cartas.pop()!;
@@ -267,6 +317,7 @@ export class BlackjackService {
       mao.encerrada = true;
       return this.avancar(userId, mesa);
     }
+    await this.rodadaDaMesa.get(userId)?.anotar('DIVIDIU', {});
     return this.publicView(userId, mesa);
   }
 
@@ -336,12 +387,35 @@ export class BlackjackService {
       apostaTotal += mao.aposta;
       retornoTotal += resultado.totalReturn;
       if (resultado.totalReturn > 0) {
-        await this.walletService.credit(userId, resultado.totalReturn, 'premio', GAME_ID);
+        await this.walletService.credit(
+          userId,
+          resultado.totalReturn,
+          'premio',
+          GAME_ID,
+          undefined,
+          this.rodadaDaMesa.get(userId)?.id,
+        );
       }
     }
 
     // A rodada de torneio é a mesa inteira: tudo que foi apostado contra tudo que voltou.
     await this.tournaments.recordRound(userId, GAME_ID, apostaTotal, retornoTotal);
+
+    const rodada = this.rodadaDaMesa.get(userId);
+    if (rodada) {
+      await rodada.terminar({
+        resultado: {
+          dealer: valores(mesa.cartasDoDealer),
+          maos: mesa.maos.map((m) => ({ cartas: valores(m.cartas), resultado: m.outcome })),
+        },
+        apostado: apostaTotal,
+        retorno: retornoTotal,
+        /* Blackjack tem turno: passa por ACOES_DOS_JOGADORES entre o sorteio e a apuração. */
+        comAcoesDoJogador: true,
+        detalhe: { seguro: mesa.seguro, seguroPago: mesa.seguroPago },
+      });
+      this.rodadaDaMesa.delete(userId);
+    }
     return this.publicView(userId, mesa);
   }
 

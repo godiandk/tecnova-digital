@@ -45,35 +45,42 @@ export const CELLS = REELS * ROWS;
  *
  * 1. PESOS MAIS CONCENTRADOS nos comuns (Ferradura foi de 22 pra 33, Sino de 20 pra 22).
  *    A frequência de vitória depende da soma dos p³, e essa soma sobe quando a
- *    distribuição é menos uniforme. Resultado: 21,72% de giros com prêmio, um em 4,6.
- * 2. PRÊMIOS DE CIMA ALCANÇÁVEIS. O Jackpot subiu de peso 0,5 pra 3 (p = 3%), e cinco
+ *    distribuição é menos uniforme. Resultado: 20% de giros com prêmio, um em 5.
+ * 2. PRÊMIOS DE CIMA ALCANÇÁVEIS. O Jackpot subiu de 0,5% pra 3% de probabilidade, e cinco
  *    Jackpots numa linha passaram de uma vez a cada 320 bilhões de giros pra uma a cada
- *    8,2 milhões. Continua raro — é um jackpot — mas agora existe.
- * 3. ESCADA DE PRÊMIOS REAL. Cada símbolo contribui entre 4,7 e 27 pontos de RTP, em vez
- *    de um contribuir 25 e outro 0,013. Repartição: 70% nos quatro comuns, 20% nos três
- *    do meio, 10% nos dois de cima.
+ *    7,6 milhões. Continua raro — é um jackpot — mas agora existe.
+ * 3. ESCADA DE PRÊMIOS REAL. Cada símbolo contribui entre 4,9 e 19,7 pontos de RTP, em
+ *    vez de um contribuir 25 e outro 0,013. Repartição: 59% nos quatro comuns, 18% nos
+ *    três do meio, 23% nos dois de cima — e agora os prêmios grandes pesam de verdade.
  *
- * RTP: 95,9715% — margem da casa de 4,03%. O número é exato e sai desta tabela por
- * fórmula fechada (`theoreticalRtp`), conferido contra a distribuição exata e contra
- * meio milhão de giros simulados em `verify-rtp.ts`, que REPROVA se sair da faixa.
+ * 4. MULTIPLICADOR INTEIRO, SEMPRE. A primeira calibração usou 0,35 e 1,8 pra segurar o
+ *    símbolo mais comum, e a matemática ficava certa — mas a mesa quebrava: numa aposta
+ *    de 50, um prêmio de 0,35 vale 17,5 fichas, e a carteira recusa fração de ficha (é a
+ *    regra que impede margem escondida em arredondamento). A conferência de ponta a
+ *    ponta pegou, com 400 na cara do jogador. Aqui todos os 27 multiplicadores são
+ *    inteiros, e o problema não pode voltar.
  *
- * UMA CONSEQUÊNCIA QUE A TELA PRECISA RESPEITAR: 9,59% dos giros devolvem ALGUMA COISA
- * abaixo da aposta (a média dessa faixa é 0,39x). Isso é como todo slot funciona, e não
- * há como evitar sem derrubar a frequência de vitória. Mas devolver 40 de uma aposta de
- * 100 NÃO É GANHAR, e a tela não pode comemorar como se fosse — é exatamente a "derrota
- * disfarçada de vitória" que este projeto não faz. A apresentação disso é tarefa da
- * interface, e está anotada como tal.
+ * 5. NENHUM PRÊMIO ABAIXO DA APOSTA. Como o menor multiplicador é 1, o pior "ganho"
+ *    devolve exatamente o que foi apostado. Isso caiu do colo junto com os inteiros, e é
+ *    melhor do que parece: todo slot comercial paga fração da aposta o tempo todo e
+ *    comemora como vitória — que é derrota disfarçada de vitória, a coisa que este
+ *    projeto decidiu não fazer. Aqui, se acendeu, no mínimo empatou.
+ *
+ * RTP: 95,9922% — margem da casa de 4,01%. O número é exato e sai desta tabela por
+ * fórmula fechada (`theoreticalRtp`), conferido contra a distribuição exata
+ * (`tools/analisa-slot.py`) e contra cinco milhões de giros simulados em `verify-rtp.ts`,
+ * que REPROVA se sair da faixa.
  */
 export const SLOT_SYMBOLS: readonly SlotSymbol[] = [
-  { id: 'ferradura', label: 'Ferradura', weight: 33, payout: { 3: 0.35, 4: 1.8, 5: 8 } },
-  { id: 'sino', label: 'Sino', weight: 22, payout: { 3: 1.5, 4: 7, 5: 35 } },
-  { id: 'barras', label: 'Barras', weight: 13, payout: { 3: 5, 4: 25, 5: 140 } },
-  { id: 'estrela', label: 'Estrela', weight: 9, payout: { 3: 15, 4: 70, 5: 350 } },
-  { id: 'moeda', label: 'Moeda', weight: 7, payout: { 3: 30, 4: 150, 5: 700 } },
-  { id: 'coroa', label: 'Coroa', weight: 5.5, payout: { 3: 60, 4: 300, 5: 1400 } },
-  { id: 'diamante', label: 'Diamante', weight: 4, payout: { 3: 150, 4: 700, 5: 3500 } },
-  { id: 'sete', label: 'Sete', weight: 3.5, payout: { 3: 200, 4: 1000, 5: 5500 } },
-  { id: 'jackpot', label: 'Jackpot', weight: 3, payout: { 3: 300, 4: 1600, 5: 8500 } },
+  { id: 'ferradura', label: 'Ferradura', weight: 60, payout: { 3: 1, 4: 2, 5: 3 } },
+  { id: 'sino', label: 'Sino', weight: 44, payout: { 3: 2, 4: 5, 5: 15 } },
+  { id: 'barras', label: 'Barras', weight: 28, payout: { 3: 4, 4: 20, 5: 100 } },
+  { id: 'estrela', label: 'Estrela', weight: 20, payout: { 3: 10, 4: 50, 5: 250 } },
+  { id: 'moeda', label: 'Moeda', weight: 14, payout: { 3: 25, 4: 125, 5: 600 } },
+  { id: 'coroa', label: 'Coroa', weight: 10, payout: { 3: 60, 4: 300, 5: 1500 } },
+  { id: 'diamante', label: 'Diamante', weight: 8, payout: { 3: 150, 4: 750, 5: 3500 } },
+  { id: 'sete', label: 'Sete', weight: 7, payout: { 3: 400, 4: 2000, 5: 10000 } },
+  { id: 'jackpot', label: 'Jackpot', weight: 6, payout: { 3: 700, 4: 3500, 5: 16000 } },
 ] as const;
 
 export interface Payline {

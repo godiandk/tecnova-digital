@@ -16,7 +16,7 @@ medida, está escrito que não tenho.
 |---|---|---|---|
 | 3 | Regra separada da apresentação | **Existe e está bom** | os 10 `*.engine.ts` são TypeScript puro, sem React; `verify-*.ts` roda cada um no terminal |
 | 4 | Game Core comum | **Existe parcialmente** | `games/core/` (fases, eventos, reconexão, relógio) + `games/shared/` (RNG, sapata, naipes, níveis) |
-| 5 | State Machine da rodada | **Existe mas só um jogo usa** | `core/fases.ts` define 10 fases e as transições; só a Banca Francesa consome |
+| 5 | State Machine da rodada | **Existe e todos usam** | `core/fases.ts` + `core/maquina-de-rodada.ts`; `verifica-fases-dos-jogos.ts` reprova se um jogo mover dinheiro sem registrar rodada |
 | 6 | Animation Director | **Não existe** | animação vive dentro de cada tela, com `setTimeout` encadeado |
 | 7 | Renderização por tela | **Existe parcialmente** | tudo é React Native + Reanimated; sem Skia, sem Pixi |
 | 8 | Asset pipeline | **Não existe** | sem atlas, sem preload por jogo, sem descarregamento; as artes são WebP soltas |
@@ -162,7 +162,7 @@ que reprova, e teste de estado que recusa transição inválida.
 |---|---|---|---|
 | ~~P0.1~~ **FEITO** | **RTP dos caça-níqueis: 95,9715%** | 89,17% medido, contra 97–99% dos outros jogos. É margem que o jogador não vê | `verify-rtp` com fórmula exata e 500 mil giros concordando; o número declarado na tela |
 | ~~P0.2~~ **FEITO** | **Tabelas `rodadas` e `eventos_da_rodada` no Postgres** | Nenhuma rodada é reconstruível hoje | conferência que joga uma rodada, apaga o estado em memória e a reconstrói do banco |
-| P0.3 | **Os outros nove jogos na máquina de fases** | "aposta depois do fechamento" e "liquidação dupla" só são impossíveis num jogo | conferência por jogo tentando cada transição inválida |
+| ~~P0.3~~ **FEITO** | **Os outros nove jogos na máquina de fases** | "aposta depois do fechamento" e "liquidação dupla" só são impossíveis num jogo | conferência por jogo tentando cada transição inválida |
 
 ### P1 — jogo profissional
 

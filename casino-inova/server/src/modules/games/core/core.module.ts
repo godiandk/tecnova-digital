@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { RegistroDeEventos } from './registro-de-eventos';
 import { ReconexaoService } from './reconexao.service';
+import { MaquinaDeRodada } from './maquina-de-rodada';
 import { RodadasRepository } from './rodadas.repository';
 
 /**
@@ -18,7 +19,7 @@ import { RodadasRepository } from './rodadas.repository';
  */
 @Global()
 @Module({
-  providers: [RegistroDeEventos, ReconexaoService, RodadasRepository],
-  exports: [RegistroDeEventos, ReconexaoService, RodadasRepository],
+  providers: [RegistroDeEventos, ReconexaoService, RodadasRepository, MaquinaDeRodada],
+  exports: [RegistroDeEventos, ReconexaoService, RodadasRepository, MaquinaDeRodada],
 })
 export class CoreDeSalasModule {}

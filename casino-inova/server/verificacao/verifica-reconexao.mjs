@@ -16,7 +16,7 @@ const falhar = (m) => { problemas += 1; console.log(`FALHOU: ${m}`); };
 const criarConta = async (nome) => {
   const r = await fetch(`${BASE}/auth/cadastrar`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email: `rec-${nome}-${Date.now()}@teste.local`, senha: 'senha-de-teste-123', nome }),
+    body: JSON.stringify({ email: `rec-${nome}-${Date.now()}@teste.local`, senha: 'senha-de-teste-123', nome, nomeCompleto: 'Conta De Vistoria', nascimento: '1990-01-01', aceitouTermos: true }),
   });
   return (await r.json()).token;
 };
@@ -55,17 +55,61 @@ const seqAntes = antesDaQueda.fase?.seq ?? 0;
 const apostaDeB = antesDaQueda.seats.find((a) => !a.isBot && a.pendingBets.length && a.pendingBets[0].type === 'grande');
 if (!apostaDeB) falhar('a aposta do convidado não apareceu na mesa');
 
-// --- B cai no meio da rodada ---
-socketB.close();
-await new Promise((r) => setTimeout(r, 600));
+/*
+ * B CAI, A MESA ANDA UM LANÇAMENTO, B VOLTA. E de novo, até a rodada decidir.
+ *
+ * A versão anterior derrubava B, girava UMA vez e esperava ver PAGAMENTO no que foi
+ * reenviado. Só que 153 das 216 combinações de três dados são NULAS — 70,8% —, e o nulo
+ * não paga nem fecha a rodada: a conferência reprovava em sete de cada dez execuções,
+ * sem nada estar quebrado. Uma conferência que falha sete vezes em dez é pior que uma
+ * que falha sempre, porque ensina a ignorar o vermelho.
+ *
+ * Girar em laço com B fora também não serve: entre um lançamento e outro a mesa REABRE
+ * as apostas por alguns segundos, e B ficaria fora tempo demais pra janela de reconexão
+ * — que é curta de propósito. Então o ciclo é este: derruba, gira uma vez, volta,
+ * confere. Se o lançamento foi nulo, repete. Isso testa a reconexão VÁRIAS vezes, que é
+ * melhor do que testá-la uma, e o que se afirma no fim é sobre o ciclo em que a rodada
+ * de fato decidiu.
+ */
+let socketB2 = socketB;
+let volta = null;
+let decidiu = false;
 
-// --- Enquanto B está fora, a mesa anda ---
-await pedir(socketA, 'banca-francesa:girar', { tableId: mesaId });
-console.log('o anfitrião girou enquanto o convidado estava fora');
+/* A rodada em que estamos, pra saber quando ela troca. Começa na que a mesa nasceu. */
+let rodadaAnterior = criada.fase?.rodadaId;
+let seqDoCiclo = seqAntes;
 
-// --- B volta dizendo até onde viu ---
-const socketB2 = await conectar(tokenB);
-const volta = await pedir(socketB2, 'reconectar', { mesaId, ultimoEventoVisto: seqAntes });
+for (let ciclo = 0; ciclo < 12 && !decidiu; ciclo += 1) {
+  socketB2.close();
+  await new Promise((r) => setTimeout(r, 300));
+
+  const giro = await pedir(socketA, 'banca-francesa:girar', { tableId: mesaId });
+  const lancamentos = giro?.rodada?.lancamentos ?? [];
+  const ultimo = lancamentos[lancamentos.length - 1];
+  /*
+   * Decidiu quando o último lançamento tem resultado OU quando a rodada trocou de id —
+   * porque uma rodada que decide é liquidada e a mesa já abre a seguinte, e aí a lista
+   * de lançamentos que volta é a da rodada NOVA, vazia.
+   */
+  decidiu = Boolean(ultimo && ultimo.outcome !== null) || giro?.rodada?.rodadaId !== rodadaAnterior;
+  rodadaAnterior = giro?.rodada?.rodadaId;
+
+  socketB2 = await conectar(tokenB);
+  volta = await pedir(socketB2, 'reconectar', { mesaId, ultimoEventoVisto: seqDoCiclo });
+  if (!volta.ok) falhar(`a reconexão falhou: ${JSON.stringify(volta)}`);
+  if (!volta.dentroDaJanela) falhar('voltou fora da janela, mas foi menos de um segundo');
+
+  if (!decidiu) {
+    /* O próximo ciclo parte de onde este parou; senão o reenvio traria tudo de novo. */
+    seqDoCiclo = volta?.estado?.fase?.seq ?? giro?.fase?.seq ?? seqDoCiclo;
+    /* Deixa a próxima janela de apostas abrir antes de tentar de novo. */
+    const esperaAte = giro?.fase?.terminaEm ?? 0;
+    await new Promise((r) => setTimeout(r, Math.max(250, esperaAte - Date.now() + 200)));
+  }
+}
+if (!decidiu) falhar('doze lançamentos sem decidir — improvável demais pra ser acaso');
+console.log('a mesa andou e o convidado voltou a cada lançamento');
+
 
 if (!volta.ok) falhar(`a reconexão falhou: ${JSON.stringify(volta)}`);
 if (!volta.dentroDaJanela) falhar('voltou fora da janela, mas foram menos de 2 segundos');
