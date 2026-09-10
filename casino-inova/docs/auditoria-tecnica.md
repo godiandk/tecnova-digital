@@ -194,10 +194,97 @@ desperdício que a POC existe pra evitar. Ela sai da espera quando o §6 do
 
 ### P2 — qualidade
 
-P2.1 asset pipeline (atlas, preload por jogo, descarregamento);
-P2.2 design system consolidado com inventário e documento;
-P2.3 Skia na roda da roleta e no pagamento com fichas;
-P2.4 responsividade provada nos dez jogos, não em um.
+| | Tarefa | Estado |
+|---|---|---|
+| P2.1 | asset pipeline (atlas, preload por jogo, descarregamento) | a fazer — o gerador de atlas já existe (`tools/gera-atlas-do-slot.py`, feito na POC) |
+| P2.2 | design system consolidado com inventário e documento | a fazer |
+| P2.3 **SEGURA** | Skia na roda da roleta e no pagamento com fichas | **espera o §6 do `RENDERING_STRATEGY.md`** — é a decisão de renderer |
+| ~~P2.4~~ **FEITO** | responsividade provada nos dez jogos, não em um | 50 combinações (10 jogos × 5 tamanhos) passam. **Nove dos dez estavam quebrados**: `hitSlop` não existe no `react-native-web`, então todo botão redondo era 40 px no navegador — que é o nosso canal |
+
+---
+
+## 3b. Pedidos do produto — a fila, na ordem pedida
+
+Registrado a pedido, para não se perder. A ordem é a que o produto definiu.
+
+### F1 — urgente: seletor de aposta
+
+Uma mesa pode exigir 500 milhões de fichas e a interface começa num valor mínimo,
+obrigando a pessoa a tocar no `+` dezenas de vezes. **Isso não pode existir.**
+
+- `BetSelector` reutilizável, com valores escaláveis e escolha rápida;
+- a aposta desejada em **2 a 3 interações**, não em dezenas;
+- mesa com mínimo de 500 milhões **abre em 500 milhões**, não em 50.
+
+*O que já existe e não deve ser recriado:* `niveis-de-mesa.ts` no servidor já entrega
+`fichas: [1, 2, 5, 10, 20] × mínimo` por degrau — a régua de valores por mesa já está
+calculada e versionada. O `TrilhoDeFichas` do aplicativo já é o componente do trilho.
+
+### F2 — urgente: barra de nível (XP)
+
+O asset existe. Falta a barra funcionar:
+
+- barra mais alta; preenchimento correto de 0 a 100% ocupando todo o espaço útil;
+- sem buracos e sem preenchimento torto; nível centralizado; XP legível;
+- animação ao ganhar XP e **animação especial ao subir de nível**;
+- **o mesmo componente no Perfil e no Lobby**;
+- no Lobby, mais espaço vertical: nome + saldo + nível + barra + XP não podem ficar
+  espremidos.
+
+*O que já existe:* `verifica-barra-de-nivel.mjs` já confere a barra contra a arte dela,
+e `progressao/niveis.ts` já tem a curva de XP (`1 + √(aposta/10)`, teto 50 por rodada;
+nível N custa `500 + (N−1)×250`).
+
+### F3 — economia: a discrepância medida
+
+O produto apontou incoerência entre saldos, mesas e loja. **Ela é real e está medida:**
+
+| | |
+|---|---|
+| Banca de boas-vindas | 10.000 fichas |
+| Mesa Bronze | mínimo 50 · Prata 500 · Ouro 5.000 · Diamante 50.000 · ×10 por degrau, 12 degraus |
+| Maior pacote da loja | **120.000 fichas por R$ 149,90** |
+| Recompensa diária de hoje, 30 dias | **1.874 × o mínimo da mesa do saldo** |
+
+Ou seja: um jogador no degrau Diamante recebe **93,7 milhões de fichas por mês de graça**,
+contra 120 mil do maior pacote pago. **A recompensa diária vale 780 pacotes da loja por
+mês.** Acima de Prata, a loja não tem função econômica.
+
+Isso precisa ser resolvido *antes* de congelar os valores da recompensa diária — e é
+exatamente o que o pedido 19 do produto ataca ao tirar o saldo da fórmula.
+
+### F4 — loja e pagamentos
+
+Arquitetura com Pix, Apple Pay, Google Pay e cartão; EUR, USD e BRL; `PaymentProvider`,
+webhook, idempotência e validação no servidor.
+
+**Sem NFT nem cripto agora** — pagamentos tradicionais primeiro; blockchain vira estudo
+separado, depois.
+
+### F5 — recompensa diária (calendário)
+
+Sistema completo, especificado em **`docs/recompensa-diaria.md`**: mês real (28/29/30/31),
+estados do dia, sequência, fuso, idempotência, multiplicador por nível, marcos, modal no
+login, histórico e testes.
+
+**Boa parte do servidor já existe** e não deve ser recriada — o que existe, o que falta e
+os quatro conflitos entre o que existe e o que foi pedido estão nesse documento.
+
+### A ordem, como o produto pediu
+
+1. registrar no roadmap *(esta seção)*;
+2. **F1 e F2** — os problemas urgentes de aposta e XP, e o diagnóstico econômico da F3;
+3. **as tarefas estruturais que destravam o renderer** — o §6 do `RENDERING_STRATEGY.md`
+   (medir os dois braços num aparelho de verdade), que é o que libera P1.1 e P2.3;
+4. **F5** — a recompensa diária, integrada à arquitetura atual;
+5. não recriar sistema que já existe;
+6. aproveitar os assets de recompensa que já temos.
+
+**Antes de congelar qualquer valor de ficha da recompensa diária**, o produto pediu uma
+proposta econômica com recompensa base, crescimento diário, multiplicadores por nível,
+marcos 7/14/21/fim de mês, e o total que um jogador de nível baixo, médio e alto receberia
+em 30 dias — com o impacto estimado na economia. Ela vai em `docs/recompensa-diaria.md`,
+e **os valores só entram no código depois de aprovada.**
 
 ### P3 — futuro
 
