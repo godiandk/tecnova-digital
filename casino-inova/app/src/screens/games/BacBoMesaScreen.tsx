@@ -33,7 +33,7 @@ import { corDoJogador, pilhaEmPalavras } from '../../data/fichasDeValor';
 import { Dado } from '../../components/Dado';
 import { ChipStack } from '../../components/ChipStack';
 import { RoadmapPanel, VocabularioDoPlacar } from '../../components/RoadmapPanel';
-import { ApiError, novaAcao } from '../../api/client';
+import { ApiError, novaAcao, mensagemParaOJogador } from '../../api/client';
 import { Roadmap } from '../../api/roadmap';
 import {
   fetchBacBoConfig,
@@ -132,7 +132,7 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
     fetchBacBoConfig()
       .then(setConfig)
       .catch((e: unknown) =>
-        setErroDeConfig(e instanceof ApiError ? e.message : 'Não foi possível falar com o servidor.'),
+        setErroDeConfig(mensagemParaOJogador(e, 'Não foi possível falar com o servidor.')),
       );
   }, []);
 
@@ -252,7 +252,7 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
         setRolando(false);
       }, TEMPO_DOS_DADOS);
     } catch (e) {
-      setErro(e instanceof ApiError ? e.message : 'Não foi possível apostar agora.');
+      setErro(mensagemParaOJogador(e, 'Não foi possível apostar agora.'));
       setRolando(false);
     }
   };

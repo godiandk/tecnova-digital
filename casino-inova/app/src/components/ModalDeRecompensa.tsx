@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { type CalendarioDeRecompensa, coletarRecompensa, fetchCalendarioDeRecompensa } from '../api/recompensas';
-import { ApiError } from '../api/client';
+import { ApiError, mensagemParaOJogador } from '../api/client';
 import { RECOMPENSA } from '../data/recompensaAssets';
 import { chaveDeColeta } from '../data/chaveDeColeta';
 import { usePlayer } from '../data/usePlayer';
@@ -66,7 +66,7 @@ export function ModalDeRecompensa() {
       setCalendario(feita.calendario);
       recarregar();
     } catch (e: unknown) {
-      setErro(e instanceof ApiError ? e.message : 'Não foi possível coletar agora.');
+      setErro(mensagemParaOJogador(e, 'Não foi possível coletar agora.'));
     } finally {
       setColetando(false);
     }

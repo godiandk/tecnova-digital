@@ -1,4 +1,6 @@
-import { ForbiddenException } from '@nestjs/common';
+import type { CorsOptions, CorsOptionsDelegate } from '@nestjs/common/interfaces/external/cors-options.interface';
+
+import { registro } from '../observabilidade/registro';
 
 /**
  * DE ONDE O NAVEGADOR PODE FALAR COM ESTE SERVIDOR.
@@ -46,10 +48,37 @@ export function origensDoAmbiente(): string[] {
  *
  * @param origem o cabeçalho `Origin`. `undefined` é quem não é navegador.
  */
-export function origemPermitida(origem: string | undefined, permitidas = origensDoAmbiente()): boolean {
+export function origemPermitida(
+  origem: string | undefined,
+  permitidas = origensDoAmbiente(),
+  hostDoPedido?: string,
+): boolean {
   if (!origem) return true; // aplicativo nativo, curl, webhook: não mandam Origin
+
+  /*
+   * MESMA ORIGEM, PRIMEIRO E SEM CONFIGURAÇÃO. Se o `Origin` aponta para o mesmo host que
+   * atendeu o pedido, quem está chamando é o próprio site — e o próprio site nunca é "de
+   * fora". Ter que listar o próprio domínio numa variável seria uma armadilha: esquecer a
+   * variável derruba o caminho principal, que foi exatamente o que aconteceu.
+   */
+  if (hostDoPedido && mesmoHost(origem, hostDoPedido)) return true;
+
   if (permitidas.length > 0) return permitidas.includes(origem);
   return DESENVOLVIMENTO.some((padrao) => padrao.test(origem));
+}
+
+/**
+ * O `Origin` aponta para este mesmo servidor?
+ *
+ * Compara HOST (com porta), e não a URL inteira: o `Origin` traz o esquema
+ * (`https://casa.com`) e o `Host` não (`casa.com`). Comparar texto cru nunca bateria.
+ */
+function mesmoHost(origem: string, hostDoPedido: string): boolean {
+  try {
+    return new URL(origem).host.toLowerCase() === hostDoPedido.toLowerCase();
+  } catch {
+    return false; // `Origin` que não é URL não é mesma origem coisa nenhuma
+  }
 }
 
 /**
@@ -59,19 +88,60 @@ export function origemPermitida(origem: string | undefined, permitidas = origens
  * cabeçalho `Authorization`, que o navegador não manda sozinho entre sites. É o que torna
  * um pedido forjado de outra aba inútil mesmo que ele passasse pelo CORS.
  */
-export const corsDaApi = {
-  origin: (origem: string | undefined, callback: (erro: Error | null, permitido?: boolean) => void) => {
-    if (origemPermitida(origem)) return callback(null, true);
-    /*
-     * 403, E NÃO UM ERRO CRU. Devolvendo um `Error` comum, o Nest não sabe o que é e
-     * responde 500 — o que faz uma regra funcionando parecer um servidor quebrado, enche o
-     * registro de erro falso e esconde um 500 de verdade no meio. `ForbiddenException` diz
-     * a coisa certa: o pedido foi entendido e recusado.
-     */
-    callback(new ForbiddenException(`Origem não permitida: ${origem}`));
-  },
+const OPCOES_FIXAS: CorsOptions = {
   credentials: false,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   maxAge: 86_400,
+};
+
+/**
+ * A configuração de CORS que o Nest usa.
+ *
+ * É uma FUNÇÃO DO PEDIDO, e não um objeto fixo, porque a decisão precisa do `Host` — é ele
+ * que responde "este `Origin` é o meu próprio site?". Com um objeto fixo, a função de
+ * origem recebe só o `Origin` e não tem como saber isso.
+ *
+ * `credentials: false` porque este projeto não usa cookie de sessão: o token vai no
+ * cabeçalho `Authorization`, que o navegador não manda sozinho entre sites. É o que torna
+ * um pedido forjado de outra aba inútil mesmo que ele passasse pelo CORS.
+ */
+export const corsDaApi: CorsOptionsDelegate<{
+  headers?: Record<string, string | string[] | undefined>;
+}> = (req, callback) => {
+  const origem = primeiro(req?.headers?.origin);
+  const host = primeiro(req?.headers?.host);
+
+  if (origemPermitida(origem, origensDoAmbiente(), host)) {
+    return callback(null, { ...OPCOES_FIXAS, origin: origem ?? true });
+  }
+
+  /*
+   * RECUSAR SEM CABEÇALHO, e não com exceção.
+   *
+   * A versão anterior lançava `ForbiddenException`, e isso ia parar NA TELA DO JOGADOR: a
+   * mensagem técnica aparecia em cima do prêmio dele. Não devolver o cabeçalho de CORS é o
+   * que o padrão manda fazer — o NAVEGADOR recusa a resposta, e do lado de cá não existe
+   * erro nenhum para vazar. Quem não é navegador já passou pela linha de cima.
+   */
+  registro.aviso('cors', 'origem-recusada', { host });
+  callback(null, { ...OPCOES_FIXAS, origin: false });
+};
+
+/** Cabeçalho pode vir como lista quando aparece repetido; vale o primeiro. */
+function primeiro(valor: string | string[] | undefined): string | undefined {
+  return Array.isArray(valor) ? valor[0] : valor;
+}
+
+/** O mesmo critério, no formato que o Socket.IO entende (ele não usa delegate). */
+export const corsDoSocket = {
+  ...OPCOES_FIXAS,
+  origin: (origem: string | undefined, callback: (erro: Error | null, permitido?: boolean) => void) => {
+    /*
+     * O socket não tem o `Host` do pedido nesta função, então a mesma origem entra pela
+     * lista — e, sem lista, pelo padrão de desenvolvimento. É menos preciso que o caminho
+     * da API de propósito: preferir errar recusando um socket a errar aceitando qualquer um.
+     */
+    callback(null, origemPermitida(origem));
+  },
 };

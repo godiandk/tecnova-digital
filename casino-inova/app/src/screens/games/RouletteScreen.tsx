@@ -14,7 +14,7 @@ import { RodaDaRoleta } from '../../components/RodaDaRoleta';
 import { PanoDaRoleta } from '../../components/PanoDaRoleta';
 import { TrilhoDeFichas } from '../../components/TrilhoDeFichas';
 import { RouletteHistoryPanel, RouletteHistory } from '../../components/RouletteHistoryPanel';
-import { ApiError, novaAcao } from '../../api/client';
+import { ApiError, novaAcao, mensagemParaOJogador } from '../../api/client';
 import {
   fetchRouletteConfig,
   fetchRouletteHistory,
@@ -109,7 +109,7 @@ export function RouletteScreen({ navigation }: Props) {
     fetchRouletteConfig()
       .then(setConfig)
       .catch((e: unknown) =>
-        setErroDaConfig(e instanceof ApiError ? e.message : 'Não foi possível falar com o servidor.'),
+        setErroDaConfig(mensagemParaOJogador(e, 'Não foi possível falar com o servidor.')),
       );
     fetchRouletteHistory().then(setHistorico).catch(() => undefined);
   }, []);
@@ -220,7 +220,7 @@ export function RouletteScreen({ navigation }: Props) {
         setRodando(false);
       }, ATE_A_BOLA_PARAR);
     } catch (e) {
-      setErro(e instanceof ApiError ? e.message : 'Não foi possível girar agora.');
+      setErro(mensagemParaOJogador(e, 'Não foi possível girar agora.'));
       setRodando(false);
     }
   };

@@ -108,3 +108,49 @@ export async function apiRequest<T>(
 
   return payload as T;
 }
+
+/**
+ * A MENSAGEM QUE O JOGADOR PODE VER.
+ *
+ * ISTO EXISTE POR UM DEFEITO QUE FOI AO AR: a tela mostrava `erro.message` cru, e num dia
+ * ruim o jogador leu **"Origem não permitida: https://casino-inova.onrender.com"** escrito
+ * em vermelho em cima do prêmio dele. Detalhe de infraestrutura na cara de quem só queria
+ * jogar. Não é questão de texto feio — é a quarta parede caindo.
+ *
+ * A REGRA, e ela é uma linha: **o servidor tem duas famílias de mensagem, e só uma é para
+ * gente.**
+ *
+ *   400 / 409 — REGRA DE JOGO, escrita para ser lida: "Na mesa Bronze, a aposta mínima é
+ *               50 fichas", "Você já coletou hoje". Estas passam inteiras: elas explicam
+ *               o que fazer, e trocá-las por um genérico piora a vida de quem joga.
+ *
+ *   401 / 403 / 5xx / rede — INFRAESTRUTURA. Sessão, permissão, origem, banco, servidor
+ *               fora do ar. Nada disso o jogador pode resolver, e o texto técnico só
+ *               assusta. Viram frases humanas, e o detalhe vai para o console.
+ *
+ * O QUE SE PERDE, dito de frente: um 400 mal escrito pelo servidor chega inteiro na tela.
+ * É o preço de não transformar toda mensagem útil em "algo deu errado" — e o remédio é
+ * escrever bem o 400, não esconder todos.
+ */
+export function mensagemParaOJogador(erro: unknown, quandoDerCerto = 'Não foi possível agora. Tente de novo.'): string {
+  if (!(erro instanceof ApiError)) {
+    /* Sem status: nem chegou no servidor. É rede, e é o único caso que o jogador resolve. */
+    console.warn('[api] falha sem resposta do servidor', erro);
+    return 'Sem conexão com o servidor. Verifique a internet e tente de novo.';
+  }
+
+  if (erro.status === 401) return 'Sua sessão expirou. Entre de novo para continuar.';
+  if (erro.status === 429) return erro.message || 'Muitas tentativas seguidas. Espere um instante.';
+
+  /* Regra de jogo: o texto FOI escrito para ser lido. */
+  if ((erro.status === 400 || erro.status === 409 || erro.status === 404) && erro.message) {
+    return erro.message;
+  }
+
+  /*
+   * 403 e 5xx são nossos, não do jogador. O detalhe técnico vai para o console — onde o
+   * desenvolvedor olha — e a tela recebe uma frase que não mente nem assusta.
+   */
+  console.warn(`[api] ${erro.status}: ${erro.message}`);
+  return quandoDerCerto;
+}

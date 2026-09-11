@@ -13,7 +13,7 @@ import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
 import { Carta } from '../../components/Carta';
-import { ApiError } from '../../api/client';
+import { ApiError, mensagemParaOJogador } from '../../api/client';
 import {
   fetchTrucoConfig,
   newTrucoMatch,
@@ -88,7 +88,7 @@ export function TrucoScreen({ navigation, route }: Props) {
         setBuyIn(data.entradas[0] ?? data.minBuyIn);
       })
       .catch((error: unknown) => {
-        setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
+        setConfigError(mensagemParaOJogador(error, 'Não foi possível falar com o servidor.'));
       });
   }, []);
 
@@ -100,7 +100,7 @@ export function TrucoScreen({ navigation, route }: Props) {
       setMatch(result);
       setBalance(result.newBalance);
     } catch (error) {
-      setActionError(error instanceof ApiError ? error.message : 'Não foi possível completar a ação agora.');
+      setActionError(mensagemParaOJogador(error, 'Não foi possível completar a ação agora.'));
     } finally {
       setBusy(false);
     }

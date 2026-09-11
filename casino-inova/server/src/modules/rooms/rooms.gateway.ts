@@ -7,7 +7,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { corsDaApi } from '../../comum/origens-permitidas';
+import { corsDoSocket } from '../../comum/origens-permitidas';
 import { BancaFrancesaTable, BancaFrancesaTableService, TableVisibility } from './banca-francesa-table.service';
 import { FriendsService } from '../friends/friends.service';
 import { BancaFrancesaBet } from '../games/banca-francesa/banca-francesa.engine';
@@ -36,7 +36,7 @@ import { RegistroDeEventos } from '../games/core/registro-de-eventos';
  * exige token assinado), mas deixar a porta aberta permitia a qualquer site conectar e
  * receber os eventos públicos das mesas.
  */
-@WebSocketGateway({ cors: corsDaApi })
+@WebSocketGateway({ cors: corsDoSocket })
 export class RoomsGateway implements OnGatewayDisconnect {
   @WebSocketServer() server!: Server;
 

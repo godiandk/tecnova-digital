@@ -10,7 +10,7 @@ import { GameBackdrop } from '../../components/GameBackdrop';
 import { CasinoCard } from '../../components/CasinoCard';
 import { ChatPanel } from '../../components/ChatPanel';
 import { TRUCO_CARD_IMAGES, TRUCO_SIGNAL_IMAGES } from '../../data/gameAssets';
-import { ApiError } from '../../api/client';
+import { ApiError, mensagemParaOJogador } from '../../api/client';
 import { SocketError } from '../../api/socket';
 import { fetchTrucoConfig, TrucoCard, TrucoConfig, TrucoStyle, TrucoVariant } from '../../api/truco';
 import {
@@ -48,7 +48,13 @@ function cardImage(card: TrucoCard): number | undefined {
 }
 
 function errorMessage(error: unknown): string {
-  if (error instanceof SocketError || error instanceof ApiError) return error.message;
+  /*
+   * Erro de socket é de regra de mesa ("não é sua vez", "mesa cheia") e passa inteiro. O
+   * de HTTP passa pelo mesmo filtro do resto do aplicativo, que separa a mensagem escrita
+   * pra ser lida do detalhe técnico que não pode chegar na tela.
+   */
+  if (error instanceof SocketError) return error.message;
+  if (error instanceof ApiError) return mensagemParaOJogador(error);
   return 'Não foi possível falar com o servidor.';
 }
 

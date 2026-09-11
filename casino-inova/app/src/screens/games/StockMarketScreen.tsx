@@ -10,7 +10,7 @@ import { TABLE_IMAGES } from '../../data/tableImages';
 import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { ChipStack } from '../../components/ChipStack';
-import { ApiError, novaAcao } from '../../api/client';
+import { ApiError, novaAcao, mensagemParaOJogador } from '../../api/client';
 import {
   fetchStockMarketConfig,
   fetchStockMarketHistory,
@@ -99,7 +99,7 @@ export function StockMarketScreen({ navigation }: Props) {
     fetchStockMarketConfig()
       .then(setConfig)
       .catch((error: unknown) => {
-        setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
+        setConfigError(mensagemParaOJogador(error, 'Não foi possível falar com o servidor.'));
       });
     fetchStockMarketHistory().then((data) => setHistory(data.closes)).catch(() => undefined);
   }, []);
@@ -139,7 +139,7 @@ export function StockMarketScreen({ navigation }: Props) {
        */
       setPendente({ saldo: result.newBalance, fechamento: result.closePercent });
     } catch (error) {
-      setPlayError(error instanceof ApiError ? error.message : 'Não foi possível apostar agora.');
+      setPlayError(mensagemParaOJogador(error, 'Não foi possível apostar agora.'));
     } finally {
       setPlaying(false);
     }

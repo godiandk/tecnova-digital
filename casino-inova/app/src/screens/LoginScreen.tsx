@@ -11,7 +11,7 @@ import { cadastrar, entrar, provedoresDisponiveis } from '../api/auth';
 import { DocumentoLegal, fetchDocumento } from '../api/legal';
 import { googleEstaConfigurado } from '../firebase/config';
 import { useLoginGoogle } from '../firebase/loginSocial';
-import { ApiError } from '../api/client';
+import { ApiError, mensagemParaOJogador } from '../api/client';
 import { GoldButton } from '../components/GoldButton';
 import { FUNDOS, MARCA } from '../data/artePorTela';
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
@@ -58,7 +58,7 @@ export function LoginScreen({ aoEntrar }: { aoEntrar: () => void }) {
         if (usuario) aoEntrar();
       })
       .catch((capturado) => {
-        setErro(capturado instanceof ApiError ? capturado.message : 'Não deu pra entrar com o Google.');
+        setErro(mensagemParaOJogador(capturado, 'Não deu pra entrar com o Google.'));
       })
       .finally(() => setOcupado(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -83,7 +83,7 @@ export function LoginScreen({ aoEntrar }: { aoEntrar: () => void }) {
       }
       aoEntrar();
     } catch (capturado) {
-      setErro(capturado instanceof ApiError ? capturado.message : 'Não deu pra falar com o servidor.');
+      setErro(mensagemParaOJogador(capturado, 'Não deu pra falar com o servidor.'));
     } finally {
       setOcupado(false);
     }

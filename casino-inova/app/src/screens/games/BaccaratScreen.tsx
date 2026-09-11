@@ -14,7 +14,7 @@ import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
 import { Carta } from '../../components/Carta';
 import { RoadmapPanel } from '../../components/RoadmapPanel';
-import { ApiError } from '../../api/client';
+import { ApiError, mensagemParaOJogador } from '../../api/client';
 import { Roadmap } from '../../api/roadmap';
 import { fetchBaccaratConfig, fetchBaccaratRoadmap, playBaccaratRound, BaccaratConfig, BaccaratBetType, BaccaratRoundResponse } from '../../api/baccarat';
 import { usePlayer } from '../../data/usePlayer';
@@ -79,7 +79,7 @@ export function BaccaratScreen({ navigation }: Props) {
     fetchBaccaratConfig()
       .then(setConfig)
       .catch((error: unknown) => {
-        setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
+        setConfigError(mensagemParaOJogador(error, 'Não foi possível falar com o servidor.'));
       });
     fetchBaccaratRoadmap().then(setRoadmap).catch(() => undefined);
   }, []);
@@ -107,7 +107,7 @@ export function BaccaratScreen({ navigation }: Props) {
       setBalance(result.newBalance);
       setRoadmap(result.roadmap);
     } catch (error) {
-      setPlayError(error instanceof ApiError ? error.message : 'Não foi possível apostar agora.');
+      setPlayError(mensagemParaOJogador(error, 'Não foi possível apostar agora.'));
     } finally {
       setPlaying(false);
     }

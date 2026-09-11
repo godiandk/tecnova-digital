@@ -3,7 +3,7 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { type PacoteDeFichas, fetchMinhaLoja, fetchVitrine } from '../api/store';
-import { ApiError } from '../api/client';
+import { ApiError, mensagemParaOJogador } from '../api/client';
 import { colors, fontFamily, fontSize, spacing } from '../theme';
 import { CasinoCard } from '../components/CasinoCard';
 import { Fundo } from '../components/Fundo';
@@ -41,7 +41,7 @@ export function StoreScreen() {
         fetchVitrine()
           .then(setPacotes)
           .catch((e: unknown) =>
-            setErro(e instanceof ApiError ? e.message : 'Não foi possível falar com o servidor.'),
+            setErro(mensagemParaOJogador(e, 'Não foi possível falar com o servidor.')),
           ),
       );
   }, []);

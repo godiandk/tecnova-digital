@@ -13,7 +13,7 @@ import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
 import { Carta } from '../../components/Carta';
-import { ApiError, novaAcao } from '../../api/client';
+import { ApiError, novaAcao, mensagemParaOJogador } from '../../api/client';
 import {
   fetchBlackjackConfig,
   startBlackjackHand,
@@ -123,7 +123,7 @@ export function BlackjackScreen({ navigation }: Props) {
     fetchBlackjackConfig()
       .then(setConfig)
       .catch((error: unknown) => {
-        setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
+        setConfigError(mensagemParaOJogador(error, 'Não foi possível falar com o servidor.'));
       });
   }, []);
 
@@ -150,7 +150,7 @@ export function BlackjackScreen({ navigation }: Props) {
       setHand(resultado);
       setBalance(resultado.newBalance);
     } catch (erro) {
-      setActionError(erro instanceof ApiError ? erro.message : 'Não foi possível completar a ação agora.');
+      setActionError(mensagemParaOJogador(erro, 'Não foi possível completar a ação agora.'));
     } finally {
       setBusy(false);
     }

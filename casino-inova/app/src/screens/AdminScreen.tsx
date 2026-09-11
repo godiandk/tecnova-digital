@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../navigation/types';
-import { ApiError } from '../api/client';
+import { ApiError, mensagemParaOJogador } from '../api/client';
 import { PessoaAchada, concederFichas, extratoDe, procurarPessoa, LancamentoDoExtrato } from '../api/admin';
 import { formatarCodigo } from '../api/perfil';
 import { avatarEscolhido } from '../data/artePorTela';
@@ -53,7 +53,7 @@ export function AdminScreen({ navigation }: Props) {
     try {
       await acao();
     } catch (caught) {
-      setErro(caught instanceof ApiError ? caught.message : 'Não deu pra falar com o servidor.');
+      setErro(mensagemParaOJogador(caught, 'Não deu pra falar com o servidor.'));
     } finally {
       setOcupado(false);
     }

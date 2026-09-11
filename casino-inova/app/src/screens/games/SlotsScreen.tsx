@@ -11,7 +11,7 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { ChipStack } from '../../components/ChipStack';
 import { Rolo } from '../../components/Rolo';
-import { ApiError, novaAcao } from '../../api/client';
+import { ApiError, novaAcao, mensagemParaOJogador } from '../../api/client';
 import { fetchSlotsConfig, spinSlots, SlotsConfig, WinningLineDto } from '../../api/slots';
 import { usePlayer } from '../../data/usePlayer';
 import { SeletorDeAposta, apostaInicial, ajustar, useFaixaDeAposta } from '../../aposta';
@@ -78,7 +78,7 @@ export function SlotsScreen({ navigation }: Props) {
     fetchSlotsConfig()
       .then(setConfig)
       .catch((error: unknown) => {
-        setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
+        setConfigError(mensagemParaOJogador(error, 'Não foi possível falar com o servidor.'));
       });
   }, []);
 
@@ -119,7 +119,7 @@ export function SlotsScreen({ navigation }: Props) {
       setLastWin(result.totalWin);
       setBalance(result.newBalance);
     } catch (error) {
-      setSpinError(error instanceof ApiError ? error.message : 'Não foi possível girar agora.');
+      setSpinError(mensagemParaOJogador(error, 'Não foi possível girar agora.'));
     } finally {
       setSpinning(false);
     }

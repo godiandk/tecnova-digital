@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ApiError } from '../api/client';
+import { ApiError, mensagemParaOJogador } from '../api/client';
 import { fetchFriends, fetchPendingFriendRequests, sendFriendRequest, respondFriendRequest, Friend, PendingRequests } from '../api/friends';
 import { colors, fontFamily, fontSize, spacing } from '../theme';
 import { CasinoCard } from '../components/CasinoCard';
@@ -34,7 +34,7 @@ export function FriendsScreen() {
       });
       setLoadError(null);
     } catch (error) {
-      setLoadError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
+      setLoadError(mensagemParaOJogador(error, 'Não foi possível falar com o servidor.'));
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ export function FriendsScreen() {
       setTargetId('');
       await reload();
     } catch (error) {
-      setFormError(error instanceof ApiError ? error.message : 'Não foi possível enviar o pedido agora.');
+      setFormError(mensagemParaOJogador(error, 'Não foi possível enviar o pedido agora.'));
     } finally {
       setBusyId(null);
     }
@@ -65,7 +65,7 @@ export function FriendsScreen() {
       await respondFriendRequest(requestId, accept);
       await reload();
     } catch (error) {
-      setFormError(error instanceof ApiError ? error.message : 'Não foi possível responder agora.');
+      setFormError(mensagemParaOJogador(error, 'Não foi possível responder agora.'));
     } finally {
       setBusyId(null);
     }

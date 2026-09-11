@@ -12,7 +12,7 @@ import { atualizarPerfil, fetchAvatares, formatarCodigo } from '../api/perfil';
 import { AVATARES_PADRAO, avatarEscolhido } from '../data/artePorTela';
 import { fetchFriends } from '../api/friends';
 import { sair } from '../api/auth';
-import { ApiError } from '../api/client';
+import { ApiError, mensagemParaOJogador } from '../api/client';
 import { redeemCoupon } from '../api/coupons';
 import { MOLDURAS_DE_AVATAR, SELO_VIP } from '../data/artePorTela';
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
@@ -101,7 +101,7 @@ export function ProfileScreen() {
       setCouponMessage({ text: `Cupom resgatado — +${result.chips.toLocaleString('pt-BR')} fichas!`, ok: true });
       setCouponCode('');
     } catch (error) {
-      setCouponMessage({ text: error instanceof ApiError ? error.message : 'Não foi possível resgatar agora.', ok: false });
+      setCouponMessage({ text: mensagemParaOJogador(error, 'Não foi possível resgatar agora.'), ok: false });
     } finally {
       setRedeeming(false);
     }
@@ -316,7 +316,7 @@ function FolhaDeEdicao({
     try {
       await aoSalvar(limpo, avatar ?? avatares[0] ?? 'avatar-1');
     } catch (caught) {
-      setErro(caught instanceof ApiError ? caught.message : 'Não deu pra salvar agora.');
+      setErro(mensagemParaOJogador(caught, 'Não deu pra salvar agora.'));
     } finally {
       setSalvando(false);
     }

@@ -10,7 +10,7 @@ import {
   coletarRecompensa,
   fetchCalendarioDeRecompensa,
 } from '../api/recompensas';
-import { ApiError } from '../api/client';
+import { ApiError, mensagemParaOJogador } from '../api/client';
 import { RECOMPENSA, estadoDaCasa } from '../data/recompensaAssets';
 import { CasaDoCalendario } from '../components/CasaDoCalendario';
 import { usePlayer } from '../data/usePlayer';
@@ -54,7 +54,7 @@ export function RecompensaDiariaScreen({ navigation }: Props) {
   const carregar = useCallback(() => {
     fetchCalendarioDeRecompensa()
       .then(setCalendario)
-      .catch((e: unknown) => setErro(e instanceof ApiError ? e.message : 'Não foi possível falar com o servidor.'));
+      .catch((e: unknown) => setErro(mensagemParaOJogador(e, 'Não foi possível falar com o servidor.')));
   }, []);
 
   useEffect(carregar, [carregar]);
@@ -74,7 +74,7 @@ export function RecompensaDiariaScreen({ navigation }: Props) {
       setColetouAgora(feita.premio);
       recarregar();
     } catch (e: unknown) {
-      setErro(e instanceof ApiError ? e.message : 'Não foi possível coletar agora. Tente de novo.');
+      setErro(mensagemParaOJogador(e, 'Não foi possível coletar agora. Tente de novo.'));
       carregar();
     } finally {
       setColetando(false);

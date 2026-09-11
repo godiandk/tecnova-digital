@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { corsDaApi, origemPermitida } from './origens-permitidas';
+import { corsDoSocket, origemPermitida } from './origens-permitidas';
 
 /**
  * A SEGURANÇA DO APLICATIVO — a parte que nunca tinha sido auditada.
@@ -68,7 +68,28 @@ console.log('--- 1. CORS: quem pode falar com a API ---');
    * manda sozinho entre sites — é o que torna um pedido forjado de outra aba inútil mesmo
    * que ele passasse pelo CORS. Ligar `credentials` traria o risco de volta.
    */
-  confere('o CORS não aceita credenciais (não há cookie de sessão)', corsDaApi.credentials === false);
+  confere('o CORS não aceita credenciais (não há cookie de sessão)', corsDoSocket.credentials === false);
+
+  /*
+   * MESMA ORIGEM PASSA SEM CONFIGURAÇÃO NENHUMA, e esta é a conferência que o defeito de
+   * produção pediu: este servidor serve o SITE e a API na mesma origem, e a lista sem
+   * variável só conhecia localhost — então ele recusava o próprio site, e a mensagem
+   * técnica aparecia na tela do jogador em cima do prêmio dele.
+   */
+  confere(
+    'o próprio site passa mesmo sem lista nenhuma',
+    origemPermitida('https://casino-inova.onrender.com', [], 'casino-inova.onrender.com'),
+  );
+  confere(
+    'e passa mesmo com uma lista que não o inclui',
+    origemPermitida('https://casino-inova.onrender.com', ['https://outro.com'], 'casino-inova.onrender.com'),
+  );
+  confere(
+    'mas um host parecido NÃO passa como mesma origem',
+    !origemPermitida('https://casino-inova.onrender.com.evil.com', [], 'casino-inova.onrender.com'),
+  );
+  confere('e a porta faz parte da comparação', !origemPermitida('http://localhost:9999', ['https://x.com'], 'localhost:3000'));
+  confere('mesma origem com porta bate', origemPermitida('http://localhost:3000', ['https://x.com'], 'localhost:3000'));
 }
 
 console.log('\n--- 2. o registro não conta o que não deve ---');

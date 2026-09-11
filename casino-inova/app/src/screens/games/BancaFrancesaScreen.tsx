@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../../navigation/types';
-import { ApiError, novaAcao } from '../../api/client';
+import { ApiError, novaAcao, mensagemParaOJogador } from '../../api/client';
 import {
   confirmarApostas,
   fetchBancaFrancesaConfig,
@@ -91,7 +91,7 @@ export function BancaFrancesaScreen({ navigation }: Props) {
   useEffect(() => {
     fetchBancaFrancesaConfig()
       .then(setConfig)
-      .catch((e: unknown) => setErro(e instanceof ApiError ? e.message : 'Não foi possível falar com o servidor.'));
+      .catch((e: unknown) => setErro(mensagemParaOJogador(e, 'Não foi possível falar com o servidor.')));
     void recarregarRodada();
   }, [recarregarRodada]);
 
@@ -153,7 +153,7 @@ export function BancaFrancesaScreen({ navigation }: Props) {
       setAviso(null);
       return true;
     } catch (e) {
-      setErro(e instanceof ApiError ? e.message : 'Não foi possível confirmar a aposta.');
+      setErro(mensagemParaOJogador(e, 'Não foi possível confirmar a aposta.'));
       return false;
     } finally {
       if (vivo.current) setOcupado(false);
@@ -167,7 +167,7 @@ export function BancaFrancesaScreen({ navigation }: Props) {
       setRodada(await retirarApostas());
       setErro(null);
     } catch (e) {
-      setErro(e instanceof ApiError ? e.message : 'Não foi possível tirar as fichas.');
+      setErro(mensagemParaOJogador(e, 'Não foi possível tirar as fichas.'));
     } finally {
       if (vivo.current) setOcupado(false);
     }
@@ -233,7 +233,7 @@ export function BancaFrancesaScreen({ navigation }: Props) {
        */
       saldoChegouDeFora(r.newBalance);
     } catch (e) {
-      setErro(e instanceof ApiError ? e.message : 'Não foi possível lançar agora.');
+      setErro(mensagemParaOJogador(e, 'Não foi possível lançar agora.'));
     } finally {
       if (vivo.current) setOcupado(false);
     }
