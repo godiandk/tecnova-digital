@@ -41,6 +41,12 @@ export type TableVisibility = 'publica' | 'privada';
 export type Team = 'A' | 'B';
 
 export interface TrucoSeat {
+  /**
+   * O saldo de quem sentou, ANTES do débito do buy-in — é o degrau em que a pessoa
+   * estava, e é o degrau que transforma ficha em XP quando a partida acabar.
+   */
+  saldoAntes: number;
+
   seatIndex: number;
   userId: string;
   name: string;
@@ -128,7 +134,7 @@ export class TrucoTableService {
       style,
       hostUserId,
       buyIn,
-      seats: [{ seatIndex: 0, userId: hostUserId, name: host.name, isBot: false, team: 'A', hand: [] }],
+      seats: [{ seatIndex: 0, userId: hostUserId, name: host.name, isBot: false, team: 'A', hand: [], saldoAntes: 0 }],
       started: false,
       score: { A: 0, B: 0 },
       handValue: VARIANT_RULES[variant].baseHandValue,
@@ -187,6 +193,8 @@ export class TrucoTableService {
       isBot: true,
       team: teamOfSeat(seatIndex),
       hand: [],
+      /* Preenchido no débito do buy-in, antes de a partida começar. */
+      saldoAntes: 0,
     });
     return table;
   }
@@ -207,7 +215,10 @@ export class TrucoTableService {
       }
     }
     for (const seat of table.seats) {
-      if (!seat.isBot) await this.walletService.debit(seat.userId, table.buyIn, 'aposta', GAME_ID);
+      if (seat.isBot) continue;
+      /* Lido ANTES do débito: depois dele o saldo já não é o de quem sentou. */
+      seat.saldoAntes = await this.walletService.balanceOf(seat.userId);
+      await this.walletService.debit(seat.userId, table.buyIn, 'aposta', GAME_ID);
     }
 
     table.started = true;
@@ -541,7 +552,7 @@ export class TrucoTableService {
       for (const seat of table.seats) {
         if (seat.isBot) continue;
         const retorno = seat.team === table.winnerTeam ? share : 0;
-        await this.tournaments.recordRound(seat.userId, GAME_ID, table.buyIn, retorno);
+        await this.tournaments.recordRound(seat.userId, GAME_ID, table.buyIn, retorno, seat.saldoAntes);
       }
       table.lastEvent = `Dupla ${table.winnerTeam} venceu a partida!`;
       return;
@@ -625,6 +636,8 @@ export class TrucoTableService {
       isBot: false,
       team: teamOfSeat(seatIndex),
       hand: [],
+      /* Preenchido no débito do buy-in, antes de a partida começar. */
+      saldoAntes: 0,
     });
     return table;
   }

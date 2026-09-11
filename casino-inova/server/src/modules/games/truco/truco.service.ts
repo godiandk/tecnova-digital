@@ -32,6 +32,13 @@ import {
 export type TrucoResponse = 'aceitar' | 'correr' | 'aumentar';
 
 interface TrucoMatch {
+  /**
+   * O saldo de quem sentou, ANTES do débito da entrada — é ele que diz o degrau da
+   * pessoa quando a partida acabar e o XP for somado. Guardado aqui porque a partida
+   * dura minutos, e no fim o saldo já não é mais o de quem sentou.
+   */
+  saldoAntes: number;
+
   buyIn: number;
   playerScore: number;
   botScore: number;
@@ -112,12 +119,23 @@ export class TrucoService {
       throw new BadRequestException('Estilo inválido — use "sujo" ou "limpo".');
     }
 
+    /*
+     * O SALDO DE ANTES DA ENTRADA, guardado na partida.
+     *
+     * Ele é lido aqui e não no fim porque a partida dura minutos: no fim, o saldo já
+     * passou pelo débito da entrada e por tudo que a pessoa fez em outra tela. O degrau
+     * que vale pro XP é o de quem sentou — e é ele que faz a entrada de truco valer o
+     * mesmo XP pra quem joga no Bronze e pra quem joga no Eclipse.
+     */
+    const saldoAntes = await this.walletService.balanceOf(userId);
+
     /* A RODADA É REGISTRADA ANTES DE O DINHEIRO SE MEXER. Ver MaquinaDeRodada. */
     const rodada = await this.maquina.comecar({ jogo: GAME_ID, usuarioId: userId, apostas: { entrada: buyIn, variante: variant, estilo: style } });
     this.rodadaDaPartida.set(userId, rodada);
     await this.walletService.debit(userId, buyIn, 'aposta', GAME_ID, actionId, rodada.id);
     const match: TrucoMatch = {
       buyIn,
+      saldoAntes,
       variant,
       style,
       playerScore: 0,
@@ -328,7 +346,7 @@ export class TrucoService {
         );
       }
       // No truco a rodada de torneio é a partida inteira: o buy-in é a aposta.
-      await this.tournaments.recordRound(userId, GAME_ID, match.buyIn, retorno);
+      await this.tournaments.recordRound(userId, GAME_ID, match.buyIn, retorno, match.saldoAntes);
 
       const rodada = this.rodadaDaPartida.get(userId);
       if (rodada) {

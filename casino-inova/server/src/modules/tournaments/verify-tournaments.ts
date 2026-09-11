@@ -14,6 +14,7 @@ import { WalletService } from '../wallet/wallet.service';
 import { TournamentsService } from './tournaments.service';
 import { DatabaseService } from '../../database/database.service';
 import { POINTS_SCALE, windowFor } from './tournaments.config';
+import { xpDoNivel } from '../progressao/niveis';
 
 let falhas = 0;
 
@@ -48,6 +49,30 @@ async function novoServico() {
   return { db, users, wallet, tournaments: new TournamentsService(users, wallet, db) };
 }
 
+/**
+ * Um saldo plausível para quem apostou `stake`.
+ *
+ * `recordRound` exige o saldo de ANTES da rodada porque é ele que diz o degrau da pessoa,
+ * e o degrau é o que transforma ficha em XP. Aqui o número não é o objeto do teste — o
+ * que importa é que seja coerente (ninguém aposta mais do que tem), senão o guarda de
+ * plausibilidade derruba o XP pro piso e as conferências de XP abaixo mediriam o guarda
+ * em vez da curva.
+ */
+const saldoDe = (stake: number) => stake * 100;
+
+/**
+ * Quanto XP entrou entre duas leituras do jogador, atravessando as viradas de nível.
+ *
+ * Comparar só o campo `xp` daria negativo toda vez que a pessoa subisse de nível — o XP
+ * volta pra perto de zero e o resto virou nível. A conta certa soma o custo dos níveis
+ * que foram vencidos no caminho.
+ */
+function xpGanho(antes: { level: number; xp: number }, depois: { level: number; xp: number }): number {
+  let total = depois.xp - antes.xp;
+  for (let n = antes.level; n < depois.level; n += 1) total += xpDoNivel(n);
+  return total;
+}
+
 async function main() {
   // ---------- 1. Pontuação proporcional ----------
   {
@@ -55,8 +80,8 @@ async function main() {
 
     // u1 aposta baixo, u2 aposta 200x mais alto — mesmos resultados relativos.
     for (let i = 0; i < 10; i += 1) {
-      await tournaments.recordRound('u1', 'slots', 50, 100); // dobrou
-      await tournaments.recordRound('u2', 'slots', 10_000, 20_000); // dobrou igual
+      await tournaments.recordRound('u1', 'slots', 50, 100, saldoDe(50)); // dobrou
+      await tournaments.recordRound('u2', 'slots', 10_000, 20_000, saldoDe(10_000)); // dobrou igual
     }
 
     const ranking = await tournaments.leaderboard('diario-geral', 'u1');
@@ -72,8 +97,8 @@ async function main() {
   {
     const { db, tournaments } = await novoServico();
     for (let i = 0; i < 10; i += 1) {
-      await tournaments.recordRound('u1', 'slots', 100, 0); // perdeu tudo
-      await tournaments.recordRound('u2', 'slots', 100, 100); // empatou (devolveu a ficha)
+      await tournaments.recordRound('u1', 'slots', 100, 0, saldoDe(100)); // perdeu tudo
+      await tournaments.recordRound('u2', 'slots', 100, 100, saldoDe(100)); // empatou (devolveu a ficha)
     }
     const ranking = await tournaments.leaderboard('diario-geral');
     const u1 = ranking.rows.find((linha) => linha.userId === 'u1');
@@ -89,9 +114,9 @@ async function main() {
   {
     const { db, tournaments } = await novoServico();
     // u1 acerta um 62x na primeira aposta e para de jogar.
-    await tournaments.recordRound('u1', 'banca-francesa', 100, 6_200);
+    await tournaments.recordRound('u1', 'banca-francesa', 100, 6_200, saldoDe(100));
     // u2 joga as 10 rodadas exigidas, com resultado modesto.
-    for (let i = 0; i < 10; i += 1) await tournaments.recordRound('u2', 'banca-francesa', 100, 200);
+    for (let i = 0; i < 10; i += 1) await tournaments.recordRound('u2', 'banca-francesa', 100, 200, saldoDe(100));
 
     const ranking = await tournaments.leaderboard('diario-geral', 'u1');
     checa('uma rodada de sorte não entra no ranking', !ranking.rows.some((linha) => linha.userId === 'u1'));
@@ -103,8 +128,8 @@ async function main() {
   // ---------- 4. Torneio filtra por jogo ----------
   {
     const { db, tournaments } = await novoServico();
-    for (let i = 0; i < 25; i += 1) await tournaments.recordRound('u1', 'slots', 100, 300);
-    for (let i = 0; i < 25; i += 1) await tournaments.recordRound('u2', 'truco', 100, 200);
+    for (let i = 0; i < 25; i += 1) await tournaments.recordRound('u1', 'slots', 100, 300, saldoDe(100));
+    for (let i = 0; i < 25; i += 1) await tournaments.recordRound('u2', 'truco', 100, 200, saldoDe(100));
 
     const semanal = await tournaments.leaderboard('semanal-mesas');
     checa('torneio de mesas ignora slots', !semanal.rows.some((linha) => linha.userId === 'u1'));
@@ -119,9 +144,9 @@ async function main() {
   {
     const { db, tournaments } = await novoServico();
     // Os dois chegam a +1000 pontos: u1 em 10 rodadas, u2 em 20.
-    for (let i = 0; i < 10; i += 1) await tournaments.recordRound('u1', 'slots', 100, 200);
-    for (let i = 0; i < 10; i += 1) await tournaments.recordRound('u2', 'slots', 100, 200);
-    for (let i = 0; i < 10; i += 1) await tournaments.recordRound('u2', 'slots', 100, 100);
+    for (let i = 0; i < 10; i += 1) await tournaments.recordRound('u1', 'slots', 100, 200, saldoDe(100));
+    for (let i = 0; i < 10; i += 1) await tournaments.recordRound('u2', 'slots', 100, 200, saldoDe(100));
+    for (let i = 0; i < 10; i += 1) await tournaments.recordRound('u2', 'slots', 100, 100, saldoDe(100));
 
     const ranking = await tournaments.leaderboard('diario-geral');
     const u1 = ranking.rows.find((linha) => linha.userId === 'u1');
@@ -218,6 +243,89 @@ async function main() {
 
     const extrato = (await wallet.historyOf('u1')).filter((entrada) => entrada.origin === 'diario-geral');
     checa('o prêmio fica rastreável no extrato, uma vez só', extrato.length === 1, `${extrato.length} entradas`);
+    await db.onModuleDestroy();
+  }
+
+  // ---------- 7. O XP passa por aqui, e ele é a única porta ----------
+  {
+    /*
+     * ESTE CENÁRIO EXISTE PORQUE A PORTA ERA FÁCIL DE PERDER DE VISTA. `recordRound` é o
+     * único caminho pelo qual jogar vira nível: os dez jogos e as três salas passam por
+     * ele, e nada mais soma XP de rodada. Um jogo novo que esqueça de chamá-lo tem uma
+     * barra que não anda, e ninguém descobre até um jogador reclamar.
+     *
+     * O que se prova aqui é o que a função pura não consegue provar sozinha: que o
+     * caminho inteiro — chamada, degrau, transação, banco — entrega o XP certo.
+     */
+    const { db, tournaments, users } = await novoServico();
+
+    const antes = await users.findById('u1');
+    /* 50 fichas com 10.000 no bolso: degrau Bronze, aposta mínima. */
+    await tournaments.recordRound('u1', 'slots', 50, 0, 10_000);
+    const depois = await users.findById('u1');
+    const ganhouAlgo = (depois!.level > antes!.level) || (depois!.xp > antes!.xp);
+    checa('jogar move a barra', ganhouAlgo, `nível ${antes!.level}/${antes!.xp} -> ${depois!.level}/${depois!.xp}`);
+
+    /*
+     * A PROVA DE QUE NÍVEL NÃO SE COMPRA, feita pelo caminho de verdade e não pela
+     * fórmula: u1 é Bronze e aposta 50; u2 tem cem mil vezes mais e aposta cem mil vezes
+     * mais. A mesma aposta RELATIVA tem que dar o mesmo XP.
+     */
+    const u2Antes = await users.findById('u2');
+    await tournaments.recordRound('u2', 'slots', 5_000_000, 0, 1_000_000_000);
+    const u2Depois = await users.findById('u2');
+    const ganhoDeU1 = xpGanho(antes!, depois!);
+    const ganhoDeU2 = xpGanho(u2Antes!, u2Depois!);
+    checa(
+      'apostar o mínimo do próprio degrau vale o mesmo em qualquer degrau',
+      ganhoDeU1 === ganhoDeU2,
+      `Bronze apostando 50 ganhou ${ganhoDeU1}; o degrau alto apostando 5 milhões ganhou ${ganhoDeU2}`,
+    );
+
+    /*
+     * O TETO DO DIA. Apostar muito, muitas vezes, para de somar — e é isto que impede um
+     * robô de subir de nível mais rápido do que gente.
+     */
+    let rodadas = 0;
+    let anterior = await users.findById('u1');
+    let parou = false;
+    while (rodadas < 2_000 && !parou) {
+      await tournaments.recordRound('u1', 'slots', 1_000, 0, 10_000);
+      rodadas += 1;
+      const agora = await users.findById('u1');
+      if (xpGanho(anterior!, agora!) === 0) parou = true;
+      anterior = agora;
+    }
+    checa('o teto do dia existe e é alcançável', parou, `${rodadas} rodadas sem parar de somar`);
+    checa(
+      'o teto do dia não aperta antes de um dia inteiro de jogo',
+      rodadas > 1_000,
+      `parou de somar em ${rodadas} rodadas`,
+    );
+
+    /*
+     * E O DIA VIRA. Ontem cheio não pode deixar hoje travado — se deixasse, quem jogou
+     * muito num dia começaria o seguinte com a barra morta.
+     */
+    const noTeto = await users.findById('u1');
+    await users.somarExperienciaDaRodada('u1', 1_000, 10_000, '2099-12-31');
+    const amanha = await users.findById('u1');
+    checa('virar o dia zera o teto', xpGanho(noTeto!, amanha!) > 0, 'a barra continuou travada no dia seguinte');
+
+    /*
+     * O GUARDA DO SALDO. Um saldo menor que a aposta é impossível — e como saldo baixo
+     * significa degrau baixo significa MAIS XP, é exatamente a direção que alguém
+     * tentaria forçar. Tem que pagar o piso, não o máximo.
+     */
+    const u3Antes = await users.findById('u2');
+    await tournaments.recordRound('u2', 'slots', 5_000_000, 0, 0);
+    const u3Depois = await users.findById('u2');
+    checa(
+      'aposta maior que o saldo paga o piso, e não o XP máximo',
+      xpGanho(u3Antes!, u3Depois!) <= 1,
+      `ganhou ${xpGanho(u3Antes!, u3Depois!)} XP com saldo zerado`,
+    );
+
     await db.onModuleDestroy();
   }
 

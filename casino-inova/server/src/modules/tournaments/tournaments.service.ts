@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-import { xpDaRodada } from '../progressao/niveis';
 import { WalletService } from '../wallet/wallet.service';
 import { DatabaseService } from '../../database/database.service';
 import {
@@ -53,7 +52,13 @@ export class TournamentsService {
    * depois do jogo resolver, e uma rodada perdida aqui é um detalhe de ranking, não
    * uma ficha perdida — a ficha já foi movimentada pelo ledger, que é quem manda.
    */
-  async recordRound(userId: string, gameId: string, stake: number, returned: number) {
+  async recordRound(
+    userId: string,
+    gameId: string,
+    stake: number,
+    returned: number,
+    saldoAntesDaRodada: number,
+  ) {
     if (!Number.isFinite(stake) || stake <= 0) return;
     if (!Number.isFinite(returned) || returned < 0) return;
 
@@ -64,8 +69,14 @@ export class TournamentsService {
      * décima, sem ninguém entender por quê.
      *
      * Note que o XP sai do APOSTADO e ignora o `returned`: ganhar e perder valem igual.
+     *
+     * O SALDO DE ANTES é o que diz em que degrau a pessoa estava, e o degrau é o que
+     * transforma fichas em XP — 20x o mínimo vale o mesmo no Bronze e no Eclipse. Ele é
+     * obrigatório e não tem valor padrão de propósito: um padrão silencioso aqui seria um
+     * jogo novo passando o degrau errado e ninguém percebendo, que é exatamente o tipo de
+     * erro que o compilador sabe achar quando o parâmetro é exigido.
      */
-    await this.users.somarExperiencia(userId, xpDaRodada(stake));
+    await this.users.somarExperienciaDaRodada(userId, stake, saldoAntesDaRodada);
     await this.db.query(
       'INSERT INTO tournament_rounds (user_id, game_id, stake, returned) VALUES ($1,$2,$3,$4)',
       [userId, gameId, Math.round(stake), Math.round(returned)],

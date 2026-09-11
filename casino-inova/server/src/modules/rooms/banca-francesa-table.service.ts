@@ -482,11 +482,13 @@ export class BancaFrancesaTableService {
          * inteira é uma cobrança só, por mais lançamentos que ela tenha levado.
          */
         const acao = `${table.id}:${table.rodadaId}:${seat.userId}`;
+        /* Lido ANTES do débito: é o degrau de quem apostou que decide o XP da rodada. */
+        const saldoAntes = await this.walletService.balanceOf(seat.userId);
         await this.walletService.debit(seat.userId, totalStake, 'aposta', GAME_ID, `${acao}:aposta`);
         if (totalReturn > 0) {
           await this.walletService.credit(seat.userId, totalReturn, 'premio', GAME_ID, `${acao}:premio`);
         }
-        await this.tournaments.recordRound(seat.userId, GAME_ID, totalStake, totalReturn);
+        await this.tournaments.recordRound(seat.userId, GAME_ID, totalStake, totalReturn, saldoAntes);
       }
 
       bySeat[seat.userId] = { results, totalStake, totalReturn };

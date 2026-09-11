@@ -45,6 +45,14 @@ interface Mao {
 }
 
 interface EstadoDaMesa {
+  /**
+   * O saldo de antes da aposta inicial — o degrau em que a pessoa estava quando sentou.
+   *
+   * Fica na mesa, e não numa variável, porque a mão do blackjack dura VÁRIAS requisições:
+   * pedir carta, dobrar, dividir e o seguro são pedidos separados, e o XP só é somado no
+   * `encerrarTudo`, que roda numa requisição em que o `startHand` já terminou faz tempo.
+   */
+  saldoAntes: number;
   apostaInicial: number;
   maos: Mao[];
   /** Qual mão está sendo jogada agora. */
@@ -121,7 +129,8 @@ export class BlackjackService {
     if (existente && !existente.finished) {
       throw new BadRequestException('Você já tem uma mão em andamento — termine ela antes de apostar de novo.');
     }
-    const problema = problemaComAAposta(bet, await this.walletService.balanceOf(userId));
+    const saldoAntes = await this.walletService.balanceOf(userId);
+    const problema = problemaComAAposta(bet, saldoAntes);
     if (problema) throw new BadRequestException(problema);
 
     /*
@@ -146,6 +155,7 @@ export class BlackjackService {
     const d2 = sapata.comprar();
 
     const mesa: EstadoDaMesa = {
+      saldoAntes,
       apostaInicial: bet,
       maos: [{ cartas: [p1, p2], aposta: bet, dobrada: false, deSplit: false, deSplitDeAses: false, encerrada: false }],
       maoAtual: 0,
@@ -399,7 +409,7 @@ export class BlackjackService {
     }
 
     // A rodada de torneio é a mesa inteira: tudo que foi apostado contra tudo que voltou.
-    await this.tournaments.recordRound(userId, GAME_ID, apostaTotal, retornoTotal);
+    await this.tournaments.recordRound(userId, GAME_ID, apostaTotal, retornoTotal, mesa.saldoAntes);
 
     const rodada = this.rodadaDaMesa.get(userId);
     if (rodada) {

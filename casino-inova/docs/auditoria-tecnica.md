@@ -246,9 +246,15 @@ O asset existe. Falta a barra funcionar:
 - no Lobby, mais espaço vertical: nome + saldo + nível + barra + XP não podem ficar
   espremidos.
 
-*O que já existe:* `verifica-barra-de-nivel.mjs` já confere a barra contra a arte dela,
-e `progressao/niveis.ts` já tem a curva de XP (`1 + √(aposta/10)`, teto 50 por rodada;
-nível N custa `500 + (N−1)×250`).
+*O que já existe:* `verifica-barra-de-nivel.mjs` já confere a barra contra a arte dela.
+
+**A curva de XP foi trocada** (ver `docs/economia.md`, seção K). A antiga —
+`1 + √(aposta/10)`, nível N custando `500 + (N−1)×250` — fazia o nível 10.000 exigir 250
+milhões de rodadas e premiava apostar o mínimo em 29× por ficha. A nova é
+`50 × ln(1+r) / ln(21)` com `r = aposta / mínimo do degrau da pessoa`, nível N custando
+`197 × √N`, teto de 60.000 XP por dia e nível máximo de 10.000 no código. O nível 10.000
+passa a sair em seis anos de jogo pesado, e apostar em unidades da MESA é o que impede
+comprar fichas de virar comprar nível.
 
 ### F3 — economia: a discrepância medida
 
@@ -298,8 +304,10 @@ O maior pacote pago compra **duas apostas** na mesa Diamante e **nenhuma** na Ru
 mínimo da mesa vem do SALDO, multiplicar o pacote por um fator de nível não resolve: um
 multiplicador de 2,5× no Diamante leva de 2 para 5 apostas.
 
-**2. Os níveis pedidos não são alcançáveis com a curva de XP de hoje.** A curva é
-`1 + √(aposta/10)` com teto de 50 XP por rodada, e o nível N custa `500 + (N−1)×250`.
+**2. Os níveis pedidos não são alcançáveis com a curva de XP de hoje.** *(RESOLVIDO —
+a curva foi trocada; os números abaixo são os da curva ANTIGA, guardados como registro do
+que estava errado. Ver `docs/economia.md`, seção K.)* A curva era
+`1 + √(aposta/10)` com teto de 50 XP por rodada, e o nível N custava `500 + (N−1)×250`.
 Mesmo jogando sempre no teto:
 
 | Nível | Rodadas | Jogando sem parar |

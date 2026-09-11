@@ -6,6 +6,13 @@ import { BoardEnd, canPlay, chooseBotMove, otherEnd, quemAbre, shuffle, tileMatc
 import { buildTileSet, HAND_SIZE, MATCH_WIN_TOTAL_MULTIPLIER, MAX_BUY_IN, MIN_BUY_IN, Tile } from './domino.config';
 
 interface DominoMatch {
+  /**
+   * O saldo de quem sentou, ANTES do débito da entrada — é ele que diz o degrau da
+   * pessoa quando a partida acabar e o XP for somado. Guardado aqui porque a partida
+   * dura minutos, e no fim o saldo já não é mais o de quem sentou.
+   */
+  saldoAntes: number;
+
   buyIn: number;
   playerHand: Tile[];
   botHand: Tile[];
@@ -59,6 +66,16 @@ export class DominoService {
       throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
     }
 
+    /*
+     * O SALDO DE ANTES DA ENTRADA, guardado na partida.
+     *
+     * Ele é lido aqui e não no fim porque a partida dura minutos: no fim, o saldo já
+     * passou pelo débito da entrada e por tudo que a pessoa fez em outra tela. O degrau
+     * que vale pro XP é o de quem sentou — e é ele que faz a entrada de truco valer o
+     * mesmo XP pra quem joga no Bronze e pra quem joga no Eclipse.
+     */
+    const saldoAntes = await this.walletService.balanceOf(userId);
+
     /* A RODADA É REGISTRADA ANTES DE O DINHEIRO SE MEXER. Ver MaquinaDeRodada. */
     const rodada = await this.maquina.comecar({ jogo: GAME_ID, usuarioId: userId, apostas: { entrada: buyIn } });
     this.rodadaDaPartida.set(userId, rodada);
@@ -66,6 +83,7 @@ export class DominoService {
     const deck = shuffle(buildTileSet());
     const match: DominoMatch = {
       buyIn,
+      saldoAntes,
       playerHand: deck.splice(0, HAND_SIZE),
       botHand: deck.splice(0, HAND_SIZE),
       boardTiles: [],
@@ -216,7 +234,7 @@ export class DominoService {
     } else if (winner === 'empate') {
       await this.walletService.credit(userId, match.buyIn, 'ajuste', GAME_ID);
     }
-    await this.tournaments.recordRound(userId, GAME_ID, match.buyIn, retorno);
+    await this.tournaments.recordRound(userId, GAME_ID, match.buyIn, retorno, match.saldoAntes);
 
     const rodada = this.rodadaDaPartida.get(userId);
     if (rodada) {

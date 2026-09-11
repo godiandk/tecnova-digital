@@ -64,7 +64,8 @@ export class BacBoService {
   }
 
   async playRound(userId: string, bets: BacBoBet[], actionId?: string) {
-    this.validateBets(bets, await this.walletService.balanceOf(userId));
+    const saldoAntes = await this.walletService.balanceOf(userId);
+    this.validateBets(bets, saldoAntes);
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
 
@@ -89,7 +90,7 @@ export class BacBoService {
       if (totalReturn > 0) {
         await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID, undefined, rodada.id);
       }
-      await this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn);
+      await this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn, saldoAntes);
       await rodada.terminar({
         resultado: { resultado: result.outcome, jogador: result.playerTotal, banca: result.bankerTotal },
         apostado: totalStake,

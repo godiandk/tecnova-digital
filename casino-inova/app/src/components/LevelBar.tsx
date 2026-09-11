@@ -107,7 +107,16 @@ const FITA_ALTURA = 13 / 120;
  */
 export function LevelBar({ level, xp, xpToNextLevel, width, mostrarXp = true }: LevelBarProps) {
   const height = Math.round(width * PROPORCAO);
-  const progresso = xpToNextLevel > 0 ? Math.max(0, Math.min(1, xp / xpToNextLevel)) : 0;
+
+  /*
+   * NO TOPO DA ESCADA, A BARRA FICA CHEIA — e é preciso dizer isso aqui, porque a conta
+   * natural faz o contrário. No nível máximo o servidor manda `xpToNextLevel: 0`, já que
+   * não existe próximo nível pra custar nada; dividir por ele daria zero, e quem levou
+   * seis anos pra chegar ao 10.000 veria a barra VAZIA, igualzinha à de quem acabou de
+   * criar a conta. Cheia é a única leitura verdadeira: não falta mais nada.
+   */
+  const noTopo = xpToNextLevel <= 0;
+  const progresso = noTopo ? 1 : Math.max(0, Math.min(1, xp / xpToNextLevel));
   const brasao = width * BRASAO_TAMANHO;
 
   /*
@@ -159,7 +168,10 @@ export function LevelBar({ level, xp, xpToNextLevel, width, mostrarXp = true }: 
   const pulsoDoBrasao = useAnimatedStyle(() => ({ transform: [{ scale: 1 + brilhoDoNivel.value * 0.18 }] }));
 
   return (
-    <View style={{ width, height }} accessibilityLabel={`Nível ${level}, ${xp} de ${xpToNextLevel} XP`}>
+    <View
+      style={{ width, height }}
+      accessibilityLabel={noTopo ? `Nível ${level}, o máximo` : `Nível ${level}, ${xp} de ${xpToNextLevel} XP`}
+    >
       <Image source={LOBBY_UI.barraNivel} style={styles.camada} resizeMode="contain" />
 
       {/*
@@ -195,7 +207,7 @@ export function LevelBar({ level, xp, xpToNextLevel, width, mostrarXp = true }: 
         perfil era uma frase solta embaixo — a barra mostrava um progresso que a pessoa
         não conseguia ler.
       */}
-      {mostrarXp && xpToNextLevel > 0 && (
+      {mostrarXp && (
         <View
           style={[styles.faixaDoXp, { left: canalEsquerda, width: canalLargura, top: canalTopo, height: canalAltura }]}
           pointerEvents="none"
@@ -205,7 +217,7 @@ export function LevelBar({ level, xp, xpToNextLevel, width, mostrarXp = true }: 
             numberOfLines={1}
             adjustsFontSizeToFit
           >
-            {`${xp.toLocaleString('pt-BR')} / ${xpToNextLevel.toLocaleString('pt-BR')} XP`}
+            {noTopo ? 'NÍVEL MÁXIMO' : `${xp.toLocaleString('pt-BR')} / ${xpToNextLevel.toLocaleString('pt-BR')} XP`}
           </Text>
         </View>
       )}

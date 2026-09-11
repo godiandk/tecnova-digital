@@ -3,7 +3,10 @@ import { randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
 import type { Role } from '../roles/roles.constants';
 import { DatabaseService } from '../../database/database.service';
-import { Progresso, somarXp, xpDoNivel } from '../progressao/niveis';
+import { registro } from '../../observabilidade/registro';
+import { ProgressoDaRodada, XP_MAXIMO_POR_DIA, somarXp, xpDaRodada, xpDoNivel } from '../progressao/niveis';
+import { nivelPara } from '../games/shared/niveis-de-mesa';
+import { diaDoServidor } from '../../comum/dia-do-servidor';
 import { gerarCodigoPublico, somenteDigitos } from './codigo-publico';
 import { emailsDeAdmin } from '../roles/donos';
 
@@ -247,31 +250,128 @@ export class UsersService {
   }
 
   /**
-   * Soma XP a quem jogou e sobe o nível se der.
+   * O XP DE UMA RODADA QUE ACABOU — o único caminho pelo qual jogar vira nível.
    *
-   * Lê e grava numa transação porque duas rodadas terminando ao mesmo tempo (é comum:
-   * mesa compartilhada, ou a pessoa em duas telas) leriam o mesmo XP e uma
-   * sobrescreveria a outra — o `FOR UPDATE` faz a segunda esperar a primeira. XP perdido
-   * é barra que anda pra trás, e barra que anda pra trás é a única coisa pior do que
-   * barra parada.
+   * A BARRA JÁ ANDAVA — `recordRound` é o funil por onde os dez jogos e as três salas
+   * passam, e ele já somava XP. O que estava errado era QUANTO cada rodada valia. A conta
+   * antiga olhava só o número de fichas apostadas, e número de fichas depende do degrau em
+   * que a pessoa está: quem comprou fichas e subiu de mesa apostava mais fichas pela mesma
+   * jogada e subia de nível mais rápido. A barra virava um placar de quanto se gastou.
+   *
+   * E não havia teto nenhum por dia, então tempo de máquina valia nível: quem automatizasse
+   * a aposta mínima passava na frente de quem joga.
+   *
+   * POR QUE A CONTA INTEIRA MORA AQUI DENTRO. Ela precisa de três coisas que só existem
+   * juntas dentro da transação: o nível e o XP de agora, o quanto já subiu hoje, e o
+   * degrau da pessoa. Calcular o XP fora e passar um número pronto abriria a porta que
+   * este projeto fecha em todo lugar — um valor decidido em outro lugar e aceito aqui sem
+   * conferir. Quem chama passa o que ACONTECEU (apostou tanto, com tanto no bolso); quem
+   * decide quanto isso vale é este método.
+   *
+   * O SALDO É O DE ANTES DA RODADA, e isso não é detalhe. Se fosse o de depois, quem
+   * apostasse tudo e perdesse cairia pro degrau Bronze na hora — e a mesma aposta, medida
+   * contra um mínimo de 50 em vez do mínimo do degrau real, renderia o XP máximo. O jogo
+   * pagaria um bônus de barra por quebrar. Com o saldo de antes, quebrar não rende nada.
+   *
+   * O TETO DIÁRIO É APLICADO AQUI, dentro do mesmo `FOR UPDATE` que lê o XP, porque ele é
+   * uma condição de corrida esperando pra acontecer: um robô disparando cinquenta rodadas
+   * ao mesmo tempo leria cinquenta vezes o mesmo "já ganhei X hoje" e passaria do teto
+   * cinquenta vezes. A linha travada faz a segunda rodada esperar a primeira.
    */
-  async somarExperiencia(userId: string, ganho: number): Promise<Progresso | null> {
-    if (!Number.isFinite(ganho) || ganho <= 0) return null;
+  async somarExperienciaDaRodada(
+    userId: string,
+    apostado: number,
+    saldoAntesDaRodada: number,
+    hoje = diaDoServidor(),
+  ): Promise<ProgressoDaRodada | null> {
+    if (!Number.isFinite(apostado) || apostado <= 0) return null;
 
+    /*
+     * UM SALDO QUE NÃO SE SUSTENTA NÃO PODE VALER XP CHEIO, e a direção do erro é a razão.
+     * Saldo alto = degrau alto = mínimo alto = MENOS XP pela mesma ficha. Então quem quer
+     * fraudar isto quer o saldo BAIXO — e um saldo zerado que escapou do caminho normal
+     * (um assento que não passou pelo débito, um jogo novo passando a variável errada)
+     * renderia o XP máximo em toda rodada, silenciosamente.
+     *
+     * A conferência é a única que sempre vale: ninguém aposta mais do que tinha. Quando o
+     * número não passa por ela, o XP vira o piso — a rodada conta, mas não paga. E fica
+     * registrado, porque isto é defeito de programação, não jogada de jogador.
+     */
+    if (!Number.isFinite(saldoAntesDaRodada) || saldoAntesDaRodada < apostado) {
+      registro.aviso('progressao', 'saldo-antes-nao-confere', {
+        apostado,
+        saldoAntesDaRodada,
+        porque: 'o saldo de antes da rodada é menor que a aposta — XP pago no piso',
+      });
+      return this.gravarExperiencia(userId, 1, hoje);
+    }
+
+    /*
+     * O DIVISOR É O MÍNIMO DO DEGRAU DA PESSOA, e é ele que impede dinheiro de virar
+     * nível: o Bronze apostando 20x o mínimo dele e o Eclipse apostando 20x o mínimo dele
+     * ganham exatamente o mesmo XP. Ver `verify-xp.ts`, conferência 1.
+     */
+    const minimoDoDegrau = nivelPara(saldoAntesDaRodada).minimo;
+    const ganhoCheio = xpDaRodada(apostado, minimoDoDegrau);
+    if (ganhoCheio <= 0) return null;
+
+    return this.gravarExperiencia(userId, ganhoCheio, hoje);
+  }
+
+  /**
+   * Grava o XP já calculado, aplicando o teto do dia, tudo numa transação só.
+   *
+   * Separado de `somarExperienciaDaRodada` porque o teto e a corrida pela linha são a
+   * mesma coisa nos dois caminhos (o normal e o do piso), e duplicar um `FOR UPDATE` é
+   * duplicar o lugar onde uma condição de corrida pode nascer.
+   */
+  private async gravarExperiencia(
+    userId: string,
+    ganhoCheio: number,
+    hoje: string,
+  ): Promise<ProgressoDaRodada | null> {
     return this.db.transaction(async (client) => {
-      const { rows } = await client.query<{ level: number; xp: number }>(
-        'SELECT level, xp FROM users WHERE id = $1 FOR UPDATE',
+      const { rows } = await client.query<{ level: number; xp: number; xp_do_dia: number; xp_do_dia_em: string | null }>(
+        'SELECT level, xp, xp_do_dia, xp_do_dia_em FROM users WHERE id = $1 FOR UPDATE',
         [userId],
       );
       if (rows.length === 0) return null;
 
+      /*
+       * O contador se zera sozinho: se o dia gravado não é hoje, o que está lá é de
+       * ontem. Sem isto seria preciso uma tarefa agendada zerando a coluna de todo mundo
+       * à meia-noite — trabalho recorrente que falha em silêncio quando o processo está
+       * fora do ar.
+       */
+      const jaHoje = normalizarDia(rows[0].xp_do_dia_em) === hoje ? Math.max(0, rows[0].xp_do_dia) : 0;
+      const cabe = Math.max(0, XP_MAXIMO_POR_DIA - jaHoje);
+      const ganho = Math.min(ganhoCheio, cabe);
+
+      /*
+       * Bateu no teto: nada muda, mas o dia fica gravado. Devolver o progresso parado (e
+       * não `null`) é o que permite à tela dizer "você já alcançou o máximo de hoje" em
+       * vez de simplesmente não mexer a barra e deixar a pessoa achando que travou.
+       */
+      if (ganho <= 0) {
+        await client.query('UPDATE users SET xp_do_dia = $2, xp_do_dia_em = $3 WHERE id = $1', [userId, jaHoje, hoje]);
+        return {
+          level: rows[0].level,
+          xp: rows[0].xp,
+          xpToNextLevel: xpDoNivel(rows[0].level),
+          subiuNiveis: 0,
+          noTopo: false,
+          ganho: 0,
+          xpDoDia: jaHoje,
+          noTetoDoDia: true,
+        };
+      }
+
       const progresso = somarXp(rows[0].level, rows[0].xp, ganho);
-      await client.query('UPDATE users SET level = $2, xp = $3 WHERE id = $1', [
-        userId,
-        progresso.level,
-        progresso.xp,
-      ]);
-      return progresso;
+      await client.query(
+        'UPDATE users SET level = $2, xp = $3, xp_do_dia = $4, xp_do_dia_em = $5 WHERE id = $1',
+        [userId, progresso.level, progresso.xp, jaHoje + ganho, hoje],
+      );
+      return { ...progresso, ganho, xpDoDia: jaHoje + ganho, noTetoDoDia: jaHoje + ganho >= XP_MAXIMO_POR_DIA };
     });
   }
 
@@ -283,6 +383,17 @@ export class UsersService {
     if (!linha) throw new NotFoundException('Usuário não encontrado.');
     return paraUsuario(linha);
   }
+}
+
+/**
+ * A coluna `DATE` volta do driver como `Date` ou como texto, conforme a configuração do
+ * `pg`. Os dois viram `AAAA-MM-DD` aqui, e nenhum passa por fuso local no caminho — um
+ * `Date` reinterpretado no fuso da máquina perde um dia em metade do planeta.
+ */
+function normalizarDia(valor: string | Date | null): string | null {
+  if (valor === null || valor === undefined) return null;
+  if (valor instanceof Date) return valor.toISOString().slice(0, 10);
+  return String(valor).slice(0, 10);
 }
 
 function paraUsuario(linha: LinhaUsuario): User {

@@ -39,7 +39,8 @@ export class SlotsService {
    * só mostra o que o servidor sorteou.
    */
   async playSpin(userId: string, bet: number, actionId?: string) {
-    const problema = problemaComAAposta(bet, await this.walletService.balanceOf(userId));
+    const saldoAntes = await this.walletService.balanceOf(userId);
+    const problema = problemaComAAposta(bet, saldoAntes);
     if (problema) throw new BadRequestException(problema);
 
     /*
@@ -60,7 +61,7 @@ export class SlotsService {
       if (result.totalWin > 0) {
         await this.walletService.credit(userId, result.totalWin, 'premio', GAME_ID, undefined, rodada.id);
       }
-      await this.tournaments.recordRound(userId, GAME_ID, bet, result.totalWin);
+      await this.tournaments.recordRound(userId, GAME_ID, bet, result.totalWin, saldoAntes);
       await rodada.terminar({
         resultado: { grade: result.grid, linhas: result.winningLines.map((l) => l.payline) },
         apostado: bet,

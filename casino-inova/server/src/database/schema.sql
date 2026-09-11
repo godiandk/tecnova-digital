@@ -303,3 +303,23 @@ CREATE TABLE IF NOT EXISTS eventos_da_rodada (
 -- "O que este jogador fez nesta rodada" e "onde ele estava quando reclamou".
 CREATE INDEX IF NOT EXISTS eventos_usuario_idx ON eventos_da_rodada (usuario_id, em DESC)
   WHERE usuario_id IS NOT NULL;
+
+-- --- O teto diário de XP ---
+--
+-- Duas colunas na própria linha do usuário, e não uma tabela de histórico, porque a
+-- única pergunta que o teto faz é "quanto já subiu HOJE". O histórico de XP ganho por
+-- rodada já existe: cada rodada está em `rodadas` com o que foi apostado, e o XP sai do
+-- apostado por uma função pura.
+--
+-- `xp_do_dia_em` guarda de QUE DIA é o contador. Sem ela seria preciso uma tarefa
+-- agendada zerando `xp_do_dia` de todo mundo à meia-noite — que é trabalho recorrente,
+-- falha em silêncio quando o processo está fora do ar, e dá a todos a mesma meia-noite.
+-- Com a data junto, o contador se zera sozinho na primeira rodada de cada dia: se o dia
+-- gravado não é hoje, o que estava lá era de ontem e não conta.
+--
+-- O DIA É EM UTC e vem do código (`src/comum/dia-do-servidor.ts`), nunca de
+-- `CURRENT_DATE`. `CURRENT_DATE` é a data no fuso do BANCO — trocar o fuso do servidor
+-- moveria a virada do dia pra todo mundo de uma vez, e horário de verão daria dias de 23
+-- e de 25 horas. A régua do dia está escrita em um lugar só, em código, onde se lê.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS xp_do_dia    INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS xp_do_dia_em DATE;

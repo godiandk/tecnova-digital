@@ -30,6 +30,12 @@ export type TableVisibility = 'publica' | 'privada';
 export type Team = 'A' | 'B';
 
 export interface DominoSeat {
+  /**
+   * O saldo de quem sentou, ANTES do débito do buy-in — é o degrau em que a pessoa
+   * estava, e é o degrau que transforma ficha em XP quando a partida acabar.
+   */
+  saldoAntes: number;
+
   seatIndex: number;
   userId: string;
   name: string;
@@ -105,7 +111,7 @@ export class DominoTableService {
       visibility,
       hostUserId,
       buyIn,
-      seats: [{ seatIndex: 0, userId: hostUserId, name: host.name, isBot: false, team: 'A', hand: [] }],
+      seats: [{ seatIndex: 0, userId: hostUserId, name: host.name, isBot: false, team: 'A', hand: [], saldoAntes: 0 }],
       started: false,
       score: { A: 0, B: 0 },
       board: [],
@@ -159,6 +165,8 @@ export class DominoTableService {
       isBot: true,
       team: teamOfSeat(seatIndex),
       hand: [],
+      /* Preenchido no débito do buy-in, antes de a partida começar. */
+      saldoAntes: 0,
     });
     return table;
   }
@@ -177,7 +185,10 @@ export class DominoTableService {
       }
     }
     for (const seat of table.seats) {
-      if (!seat.isBot) await this.walletService.debit(seat.userId, table.buyIn, 'aposta', GAME_ID);
+      if (seat.isBot) continue;
+      /* Lido ANTES do débito: depois dele o saldo já não é o de quem sentou. */
+      seat.saldoAntes = await this.walletService.balanceOf(seat.userId);
+      await this.walletService.debit(seat.userId, table.buyIn, 'aposta', GAME_ID);
     }
 
     table.started = true;
@@ -452,7 +463,7 @@ export class DominoTableService {
       for (const seat of winners) await this.walletService.credit(seat.userId, share, 'premio', GAME_ID);
       for (const seat of table.seats) {
         if (seat.isBot) continue;
-        await this.tournaments.recordRound(seat.userId, GAME_ID, table.buyIn, seat.team === winner ? share : 0);
+        await this.tournaments.recordRound(seat.userId, GAME_ID, table.buyIn, seat.team === winner ? share : 0, seat.saldoAntes);
       }
       table.lastEvent = `${table.lastEvent ?? ''} Dupla ${winner} venceu a partida!`.trim();
       return;
@@ -569,7 +580,7 @@ export class DominoTableService {
 
     const user = (await this.requireUser(userId));
     const seatIndex = this.nextFreeSeat(table);
-    table.seats.push({ seatIndex, userId, name: user.name, isBot: false, team: teamOfSeat(seatIndex), hand: [] });
+    table.seats.push({ seatIndex, userId, name: user.name, isBot: false, team: teamOfSeat(seatIndex), hand: [], saldoAntes: 0 });
     return table;
   }
 

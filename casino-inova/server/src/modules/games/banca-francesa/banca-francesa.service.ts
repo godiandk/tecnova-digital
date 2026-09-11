@@ -288,6 +288,8 @@ export class BancaFrancesaService {
        * mesma conta no fim, mas o extrato ficaria mentindo sobre o tamanho da aposta:
        * quem pôs 100 na linha veria "apostou 50", e não foi isso que ele fez.
        */
+      /* Lido ANTES do débito: é o degrau de quem apostou que decide o XP da rodada. */
+      const saldoAntes = await this.walletService.balanceOf(userId);
       await this.walletService.debit(userId, totalStake, 'aposta', GAME_ID, actionId, rodada.rodadaId);
       if (totalReturn > 0) {
         await this.walletService.credit(
@@ -300,7 +302,7 @@ export class BancaFrancesaService {
         );
       }
       /* O torneio pontua pelo RISCO, que é o que a pessoa de fato pôs em jogo. */
-      await this.tournaments.recordRound(userId, GAME_ID, riscoTotal, totalReturn);
+      await this.tournaments.recordRound(userId, GAME_ID, riscoTotal, totalReturn, saldoAntes);
 
       await this.garantirNoBanco(rodada);
       await this.rodadasGuardadas.anotar(rodada.rodadaId, {

@@ -90,7 +90,7 @@ export class RouletteService {
       throw new BadRequestException(`No máximo ${MAXIMO_DE_APOSTAS_POR_RODADA} apostas por rodada.`);
     }
 
-    const saldo = await this.walletService.balanceOf(userId);
+    const saldoAntes = await this.walletService.balanceOf(userId);
     let total = 0;
     for (const aposta of apostas) {
       if (!TOTAL_MULTIPLIER[aposta.type]) throw new BadRequestException('Tipo de aposta inválido.');
@@ -100,13 +100,13 @@ export class RouletteService {
       ) {
         throw new BadRequestException('Aposta em número exato precisa de um número entre 0 e 36.');
       }
-      const problema = problemaComAAposta(aposta.amount, saldo);
+      const problema = problemaComAAposta(aposta.amount, saldoAntes);
       if (problema) throw new BadRequestException(problema);
       total += aposta.amount;
     }
-    if (total > saldo) {
+    if (total > saldoAntes) {
       throw new BadRequestException(
-        `Você tem ${saldo.toLocaleString('pt-BR')} fichas — a soma das apostas não pode passar disso.`,
+        `Você tem ${saldoAntes.toLocaleString('pt-BR')} fichas — a soma das apostas não pode passar disso.`,
       );
     }
 
@@ -141,7 +141,7 @@ export class RouletteService {
           porAposta: results.map((r) => ({ tipo: r.type, valor: r.amount, retorno: r.totalReturn })),
         },
       });
-      await this.tournaments.recordRound(userId, GAME_ID, total, totalReturn);
+      await this.tournaments.recordRound(userId, GAME_ID, total, totalReturn, saldoAntes);
 
       this.history.push(pocket);
       if (this.history.length > HISTORY_LIMIT) this.history.shift();

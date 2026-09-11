@@ -53,7 +53,8 @@ export class BaccaratService {
    * igual a slots e roleta, diferente do blackjack.
    */
   async playRound(userId: string, betType: BaccaratBetType, amount: number, actionId?: string) {
-    const problema = problemaComAAposta(amount, await this.walletService.balanceOf(userId));
+    const saldoAntes = await this.walletService.balanceOf(userId);
+    const problema = problemaComAAposta(amount, saldoAntes);
     if (problema) throw new BadRequestException(problema);
     if (!VALID_BET_TYPES.includes(betType)) {
       throw new BadRequestException('Tipo de aposta inválido — use jogador, banca ou empate.');
@@ -92,7 +93,7 @@ export class BaccaratService {
       if (totalReturn > 0) {
         await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID, undefined, rodada.id);
       }
-      await this.tournaments.recordRound(userId, GAME_ID, amount, totalReturn);
+      await this.tournaments.recordRound(userId, GAME_ID, amount, totalReturn, saldoAntes);
       await rodada.terminar({
         resultado: { vencedor: round.winner, jogador: round.playerTotal, banca: round.bankerTotal },
         apostado: amount,

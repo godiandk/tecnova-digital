@@ -8,6 +8,13 @@ import { BIG_BET, BIG_BLIND, Card, MAX_BUY_IN, MAX_RAISES_PER_STREET, MIN_BUY_IN
 type Street = 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
 
 interface PokerHand {
+  /**
+   * O saldo de quem sentou, ANTES do débito da entrada — é ele que diz o degrau da
+   * pessoa quando a partida acabar e o XP for somado. Guardado aqui porque a partida
+   * dura minutos, e no fim o saldo já não é mais o de quem sentou.
+   */
+  saldoAntes: number;
+
   userId: string;
   buyIn: number;
   playerStack: number;
@@ -76,6 +83,16 @@ export class PokerService {
       throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
     }
 
+    /*
+     * O SALDO DE ANTES DA ENTRADA, guardado na partida.
+     *
+     * Ele é lido aqui e não no fim porque a partida dura minutos: no fim, o saldo já
+     * passou pelo débito da entrada e por tudo que a pessoa fez em outra tela. O degrau
+     * que vale pro XP é o de quem sentou — e é ele que faz a entrada de truco valer o
+     * mesmo XP pra quem joga no Bronze e pra quem joga no Eclipse.
+     */
+    const saldoAntes = await this.walletService.balanceOf(userId);
+
     /* A RODADA É REGISTRADA ANTES DE O DINHEIRO SE MEXER. Ver MaquinaDeRodada. */
     const rodada = await this.maquina.comecar({ jogo: GAME_ID, usuarioId: userId, apostas: { entrada: buyIn } });
     this.rodadaDaPartida.set(userId, rodada);
@@ -83,6 +100,7 @@ export class PokerService {
     const deck = shuffle(buildDeck());
     const match: PokerHand = {
       userId,
+      saldoAntes,
       buyIn,
       playerStack: buyIn - SMALL_BLIND,
       botStack: buyIn - BIG_BLIND,
@@ -251,7 +269,7 @@ export class PokerService {
       );
     }
     // O buy-in virou o stack da mão; o que sobrou dele é o retorno.
-    await this.tournaments.recordRound(match.userId, GAME_ID, match.buyIn, match.playerStack);
+    await this.tournaments.recordRound(match.userId, GAME_ID, match.buyIn, match.playerStack, match.saldoAntes);
 
     const rodada = this.rodadaDaPartida.get(match.userId);
     if (rodada) {

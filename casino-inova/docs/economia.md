@@ -449,5 +449,78 @@ pela metade, senão a inversão fica pior.
 
 ---
 
-**Nada disto está implementado.** Aprovando, a ordem é: XP → `economicTier` → apostas →
-loja → recompensa diária, sobre a mesma fundação.
+A ordem de execução é: XP → `economicTier` → apostas → loja → recompensa diária, sobre a
+mesma fundação.
+
+---
+
+# K. O que já está implementado, e onde a implementação divergiu da proposta
+
+Esta seção é o registro do que saiu do papel. Ela existe para que a proposta acima não
+vire a versão "oficial" de coisas que o código faz diferente.
+
+## Etapa 1 — XP (feita)
+
+| Peça | Onde | Estado |
+|---|---|---|
+| Curva `50 × ln(1+r) / ln(21)`, com `r = aposta / mínimo do degrau` | `progressao/niveis.ts` | feito |
+| Custo do nível `197 × √N` | `progressao/niveis.ts` | feito |
+| Teto de 60.000 XP por dia, com o dia zerando sozinho | `users.service.ts` + `users.xp_do_dia` | feito |
+| Nível máximo 10.000 de verdade, no código | `NIVEL_MAXIMO` | feito |
+| XP ligado aos dez jogos e às três salas | `tournaments.recordRound` | feito |
+| Régua de dia única, em UTC | `comum/dia-do-servidor.ts` | feito |
+| 6 conferências de XP + 5 de calendário + 5 de ponta a ponta | `verify-xp`, `verifica-dia-do-servidor`, `verify-tournaments` | feito |
+
+### Três coisas que a implementação descobriu, e que a proposta não previa
+
+**1. A barra JÁ andava.** A auditoria dizia que `xpDaRodada` era chamado só no torneio e
+que os dez jogos não davam XP. Errado: `recordRound` é o funil, e os dez jogos e as três
+salas passam por ele. O defeito real era outro e mais sutil — a conta antiga olhava só o
+NÚMERO DE FICHAS, e número de fichas depende do degrau. Quem comprava fichas e subia de
+mesa apostava mais fichas pela mesma jogada, e subia de nível mais rápido. Era
+pay-to-level, só que por acidente.
+
+**2. A trava de 100 níveis por chamada estourava a barra.** `somarXp` parava de subir
+depois de cem níveis numa chamada só. Dez milhões de XP de uma vez levavam ao nível 102
+com **9.865.741 de XP sobrando** numa barra que segura 1.990 — cheia muito além do fim. O
+teto certo não é "cem por vez", é o topo da escada: `NIVEL_MAXIMO = 10.000`. Acima dele o
+XP some, e isso está dito no código: não existe nível pra comprar com ele.
+
+**3. Um piso de 1 XP por rodada.** Quem desce um degrau pra jogar barato num dia ruim
+aposta muito abaixo do mínimo do próprio degrau; `r` fica em 0,02 e a conta arredondava
+pra **zero**. Uma rodada jogada de verdade valendo zero parece defeito. O piso não dá pra
+farmar: a 1 XP por rodada seriam 60.000 rodadas pra encher o teto do dia, contra 5.455
+apostando o mínimo do próprio degrau.
+
+### O guarda do saldo
+
+O XP precisa do saldo de ANTES da rodada, e a direção do erro importa: saldo alto = degrau
+alto = mínimo alto = **menos** XP pela mesma ficha. Quem quisesse fraudar isto quereria o
+saldo **baixo**. Então um saldo que não se sustenta (menor que a própria aposta — que é
+impossível) paga o **piso**, não o máximo, e fica registrado como defeito de programação.
+
+Foi por isso que o saldo de antes virou parâmetro **obrigatório** de `recordRound`: um
+valor padrão silencioso ali seria um jogo novo passando o degrau errado sem ninguém
+perceber. Exigido, o compilador acha.
+
+### Os números, conferidos rodando
+
+| | XP/dia | nível 20 | nível 100 | nível 1.000 | nível 10.000 |
+|---|---|---|---|---|---|
+| casual (30 rodadas no mínimo) | 330 | 34 d | 13 meses | 34 anos | — |
+| médio (150 rodadas em 5×) | 4.350 | 3 d | 30 d | 3 anos | 83 anos |
+| pesado (batendo o teto diário) | 60.000 | 5 h | 2 d | 69 d | **6,0 anos** |
+
+- aposta mínima: **11 XP**; ficha maior (20×): **50 XP** — 4,5× por rodada
+- por ficha, o mínimo rende **4,4×** mais que a ficha maior (a fórmula antiga dava **29×**)
+- primeiro nível em **18 rodadas** de aposta mínima
+- teto do dia: **5.455** rodadas no mínimo ou **1.200** na ficha maior — o mesmo lugar
+
+**Oito mutações deliberadas foram testadas** (divisor fixo, teto por rodada acima do custo
+do nível 1, curva de custo antiga, teto diário solto, subir um nível por chamada, sem teto
+de nível, `noTopo` sempre falso, curva reta) e **as oito foram pegas** pelas conferências.
+
+## Etapas 2 a 5 — ainda não
+
+`economicTier`, apostas, loja e recompensa diária seguem como estão escritos acima.
+

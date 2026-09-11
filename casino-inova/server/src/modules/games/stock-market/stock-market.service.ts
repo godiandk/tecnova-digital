@@ -44,7 +44,8 @@ export class StockMarketService {
     if (!DIRECTIONS.includes(bet?.direction)) {
       throw new BadRequestException('Aposte em "alta" ou "baixa".');
     }
-    const problema = problemaComAAposta(bet.amount, await this.walletService.balanceOf(userId));
+    const saldoAntes = await this.walletService.balanceOf(userId);
+    const problema = problemaComAAposta(bet.amount, saldoAntes);
     if (problema) throw new BadRequestException(problema);
 
     /*
@@ -67,7 +68,7 @@ export class StockMarketService {
       if (result.totalReturn > 0) {
         await this.walletService.credit(userId, result.totalReturn, 'premio', GAME_ID, undefined, rodada.id);
       }
-      await this.tournaments.recordRound(userId, GAME_ID, bet.amount, result.totalReturn);
+      await this.tournaments.recordRound(userId, GAME_ID, bet.amount, result.totalReturn, saldoAntes);
       await rodada.terminar({
         resultado: { fechamento: round.closePercent },
         apostado: bet.amount,
