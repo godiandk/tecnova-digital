@@ -2,7 +2,6 @@ import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common
 import { TrucoResponse, TrucoService } from './truco.service';
 import { Card, TrucoSignalId, TrucoStyle, TrucoVariant } from './truco.config';
 import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
-import { Publico } from '../../auth/auth.guard';
 import { AcaoDto } from '../shared/acao.dto';
 
 const VALID_RESPONSES: TrucoResponse[] = ['aceitar', 'correr', 'aumentar'];
@@ -34,10 +33,13 @@ class RespondTrucoDto extends UserIdDto {
 export class TrucoController {
   constructor(private readonly trucoService: TrucoService) {}
 
-  @Publico()
+  /*
+   * DEIXOU DE SER PÚBLICO: a faixa de entrada agora é do degrau de quem pergunta, e degrau
+   * depende de saldo e nível — dois dados que só existem com alguém identificado.
+   */
   @Get('config')
-  getConfig() {
-    return this.trucoService.getConfig();
+  getConfig(@UsuarioAtual() usuarioLogado: string) {
+    return this.trucoService.getConfig(usuarioLogado);
   }
 
   @Post('nova-partida')

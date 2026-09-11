@@ -25,6 +25,7 @@ import {
 import { CartaComNaipe, nomeDaCarta } from '../shared/naipes';
 import { Sapata } from '../shared/sapata';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
+import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
 
 type Carta = CartaComNaipe<Rank>;
 
@@ -98,6 +99,7 @@ export class BlackjackService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
   private readonly maquina: MaquinaDeRodada,
   ) {}
@@ -129,8 +131,13 @@ export class BlackjackService {
     if (existente && !existente.finished) {
       throw new BadRequestException('Você já tem uma mão em andamento — termine ela antes de apostar de novo.');
     }
-    const saldoAntes = await this.walletService.balanceOf(userId);
-    const problema = problemaComAAposta(bet, saldoAntes);
+    /*
+     * Quem é esta pessoa economicamente: saldo, nível e o degrau que os dois liberam.
+     * O degrau é `min(o que o saldo banca, o que o nível liberou)` — comprar fichas dá
+     * mais rodadas na mesa dela, não passagem pra mesa de cima.
+     */
+    const quem = await this.degraus.de(userId);
+    const problema = problemaComAAposta(bet, quem.saldo, quem.nivel);
     if (problema) throw new BadRequestException(problema);
 
     /*
@@ -155,7 +162,7 @@ export class BlackjackService {
     const d2 = sapata.comprar();
 
     const mesa: EstadoDaMesa = {
-      saldoAntes,
+      saldoAntes: quem.saldo,
       apostaInicial: bet,
       maos: [{ cartas: [p1, p2], aposta: bet, dobrada: false, deSplit: false, deSplitDeAses: false, encerrada: false }],
       maoAtual: 0,

@@ -11,10 +11,10 @@ import {
   RoundResult,
   shuffle,
 } from '../games/truco/truco.engine';
+import { DegrauDoJogador } from '../games/shared/degrau-do-jogador.service';
+import { problemaComAEntrada } from '../games/shared/niveis-de-mesa';
 import {
   Card,
-  MAX_BUY_IN,
-  MIN_BUY_IN,
   nextHandValue,
   TRUCO_SIGNALS,
   TrucoRank,
@@ -110,6 +110,7 @@ export class TrucoTableService {
   constructor(
     private readonly usersService: UsersService,
     private readonly walletService: WalletService,
+    private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
   ) {}
 
@@ -121,9 +122,13 @@ export class TrucoTableService {
 
     if (!VARIANT_RULES[variant]) throw new BadRequestException('Variante inválida.');
     if (style !== 'sujo' && style !== 'limpo') throw new BadRequestException('Estilo inválido.');
-    if (!Number.isFinite(buyIn) || buyIn < MIN_BUY_IN || buyIn > MAX_BUY_IN) {
-      throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
-    }
+    /*
+     * A ENTRADA CABE NO DEGRAU DE QUEM ABRE A MESA. Era `100 a 5.000` pra todo mundo, de
+     * quem acabou de criar a conta a quem tem cinco quatrilhões.
+     */
+    const anfitriao = await this.degraus.de(hostUserId);
+    const problemaDaEntrada = problemaComAEntrada(buyIn, anfitriao.saldo, anfitriao.nivel);
+    if (problemaDaEntrada) throw new BadRequestException(problemaDaEntrada);
 
     const host = (await this.requireUser(hostUserId));
     const table: TrucoOnlineTable = {
@@ -626,6 +631,16 @@ export class TrucoTableService {
     if (table.seats.some((seat) => seat.userId === userId)) return table;
     if (table.started) throw new BadRequestException('A partida já começou.');
     if (table.seats.length >= SEATS) throw new BadRequestException('Mesa cheia.');
+
+    /*
+     * E CABE NO DEGRAU DE QUEM SENTA, não só no de quem abriu. Sem esta linha, um jogador
+     * Bronze convidado por link entraria numa mesa de entrada Eclipse: ou o débito falha
+     * no começo da partida (e a mesa trava esperando quem não pode pagar), ou ele paga uma
+     * entrada que é a banca inteira dele numa mesa que não é a dele.
+     */
+    const quem = await this.degraus.de(userId);
+    const problemaDaEntrada = problemaComAEntrada(table.buyIn, quem.saldo, quem.nivel);
+    if (problemaDaEntrada) throw new BadRequestException(problemaDaEntrada);
 
     const user = (await this.requireUser(userId));
     const seatIndex = this.nextFreeSeat(table);

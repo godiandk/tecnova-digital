@@ -16,11 +16,10 @@ import { Carta } from '../../components/Carta';
 import { ApiError } from '../../api/client';
 import { fetchPokerConfig, newPokerHand, actPoker, PokerConfig, PokerHandState, PokerCard, PokerAction } from '../../api/poker';
 import { usePlayer } from '../../data/usePlayer';
+import { SeletorDeEntrada } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Poker'>;
-
-const BUY_IN_STEP = 100;
 
 /** Largura da carta. Cinco do board cabem lado a lado num celular estreito. */
 const LARGURA_DA_CARTA = 54;
@@ -78,7 +77,8 @@ export function PokerScreen({ navigation }: Props) {
     fetchPokerConfig()
       .then((data) => {
         setConfig(data);
-        setBuyIn(Math.max(data.minBuyIn, Math.min(1000, data.maxBuyIn)));
+        /* Abre na entrada mais barata do degrau — nunca num valor que o saldo não cobre. */
+        setBuyIn(data.entradas[0]?.entrada ?? data.minBuyIn);
       })
       .catch((error: unknown) => {
         setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
@@ -97,11 +97,6 @@ export function PokerScreen({ navigation }: Props) {
     } finally {
       setBusy(false);
     }
-  };
-
-  const adjustBuyIn = (delta: number) => {
-    if (!config) return;
-    setBuyIn((current) => Math.max(config.minBuyIn, Math.min(config.maxBuyIn, current + delta)));
   };
 
   const inHand = Boolean(hand && !hand.finished);
@@ -160,18 +155,13 @@ export function PokerScreen({ navigation }: Props) {
                 </View>
               </View>
             )}
-            <View style={styles.betRow}>
-              <Pressable onPress={() => adjustBuyIn(-BUY_IN_STEP)} style={styles.betButton} disabled={busy}>
-                <Ionicons name="remove" size={20} color={colors.textPrimary} />
-              </Pressable>
-              <View style={styles.betValue}>
-                <Text style={styles.betLabel}>Buy-in (cegas {config.smallBlind}/{config.bigBlind})</Text>
-                <Text style={styles.betAmount}>{buyIn.toLocaleString('pt-BR')}</Text>
-              </View>
-              <Pressable onPress={() => adjustBuyIn(BUY_IN_STEP)} style={styles.betButton} disabled={busy}>
-                <Ionicons name="add" size={20} color={colors.textPrimary} />
-              </Pressable>
-            </View>
+            <SeletorDeEntrada
+              opcoes={config.entradas}
+              valor={buyIn}
+              aoMudar={setBuyIn}
+              legenda="o stack da mão"
+              travado={busy}
+            />
             {actionError && <Text style={styles.errorText}>{actionError}</Text>}
             <Pressable onPress={() => run(() => newPokerHand(buyIn))} disabled={busy} style={[styles.primaryButton, busy && styles.buttonDisabled]}>
               {busy ? <ActivityIndicator color={colors.background} /> : <Text style={styles.primaryButtonLabel}>Começar mão</Text>}
@@ -253,20 +243,6 @@ const styles = StyleSheet.create({
   resultLoss: { color: colors.textFaint },
   resultDraw: { color: colors.textSecondary },
   handLabelText: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
-  betRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  betButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 20,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  betValue: { alignItems: 'center', minWidth: 200 },
-  betLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  betAmount: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
   matchBlock: { width: '100%', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md },
   score: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, color: colors.textPrimary },
   stacksText: { fontFamily: fontFamily.body, fontSize: fontSize.sm, color: colors.textSecondary },

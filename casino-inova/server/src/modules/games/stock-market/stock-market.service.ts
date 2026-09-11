@@ -5,6 +5,7 @@ import { resolveBet, runRound, StockBet, theoreticalRtp } from './stock-market.e
 import { COMMISSION, MAX_CHANGE_PERCENT, StockDirection, TICKS_PER_ROUND } from './stock-market.config';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 import { MaquinaDeRodada } from '../core/maquina-de-rodada';
+import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 const DIRECTIONS: StockDirection[] = ['alta', 'baixa'];
@@ -19,6 +20,7 @@ export class StockMarketService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
     private readonly acoes: AcoesRepetidas,
     private readonly maquina: MaquinaDeRodada,
@@ -44,8 +46,13 @@ export class StockMarketService {
     if (!DIRECTIONS.includes(bet?.direction)) {
       throw new BadRequestException('Aposte em "alta" ou "baixa".');
     }
-    const saldoAntes = await this.walletService.balanceOf(userId);
-    const problema = problemaComAAposta(bet.amount, saldoAntes);
+    /*
+     * Quem é esta pessoa economicamente: saldo, nível e o degrau que os dois liberam.
+     * O degrau é `min(o que o saldo banca, o que o nível liberou)` — comprar fichas dá
+     * mais rodadas na mesa dela, não passagem pra mesa de cima.
+     */
+    const quem = await this.degraus.de(userId);
+    const problema = problemaComAAposta(bet.amount, quem.saldo, quem.nivel);
     if (problema) throw new BadRequestException(problema);
 
     /*
@@ -68,7 +75,7 @@ export class StockMarketService {
       if (result.totalReturn > 0) {
         await this.walletService.credit(userId, result.totalReturn, 'premio', GAME_ID, undefined, rodada.id);
       }
-      await this.tournaments.recordRound(userId, GAME_ID, bet.amount, result.totalReturn, saldoAntes);
+      await this.tournaments.recordRound(userId, GAME_ID, bet.amount, result.totalReturn, quem.saldo);
       await rodada.terminar({
         resultado: { fechamento: round.closePercent },
         apostado: bet.amount,

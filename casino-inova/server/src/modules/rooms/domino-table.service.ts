@@ -3,7 +3,9 @@ import { UsersService } from '../users/users.service';
 import { WalletService } from '../wallet/wallet.service';
 import { TournamentsService } from '../tournaments/tournaments.service';
 import { BoardEnd, canPlay, otherEnd, shuffle, tileMatches, tileSum } from '../games/domino/domino.engine';
-import { buildTileSet, HAND_SIZE, MAX_BUY_IN, MIN_BUY_IN, Tile } from '../games/domino/domino.config';
+import { buildTileSet, HAND_SIZE, Tile } from '../games/domino/domino.config';
+import { DegrauDoJogador } from '../games/shared/degrau-do-jogador.service';
+import { problemaComAEntrada } from '../games/shared/niveis-de-mesa';
 import { generateTableCode } from './table-code';
 
 /**
@@ -95,14 +97,19 @@ export class DominoTableService {
   constructor(
     private readonly usersService: UsersService,
     private readonly walletService: WalletService,
+    private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
   ) {}
 
   async createTable(hostUserId: string, options: { visibility: TableVisibility; buyIn: number }): Promise<DominoOnlineTable> {
     const { visibility, buyIn } = options;
-    if (!Number.isFinite(buyIn) || buyIn < MIN_BUY_IN || buyIn > MAX_BUY_IN) {
-      throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
-    }
+    /*
+     * A ENTRADA CABE NO DEGRAU DE QUEM ABRE A MESA. Era `100 a 5.000` pra todo mundo, de
+     * quem acabou de criar a conta a quem tem cinco quatrilhões.
+     */
+    const anfitriao = await this.degraus.de(hostUserId);
+    const problema = problemaComAEntrada(buyIn, anfitriao.saldo, anfitriao.nivel);
+    if (problema) throw new BadRequestException(problema);
 
     const host = (await this.requireUser(hostUserId));
     const table: DominoOnlineTable = {
@@ -577,6 +584,16 @@ export class DominoTableService {
     if (table.seats.some((seat) => seat.userId === userId)) return table;
     if (table.started) throw new BadRequestException('A partida já começou.');
     if (table.seats.length >= SEATS) throw new BadRequestException('Mesa cheia.');
+
+    /*
+     * E CABE NO DEGRAU DE QUEM SENTA, não só no de quem abriu. Sem esta linha, um jogador
+     * Bronze convidado por link entraria numa mesa de entrada Eclipse: ou o débito falha
+     * no começo da partida (e a mesa trava esperando quem não pode pagar), ou ele paga uma
+     * entrada que é a banca inteira dele numa mesa que não é a dele.
+     */
+    const quem = await this.degraus.de(userId);
+    const problema = problemaComAEntrada(table.buyIn, quem.saldo, quem.nivel);
+    if (problema) throw new BadRequestException(problema);
 
     const user = (await this.requireUser(userId));
     const seatIndex = this.nextFreeSeat(table);

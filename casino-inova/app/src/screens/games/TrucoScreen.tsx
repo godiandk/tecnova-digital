@@ -26,11 +26,10 @@ import {
   TrucoVariantRules,
 } from '../../api/truco';
 import { usePlayer } from '../../data/usePlayer';
+import { SeletorDeEntrada } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Truco'>;
-
-const BUY_IN_STEP = 100;
 
 /** Largura da carta. Três na mão e duas na mesa, num celular estreito. */
 const LARGURA_DA_CARTA = 62;
@@ -85,7 +84,8 @@ export function TrucoScreen({ navigation, route }: Props) {
     fetchTrucoConfig()
       .then((data) => {
         setConfig(data);
-        setBuyIn(Math.max(data.minBuyIn, Math.min(200, data.maxBuyIn)));
+        /* Abre na entrada mais barata do degrau — nunca num valor que o saldo não cobre. */
+        setBuyIn(data.entradas[0] ?? data.minBuyIn);
       })
       .catch((error: unknown) => {
         setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
@@ -104,11 +104,6 @@ export function TrucoScreen({ navigation, route }: Props) {
     } finally {
       setBusy(false);
     }
-  };
-
-  const adjustBuyIn = (delta: number) => {
-    if (!config) return;
-    setBuyIn((current) => Math.max(config.minBuyIn, Math.min(config.maxBuyIn, current + delta)));
   };
 
   const inMatch = Boolean(match && !match.finished);
@@ -154,18 +149,13 @@ export function TrucoScreen({ navigation, route }: Props) {
                 {match.matchOutcome === 'jogador' ? `Você venceu a partida ${match.playerScore} a ${match.botScore}!` : `O bot venceu ${match.botScore} a ${match.playerScore}.`}
               </Text>
             )}
-            <View style={styles.betRow}>
-              <Pressable onPress={() => adjustBuyIn(-BUY_IN_STEP)} style={styles.betButton} disabled={busy}>
-                <Ionicons name="remove" size={20} color={colors.textPrimary} />
-              </Pressable>
-              <View style={styles.betValue}>
-                <Text style={styles.betLabel}>Buy-in (paga ×2 se ganhar)</Text>
-                <Text style={styles.betAmount}>{buyIn.toLocaleString('pt-BR')}</Text>
-              </View>
-              <Pressable onPress={() => adjustBuyIn(BUY_IN_STEP)} style={styles.betButton} disabled={busy}>
-                <Ionicons name="add" size={20} color={colors.textPrimary} />
-              </Pressable>
-            </View>
+            <SeletorDeEntrada
+              opcoes={config.entradas.map((entrada) => ({ entrada }))}
+              valor={buyIn}
+              aoMudar={setBuyIn}
+              legenda="paga ×2 se ganhar"
+              travado={busy}
+            />
             {actionError && <Text style={styles.errorText}>{actionError}</Text>}
             <Pressable onPress={() => run(() => newTrucoMatch(buyIn, variante))} disabled={busy} style={[styles.primaryButton, busy && styles.buttonDisabled]}>
               {busy ? <ActivityIndicator color={colors.background} /> : <Text style={styles.primaryButtonLabel}>Começar partida</Text>}
@@ -323,20 +313,6 @@ const styles = StyleSheet.create({
   resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, textAlign: 'center', maxWidth: 280 },
   resultWin: { color: colors.goldBright },
   resultLoss: { color: colors.textFaint },
-  betRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  betButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 20,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  betValue: { alignItems: 'center', minWidth: 180 },
-  betLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  betAmount: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
   matchBlock: { width: '100%', alignItems: 'center', gap: spacing.md, marginTop: spacing.lg },
   score: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, color: colors.textPrimary },
   viraLinha: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

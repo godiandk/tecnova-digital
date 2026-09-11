@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../../navigation/types';
+import { type DominoConfig, fetchDominoConfig } from '../../api/domino';
 import { TABLE_IMAGES } from '../../data/tableImages';
 import { DOMINO_TILE_IMAGES } from '../../data/gameAssets';
 import { GameBackdrop } from '../../components/GameBackdrop';
@@ -30,6 +31,7 @@ import {
   startDominoMatch,
   Tile,
 } from '../../api/dominoMesa';
+import { SeletorDeEntrada } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DominoMesa'>;
@@ -49,7 +51,23 @@ export function DominoMesaScreen({ navigation }: Props) {
   const [table, setTable] = useState<DominoTableView | null>(null);
   const [publicTables, setPublicTables] = useState<DominoPublicTable[]>([]);
   const [codeInput, setCodeInput] = useState('');
-  const [buyIn, setBuyIn] = useState(200);
+  const [buyIn, setBuyIn] = useState(0);
+  /*
+   * A FAIXA DE ENTRADA VEM DO SERVIDOR, e esta tela não buscava nada: o seletor andava de
+   * cem em cem entre 100 e 5.000 escritos aqui dentro, para todo mundo. Agora ela pergunta,
+   * como a tela de mesa do truco já fazia.
+   */
+  const [config, setConfig] = useState<DominoConfig | null>(null);
+
+  useEffect(() => {
+    fetchDominoConfig()
+      .then((data) => {
+        setConfig(data);
+        /* Abre na entrada mais barata do degrau — nunca num valor que o saldo não cobre. */
+        setBuyIn(data.entradas[0] ?? data.minBuyIn);
+      })
+      .catch(() => { /* sem config, o seletor mostra a frase de "sem fichas" em vez de chutar */ });
+  }, []);
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -163,15 +181,13 @@ export function DominoMesaScreen({ navigation }: Props) {
                   Batida simples vale 1, carroça vale 2, lá-e-lô vale 3 e cruzada vale 4.
                 </Text>
 
-                <View style={styles.amountRow}>
-                  <Pressable onPress={() => setBuyIn((v) => Math.max(100, v - 100))} style={styles.stepButton}>
-                    <Ionicons name="remove" size={18} color={colors.textPrimary} />
-                  </Pressable>
-                  <Text style={styles.amountLabel}>{buyIn.toLocaleString('pt-BR')} fichas</Text>
-                  <Pressable onPress={() => setBuyIn((v) => Math.min(5000, v + 100))} style={styles.stepButton}>
-                    <Ionicons name="add" size={18} color={colors.textPrimary} />
-                  </Pressable>
-                </View>
+                <SeletorDeEntrada
+                  opcoes={(config?.entradas ?? []).map((entrada) => ({ entrada }))}
+                  valor={buyIn}
+                  aoMudar={setBuyIn}
+                  legenda="cada lugar paga o mesmo"
+                  travado={busy}
+                />
 
                 <View style={styles.buttonRow}>
                   <Pressable
@@ -407,18 +423,6 @@ const styles = StyleSheet.create({
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   cardTitle: { fontFamily: fontFamily.displaySemiBold, fontSize: fontSize.md, color: colors.textPrimary },
   cardHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
-  amountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md, marginTop: spacing.xs },
-  amountLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textPrimary, minWidth: 120, textAlign: 'center' },
-  stepButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   buttonRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs, flexWrap: 'wrap' },
   inputRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
   input: {

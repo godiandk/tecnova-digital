@@ -24,11 +24,10 @@ import {
   DominoEnd,
 } from '../../api/domino';
 import { usePlayer } from '../../data/usePlayer';
+import { SeletorDeEntrada } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Domino'>;
-
-const BUY_IN_STEP = 100;
 
 /** Dominó double-six: todas as combinações de 0 a 6, sem repetir — 28 peças. */
 const TOTAL_DE_PECAS = 28;
@@ -74,7 +73,8 @@ export function DominoScreen({ navigation }: Props) {
     fetchDominoConfig()
       .then((data) => {
         setConfig(data);
-        setBuyIn(Math.max(data.minBuyIn, Math.min(200, data.maxBuyIn)));
+        /* Abre na entrada mais barata do degrau — nunca num valor que o saldo não cobre. */
+        setBuyIn(data.entradas[0] ?? data.minBuyIn);
       })
       .catch((error: unknown) => {
         setConfigError(error instanceof ApiError ? error.message : 'Não foi possível falar com o servidor.');
@@ -94,11 +94,6 @@ export function DominoScreen({ navigation }: Props) {
     } finally {
       setBusy(false);
     }
-  };
-
-  const adjustBuyIn = (delta: number) => {
-    if (!config) return;
-    setBuyIn((current) => Math.max(config.minBuyIn, Math.min(config.maxBuyIn, current + delta)));
   };
 
   const inMatch = Boolean(match && !match.finished);
@@ -155,18 +150,13 @@ export function DominoScreen({ navigation }: Props) {
                 {match.matchOutcome === 'jogador' ? 'Você venceu a partida!' : match.matchOutcome === 'bot' ? 'O bot venceu.' : 'Empate — buy-in devolvido.'}
               </Text>
             )}
-            <View style={styles.betRow}>
-              <Pressable onPress={() => adjustBuyIn(-BUY_IN_STEP)} style={styles.betButton} disabled={busy}>
-                <Ionicons name="remove" size={20} color={colors.textPrimary} />
-              </Pressable>
-              <View style={styles.betValue}>
-                <Text style={styles.betLabel}>Buy-in (paga ×2 se ganhar)</Text>
-                <Text style={styles.betAmount}>{buyIn.toLocaleString('pt-BR')}</Text>
-              </View>
-              <Pressable onPress={() => adjustBuyIn(BUY_IN_STEP)} style={styles.betButton} disabled={busy}>
-                <Ionicons name="add" size={20} color={colors.textPrimary} />
-              </Pressable>
-            </View>
+            <SeletorDeEntrada
+              opcoes={config.entradas.map((entrada) => ({ entrada }))}
+              valor={buyIn}
+              aoMudar={setBuyIn}
+              legenda="paga ×2 se ganhar"
+              travado={busy}
+            />
             {actionError && <Text style={styles.errorText}>{actionError}</Text>}
             <Pressable onPress={() => run(() => newDominoMatch(buyIn))} disabled={busy} style={[styles.primaryButton, busy && styles.buttonDisabled]}>
               {busy ? <ActivityIndicator color={colors.background} /> : <Text style={styles.primaryButtonLabel}>Começar partida</Text>}
@@ -298,20 +288,6 @@ const styles = StyleSheet.create({
   resultWin: { color: colors.goldBright },
   resultLoss: { color: colors.textFaint },
   resultDraw: { color: colors.textSecondary },
-  betRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  betButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 20,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  betValue: { alignItems: 'center', minWidth: 180 },
-  betLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  betAmount: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
   matchBlock: { width: '100%', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md },
   score: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.textSecondary },
   boardEnds: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, color: colors.textPrimary },

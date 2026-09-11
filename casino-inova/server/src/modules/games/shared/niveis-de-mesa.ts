@@ -155,6 +155,53 @@ function degrau(indice: number): NivelDeMesa {
 export const NIVEIS_DE_MESA: NivelDeMesa[] = Array.from({ length: 12 }, (_, i) => degrau(i));
 
 /**
+ * O NÍVEL TAMBÉM ABRE MESA — e é isto que impede comprar passagem pro degrau de cima.
+ *
+ * O PROBLEMA, medido: a escada era só de saldo. Quem comprasse fichas subia de mesa na
+ * hora, e com o pacote de R$ 149,90 por mês subia UM DEGRAU POR MÊS — R$ 1.800 chegavam
+ * ao Eclipse em um ano, e depois não havia mais nada pra comprar. O jogo acabava pra
+ * quem pagou, e a progressão de nível não significava nada.
+ *
+ * A REGRA NOVA: o degrau da pessoa é o MENOR entre o que o saldo banca e o que o nível
+ * liberou. Comprar fichas passa a dar MAIS RODADAS NA MESA DELA, e não passagem pra mesa
+ * de cima. O freio é a progressão, e progressão não se compra (ver `progressao/niveis.ts`:
+ * o XP sai da aposta em unidades da mesa, então mesa alta não rende XP a mais).
+ *
+ * OS DOIS LADOS SÃO NECESSÁRIOS. Só saldo é a economia velha, com a catraca. Só nível
+ * deixaria alguém sentar numa mesa que não consegue pagar — e uma mesa que a pessoa não
+ * banca é uma mesa em que ela some na primeira aposta.
+ *
+ * OS NÍVEIS DE ABERTURA saem da curva de XP e não do gosto: cada um é onde o jogador
+ * regular alcança aquele degrau numa janela que faz sentido (tabela em docs/economia.md,
+ * seção D). O Eclipse abre no 10.000, que é o `NIVEL_MAXIMO` — os dois fins coincidem de
+ * propósito: a última mesa abre exatamente quando a escada de níveis acaba.
+ */
+export const NIVEL_PARA_ABRIR_O_DEGRAU = [1, 20, 50, 100, 200, 400, 700, 1_200, 2_000, 3_500, 6_000, 10_000];
+
+/** O degrau mais alto que este NÍVEL já liberou. */
+export function degrauDoNivel(nivel: number): NivelDeMesa {
+  const n = Number.isFinite(nivel) ? Math.floor(nivel) : 1;
+  let escolhido = NIVEIS_DE_MESA[0];
+  for (let i = 0; i < NIVEIS_DE_MESA.length; i += 1) {
+    if (n >= (NIVEL_PARA_ABRIR_O_DEGRAU[i] ?? Number.POSITIVE_INFINITY)) escolhido = NIVEIS_DE_MESA[i];
+  }
+  return escolhido;
+}
+
+/**
+ * O DEGRAU ECONÔMICO — o único que manda. Mesa, aposta, recompensa e loja saem daqui.
+ *
+ * `min(o que o saldo banca, o que o nível liberou)`, e o `min` é sobre a POSIÇÃO na
+ * escada e não sobre o mínimo em fichas: dá a mesma resposta hoje, e dá a resposta certa
+ * no dia em que alguém mexer na escada e ela deixar de ser crescente.
+ */
+export function degrauEconomico(saldo: number, nivel: number): NivelDeMesa {
+  const porSaldo = NIVEIS_DE_MESA.indexOf(nivelPara(saldo));
+  const porNivel = NIVEIS_DE_MESA.indexOf(degrauDoNivel(nivel));
+  return NIVEIS_DE_MESA[Math.min(porSaldo, porNivel)];
+}
+
+/**
  * A aposta cabe no nível de quem está apostando?
  *
  * Devolve a mensagem do problema, ou `null` quando está tudo certo. Não lança exceção
@@ -167,8 +214,8 @@ export const NIVEIS_DE_MESA: NivelDeMesa[] = Array.from({ length: 12 }, (_, i) =
  * conferida, e nenhum dos seis a lia. Quem tinha cem milhões continuava limitado a
  * cinco mil por aposta em todas as mesas.
  */
-export function problemaComAAposta(valor: number, saldo: number): string | null {
-  const nivel = nivelPara(saldo);
+export function problemaComAAposta(valor: number, saldo: number, nivelDoJogador: number): string | null {
+  const nivel = degrauEconomico(saldo, nivelDoJogador);
   if (!Number.isFinite(valor) || !Number.isInteger(valor)) {
     return 'Ficha não se parte — a aposta precisa ser um número inteiro.';
   }
@@ -206,9 +253,9 @@ export function nivelPara(saldo: number): NivelDeMesa {
   return escolhido;
 }
 
-/** Onde a pessoa pode jogar: o nível dela e o degrau logo abaixo. */
-export function niveisDisponiveis(saldo: number): NivelDeMesa[] {
-  const meu = nivelPara(saldo);
+/** Onde a pessoa pode jogar: o degrau econômico dela e o logo abaixo. */
+export function niveisDisponiveis(saldo: number, nivelDoJogador: number): NivelDeMesa[] {
+  const meu = degrauEconomico(saldo, nivelDoJogador);
   const i = NIVEIS_DE_MESA.indexOf(meu);
   return i === 0 ? [meu] : [NIVEIS_DE_MESA[i - 1], meu];
 }
@@ -221,8 +268,8 @@ export function nivelPorId(id: string): NivelDeMesa | undefined {
  * O nível vale pra esta pessoa? Recusar aqui é o que impede alguém de mandar
  * "nivel: bronze" na requisição com cinco milhões no bolso.
  */
-export function podeJogarNo(saldo: number, id: string): boolean {
-  return niveisDisponiveis(saldo).some((n) => n.id === id);
+export function podeJogarNo(saldo: number, nivelDoJogador: number, id: string): boolean {
+  return niveisDisponiveis(saldo, nivelDoJogador).some((n) => n.id === id);
 }
 
 /**
@@ -267,9 +314,64 @@ export const MESAS_DE_ENTRADA: MesaDeEntrada[] = NIVEIS_DE_MESA.map((n) => ({
   saldoMinimo: n.minimo * 20,
 }));
 
-export function mesasDeEntradaDisponiveis(saldo: number): MesaDeEntrada[] {
-  const permitidos = new Set(niveisDisponiveis(saldo).map((n) => n.id));
+export function mesasDeEntradaDisponiveis(saldo: number, nivelDoJogador: number): MesaDeEntrada[] {
+  const permitidos = new Set(niveisDisponiveis(saldo, nivelDoJogador).map((n) => n.id));
   return MESAS_DE_ENTRADA.filter((m) => permitidos.has(m.nivel) && saldo >= m.saldoMinimo);
+}
+
+/**
+ * A FAIXA DE ENTRADA DAS MESAS ENTRE JOGADORES — truco, dominó e pôquer.
+ *
+ * ESTES TRÊS JOGOS IGNORAVAM A ESCADA INTEIRA. O buy-in era `100 a 5.000`, escrito à mão
+ * em três arquivos de configuração e conferido em cinco lugares, igual pra todo mundo: o
+ * jogador Eclipse, com cinco quatrilhões no bolso, entrava numa partida de truco de cinco
+ * mil fichas — 0,0000000001% da banca dele. Uma partida inteira que não muda nada é uma
+ * partida que não vale a pena jogar, que é o mesmo defeito que a escada veio resolver nas
+ * mesas contra a casa.
+ *
+ * A FAIXA SAI DO DEGRAU ECONÔMICO, e os dois extremos têm significado:
+ *
+ *   mínimo — a aposta mínima do degrau mais barato em que a pessoa pode sentar. Ela pode
+ *            descer um degrau (a mesma regra das outras mesas), e o piso acompanha.
+ *   máximo — a ficha maior do degrau dela, que é 20x o mínimo. Uma partida custa, no
+ *            máximo, o que uma rodada cara custa numa mesa contra a casa.
+ *
+ * No Bronze isso dá 50 a 1.000, no lugar dos 100 a 5.000 de antes — e no Eclipse dá 500
+ * trilhões a 100 quatrilhões, que é o ponto.
+ */
+export interface FaixaDeEntrada {
+  minimo: number;
+  maximo: number;
+}
+
+export function faixaDeEntrada(saldo: number, nivelDoJogador: number): FaixaDeEntrada {
+  const onde = niveisDisponiveis(saldo, nivelDoJogador);
+  return { minimo: onde[0].minimo, maximo: onde[onde.length - 1].maximo };
+}
+
+/**
+ * A entrada cabe em quem vai sentar? Devolve a mensagem do problema, ou `null`.
+ *
+ * Mesma forma de `problemaComAAposta`, e pela mesma razão: isto é regra de economia e não
+ * conhece HTTP. Quem chama decide se vira 400 ou aviso na tela.
+ */
+export function problemaComAEntrada(buyIn: number, saldo: number, nivelDoJogador: number): string | null {
+  const faixa = faixaDeEntrada(saldo, nivelDoJogador);
+  if (!Number.isFinite(buyIn) || !Number.isInteger(buyIn)) {
+    return 'Ficha não se parte — a entrada precisa ser um número inteiro.';
+  }
+  if (buyIn < faixa.minimo || buyIn > faixa.maximo) {
+    return `A entrada precisa estar entre ${faixa.minimo.toLocaleString('pt-BR')} e ${faixa.maximo.toLocaleString('pt-BR')} fichas.`;
+  }
+  /*
+   * O SALDO PRECISA COBRIR A ENTRADA INTEIRA, e isto não é o mesmo que a faixa: quem
+   * acabou de cair pro fundo de um degrau tem o mínimo daquele degrau na faixa e pode não
+   * ter fichas pra pagar. Sem esta linha, o débito falharia DEPOIS de a mesa ser criada.
+   */
+  if (buyIn > saldo) {
+    return `Você tem ${saldo.toLocaleString('pt-BR')} fichas — a entrada não pode passar disso.`;
+  }
+  return null;
 }
 
 /**

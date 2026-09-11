@@ -11,6 +11,14 @@ export type PokerAction = 'desistir' | 'passar' | 'pagar' | 'aumentar';
 export type PokerStreet = 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
 
 export interface PokerConfig {
+  /**
+   * As entradas possíveis, prontas do servidor — as fichas do degrau da pessoa.
+   *
+   * `minBuyIn` e `maxBuyIn` continuam vindo pra quem só quer a faixa, mas quem desenha o
+   * seletor usa esta lista: com a faixa saindo do degrau, um par de `+` e `−` andando de
+   * cem em cem precisaria de um trilhão de toques nas mesas altas.
+   */
+  entradas: Array<{ entrada: number; smallBlind: number; bigBlind: number; smallBet: number; bigBet: number }>;
   minBuyIn: number;
   maxBuyIn: number;
   smallBlind: number;

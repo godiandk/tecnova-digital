@@ -5,6 +5,7 @@ import { spin, theoreticalRtp } from './slots.engine';
 import { MIN_MATCH, PAYLINES, REELS, ROWS, SLOT_SYMBOLS } from './slots.config';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 import { MaquinaDeRodada } from '../core/maquina-de-rodada';
+import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 /** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
@@ -14,6 +15,7 @@ const GAME_ID = 'slots';
 export class SlotsService {
   constructor(
     private readonly walletService: WalletService,
+    private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
     private readonly acoes: AcoesRepetidas,
     private readonly maquina: MaquinaDeRodada,
@@ -39,8 +41,13 @@ export class SlotsService {
    * só mostra o que o servidor sorteou.
    */
   async playSpin(userId: string, bet: number, actionId?: string) {
-    const saldoAntes = await this.walletService.balanceOf(userId);
-    const problema = problemaComAAposta(bet, saldoAntes);
+    /*
+     * Quem é esta pessoa economicamente: saldo, nível e o degrau que os dois liberam.
+     * O degrau é `min(o que o saldo banca, o que o nível liberou)` — comprar fichas dá
+     * mais rodadas na mesa dela, não passagem pra mesa de cima.
+     */
+    const quem = await this.degraus.de(userId);
+    const problema = problemaComAAposta(bet, quem.saldo, quem.nivel);
     if (problema) throw new BadRequestException(problema);
 
     /*
@@ -61,7 +68,7 @@ export class SlotsService {
       if (result.totalWin > 0) {
         await this.walletService.credit(userId, result.totalWin, 'premio', GAME_ID, undefined, rodada.id);
       }
-      await this.tournaments.recordRound(userId, GAME_ID, bet, result.totalWin, saldoAntes);
+      await this.tournaments.recordRound(userId, GAME_ID, bet, result.totalWin, quem.saldo);
       await rodada.terminar({
         resultado: { grade: result.grid, linhas: result.winningLines.map((l) => l.payline) },
         apostado: bet,

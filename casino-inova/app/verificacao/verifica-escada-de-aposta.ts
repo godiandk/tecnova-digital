@@ -18,9 +18,14 @@ import {
   ajustar, apostaInicial, atalhos, dobrar, metade, movimentosDe, podeApostar,
   toquesPara, tudo, type FaixaDeAposta,
 } from '../src/aposta/escada';
-import { degrauPara, faixaPara } from '../src/aposta/degrau';
+import { degrauEconomicoPara, degrauPara, faixaPara } from '../src/aposta/degrau';
 /* O servidor, de verdade: é contra ELE que a conta do cliente é comparada. */
-import { NIVEIS_DE_MESA, nivelPara, problemaComAAposta } from '../../server/src/modules/games/shared/niveis-de-mesa';
+import {
+  NIVEIS_DE_MESA,
+  NIVEL_PARA_ABRIR_O_DEGRAU,
+  degrauEconomico,
+  problemaComAAposta,
+} from '../../server/src/modules/games/shared/niveis-de-mesa';
 
 let passaram = 0;
 let falharam = 0;
@@ -36,6 +41,16 @@ function confere(oQue: string, teste: () => void): void {
     console.log(`         ${(erro as Error).message.split('\n')[0]}`);
   }
 }
+
+/**
+ * A escada como o servidor a PUBLICA em `/niveis/escada`: cada degrau com o nível que o
+ * abre. É contra ela que a conta do aplicativo é comparada — e é ela que o aplicativo
+ * recebe de verdade, então a conferência mede o mesmo dado que a tela usa.
+ */
+const escadaComNivel = NIVEIS_DE_MESA.map((n, i) => ({
+  ...n,
+  abreNoLevel: NIVEL_PARA_ABRIR_O_DEGRAU[i] ?? null,
+}));
 
 /** Um degrau como o servidor entrega: fichas = mínimo × [1, 2, 5, 10, 20]. */
 function degrau(minimo: number, saldo: number): FaixaDeAposta {
@@ -202,7 +217,6 @@ confere('o degrau escolhido é o MESMO do servidor, em toda a faixa de saldo', (
    * Varre as fronteiras (a entrada de cada degrau, e um a menos e um a mais) e uma
    * amostra larga no meio.
    */
-  const escada = NIVEIS_DE_MESA as unknown as Parameters<typeof degrauPara>[0];
   const saldos: number[] = [0, 1, 49, 50];
   for (const n of NIVEIS_DE_MESA) {
     saldos.push(n.saldoDeEntrada - 1, n.saldoDeEntrada, n.saldoDeEntrada + 1);
@@ -211,8 +225,9 @@ confere('o degrau escolhido é o MESMO do servidor, em toda a faixa de saldo', (
 
   for (const saldo of saldos) {
     if (saldo < 0) continue;
-    const doServidor = nivelPara(saldo);
-    const doCliente = degrauPara(escada, saldo);
+    /* Nível no topo: aqui a pergunta é só sobre o SALDO, com o nível fora do caminho. */
+    const doServidor = degrauEconomico(saldo, 10_000);
+    const doCliente = degrauPara(escadaComNivel, saldo);
     assert.equal(doCliente?.id, doServidor.id, `saldo ${saldo}: cliente ${doCliente?.id}, servidor ${doServidor.id}`);
     assert.equal(doCliente?.minimo, doServidor.minimo, `saldo ${saldo}: mínimo diferente`);
   }
@@ -225,9 +240,9 @@ confere('toda aposta que o seletor deixa montar, o servidor ACEITA', () => {
    * Um seletor que deixa montar uma aposta que o servidor nega é pior do que um seletor
    * limitado — a pessoa escolhe, confirma e toma erro.
    */
-  const escada = NIVEIS_DE_MESA as unknown as Parameters<typeof faixaPara>[0];
   for (const saldo of [50, 137, 5_000, 50_000, 999_999, 5_000_000, 12_345_678_901]) {
-    const faixa = faixaPara(escada, saldo);
+   for (const level of [1, 19, 20, 49, 50, 99, 100, 199, 200, 700, 2_000, 10_000]) {
+    const faixa = faixaPara(escadaComNivel, saldo, level);
     if (!podeApostar(faixa)) continue;
     let valor = apostaInicial(faixa);
     const vistos = new Set([valor]);
@@ -241,10 +256,34 @@ confere('toda aposta que o seletor deixa montar, o servidor ACEITA', () => {
       vistos.add(metade(faixa, alvo));
     }
     for (const v of vistos) {
-      const problema = problemaComAAposta(v, saldo);
-      assert.equal(problema, null, `saldo ${saldo}, aposta ${v}: ${problema}`);
+      const problema = problemaComAAposta(v, saldo, level);
+      assert.equal(problema, null, `saldo ${saldo}, nível ${level}, aposta ${v}: ${problema}`);
+    }
+   }
+  }
+});
+
+/*
+ * E A OUTRA METADE DO CICLO: o degrau que o aplicativo calcula é o MESMO que o servidor
+ * calcula, em toda combinação de saldo e nível. Sem isto, o seletor pode oferecer as
+ * fichas certas de uma mesa errada — e o erro só apareceria quando a pessoa apostasse.
+ */
+confere('o degrau do aplicativo é o mesmo do servidor, em saldo e nível', () => {
+  let comparados = 0;
+  for (const saldo of [0, 1, 49, 50, 137, 49_999, 50_000, 499_999, 5_000_000, 5e8, 5e11, 5e14, 5e15]) {
+    for (const level of [0, 1, 19, 20, 49, 50, 99, 100, 199, 200, 399, 400, 699, 700, 1_199, 1_200,
+                         1_999, 2_000, 3_499, 3_500, 5_999, 6_000, 9_999, 10_000, 99_999]) {
+      const doServidor = degrauEconomico(saldo, level);
+      const doAplicativo = degrauEconomicoPara(escadaComNivel, saldo, level);
+      assert.equal(
+        doAplicativo?.id,
+        doServidor.id,
+        `saldo ${saldo}, nível ${level}: aplicativo diz ${doAplicativo?.id}, servidor diz ${doServidor.id}`,
+      );
+      comparados += 1;
     }
   }
+  assert.ok(comparados >= 300, `só ${comparados} combinações comparadas`);
 });
 
 console.log(`\n${passaram} passaram, ${falharam} falharam\n`);

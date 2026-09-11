@@ -3,11 +3,22 @@ import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { LanceRegistrado, MaquinaDeRodada } from '../core/maquina-de-rodada';
 import { bestHandOf, botDecision, buildDeck, compareHandValues, handLabel, PokerAction, shuffle } from './poker.engine';
-import { BIG_BET, BIG_BLIND, Card, MAX_BUY_IN, MAX_RAISES_PER_STREET, MIN_BUY_IN, SMALL_BET, SMALL_BLIND } from './poker.config';
+import { apostasDaMesa, type ApostasDaMesa, Card, MAX_RAISES_PER_STREET } from './poker.config';
+import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
+import { faixaDeEntrada, problemaComAEntrada } from '../shared/niveis-de-mesa';
 
 type Street = 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
 
 interface PokerHand {
+  /**
+   * Blinds e apostas DESTA mão, derivadas do buy-in que foi pago.
+   *
+   * Ficam na mão e não no módulo porque duas pessoas podem estar jogando em degraus
+   * diferentes ao mesmo tempo, e porque o buy-in não muda no meio de uma mão — congelar
+   * aqui é o que garante que a aposta da quarta rua é a mesma que foi prometida na
+   * primeira.
+   */
+  apostas: ApostasDaMesa;
   /**
    * O saldo de quem sentou, ANTES do débito da entrada — é ele que diz o degrau da
    * pessoa quando a partida acabar e o XP for somado. Guardado aqui porque a partida
@@ -66,12 +77,37 @@ export class PokerService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
     private readonly maquina: MaquinaDeRodada,
   ) {}
 
-  getConfig() {
-    return { minBuyIn: MIN_BUY_IN, maxBuyIn: MAX_BUY_IN, smallBlind: SMALL_BLIND, bigBlind: BIG_BLIND, smallBet: SMALL_BET, bigBet: BIG_BET };
+  async getConfig(userId: string) {
+    const quem = await this.degraus.de(userId);
+    const faixa = faixaDeEntrada(quem.saldo, quem.nivel);
+
+    /*
+     * AS ENTRADAS VÊM PRONTAS, COM AS CEGAS DE CADA UMA — e é isso que impede a tela de
+     * mentir. As cegas saem do buy-in agora; se a tela mostrasse "cegas 1/2" ao lado de um
+     * seletor que vai até mil fichas, ela estaria anunciando um jogo e entregando outro.
+     * Mandando a lista pronta, o rótulo de cada opção é o que a mão vai cobrar de verdade,
+     * e nenhuma fórmula precisa ser copiada pro aplicativo.
+     *
+     * As opções são as FICHAS DO DEGRAU, as mesmas do trilho de aposta das outras mesas:
+     * cinco valores, do mínimo ao teto, um toque cada.
+     */
+    const entradas = quem.degrau.fichas
+      .filter((entrada) => entrada >= faixa.minimo && entrada <= faixa.maximo && entrada <= quem.saldo)
+      .map((entrada) => ({ entrada, ...apostasDaMesa(entrada) }));
+
+    return {
+      minBuyIn: faixa.minimo,
+      maxBuyIn: faixa.maximo,
+      degrau: quem.degrau,
+      entradas,
+      /* As cegas da MENOR entrada, pra a tela ter o que mostrar antes de escolher. */
+      ...apostasDaMesa(faixa.minimo),
+    };
   }
 
   async newHand(userId: string, buyIn: number, actionId?: string) {
@@ -79,9 +115,12 @@ export class PokerService {
     if (existing && !existing.finished) {
       throw new BadRequestException('Você já tem uma mão de poker em andamento.');
     }
-    if (!Number.isFinite(buyIn) || buyIn < MIN_BUY_IN || buyIn > MAX_BUY_IN) {
-      throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
-    }
+    const quem = await this.degraus.de(userId);
+    const problema = problemaComAEntrada(buyIn, quem.saldo, quem.nivel);
+    if (problema) throw new BadRequestException(problema);
+
+    /* As apostas desta mão saem do buy-in DELA, e ficam guardadas: o buy-in não muda no meio. */
+    const apostas = apostasDaMesa(buyIn);
 
     /*
      * O SALDO DE ANTES DA ENTRADA, guardado na partida.
@@ -91,7 +130,7 @@ export class PokerService {
      * que vale pro XP é o de quem sentou — e é ele que faz a entrada de truco valer o
      * mesmo XP pra quem joga no Bronze e pra quem joga no Eclipse.
      */
-    const saldoAntes = await this.walletService.balanceOf(userId);
+    const saldoAntes = quem.saldo;
 
     /* A RODADA É REGISTRADA ANTES DE O DINHEIRO SE MEXER. Ver MaquinaDeRodada. */
     const rodada = await this.maquina.comecar({ jogo: GAME_ID, usuarioId: userId, apostas: { entrada: buyIn } });
@@ -102,16 +141,17 @@ export class PokerService {
       userId,
       saldoAntes,
       buyIn,
-      playerStack: buyIn - SMALL_BLIND,
-      botStack: buyIn - BIG_BLIND,
-      pot: SMALL_BLIND + BIG_BLIND,
+      apostas,
+      playerStack: buyIn - apostas.smallBlind,
+      botStack: buyIn - apostas.bigBlind,
+      pot: apostas.smallBlind + apostas.bigBlind,
       deck,
       playerHole: deck.splice(0, 2),
       botHole: deck.splice(0, 2),
       board: [],
       street: 'preflop',
-      playerBetThisStreet: SMALL_BLIND,
-      botBetThisStreet: BIG_BLIND,
+      playerBetThisStreet: apostas.smallBlind,
+      botBetThisStreet: apostas.bigBlind,
       raisesThisStreet: 0,
       streetActionCount: 0,
       toAct: 'jogador', // no heads-up, o botão (você) age primeiro no pré-flop
@@ -167,7 +207,7 @@ export class PokerService {
     if (action === 'pagar') {
       amount = Math.min(otherBet - myBet, myStack);
     } else if (action === 'aumentar') {
-      const betSize = match.street === 'preflop' || match.street === 'flop' ? SMALL_BET : BIG_BET;
+      const betSize = match.street === 'preflop' || match.street === 'flop' ? match.apostas.smallBet : match.apostas.bigBet;
       const target = otherBet + betSize;
       amount = Math.min(target - myBet, myStack);
       match.raisesThisStreet += 1;

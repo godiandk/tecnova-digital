@@ -13,8 +13,8 @@
  * aposta que vai ser recusada.
  *
  * E a conta é a MESMA do servidor, linha por linha — `verifica-escada-de-aposta` compara
- * as duas em toda a faixa de saldo e reprova se divergirem em um único ponto. Se alguém
- * mudar a regra lá e esquecer daqui, a conferência para o build.
+ * as duas em toda a faixa de saldo E de nível, e reprova se divergirem em um único ponto.
+ * Se alguém mudar a regra lá e esquecer daqui, a conferência para o build.
  */
 import type { NivelDeMesa } from '../api/niveis';
 import type { FaixaDeAposta } from './escada';
@@ -33,9 +33,37 @@ export function degrauPara(escada: NivelDeMesa[], saldo: number): NivelDeMesa | 
   return escolhido;
 }
 
+/**
+ * O degrau que o NÍVEL do jogador já abriu.
+ *
+ * O `abreNoLevel` vem do servidor com a escada — a tabela não é copiada pra cá. Quando ele
+ * vier nulo (escada antiga, servidor mais velho que o aplicativo), o degrau é tratado como
+ * aberto: a tela não pode trancar uma mesa por causa de um campo que não recebeu.
+ */
+export function degrauDoNivel(escada: NivelDeMesa[], level: number): NivelDeMesa | null {
+  if (escada.length === 0) return null;
+  let escolhido = escada[0];
+  for (const nivel of escada) if (nivel.abreNoLevel === null || level >= nivel.abreNoLevel) escolhido = nivel;
+  return escolhido;
+}
+
+/**
+ * O DEGRAU ECONÔMICO — `min(o que o saldo banca, o que o nível liberou)`.
+ *
+ * É o mesmo `degrauEconomico` do servidor, e é o que faz comprar fichas dar mais rodadas
+ * na mesa da pessoa em vez de passagem pra mesa de cima. O `min` é sobre a POSIÇÃO na
+ * escada, igual lá.
+ */
+export function degrauEconomicoPara(escada: NivelDeMesa[], saldo: number, level: number): NivelDeMesa | null {
+  const porSaldo = degrauPara(escada, saldo);
+  const porNivel = degrauDoNivel(escada, level);
+  if (!porSaldo || !porNivel) return porSaldo ?? porNivel;
+  return escada.indexOf(porSaldo) <= escada.indexOf(porNivel) ? porSaldo : porNivel;
+}
+
 /** A faixa que o seletor de aposta usa: mínimo do degrau, saldo, e as fichas do degrau. */
-export function faixaPara(escada: NivelDeMesa[], saldo: number): FaixaDeAposta {
-  const degrau = degrauPara(escada, saldo);
+export function faixaPara(escada: NivelDeMesa[], saldo: number, level: number): FaixaDeAposta {
+  const degrau = degrauEconomicoPara(escada, saldo, level);
   return {
     minimo: degrau?.minimo ?? 0,
     saldo: Math.max(0, Math.floor(saldo)),

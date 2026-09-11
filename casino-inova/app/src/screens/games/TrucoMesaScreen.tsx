@@ -31,6 +31,7 @@ import {
   TrucoPublicTable,
   TrucoTableView,
 } from '../../api/trucoMesa';
+import { SeletorDeEntrada } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TrucoMesa'>;
@@ -86,7 +87,8 @@ export function TrucoMesaScreen({ navigation, route }: Props) {
         setConfig(data);
         setVariant(variantePreescolhida ?? data.defaultVariant);
         setStyle(data.defaultStyle);
-        setBuyIn(Math.max(data.minBuyIn, Math.min(200, data.maxBuyIn)));
+        /* Abre na entrada mais barata do degrau — nunca num valor que o saldo não cobre. */
+        setBuyIn(data.entradas[0] ?? data.minBuyIn);
       })
       .catch((caught) => setError(errorMessage(caught)));
     refreshPublic();
@@ -190,16 +192,13 @@ export function TrucoMesaScreen({ navigation, route }: Props) {
                   {style === 'sujo' ? 'Pode mandar sinal pro parceiro.' : 'Sinal pro parceiro é proibido.'}
                 </Text>
 
-                <Text style={styles.optionLabel}>Buy-in</Text>
-                <View style={styles.amountRow}>
-                  <Pressable onPress={() => setBuyIn((v) => Math.max(config?.minBuyIn ?? 100, v - 100))} style={styles.stepButton}>
-                    <Ionicons name="remove" size={18} color={colors.textPrimary} />
-                  </Pressable>
-                  <Text style={styles.amountLabel}>{buyIn.toLocaleString('pt-BR')} fichas</Text>
-                  <Pressable onPress={() => setBuyIn((v) => Math.min(config?.maxBuyIn ?? 5000, v + 100))} style={styles.stepButton}>
-                    <Ionicons name="add" size={18} color={colors.textPrimary} />
-                  </Pressable>
-                </View>
+                <SeletorDeEntrada
+                  opcoes={(config?.entradas ?? []).map((entrada) => ({ entrada }))}
+                  valor={buyIn}
+                  aoMudar={setBuyIn}
+                  legenda="cada lugar paga o mesmo"
+                  travado={busy}
+                />
 
                 <View style={styles.buttonRow}>
                   <Pressable onPress={() => handleCreate('publica')} style={styles.primaryButton} disabled={busy}>
@@ -513,18 +512,6 @@ const styles = StyleSheet.create({
   toggleActive: { borderColor: colors.goldBright, backgroundColor: colors.felt },
   toggleLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textFaint },
   toggleLabelActive: { color: colors.textPrimary },
-  amountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md },
-  amountLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textPrimary, minWidth: 120, textAlign: 'center' },
-  stepButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   buttonRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs, flexWrap: 'wrap' },
   inputRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
   input: {

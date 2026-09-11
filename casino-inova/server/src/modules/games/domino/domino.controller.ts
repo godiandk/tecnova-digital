@@ -3,7 +3,6 @@ import { DominoService } from './domino.service';
 import { BoardEnd } from './domino.engine';
 import { Tile } from './domino.config';
 import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
-import { Publico } from '../../auth/auth.guard';
 import { AcaoDto } from '../shared/acao.dto';
 
 class NewMatchDto extends AcaoDto {
@@ -22,10 +21,13 @@ class UserIdDto {
 export class DominoController {
   constructor(private readonly dominoService: DominoService) {}
 
-  @Publico()
+  /*
+   * DEIXOU DE SER PÚBLICO: a faixa de entrada agora é do degrau de quem pergunta, e degrau
+   * depende de saldo e nível — dois dados que só existem com alguém identificado.
+   */
   @Get('config')
-  getConfig() {
-    return this.dominoService.getConfig();
+  getConfig(@UsuarioAtual() usuarioLogado: string) {
+    return this.dominoService.getConfig(usuarioLogado);
   }
 
   @Post('nova-partida')

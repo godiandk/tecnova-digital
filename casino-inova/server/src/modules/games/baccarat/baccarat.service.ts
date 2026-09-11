@@ -8,6 +8,7 @@ import { CartaComNaipe, nomeDaCarta } from '../shared/naipes';
 import { Sapata } from '../shared/sapata';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 import { MaquinaDeRodada } from '../core/maquina-de-rodada';
+import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 const VALID_BET_TYPES: BaccaratBetType[] = ['jogador', 'banca', 'empate'];
@@ -29,6 +30,7 @@ export class BaccaratService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
     private readonly roadmapService: RoadmapService,
     private readonly acoes: AcoesRepetidas,
@@ -53,8 +55,13 @@ export class BaccaratService {
    * igual a slots e roleta, diferente do blackjack.
    */
   async playRound(userId: string, betType: BaccaratBetType, amount: number, actionId?: string) {
-    const saldoAntes = await this.walletService.balanceOf(userId);
-    const problema = problemaComAAposta(amount, saldoAntes);
+    /*
+     * Quem é esta pessoa economicamente: saldo, nível e o degrau que os dois liberam.
+     * O degrau é `min(o que o saldo banca, o que o nível liberou)` — comprar fichas dá
+     * mais rodadas na mesa dela, não passagem pra mesa de cima.
+     */
+    const quem = await this.degraus.de(userId);
+    const problema = problemaComAAposta(amount, quem.saldo, quem.nivel);
     if (problema) throw new BadRequestException(problema);
     if (!VALID_BET_TYPES.includes(betType)) {
       throw new BadRequestException('Tipo de aposta inválido — use jogador, banca ou empate.');
@@ -93,7 +100,7 @@ export class BaccaratService {
       if (totalReturn > 0) {
         await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID, undefined, rodada.id);
       }
-      await this.tournaments.recordRound(userId, GAME_ID, amount, totalReturn, saldoAntes);
+      await this.tournaments.recordRound(userId, GAME_ID, amount, totalReturn, quem.saldo);
       await rodada.terminar({
         resultado: { vencedor: round.winner, jogador: round.playerTotal, banca: round.bankerTotal },
         apostado: amount,

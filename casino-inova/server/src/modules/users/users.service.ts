@@ -5,7 +5,7 @@ import type { Role } from '../roles/roles.constants';
 import { DatabaseService } from '../../database/database.service';
 import { registro } from '../../observabilidade/registro';
 import { ProgressoDaRodada, XP_MAXIMO_POR_DIA, somarXp, xpDaRodada, xpDoNivel } from '../progressao/niveis';
-import { nivelPara } from '../games/shared/niveis-de-mesa';
+import { degrauEconomico } from '../games/shared/niveis-de-mesa';
 import { diaDoServidor } from '../../comum/dia-do-servidor';
 import { gerarCodigoPublico, somenteDigitos } from './codigo-publico';
 import { emailsDeAdmin } from '../roles/donos';
@@ -273,10 +273,9 @@ export class UsersService {
    * contra um mínimo de 50 em vez do mínimo do degrau real, renderia o XP máximo. O jogo
    * pagaria um bônus de barra por quebrar. Com o saldo de antes, quebrar não rende nada.
    *
-   * O TETO DIÁRIO É APLICADO AQUI, dentro do mesmo `FOR UPDATE` que lê o XP, porque ele é
-   * uma condição de corrida esperando pra acontecer: um robô disparando cinquenta rodadas
-   * ao mesmo tempo leria cinquenta vezes o mesmo "já ganhei X hoje" e passaria do teto
-   * cinquenta vezes. A linha travada faz a segunda rodada esperar a primeira.
+   * O DEGRAU É O ECONÔMICO — `min(o que o saldo banca, o que o nível liberou)`. Quem
+   * comprou fichas e ainda não subiu de nível continua medido pela mesa em que joga de
+   * verdade, e não pela mesa que o dinheiro dele alcançaria.
    */
   async somarExperienciaDaRodada(
     userId: string,
@@ -297,39 +296,15 @@ export class UsersService {
      * número não passa por ela, o XP vira o piso — a rodada conta, mas não paga. E fica
      * registrado, porque isto é defeito de programação, não jogada de jogador.
      */
-    if (!Number.isFinite(saldoAntesDaRodada) || saldoAntesDaRodada < apostado) {
+    const saldoConfere = Number.isFinite(saldoAntesDaRodada) && saldoAntesDaRodada >= apostado;
+    if (!saldoConfere) {
       registro.aviso('progressao', 'saldo-antes-nao-confere', {
         apostado,
         saldoAntesDaRodada,
         porque: 'o saldo de antes da rodada é menor que a aposta — XP pago no piso',
       });
-      return this.gravarExperiencia(userId, 1, hoje);
     }
 
-    /*
-     * O DIVISOR É O MÍNIMO DO DEGRAU DA PESSOA, e é ele que impede dinheiro de virar
-     * nível: o Bronze apostando 20x o mínimo dele e o Eclipse apostando 20x o mínimo dele
-     * ganham exatamente o mesmo XP. Ver `verify-xp.ts`, conferência 1.
-     */
-    const minimoDoDegrau = nivelPara(saldoAntesDaRodada).minimo;
-    const ganhoCheio = xpDaRodada(apostado, minimoDoDegrau);
-    if (ganhoCheio <= 0) return null;
-
-    return this.gravarExperiencia(userId, ganhoCheio, hoje);
-  }
-
-  /**
-   * Grava o XP já calculado, aplicando o teto do dia, tudo numa transação só.
-   *
-   * Separado de `somarExperienciaDaRodada` porque o teto e a corrida pela linha são a
-   * mesma coisa nos dois caminhos (o normal e o do piso), e duplicar um `FOR UPDATE` é
-   * duplicar o lugar onde uma condição de corrida pode nascer.
-   */
-  private async gravarExperiencia(
-    userId: string,
-    ganhoCheio: number,
-    hoje: string,
-  ): Promise<ProgressoDaRodada | null> {
     return this.db.transaction(async (client) => {
       const { rows } = await client.query<{ level: number; xp: number; xp_do_dia: number; xp_do_dia_em: string | null }>(
         'SELECT level, xp, xp_do_dia, xp_do_dia_em FROM users WHERE id = $1 FOR UPDATE',
@@ -338,14 +313,32 @@ export class UsersService {
       if (rows.length === 0) return null;
 
       /*
-       * O contador se zera sozinho: se o dia gravado não é hoje, o que está lá é de
-       * ontem. Sem isto seria preciso uma tarefa agendada zerando a coluna de todo mundo
-       * à meia-noite — trabalho recorrente que falha em silêncio quando o processo está
-       * fora do ar.
+       * O DIVISOR É O MÍNIMO DO DEGRAU ECONÔMICO DA PESSOA, e é ele que impede dinheiro de
+       * virar nível: o Bronze apostando 20x o mínimo dele e o Eclipse apostando 20x o
+       * mínimo dele ganham exatamente o mesmo XP.
+       *
+       * O NÍVEL ENTRA NA CONTA, e por isso ela mora aqui dentro e não antes da transação:
+       * o degrau é `min(o que o saldo banca, o que o nível liberou)`, e o nível é uma
+       * coluna desta mesma linha que já está travada. Lê-lo fora seria uma consulta a mais
+       * por rodada, e uma janela em que ele muda entre a leitura e a gravação.
+       */
+      const minimoDoDegrau = degrauEconomico(saldoAntesDaRodada, rows[0].level).minimo;
+      const ganhoCheio = saldoConfere ? xpDaRodada(apostado, minimoDoDegrau) : 1;
+      if (ganhoCheio <= 0) return null;
+
+      /*
+       * O contador do dia se zera sozinho: se o dia gravado não é hoje, o que está lá é de
+       * ontem. Sem isto seria preciso uma tarefa agendada zerando a coluna de todo mundo à
+       * meia-noite — trabalho recorrente que falha em silêncio quando o processo está fora
+       * do ar, e que daria a todo mundo a mesma meia-noite.
+       *
+       * O TETO É APLICADO DENTRO DO MESMO `FOR UPDATE` que leu o XP porque ele é uma
+       * condição de corrida esperando pra acontecer: um robô disparando cinquenta rodadas
+       * ao mesmo tempo leria cinquenta vezes o mesmo "já ganhei X hoje" e passaria do teto
+       * cinquenta vezes. A linha travada faz a segunda rodada esperar a primeira.
        */
       const jaHoje = normalizarDia(rows[0].xp_do_dia_em) === hoje ? Math.max(0, rows[0].xp_do_dia) : 0;
-      const cabe = Math.max(0, XP_MAXIMO_POR_DIA - jaHoje);
-      const ganho = Math.min(ganhoCheio, cabe);
+      const ganho = Math.min(ganhoCheio, Math.max(0, XP_MAXIMO_POR_DIA - jaHoje));
 
       /*
        * Bateu no teto: nada muda, mas o dia fica gravado. Devolver o progresso parado (e

@@ -10,6 +10,7 @@ import {
 } from './roulette.config';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 import { MaquinaDeRodada } from '../core/maquina-de-rodada';
+import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 /** Quantos números o painel da mesa guarda — mesa real costuma mostrar os últimos ~20. */
@@ -24,6 +25,7 @@ export class RouletteService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
     private readonly acoes: AcoesRepetidas,
     private readonly maquina: MaquinaDeRodada,
@@ -90,7 +92,13 @@ export class RouletteService {
       throw new BadRequestException(`No máximo ${MAXIMO_DE_APOSTAS_POR_RODADA} apostas por rodada.`);
     }
 
-    const saldoAntes = await this.walletService.balanceOf(userId);
+    /*
+     * Quem é esta pessoa economicamente: saldo, nível e o degrau que os dois liberam.
+     * O degrau é `min(o que o saldo banca, o que o nível liberou)` — comprar fichas dá
+     * mais rodadas na mesa dela, não passagem pra mesa de cima.
+     */
+    const quem = await this.degraus.de(userId);
+    const saldoAntes = quem.saldo;
     let total = 0;
     for (const aposta of apostas) {
       if (!TOTAL_MULTIPLIER[aposta.type]) throw new BadRequestException('Tipo de aposta inválido.');
@@ -100,7 +108,7 @@ export class RouletteService {
       ) {
         throw new BadRequestException('Aposta em número exato precisa de um número entre 0 e 36.');
       }
-      const problema = problemaComAAposta(aposta.amount, saldoAntes);
+      const problema = problemaComAAposta(aposta.amount, quem.saldo, quem.nivel);
       if (problema) throw new BadRequestException(problema);
       total += aposta.amount;
     }

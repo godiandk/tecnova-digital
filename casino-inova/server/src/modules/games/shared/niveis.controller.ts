@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
-import { WalletService } from '../../wallet/wallet.service';
-import { MESAS_DE_ENTRADA, NIVEIS_DE_MESA, nivelPara, niveisDisponiveis } from './niveis-de-mesa';
+import { DegrauDoJogador } from './degrau-do-jogador.service';
+import { MESAS_DE_ENTRADA, NIVEIS_DE_MESA, NIVEL_PARA_ABRIR_O_DEGRAU, nivelPara } from './niveis-de-mesa';
 
 /**
  * Em que nível de mesa esta pessoa joga, e quanto ela pode apostar.
@@ -19,29 +19,59 @@ import { MESAS_DE_ENTRADA, NIVEIS_DE_MESA, nivelPara, niveisDisponiveis } from '
  */
 @Controller('niveis')
 export class NiveisController {
-  constructor(private readonly wallet: WalletService) {}
+  constructor(private readonly degraus: DegrauDoJogador) {}
 
   @Get('meu')
   async meuNivel(@UsuarioAtual() userId: string) {
-    const saldo = await this.wallet.balanceOf(userId);
-    const meu = nivelPara(saldo);
-    const disponiveis = niveisDisponiveis(saldo);
+    const quem = await this.degraus.de(userId);
+
+    /*
+     * O DEGRAU QUE O SALDO BANCARIA, mandado junto e separado do degrau de verdade.
+     *
+     * Quando os dois são diferentes é porque o NÍVEL está segurando: a pessoa tem fichas
+     * pra uma mesa que ela ainda não abriu. Isso precisa aparecer na tela com o número —
+     * "seu saldo alcança a mesa Ouro; ela abre no nível 50" —, e não sumir. Uma mesa que
+     * não abre sem explicação é a diferença entre uma regra e um defeito, e quem comprou
+     * fichas é justamente quem vai perguntar.
+     */
+    const peloSaldo = nivelPara(quem.saldo);
+    const travadoPeloNivel = peloSaldo.id !== quem.degrau.id;
 
     return {
-      saldo,
-      nivel: meu,
-      /** O nível dele e o degrau abaixo — onde ele pode sentar. */
-      disponiveis,
+      saldo: quem.saldo,
+      level: quem.nivel,
+      /** O degrau econômico: `min(o que o saldo banca, o que o nível liberou)`. */
+      nivel: quem.degrau,
+      /** O degrau dele e o logo abaixo — onde ele pode sentar. */
+      disponiveis: quem.onde,
       /** As mesas entre jogadores (truco, dominó, pôquer) que ele alcança. */
       mesasDeEntrada: MESAS_DE_ENTRADA.filter((mesa) =>
-        disponiveis.some((nivel) => nivel.id === mesa.nivel),
+        quem.onde.some((nivel) => nivel.id === mesa.nivel),
       ),
+      /** O nível está segurando uma mesa que o saldo já bancaria? */
+      travadoPeloNivel,
+      /** Qual mesa, e em que nível ela abre. Nulo quando nada está travado. */
+      proximaPorNivel: travadoPeloNivel
+        ? {
+            nivel: peloSaldo,
+            abreNoLevel: NIVEL_PARA_ABRIR_O_DEGRAU[NIVEIS_DE_MESA.indexOf(peloSaldo)] ?? null,
+          }
+        : null,
     };
   }
 
-  /** A escada inteira, pra a tela poder mostrar o que vem depois. Não depende de quem pede. */
+  /**
+   * A escada inteira, com o nível em que cada degrau abre. Não depende de quem pede.
+   *
+   * O nível de abertura vai JUNTO porque a tela precisa mostrar o caminho inteiro, e não
+   * só o degrau atual: sem ele, a escada é uma lista de mesas caras sem nenhuma pista de
+   * como se chega lá.
+   */
   @Get('escada')
   escada() {
-    return NIVEIS_DE_MESA;
+    return NIVEIS_DE_MESA.map((nivel, i) => ({
+      ...nivel,
+      abreNoLevel: NIVEL_PARA_ABRIR_O_DEGRAU[i] ?? null,
+    }));
   }
 }

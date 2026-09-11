@@ -268,9 +268,15 @@ async function main() {
 
     /*
      * A PROVA DE QUE NÍVEL NÃO SE COMPRA, feita pelo caminho de verdade e não pela
-     * fórmula: u1 é Bronze e aposta 50; u2 tem cem mil vezes mais e aposta cem mil vezes
-     * mais. A mesma aposta RELATIVA tem que dar o mesmo XP.
+     * fórmula: u1 é Bronze e aposta 50; u2 tem cem mil vezes mais, NÍVEL PRA ESTAR LÁ, e
+     * aposta cem mil vezes mais. A mesma aposta RELATIVA tem que dar o mesmo XP.
+     *
+     * O nível de u2 é posto à mão porque o degrau é `min(saldo, nível)`: sem ele, u2 seria
+     * um jogador Bronze de bolso cheio, e a comparação mediria outra coisa. 400 é o nível
+     * que abre a Safira, que é o degrau de quem tem um bilhão — nem um a mais: no topo da
+     * escada (10.000) o XP para de acumular, e a conta daria zero por outro motivo.
      */
+    await db.query('UPDATE users SET level = 400 WHERE id = $1', ['u2']);
     const u2Antes = await users.findById('u2');
     await tournaments.recordRound('u2', 'slots', 5_000_000, 0, 1_000_000_000);
     const u2Depois = await users.findById('u2');
@@ -280,6 +286,33 @@ async function main() {
       'apostar o mínimo do próprio degrau vale o mesmo em qualquer degrau',
       ganhoDeU1 === ganhoDeU2,
       `Bronze apostando 50 ganhou ${ganhoDeU1}; o degrau alto apostando 5 milhões ganhou ${ganhoDeU2}`,
+    );
+
+    /*
+     * E A PROVA DO CAMINHO CONTRÁRIO — a que fecha a loja como atalho de nível.
+     *
+     * Um jogador de NÍVEL 1 com um bilhão de fichas (comprou, ou ganhou grande) é medido
+     * pelo degrau que o nível dele abriu, que é o Bronze. Ele pode apostar o que quiser —
+     * não existe aposta máxima —, e apostar vinte milhões de vezes o mínimo do Bronze não
+     * pode render mais do que apostar a ficha maior do Bronze. Senão comprar fichas
+     * voltaria a acelerar o nível por outra porta.
+     */
+    await db.query('UPDATE users SET level = 1 WHERE id = $1', ['u2']);
+    const ricoAntes = await users.findById('u2');
+    await tournaments.recordRound('u2', 'slots', 1_000_000_000, 0, 1_000_000_000);
+    const ricoDepois = await users.findById('u2');
+    const ganhoDoRico = xpGanho(ricoAntes!, ricoDepois!);
+
+    await db.query('UPDATE users SET level = 1 WHERE id = $1', ['u1']);
+    const honestoAntes = await users.findById('u1');
+    await tournaments.recordRound('u1', 'slots', 1_000, 0, 10_000); // a ficha maior do Bronze
+    const honestoDepois = await users.findById('u1');
+    const ganhoDoHonesto = xpGanho(honestoAntes!, honestoDepois!);
+
+    checa(
+      'apostar acima da ficha maior não rende XP a mais',
+      ganhoDoRico === ganhoDoHonesto,
+      `um bilhão rendeu ${ganhoDoRico}; a ficha maior do Bronze rendeu ${ganhoDoHonesto}`,
     );
 
     /*

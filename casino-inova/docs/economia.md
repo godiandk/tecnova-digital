@@ -520,7 +520,60 @@ perceber. Exigido, o compilador acha.
 do nível 1, curva de custo antiga, teto diário solto, subir um nível por chamada, sem teto
 de nível, `noTopo` sempre falso, curva reta) e **as oito foram pegas** pelas conferências.
 
-## Etapas 2 a 5 — ainda não
+## Etapa 2 — `economicTier` e as apostas (feita)
 
-`economicTier`, apostas, loja e recompensa diária seguem como estão escritos acima.
+| Peça | Onde | Estado |
+|---|---|---|
+| `degrauEconomico = min(saldo, nível)` | `games/shared/niveis-de-mesa.ts` | feito |
+| Níveis de abertura (Bronze 1 … Eclipse 10.000) | `NIVEL_PARA_ABRIR_O_DEGRAU` | feito |
+| `DegrauDoJogador`: saldo, nível e degrau num lugar só | `games/shared/degrau-do-jogador.service.ts` | feito |
+| Os 7 jogos contra a casa validam pelo degrau econômico | cada `*.service.ts` | feito |
+| Truco, dominó e pôquer saem do buy-in fixo 100–5.000 | `faixaDeEntrada`, `problemaComAEntrada` | feito |
+| As entradas oferecidas são `k × mínimo(economicTier)`, k ∈ {1, 2, 5, 10, 20} — as fichas do degrau | `config.entradas` | feito |
+| Cegas do pôquer proporcionais ao buy-in | `apostasDaMesa` | feito |
+| `/niveis/meu` e `/niveis/escada` publicam o freio de nível | `niveis.controller.ts` | feito |
+| Seletor de entrada no lugar dos 5 steppers de `+`/`−` | `aposta/SeletorDeEntrada.tsx` | feito |
+| Espelho do degrau no aplicativo, conferido contra o servidor | `aposta/degrau.ts` | feito |
+
+### O exploit que o `economicTier` abriu, e que foi fechado junto
+
+Travar o degrau pelo nível cria um jogador novo: **rico e preso numa mesa barata**. Como
+não existe aposta máxima (é decisão do dono do jogo), esse jogador podia apostar cem vezes
+o mínimo do Bronze e levar o teto de XP em toda rodada — 20% a mais que quem aposta a ficha
+maior honestamente. Comprar fichas voltaria a acelerar o nível, por outra porta.
+
+**Fechado**: o `r` da fórmula de XP para na ficha maior (`R_DE_REFERENCIA = 20`). Apostar
+acima dela continua permitido; só não rende XP a mais. Isso baixou o teto por rodada de 60
+para **50 XP** — e o teto por rodada nunca foi o que governa a progressão (quem governa é o
+teto diário de 60.000), então os prazos até o nível 10.000 não mudaram.
+
+### O que cada jogador vê agora
+
+| | saldo | nível | degrau | mínimo da mesa | buy-in do truco |
+|---|---|---|---|---|---|
+| começou hoje | 10 mil | 1 | Bronze | 50 | 50 a 1.000 |
+| comprou muito, nível 1 | 5 quatrilhões | 1 | **Bronze** | 50 | 50 a 1.000 |
+| jogou muito, sem fichas | 0 | 10.000 | **Bronze** | 50 | — |
+| jogou e tem banca | 1 bilhão | 400 | Safira | 5 milhões | 5 mi a 100 mi |
+
+O `/niveis/meu` manda `travadoPeloNivel` e `proximaPorNivel` para a tela poder dizer, com o
+número: *"seu saldo alcança a mesa Ouro; ela abre no nível 50"*. Uma mesa que não abre sem
+explicação é a diferença entre uma regra e um defeito — e quem comprou fichas é justamente
+quem vai perguntar.
+
+### Conferências
+
+- `verify-niveis`: 80 combinações de saldo × nível, e as duas pontas (nível 1 com 5
+  quatrilhões → Bronze; nível 10.000 com saldo zero → Bronze)
+- `verify:escada-de-aposta`: 325 combinações comparando o degrau do **aplicativo** com o do
+  **servidor**, mais "toda aposta que o seletor deixa montar, o servidor aceita" agora
+  varrido em 12 níveis
+- `verify-tournaments`: prova pelos dois lados — mesma aposta relativa vale o mesmo em
+  degraus diferentes, e apostar acima da ficha maior não rende XP a mais
+
+Uma mutação (o aplicativo ignorando o freio de nível) foi testada e pega.
+
+## Etapas 3 a 5 — ainda não
+
+Loja e recompensa diária seguem como estão escritas acima.
 

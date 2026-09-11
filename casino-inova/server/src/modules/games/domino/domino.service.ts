@@ -3,7 +3,9 @@ import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { LanceRegistrado, MaquinaDeRodada } from '../core/maquina-de-rodada';
 import { BoardEnd, canPlay, chooseBotMove, otherEnd, quemAbre, shuffle, tileMatches, tileSum } from './domino.engine';
-import { buildTileSet, HAND_SIZE, MATCH_WIN_TOTAL_MULTIPLIER, MAX_BUY_IN, MIN_BUY_IN, Tile } from './domino.config';
+import { buildTileSet, HAND_SIZE, MATCH_WIN_TOTAL_MULTIPLIER, Tile } from './domino.config';
+import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
+import { faixaDeEntrada, problemaComAEntrada } from '../shared/niveis-de-mesa';
 
 interface DominoMatch {
   /**
@@ -49,12 +51,21 @@ export class DominoService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
     private readonly maquina: MaquinaDeRodada,
   ) {}
 
-  getConfig() {
-    return { minBuyIn: MIN_BUY_IN, maxBuyIn: MAX_BUY_IN, handSize: HAND_SIZE };
+  /*
+   * A CONFIGURAÇÃO PASSOU A DEPENDER DE QUEM PERGUNTA, porque a faixa de entrada é do
+   * degrau da pessoa. Era um endereço público que devolvia 100 a 5.000 pra todo mundo.
+   */
+  async getConfig(userId: string) {
+    const quem = await this.degraus.de(userId);
+    const faixa = faixaDeEntrada(quem.saldo, quem.nivel);
+    /* As entradas possíveis são as FICHAS DO DEGRAU: cinco valores, um toque cada. */
+    const entradas = quem.degrau.fichas.filter((e) => e >= faixa.minimo && e <= faixa.maximo && e <= quem.saldo);
+    return { minBuyIn: faixa.minimo, maxBuyIn: faixa.maximo, handSize: HAND_SIZE, degrau: quem.degrau, entradas };
   }
 
   async newMatch(userId: string, buyIn: number, actionId?: string) {
@@ -62,9 +73,9 @@ export class DominoService {
     if (existing && !existing.finished) {
       throw new BadRequestException('Você já tem uma partida de dominó em andamento.');
     }
-    if (!Number.isFinite(buyIn) || buyIn < MIN_BUY_IN || buyIn > MAX_BUY_IN) {
-      throw new BadRequestException(`O buy-in precisa estar entre ${MIN_BUY_IN} e ${MAX_BUY_IN} fichas.`);
-    }
+    const quem = await this.degraus.de(userId);
+    const problema = problemaComAEntrada(buyIn, quem.saldo, quem.nivel);
+    if (problema) throw new BadRequestException(problema);
 
     /*
      * O SALDO DE ANTES DA ENTRADA, guardado na partida.
@@ -74,7 +85,7 @@ export class DominoService {
      * que vale pro XP é o de quem sentou — e é ele que faz a entrada de truco valer o
      * mesmo XP pra quem joga no Bronze e pra quem joga no Eclipse.
      */
-    const saldoAntes = await this.walletService.balanceOf(userId);
+    const saldoAntes = quem.saldo;
 
     /* A RODADA É REGISTRADA ANTES DE O DINHEIRO SE MEXER. Ver MaquinaDeRodada. */
     const rodada = await this.maquina.comecar({ jogo: GAME_ID, usuarioId: userId, apostas: { entrada: buyIn } });

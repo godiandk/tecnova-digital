@@ -6,6 +6,7 @@ import { SIDE_TOTAL_MULTIPLIER, TIE_PROFIT_ODDS, TIE_REFUND_MULTIPLIER } from '.
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 import { MaquinaDeRodada } from '../core/maquina-de-rodada';
+import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 const BET_TYPES: BacBoBet['type'][] = ['jogador', 'banca', 'empate'];
@@ -21,6 +22,7 @@ export class BacBoService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
     private readonly roadmapService: RoadmapService,
     private readonly acoes: AcoesRepetidas,
@@ -45,7 +47,7 @@ export class BacBoService {
   }
 
   /** Recebe o saldo porque o limite da aposta sai do NÍVEL de quem aposta, não de um número fixo. */
-  validateBets(bets: BacBoBet[], saldo: number) {
+  validateBets(bets: BacBoBet[], saldo: number, nivelDoJogador: number) {
     if (!Array.isArray(bets) || bets.length === 0 || bets.length > BET_TYPES.length) {
       throw new BadRequestException(`Aposte em 1 a ${BET_TYPES.length} tipos (jogador, banca, empate).`);
     }
@@ -58,14 +60,19 @@ export class BacBoService {
         throw new BadRequestException(`Aposta em "${bet.type}" duplicada — some tudo numa aposta só.`);
       }
       seen.add(bet.type);
-      const problema = problemaComAAposta(bet.amount, saldo);
+      const problema = problemaComAAposta(bet.amount, saldo, nivelDoJogador);
       if (problema) throw new BadRequestException(problema);
     }
   }
 
   async playRound(userId: string, bets: BacBoBet[], actionId?: string) {
-    const saldoAntes = await this.walletService.balanceOf(userId);
-    this.validateBets(bets, saldoAntes);
+    /*
+     * Quem é esta pessoa economicamente: saldo, nível e o degrau que os dois liberam.
+     * O degrau é `min(o que o saldo banca, o que o nível liberou)` — comprar fichas dá
+     * mais rodadas na mesa dela, não passagem pra mesa de cima.
+     */
+    const quem = await this.degraus.de(userId);
+    this.validateBets(bets, quem.saldo, quem.nivel);
 
     const totalStake = bets.reduce((sum, bet) => sum + bet.amount, 0);
 
@@ -90,7 +97,7 @@ export class BacBoService {
       if (totalReturn > 0) {
         await this.walletService.credit(userId, totalReturn, 'premio', GAME_ID, undefined, rodada.id);
       }
-      await this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn, saldoAntes);
+      await this.tournaments.recordRound(userId, GAME_ID, totalStake, totalReturn, quem.saldo);
       await rodada.terminar({
         resultado: { resultado: result.outcome, jogador: result.playerTotal, banca: result.bankerTotal },
         apostado: totalStake,

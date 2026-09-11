@@ -54,7 +54,20 @@
 export function xpDaRodada(apostado: number, minimoDaMesa: number): number {
   if (!Number.isFinite(apostado) || apostado <= 0) return 0;
   if (!Number.isFinite(minimoDaMesa) || minimoDaMesa <= 0) return 0;
-  const r = apostado / minimoDaMesa;
+  /*
+   * O `r` PARA NA FICHA MAIOR, e isto fecha uma porta que o degrau econômico abriu.
+   *
+   * Com `economicTier = min(saldo, nível)`, quem compra fichas e continua no nível baixo
+   * fica travado numa mesa barata COM MUITO DINHEIRO NO BOLSO. Como não existe aposta
+   * máxima (é decisão do dono do jogo, ver `niveis-de-mesa.ts`), essa pessoa podia apostar
+   * cem vezes o mínimo daquela mesa e levar o XP do teto em toda rodada — 20% a mais que
+   * quem aposta a ficha maior honestamente. Comprar ficha voltaria a acelerar o nível, que
+   * é exatamente o que o degrau econômico veio impedir.
+   *
+   * Apostar acima da ficha maior continua PERMITIDO — só não rende XP a mais. A maior
+   * ficha do trilho é o teto do que uma rodada pode valer, e isso vale pros doze degraus.
+   */
+  const r = Math.min(R_DE_REFERENCIA, apostado / minimoDaMesa);
   const bruto = (XP_NA_FICHA_MAIOR * Math.log(1 + r)) / Math.log(1 + R_DE_REFERENCIA);
   /*
    * O PISO DE 1 XP. Quem desce um degrau pra jogar barato num dia ruim aposta bem abaixo
@@ -77,8 +90,15 @@ export function xpDaRodada(apostado: number, minimoDaMesa: number): number {
 export const XP_NA_FICHA_MAIOR = 50;
 export const R_DE_REFERENCIA = 20;
 
-/** Teto de XP por rodada. Nenhuma aposta, por maior que seja, compra um nível. */
-export const XP_MAXIMO_POR_RODADA = 60;
+/**
+ * Teto de XP por rodada. Nenhuma aposta, por maior que seja, compra um nível.
+ *
+ * Ele COINCIDE com `XP_NA_FICHA_MAIOR` por construção, agora que o `r` para na ficha
+ * maior — e continua existindo como trava separada porque é ele que está conferido contra
+ * o custo do nível mais barato (`verify-xp`, conferência 5). Se um dia alguém soltar o
+ * limite do `r`, é esta constante que segura, e a conferência avisa antes.
+ */
+export const XP_MAXIMO_POR_RODADA = 50;
 
 /**
  * TETO DE XP POR DIA — é ele que trava robô, automação e farm de aposta mínima.
