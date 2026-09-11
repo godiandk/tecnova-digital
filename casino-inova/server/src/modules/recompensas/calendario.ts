@@ -1,139 +1,212 @@
-import { nivelPara } from '../games/shared/niveis-de-mesa';
+import { diaDoMes, diasDoMes, diasEntre, diaSeguinte } from '../../comum/dia-do-servidor';
+import { NIVEIS_DE_MESA } from '../games/shared/niveis-de-mesa';
 
 /**
- * O CALENDÁRIO DE TRINTA DIAS — a ficha que se ganha por voltar.
+ * A RECOMPENSA DIÁRIA — a ficha que se ganha por voltar.
  *
- * Isto existe por uma razão de jogo, e ela foi decidida junto com a retirada do teto de
- * aposta: sem teto, uma aposta pode zerar a conta. Quem zera precisa de um caminho de
- * volta que não seja comprar ficha — senão o jogo acabou pra essa pessoa. O calendário é
- * esse caminho: amanhã tem ficha, de graça, e dá pra jogar de novo.
+ * Existe por uma razão de jogo, decidida junto com a retirada do teto de aposta: sem teto,
+ * uma aposta pode zerar a conta. Quem zera precisa de um caminho de volta que não seja
+ * comprar ficha — senão o jogo acabou pra essa pessoa. O calendário é esse caminho: amanhã
+ * tem ficha, de graça, e dá pra jogar de novo.
  *
- * TRÊS DECISÕES, e o motivo de cada uma:
+ * A CATRACA QUE ISTO DESMONTA
  *
- * 1. O PRÊMIO É CALCULADO SOBRE O DEGRAU DA PESSOA, e não um número fixo. Dez mil fichas
- *    é uma banca inteira pra quem começou e é troco pra quem tem noventa e nove bilhões
- *    — o mesmo prêmio seria generoso demais num caso e insultuoso no outro. Como o
- *    prêmio é múltiplo do MÍNIMO da mesa em que a pessoa joga, ele sempre vale a mesma
- *    coisa em rodadas: o dia 1 paga dez rodadas, o dia 30 paga quinhentas.
+ * O prêmio era `mínimo da mesa do SALDO ATUAL × multiplicador do dia`, e isso era uma
+ * catraca de juros compostos: coletar aumenta o saldo, saldo maior sobe o degrau, degrau
+ * maior aumenta o prêmio do dia seguinte. Medido: quem só coletasse, sem jogar UMA rodada,
+ * chegava ao degrau Eclipse em 171 dias e a 102,3 QUATRILHÕES de fichas em um ano. Acima
+ * do Prata a loja deixava de ter função econômica, e jogar empobrecia em relação a não
+ * jogar — a recompensa rendia mais que o jogo.
  *
- *    E quem zerou a conta cai no degrau Bronze, então recebe o prêmio de Bronze — que é
- *    exatamente o suficiente pra sentar numa mesa Bronze e jogar. É o piso funcionando.
+ * Agora a âncora é o BRONZE, fixa, multiplicada pelo NÍVEL. Isso corta o laço: o prêmio
+ * não depende mais de nada que ele próprio faça crescer. Um ano só coletando cai de 102,3
+ * quatrilhões para 1,1 milhão de fichas.
  *
- * 2. O CALENDÁRIO INTEIRO FICA À VISTA, com o valor de cada dia. Não existe "prêmio
- *    surpresa", não existe caixa que pode vir vazia, e o dia 30 não é um mistério que
- *    prende. A pessoa sabe hoje o que vai ganhar no dia 19, e decide se vale a pena.
- *
- * 3. PERDER UM DIA VOLTA PRO DIA 1, E ISSO É DITO ANTES. É a regra que faz a sequência
- *    significar alguma coisa. O que ela não pode ser é uma pegadinha: a tela mostra a
- *    regra, mostra em que dia a pessoa está e mostra até quando ela tem pra coletar —
- *    com hora marcada, não com um relógio correndo pra criar aflição.
+ * E O PISO CONTINUA FUNCIONANDO PRA QUEM QUEBROU, que era o bom argumento a favor do
+ * saldo: quem zera a conta joga no Bronze, e o prêmio é em fichas de Bronze — dez apostas
+ * mínimas no primeiro dia, o suficiente pra sentar e jogar. O que mudou é que o prêmio
+ * deixou de pagar MAIS a quem tem mais, que era o efeito que aquela fórmula tinha.
  */
-
-/** O calendário tem um mês. Depois do dia 30, recomeça no 1. */
-export const DIAS_DO_CALENDARIO = 30;
 
 /**
- * Quantas vezes o mínimo da mesa cada dia paga.
+ * A ÂNCORA: a aposta mínima da mesa de entrada, e não o degrau da pessoa.
  *
- * A conta é uma reta com quatro marcos. A reta (8 + 2×dia) faz o prêmio crescer todo
- * dia, pra que o dia seguinte valha sempre mais que o anterior. Os marcos nas semanas —
- * 7, 14, 21 e o fechamento no 30 — são o que dá formato ao mês: pular um deles custa
- * caro, e é isso que faz alguém voltar na quinta-feira.
- *
- * Nada aqui é aleatório. O mesmo dia paga o mesmo múltiplo pra todo mundo, sempre.
+ * É esta linha que mata a catraca. Ancorar no degrau de quem coleta faria o prêmio crescer
+ * junto com o saldo que o prêmio mesmo aumenta, e o laço se fecha de novo.
  */
-const MARCOS: Record<number, number> = { 7: 60, 14: 120, 21: 200, 30: 500 };
+const ANCORA = NIVEIS_DE_MESA[0].minimo;
 
-export function multiplicadorDoDia(dia: number): number {
-  const d = Math.max(1, Math.min(DIAS_DO_CALENDARIO, Math.round(dia)));
+/**
+ * O BÔNUS DE NÍVEL — o que a progressão vale na recompensa.
+ *
+ * `1 + 0,5 × log10(nível)`, com teto em 3×: meia vez a mais a cada DÉCADA de nível. Nível
+ * 1 paga 1,00×, nível 10 paga 1,50×, nível 100 paga 2,00×, nível 1.000 paga 2,50× e o
+ * 10.000 paga 3,00× — que é exatamente onde a escada de níveis acaba.
+ *
+ * LOGARITMO E NÃO RETA, e a razão é a mesma da curva de XP: com dez mil níveis, uma reta
+ * obriga a escolher entre um bônus que não se sente no começo e um bônus absurdo no fim. O
+ * logaritmo dá os dois — e desacelera sozinho, então o nível 1.000 não vale dez vezes o
+ * nível 100 por ter dez vezes o número.
+ *
+ * O TETO DE 3× NÃO É ENFEITE: sem ele, o bônus alcançaria a diferença entre degraus (que é
+ * de 10×) e o nível voltaria a mexer em QUAL MESA a pessoa joga — que é trabalho do
+ * `economicTier`, não da recompensa.
+ */
+export function bonusDeNivel(nivel: number): number {
+  const n = Number.isFinite(nivel) ? Math.max(1, Math.floor(nivel)) : 1;
+  return Math.min(TETO_DO_BONUS, 1 + 0.5 * Math.log10(n));
+}
+
+export const TETO_DO_BONUS = 3;
+
+/**
+ * Quantas vezes a âncora cada dia da SEQUÊNCIA paga.
+ *
+ * A reta (`8 + 2 × dia`) faz o prêmio crescer todo dia, pra que o dia seguinte valha
+ * sempre mais que o anterior. Os marcos — 7, 14, 21 e o fechamento do mês — são o que dá
+ * formato ao mês: pular um deles custa caro, e é isso que faz alguém voltar na
+ * quinta-feira.
+ *
+ * O MARCO DE FIM DE MÊS É RELATIVO AO MÊS DE VERDADE, e não ao dia 30. Fevereiro fecha no
+ * 28 (ou 29, em ano bissexto), e julho no 31 — e os três pagam o mesmo marco. Antes o
+ * marco era a chave `30` numa tabela escrita à mão: em fevereiro ele nunca chegava, e em
+ * julho o dia 31 caía de volta na reta e pagava 70 no lugar de 500.
+ *
+ * Nada aqui é aleatório: o mesmo dia paga o mesmo múltiplo pra todo mundo, sempre, e o
+ * calendário inteiro fica à vista antes de a pessoa decidir se vale a pena voltar.
+ */
+export function multiplicadorDoDia(dia: number, diasDoMesAtual: number): number {
+  const total = Math.max(1, Math.round(diasDoMesAtual));
+  const d = Math.max(1, Math.min(total, Math.round(dia)));
+  if (d >= total) return MARCO_DO_FIM_DO_MES;
   return MARCOS[d] ?? 8 + 2 * d;
 }
 
+const MARCOS: Record<number, number> = { 7: 60, 14: 120, 21: 200 };
+const MARCO_DO_FIM_DO_MES = 500;
+
 /** Um marco é dia de semana fechada — a tela o desenha maior. */
-export function ehMarco(dia: number): boolean {
-  return MARCOS[dia] !== undefined;
+export function ehMarco(dia: number, diasDoMesAtual: number): boolean {
+  return dia >= diasDoMesAtual || MARCOS[dia] !== undefined;
 }
 
 /**
- * O prêmio do dia, em fichas, pra quem tem este saldo.
+ * O prêmio do dia, em fichas, pra quem está neste nível.
  *
  * Sai sempre inteiro: ficha não se parte, e o livro-caixa é de inteiros.
  */
-export function premioDoDia(dia: number, saldo: number): number {
-  return Math.round(nivelPara(saldo).minimo * multiplicadorDoDia(dia));
+export function premioDoDia(dia: number, nivelDoJogador: number, diasDoMesAtual: number): number {
+  return Math.round(ANCORA * multiplicadorDoDia(dia, diasDoMesAtual) * bonusDeNivel(nivelDoJogador));
 }
 
-/** O calendário inteiro pra quem tem este saldo — os trinta dias, com valor e marco. */
-export function calendarioPara(saldo: number): Array<{ dia: number; premio: number; marco: boolean }> {
-  return Array.from({ length: DIAS_DO_CALENDARIO }, (_, i) => ({
+export interface DiaDoCalendario {
+  dia: number;
+  premio: number;
+  marco: boolean;
+}
+
+/** O calendário inteiro do mês, pra quem está neste nível. */
+export function calendarioPara(nivelDoJogador: number, dia: string): DiaDoCalendario[] {
+  const total = diasDoMes(dia);
+  return Array.from({ length: total }, (_, i) => ({
     dia: i + 1,
-    premio: premioDoDia(i + 1, saldo),
-    marco: ehMarco(i + 1),
+    premio: premioDoDia(i + 1, nivelDoJogador, total),
+    marco: ehMarco(i + 1, total),
   }));
 }
 
-/** O começo do dia (UTC) a que este instante pertence. É a fronteira que vale pra tudo. */
-export function inicioDoDia(agora: Date): Date {
-  return new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));
-}
-
-/** Quantos dias inteiros separam dois dias. Zero é o mesmo dia. */
-export function diasEntre(de: Date, ate: Date): number {
-  const UM_DIA = 24 * 60 * 60 * 1000;
-  return Math.round((inicioDoDia(ate).getTime() - inicioDoDia(de).getTime()) / UM_DIA);
-}
-
+/**
+ * O DIA DO CALENDÁRIO É A POSIÇÃO NA SEQUÊNCIA, e não a data do mês.
+ *
+ * A diferença importa e é fácil de errar. Se a casa do calendário fosse o dia do mês,
+ * quem criasse a conta no dia 21 coletaria o marco de 200 vezes a âncora na primeira vez
+ * que abrisse o jogo — e quem entrasse no dia 1 levaria 30 dias pra chegar lá. O
+ * calendário é uma recompensa por VOLTAR, e voltar se conta em dias seguidos.
+ *
+ * A GRADE TEM O TAMANHO DO MÊS DE VERDADE — 28, 29, 30 ou 31 — pra que a tela pareça um
+ * calendário e "fechar o mês" queira dizer alguma coisa. Era `DIAS_DO_CALENDARIO = 30`,
+ * fixo, com o marco final preso na chave 30: em fevereiro esse marco nunca chegava, e em
+ * julho o dia 31 caía de volta na reta e pagava 70 no lugar de 500.
+ *
+ * E VIRAR O MÊS NÃO QUEBRA A SEQUÊNCIA. 31 de agosto e 1º de setembro são dias
+ * consecutivos, e a sequência é sobre dias consecutivos — o calendário mensal é
+ * apresentação. O que acontece é que a GRADE recomeça: quem fechou uma grade de 31 volta
+ * pra casa 1 da grade seguinte com a sequência intacta. Por isso `diaAtual` e
+ * `diasSeguidos` são dois números diferentes, e a tela mostra os dois.
+ */
 export interface EstadoDaSequencia {
-  /** O dia do calendário que está pra ser coletado agora (1 a 30). */
+  /** A casa do calendário que está pra ser coletada agora (1 até o tamanho do mês). */
   diaAtual: number;
   /** Dá pra coletar agora? Falso quando já coletou hoje. */
   podeColetar: boolean;
-  /** Quando o próximo dia abre. É um instante, não uma contagem regressiva. */
-  proximaAbertura: Date;
+  /** Quando o próximo dia abre, em `AAAA-MM-DD`. É a data, não uma contagem regressiva. */
+  proximaAbertura: string;
   /** A sequência foi perdida desde a última coleta? A tela diz isso sem rodeio. */
   sequenciaPerdida: boolean;
 }
 
 /**
- * Em que dia do calendário a pessoa está, a partir de quando ela coletou por último.
+ * Em que casa do calendário a pessoa está, a partir de quando ela coletou por último.
  *
- * `ultimaColeta` nulo é quem nunca coletou: dia 1, aberto.
+ * `ultimaColeta` nulo é quem nunca coletou: casa 1, aberta.
  *
- * A regra em três linhas, e ela é a mesma que a tela mostra escrita:
- *   coletou hoje       -> espera até amanhã, no mesmo dia do calendário
- *   coletou ontem      -> abre o dia seguinte da sequência (ou volta ao 1 depois do 30)
- *   faz mais de um dia -> a sequência caiu; recomeça no dia 1
+ * A regra em três linhas, e é a mesma que a tela mostra escrita:
+ *   coletou hoje       -> espera até amanhã, na mesma casa
+ *   coletou ontem      -> abre a casa seguinte (ou volta à 1 depois de fechar a grade)
+ *   faz mais de um dia -> a sequência caiu; recomeça na casa 1
+ *
+ * TUDO EM `AAAA-MM-DD`, nunca em `Date`. Um `Date` no caminho é um convite pra alguém (o
+ * driver do banco, o JSON, o aplicativo) reinterpretar o instante no fuso local e perder
+ * um dia — que é exatamente o defeito do item 9 ("23:59 coletou, 00:01 o sistema acha que
+ * foram dois dias"). A régua do dia mora em `comum/dia-do-servidor.ts`, em UTC, e é a
+ * mesma pro SQL: `CURRENT_DATE` saiu de cena porque é a data no fuso do BANCO.
  */
 export function estadoDaSequencia(
-  ultimaColeta: Date | null,
+  ultimaColeta: string | null,
   ultimoDia: number,
-  agora: Date,
+  hoje: string,
 ): EstadoDaSequencia {
-  const amanha = new Date(inicioDoDia(agora));
-  amanha.setUTCDate(amanha.getUTCDate() + 1);
+  const casasDaGrade = diasDoMes(hoje);
 
   if (!ultimaColeta) {
-    return { diaAtual: 1, podeColetar: true, proximaAbertura: inicioDoDia(agora), sequenciaPerdida: false };
+    return { diaAtual: 1, podeColetar: true, proximaAbertura: hoje, sequenciaPerdida: false };
   }
 
-  const distancia = diasEntre(ultimaColeta, agora);
+  const distancia = diasEntre(ultimaColeta, hoje);
 
-  if (distancia === 0) {
-    // Já coletou hoje. O dia atual continua sendo o que ela coletou; o próximo abre amanhã.
-    return { diaAtual: ultimoDia, podeColetar: false, proximaAbertura: amanha, sequenciaPerdida: false };
-  }
-
-  if (distancia === 1) {
-    // Voltou no dia seguinte: a sequência segue. Depois do dia 30, o calendário reinicia.
-    const proximo = ultimoDia >= DIAS_DO_CALENDARIO ? 1 : ultimoDia + 1;
+  if (distancia <= 0) {
+    /*
+     * Já coletou hoje — ou a última coleta está no futuro, o que só acontece se o relógio
+     * do servidor andar pra trás. Nos dois casos a resposta segura é a mesma: não paga.
+     */
     return {
-      diaAtual: proximo,
-      podeColetar: true,
-      proximaAbertura: inicioDoDia(agora),
+      diaAtual: Math.max(1, Math.min(casasDaGrade, ultimoDia)),
+      podeColetar: false,
+      proximaAbertura: diaSeguinte(hoje),
       sequenciaPerdida: false,
     };
   }
 
-  // Faltou pelo menos um dia inteiro: a sequência caiu e o calendário recomeça.
-  return { diaAtual: 1, podeColetar: true, proximaAbertura: inicioDoDia(agora), sequenciaPerdida: true };
+  if (distancia === 1) {
+    // Voltou no dia seguinte: a sequência segue. Fechada a grade, ela recomeça na casa 1.
+    return {
+      diaAtual: ultimoDia >= casasDaGrade ? 1 : ultimoDia + 1,
+      podeColetar: true,
+      proximaAbertura: hoje,
+      sequenciaPerdida: false,
+    };
+  }
+
+  // Faltou pelo menos um dia inteiro: a sequência caiu e a grade recomeça.
+  return { diaAtual: 1, podeColetar: true, proximaAbertura: hoje, sequenciaPerdida: true };
+}
+
+/** Quantas casas a grade deste mês tem. A tela desenha exatamente esta quantidade. */
+export function casasDaGrade(hoje: string): number {
+  return diasDoMes(hoje);
+}
+
+/** Que dia do mês é hoje — é a casa que a tela destaca na grade. */
+export function hojeNoMes(hoje: string): number {
+  return diaDoMes(hoje);
 }

@@ -5,6 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { UsersService } from './modules/users/users.service';
 import { PASTA_DO_SITE, SITE_PUBLICADO } from './site/pasta-do-site';
+import { corsDaApi, origensDoAmbiente } from './comum/origens-permitidas';
 
 /** IP da máquina na rede local — é por ele que o celular enxerga o servidor. */
 function localNetworkAddress(): string | null {
@@ -25,7 +26,56 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.enableCors();
+
+  /*
+   * CORS COM LISTA, e não `enableCors()` sem argumento — que quer dizer QUALQUER ORIGEM.
+   *
+   * Num aplicativo nativo isso não mudaria nada (CORS é regra de navegador). Mas este
+   * projeto também roda na web, e aí qualquer página que a pessoa abra em outra aba podia
+   * fazer o navegador dela chamar esta API em nome dela. Ver `comum/origens-permitidas.ts`.
+   */
+  app.enableCors(corsDaApi);
+  const origens = origensDoAmbiente();
+  console.log(
+    origens.length > 0
+      ? `CORS restrito a: ${origens.join(', ')}`
+      : 'CORS em modo de desenvolvimento (localhost e rede local). Defina ORIGENS_PERMITIDAS em produção.',
+  );
+
+  /*
+   * CABEÇALHOS DE SEGURANÇA, escritos à mão em vez de trazer o helmet.
+   *
+   * São cinco linhas contra uma dependência nova, e cada uma está aqui por um motivo que
+   * dá pra explicar — que é melhor do que um pacote cujo padrão ninguém leu:
+   *
+   *   nosniff       — impede o navegador de "adivinhar" que um JSON é HTML e executá-lo.
+   *   frame-options — ninguém põe esta API dentro de um iframe pra enganar quem clica.
+   *   referrer      — o endereço desta API não vaza para sites de terceiros.
+   *   HSTS          — depois da primeira visita por HTTPS, o navegador recusa HTTP. Só em
+   *                   produção: ligá-lo em desenvolvimento tranca `localhost` no HTTPS.
+   *   CSP           — a API devolve JSON, então a política mais apertada possível serve:
+   *                   nada pode ser carregado a partir do que ela responde. O site
+   *                   publicado tem a sua própria, no SiteController.
+   */
+  app.use((_req: unknown, res: { setHeader: (n: string, v: string) => void }, next: () => void) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+    if (process.env.NODE_ENV === 'production') {
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+    next();
+  });
+
+  /*
+   * O CORPO TEM TETO. O padrão do Express é 100 KB, que já é pequeno, mas ele vale por
+   * pedido e este servidor não recebe nada grande: a maior requisição é uma lista de
+   * apostas de roleta. 64 KB é folgado para isso e estreito para quem tentar entupir a
+   * memória com corpos gigantes.
+   */
+  app.useBodyParser('json', { limit: '64kb' });
+  app.useBodyParser('urlencoded', { limit: '64kb', extended: true });
 
   /*
    * Os arquivos do site, com cache agressivo — e isso é seguro justamente porque os

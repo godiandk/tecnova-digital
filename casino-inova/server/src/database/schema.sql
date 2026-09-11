@@ -323,3 +323,139 @@ CREATE INDEX IF NOT EXISTS eventos_usuario_idx ON eventos_da_rodada (usuario_id,
 -- e de 25 horas. A régua do dia está escrita em um lugar só, em código, onde se lê.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS xp_do_dia    INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS xp_do_dia_em DATE;
+
+-- --- A recompensa diária, corrigida ---
+--
+-- TRÊS DEFEITOS ESTAVAM AQUI, e os três são de tipos diferentes.
+--
+-- 1. O CHECK travava o calendário em trinta dias (`BETWEEN 1 AND 30`), então o mês de
+--    verdade — 28, 29, 30 ou 31 — não cabia. Em fevereiro o marco de fim de mês nunca
+--    chegava; em julho o dia 31 era recusado pelo banco.
+--
+-- 2. `last_claim_on` era comparado com `CURRENT_DATE`, que é a data no fuso do BANCO.
+--    Trocar o fuso do servidor moveria a virada do dia pra todo mundo de uma vez, e
+--    horário de verão dá dias de 23 e de 25 horas. A régua agora vem do código
+--    (`comum/dia-do-servidor.ts`, em UTC) e é passada como parâmetro.
+--
+-- 3. E O PIOR: a linha era marcada como coletada ANTES de o prêmio ser creditado, fora
+--    de transação. Morrendo o processo entre as duas, a pessoa ficava marcada como tendo
+--    coletado E NÃO RECEBIA — e não podia coletar de novo. Dinheiro não movido com a
+--    marca já gravada é invisível: ninguém reclama do que não sabe que existia.
+ALTER TABLE daily_rewards DROP CONSTRAINT IF EXISTS daily_rewards_last_claim_day_check;
+ALTER TABLE daily_rewards ADD COLUMN IF NOT EXISTS streak_total INTEGER NOT NULL DEFAULT 1;
+
+-- O HISTÓRICO DE COLETAS — uma linha por coleta, e é ela que fecha a janela.
+--
+-- A coleta inteira passou a ser uma transação só: grava esta linha, credita a carteira e
+-- atualiza `daily_rewards`. Ou as três acontecem, ou nenhuma acontece. O pior caso deixou
+-- de ser "marcado e não pago" e virou "nada aconteceu, tente de novo".
+--
+-- `claim_id` É A CHAVE DE IDEMPOTÊNCIA, e é o cliente quem a escolhe — ela identifica a
+-- INTENÇÃO ("a coleta que eu pedi às 9h03"), não a linha. Dois toques no botão, um retry
+-- depois de timeout, ou o mesmo pedido saindo de dois aparelhos chegam com a mesma chave,
+-- e o índice único faz o banco recusar o segundo. É o mesmo padrão de `ledger_entries`.
+--
+-- E ELE GUARDA O QUE FOI USADO NA CONTA — nível, multiplicador do dia e bônus — porque
+-- daqui a seis meses "por que recebi 3.000?" precisa de resposta, e recalcular com os
+-- números de hoje responderia outra pergunta. O multiplicador é gravado como inteiro em
+-- centésimos pra não guardar dinheiro perto de ponto flutuante.
+CREATE TABLE IF NOT EXISTS daily_reward_claims (
+  claim_id      TEXT        PRIMARY KEY,
+  user_id       TEXT        NOT NULL REFERENCES users(id),
+  -- O dia do servidor (UTC) em que a coleta valeu. Um por pessoa, garantido pelo índice.
+  claimed_on    DATE        NOT NULL,
+  -- A casa do calendário coletada (1 até o tamanho do mês).
+  calendar_day  INTEGER     NOT NULL CHECK (calendar_day BETWEEN 1 AND 31),
+  -- Dias seguidos até esta coleta, contando esta.
+  streak        INTEGER     NOT NULL CHECK (streak >= 1),
+  -- O nível do jogador no momento da coleta.
+  level         INTEGER     NOT NULL,
+  -- Multiplicador do dia e bônus de nível, em centésimos (250 = 2,50x).
+  day_multiplier    INTEGER NOT NULL,
+  level_bonus_cents INTEGER NOT NULL,
+  chips         BIGINT      NOT NULL CHECK (chips > 0),
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- É ESTE ÍNDICE QUE IMPEDE COLETAR DUAS VEZES NO MESMO DIA, e não uma checagem em código.
+-- Dois pedidos simultâneos em processos diferentes não se enxergam; o banco enxerga os
+-- dois. O segundo bate no índice e a transação inteira é desfeita — sem pagar.
+CREATE UNIQUE INDEX IF NOT EXISTS daily_reward_claims_um_por_dia
+  ON daily_reward_claims (user_id, claimed_on);
+
+CREATE INDEX IF NOT EXISTS daily_reward_claims_user_idx
+  ON daily_reward_claims (user_id, claimed_on DESC);
+
+-- --- A configuração da recompensa, no servidor ---
+--
+-- Uma linha por versão, e nunca um UPDATE: mudar o valor de um marco não pode reescrever
+-- o passado. A versão em vigor é a de maior `versao` com `valida_de <= hoje`, e as
+-- anteriores ficam pra explicar o que foi pago quando.
+--
+-- ESTÁ VAZIA POR PADRÃO, e isso é de propósito: sem linha, valem os valores do código
+-- (`calendario.ts`), que são os aprovados em docs/economia.md. A tabela existe pra dar
+-- pra corrigir um número sem soltar versão nova do servidor — não pra que os números
+-- fiquem escondidos num banco onde ninguém os lê junto com a regra.
+CREATE TABLE IF NOT EXISTS daily_reward_config (
+  versao        INTEGER     PRIMARY KEY,
+  valida_de     DATE        NOT NULL,
+  -- A âncora em fichas (o mínimo da mesa Bronze), e os quatro marcos, em JSON.
+  ancora        BIGINT      NOT NULL CHECK (ancora > 0),
+  marcos        JSONB       NOT NULL,
+  marco_fim_mes INTEGER     NOT NULL CHECK (marco_fim_mes > 0),
+  teto_do_bonus INTEGER     NOT NULL CHECK (teto_do_bonus > 0),
+  criada_em     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  criada_por    TEXT
+);
+
+-- --- As promoções da loja ---
+--
+-- UMA PROMOÇÃO É UMA LINHA COM PRAZO, e não um `if` no código. A diferença importa: com um
+-- `if`, "o pacote grande está 50% maior nesta semana" precisa de uma versão nova do
+-- servidor para começar E outra para acabar — e a que acaba é a que alguém esquece.
+--
+-- `starts_at` e `ends_at` são DATAS do servidor (UTC), a mesma régua de tudo que conta dia
+-- neste projeto (`comum/dia-do-servidor.ts`). Nunca `CURRENT_DATE`.
+--
+-- NÃO EXISTE URGÊNCIA FABRICADA AQUI. `ends_at` é a data real de fim, publicada à tela
+-- para que ela mostre "termina domingo" — e não um relógio regressivo que reinicia quando
+-- a pessoa volta. Uma promoção que "acaba em 4 minutos" toda vez que o aplicativo abre é
+-- mentira, e este projeto não conta essa.
+CREATE TABLE IF NOT EXISTS store_promotions (
+  promotion_id   TEXT        PRIMARY KEY,
+  nome           TEXT        NOT NULL,
+  starts_at      DATE        NOT NULL,
+  ends_at        DATE        NOT NULL,
+  -- Quanto acrescenta por cima do pacote, em porcentagem inteira. 50 = +50% de fichas.
+  bonus_percent  INTEGER     NOT NULL CHECK (bonus_percent > 0 AND bonus_percent <= 500),
+  -- Em que pacotes vale. Vazio = todos.
+  package_ids    TEXT[]      NOT NULL DEFAULT '{}',
+  -- Em que degraus econômicos vale. Vazio = todos.
+  eligible_tiers TEXT[]      NOT NULL DEFAULT '{}',
+  -- Quantas vezes cada pessoa pode comprar com esta promoção. NULL = sem limite.
+  purchase_limit INTEGER     CHECK (purchase_limit IS NULL OR purchase_limit > 0),
+  ativa          BOOLEAN     NOT NULL DEFAULT TRUE,
+  criada_em      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (ends_at >= starts_at)
+);
+
+CREATE INDEX IF NOT EXISTS store_promotions_janela ON store_promotions (starts_at, ends_at)
+  WHERE ativa;
+
+-- A promoção usada em cada compra fica GRAVADA NA COMPRA, e não só na tabela de promoções.
+-- Sem isso, editar ou apagar uma promoção reescreveria o passado: uma compra de três meses
+-- atrás passaria a "ter sido" com o bônus de hoje, e o suporte não teria como explicar o
+-- número que a pessoa viu na tela naquele dia.
+ALTER TABLE purchases ADD COLUMN IF NOT EXISTS promotion_id      TEXT;
+ALTER TABLE purchases ADD COLUMN IF NOT EXISTS bonus_percent     INTEGER;
+-- O degrau e o nível no momento da compra: são eles que explicam o tamanho do pacote.
+ALTER TABLE purchases ADD COLUMN IF NOT EXISTS tier_id           TEXT;
+ALTER TABLE purchases ADD COLUMN IF NOT EXISTS level             INTEGER;
+-- Preço e moeda, em centavos e inteiro. Dinheiro perto de ponto flutuante vira 9,899999.
+ALTER TABLE purchases ADD COLUMN IF NOT EXISTS price_cents       INTEGER;
+ALTER TABLE purchases ADD COLUMN IF NOT EXISTS currency          TEXT;
+-- Qual porta o dinheiro usou: revenuecat, pix, cartao... Ver PortaDePagamento.
+ALTER TABLE purchases ADD COLUMN IF NOT EXISTS provider          TEXT;
+
+CREATE INDEX IF NOT EXISTS purchases_promotion_idx ON purchases (promotion_id)
+  WHERE promotion_id IS NOT NULL;

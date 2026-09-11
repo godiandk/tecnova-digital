@@ -7,6 +7,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { corsDaApi } from '../../comum/origens-permitidas';
 import { BancaFrancesaTable, BancaFrancesaTableService, TableVisibility } from './banca-francesa-table.service';
 import { FriendsService } from '../friends/friends.service';
 import { BancaFrancesaBet } from '../games/banca-francesa/banca-francesa.engine';
@@ -29,7 +30,13 @@ import { RegistroDeEventos } from '../games/core/registro-de-eventos';
  * Quem o socket é fica decidido uma vez, no `identificar`, a partir do token assinado.
  * Nenhum evento depois disso lê identidade do corpo — ver `comUsuario`.
  */
-@WebSocketGateway({ cors: { origin: '*' } })
+/*
+ * O SOCKET USA A MESMA LISTA DE ORIGENS DA API. Era `origin: '*'` — qualquer página podia
+ * abrir um socket com este servidor. A identidade já estava protegida (o `identificar`
+ * exige token assinado), mas deixar a porta aberta permitia a qualquer site conectar e
+ * receber os eventos públicos das mesas.
+ */
+@WebSocketGateway({ cors: corsDaApi })
 export class RoomsGateway implements OnGatewayDisconnect {
   @WebSocketServer() server!: Server;
 

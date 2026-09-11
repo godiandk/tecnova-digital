@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { games } from '../data/games';
 import { getGameMode } from '../data/gameModes';
-import { usePlayer } from '../data/usePlayer';
+import { usePlayer, xpDoNivelProvisorio } from '../data/usePlayer';
 import { colors, fontFamily, fontSize, spacing, useJanela, LARGURA_MAXIMA, gradeDeCartazes } from '../theme';
 import { ChipStack } from '../components/ChipStack';
 import { LevelBar } from '../components/LevelBar';
@@ -14,6 +14,7 @@ import { TrilhoDourado } from '../components/TrilhoDourado';
 import { FitaDeGanhos } from '../components/FitaDeGanhos';
 import { Fundo } from '../components/Fundo';
 import { LuzAmbiente } from '../components/LuzAmbiente';
+import { ModalDeRecompensa } from '../components/ModalDeRecompensa';
 import { useRootNavigation } from '../navigation/useRootNavigation';
 
 /**
@@ -97,6 +98,12 @@ export function LobbyScreen() {
       <LinearGradient colors={['rgba(11,15,13,0.35)', colors.background]} locations={[0, 0.85]} style={StyleSheet.absoluteFillObject} />
       {/* Movimento na periferia — item 4 do docs/design-atencao-visual.md. */}
       <LuzAmbiente />
+      {/*
+        O AVISO DA RECOMPENSA DO DIA. Fica no salão e não na tela de entrada porque é aqui
+        que a pessoa chega — inclusive quem já estava logado e só abriu o aplicativo de
+        novo. Ele NÃO coleta sozinho: mostra o valor e espera o toque em COLETAR.
+      */}
+      <ModalDeRecompensa />
       <SafeAreaView style={styles.container} edges={['top']}>
       <View style={[styles.header, styles.centrado]}>
         <View style={styles.headerTop}>
@@ -112,7 +119,7 @@ export function LobbyScreen() {
         <LevelBar
           level={jogador?.level ?? 1}
           xp={jogador?.xp ?? 0}
-          xpToNextLevel={jogador?.xpToNextLevel ?? 500}
+          xpToNextLevel={jogador?.xpToNextLevel ?? xpDoNivelProvisorio(jogador?.level ?? 1)}
           width={larguraBarra}
         />
       </View>

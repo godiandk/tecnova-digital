@@ -232,7 +232,13 @@ export class AuthService {
   /** Confere o token e devolve o userId. Usado pelo guard e pelo gateway. */
   verificarToken(token: string): string {
     try {
-      const payload = jwt.verify(token, this.segredo) as TokenPayload;
+      /*
+       * O ALGORITMO É FIXADO, e isso não é zelo excessivo. Sem `algorithms`, a biblioteca
+       * aceita o que o PRÓPRIO TOKEN declarar no cabeçalho — e um token que declara `none`
+       * ou um algoritmo assimétrico abre a porta clássica de confusão de algoritmo. Dizer
+       * aqui qual é o único aceito custa uma linha e fecha uma classe inteira de ataque.
+       */
+      const payload = jwt.verify(token, this.segredo, { algorithms: ['HS256'] }) as TokenPayload;
       if (!payload?.sub) throw new Error('sem sub');
       return payload.sub;
     } catch {
@@ -274,6 +280,7 @@ export class AuthService {
       throw new UnauthorizedException('Conta não encontrada.');
     }
     const token = jwt.sign({ sub: userId } satisfies TokenPayload, this.segredo, {
+      algorithm: 'HS256',
       expiresIn: VALIDADE_TOKEN,
     });
     return { token, user };

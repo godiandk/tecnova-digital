@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { Publico } from './auth.guard';
 import { UsuarioAtual } from './usuario-atual.decorator';
+import { Limite } from '../../comum/limite-de-tentativas';
 
 class CadastroDto {
   email!: string;
@@ -36,6 +37,8 @@ export class AuthController {
   ) {}
 
   @Publico()
+  /* Cadastro é mais caro ainda (scrypt + escrita), e ninguém cria cinco contas por hora. */
+  @Limite({ quantas: 5, janelaEmSegundos: 3600 })
   @Post('cadastrar')
   cadastrar(@Body() body: CadastroDto) {
     if (!body?.email || !body?.senha || !body?.nome) {
@@ -49,6 +52,14 @@ export class AuthController {
   }
 
   @Publico()
+  /*
+   * DEZ TENTATIVAS EM CINCO MINUTOS, por IP E por e-mail.
+   *
+   * Por e-mail porque quem ataca UMA conta troca de IP; por IP porque quem varre MUITAS
+   * contas troca de e-mail. Os dois juntos fecham os dois caminhos, e dez tentativas em
+   * cinco minutos é folgado para quem digitou errado e apertado para um laço.
+   */
+  @Limite({ quantas: 10, janelaEmSegundos: 300, tambemPor: 'email' })
   @Post('entrar')
   entrar(@Body() body: LoginDto) {
     if (!body?.email || !body?.senha) {
@@ -69,6 +80,8 @@ export class AuthController {
   }
 
   @Publico()
+  /* O provedor externo já limita do lado dele, mas a porta daqui também precisa de teto. */
+  @Limite({ quantas: 20, janelaEmSegundos: 300 })
   @Post('entrar-com-provedor')
   entrarComProvedor(@Body() body: LoginProvedorDto) {
     if (!body?.provedor || !body?.token) {

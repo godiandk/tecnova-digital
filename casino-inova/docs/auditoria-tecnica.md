@@ -1,3 +1,11 @@
+> **Segurança do APLICATIVO: auditada.** A ressalva registrada nesta auditoria — de que
+> "segurança: existe e está bom" valia só para a segurança do JOGO, e que autenticação,
+> sessão, autorização, limite de chamadas, validação, SQL, segredos, CORS, WebSocket e
+> registro nunca tinham sido olhados — foi respondida em
+> `docs/auditoria-de-seguranca-do-aplicativo.md`. Sete achados corrigidos (dois deles de
+> gravidade alta: CORS e WebSocket abertos a qualquer origem, e nenhum limite de tentativas
+> em lugar nenhum) e três registrados em aberto, com o caminho de cada um.
+
 # Auditoria técnica do Casino Inova
 
 Levantamento do que existe hoje no repositório, medido no código e não de memória, contra

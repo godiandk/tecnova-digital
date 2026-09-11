@@ -70,6 +70,21 @@ arquivo está. Ele monta sozinho:
 
 Nenhuma senha fica escrita no projeto — os valores nascem lá dentro.
 
+### 3b. Duas variáveis que você precisa pôr à mão
+
+O `render.yaml` não sabe qual é o seu domínio, então estas duas ficam com você. As duas
+são de segurança (ver `docs/auditoria-de-seguranca-do-aplicativo.md`):
+
+| Variável | Valor | Por quê |
+|---|---|---|
+| `ORIGENS_PERMITIDAS` | `https://SEU-DOMINIO` (vírgula separa vários) | **De onde o navegador pode falar com a API.** Sem ela, valem só localhost e a rede local — e o site publicado não consegue chamar a própria API. Com ela, nenhum outro site consegue fazer o navegador de quem está logado agir em nome da pessoa. |
+| `NODE_ENV` | `production` | Liga o HSTS. Fica de fora em desenvolvimento de propósito: ligado, trancaria `localhost` no HTTPS. |
+
+E **`CONFIAR_NO_PROXY=true`** só se houver um proxy de verdade na frente (o Render tem —
+então ali ela vale). Ela faz o limite de tentativas ler o IP de `x-forwarded-for`, que é um
+cabeçalho escrito pelo cliente: **sem** proxy, qualquer um inventa um IP a cada pedido e
+passa por cima do limite; **com** proxy, é o único jeito de saber quem é.
+
 ### 4. Espere a primeira construção
 Uns 5 a 10 minutos na primeira vez: ele instala tudo, constrói o app web e compila o
 servidor. As tabelas do banco são criadas sozinhas quando o servidor sobe.

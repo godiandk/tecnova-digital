@@ -4,6 +4,7 @@ import { DatabaseModule } from './database/database.module';
 import { ObservabilidadeModule } from './observabilidade/observabilidade.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthGuard } from './modules/auth/auth.guard';
+import { LimiteDeTentativasGuard } from './comum/limite-de-tentativas';
 import { UsersModule } from './modules/users/users.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { LobbyModule } from './modules/lobby/lobby.module';
@@ -85,6 +86,15 @@ import { CoreDeSalasModule } from './modules/games/core/core.module';
    * fechado é de propósito — esquecer de proteger uma rota nova é mais fácil, e bem
    * mais caro, do que esquecer de abrir uma.
    */
-  providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
+  providers: [
+    /*
+     * A ORDEM IMPORTA: o limite roda ANTES da autenticação. Quem testa senhas nunca chega
+     * a ter um token válido — se o limite viesse depois, cada tentativa errada ainda
+     * pagaria o scrypt inteiro antes de ser recusada, que é o custo que o atacante quer
+     * impor ao servidor.
+     */
+    { provide: APP_GUARD, useClass: LimiteDeTentativasGuard },
+    { provide: APP_GUARD, useClass: AuthGuard },
+  ],
 })
 export class AppModule {}

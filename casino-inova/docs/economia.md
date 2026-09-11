@@ -573,7 +573,77 @@ quem vai perguntar.
 
 Uma mutação (o aplicativo ignorando o freio de nível) foi testada e pega.
 
-## Etapas 3 a 5 — ainda não
+## Etapa 3 — recompensa diária (feita)
 
-Loja e recompensa diária seguem como estão escritas acima.
+| Peça | Onde | Estado |
+|---|---|---|
+| Âncora no Bronze × `bonusDeNivel(L)`, teto 3× | `recompensas/calendario.ts` | feito |
+| Mês de verdade (28/29/30/31), marco no último dia | `diasDoMes` | feito |
+| Coleta numa transação só (histórico + carteira + sequência) | `recompensas.service.ts` | feito |
+| `claimId` idempotente, e o retry devolve o mesmo prêmio | `daily_reward_claims` | feito |
+| Régua de dia única, em UTC — `CURRENT_DATE` fora | `comum/dia-do-servidor.ts` | feito |
+| Histórico com nível, multiplicador e bônus de cada coleta | `/recompensas/diaria/historico` | feito |
+| `daily_reward_config` versionada | schema | tabela criada, vazia (valem os valores do código) |
+| Tela do calendário + modal no salão com COLETAR | `RecompensaDiariaScreen`, `ModalDeRecompensa` | feito |
+| Os testes do item 29 | `verify:recompensas` | feito |
+| Notificação push | — | **não**, só a arquitetura compatível (item 27 pedia isso) |
+
+**A catraca morreu, medida:** um ano só coletando cai de **102,3 quatrilhões** para **1,1
+milhão** de fichas (nível 1) ou 3,4 milhões (nível 10.000). O degrau alcançado sem jogar
+uma única rodada deixa de ser o Eclipse e passa a ser o Bronze, para sempre.
+
+O múltiplo do mês **continua 1.874** apostas mínimas, como na proposta — o que mudou é de
+que mesa ele é múltiplo: sempre do Bronze, nunca do degrau de quem coleta.
+
+Sete mutações testadas, sete pegas. A mais importante: desligando por completo a checagem
+em código (`podeColetar` sempre verdadeiro), os testes de pagamento duplo continuam
+passando — quem protege é o índice único do banco, não o `if`.
+
+## Etapa 4 — loja (feita)
+
+| Peça | Onde | Estado |
+|---|---|---|
+| `pacote = k(preço) × mínimo(economicTier) × bônusDeNível` | `store/pacotes.ts` | feito |
+| k = 100 / 300 / 800 / 2.400 | `PRECOS` | feito |
+| BRL, USD e EUR — uma tabela por moeda, sem conversão de câmbio | `PRECOS.precos` | feito |
+| Promoções com prazo, pacotes e degraus elegíveis, limite por pessoa | `store_promotions` | feito |
+| `PaymentProvider` (porta), webhook, idempotência, validação no servidor | `porta-de-pagamento.ts` | feito |
+| A compra guarda degrau, nível, preço, moeda, promoção e porta | `purchases` | feito |
+| Tela da loja lendo o servidor (era uma lista escrita no aplicativo) | `StoreScreen` | feito |
+| NFT / cripto | — | **não**, por decisão registrada |
+
+**O número que obrigava a mudança, e como ficou.** O maior pacote pago (R$ 149,90):
+
+| Degrau | Antes (120.000 fichas fixas) | Agora |
+|---|---|---|
+| Bronze | 2.400 apostas mínimas | 2.400 |
+| Ouro | 24 | 2.400 |
+| Diamante | 2 | 2.400 |
+| Rubi | **0 — nem uma** | 2.400 |
+
+No Bronze **nada mudou** para quem já jogava: foi assim que o `k` foi calibrado.
+
+**A catraca da loja está fechada pelo `economicTier`:** comprar aumenta o saldo, saldo
+maior subiria o degrau, degrau maior aumentaria o pacote seguinte. Com o freio do nível, o
+degrau só sobe jogando, e a espiral não fecha. Sem ele, medido: R$ 149,90/mês subiriam um
+degrau por mês e R$ 1.800 chegariam ao Eclipse em um ano.
+
+**As promoções não fabricam urgência.** `terminaEm` é a data real de fim, publicada para a
+tela dizer "termina domingo" — nunca um relógio regressivo que reinicia a cada abertura. E
+nenhuma promoção é disparada por derrota ou por saldo caindo: a elegibilidade olha degrau e
+pacote, e mais nada. O limite por pessoa é **teto** contra inflação, não gatilho de pressa.
+
+**Pix e cartão:** a porta existe e está documentada, a implementação não — pagamento fora
+da loja de aplicativo depende de um adquirente e de uma decisão sobre as regras da Apple
+para bens digitais. Apple Pay e Google Pay funcionam pela RevenueCat, que é como compra de
+ficha acontece dentro das lojas.
+
+Cinco mutações testadas, cinco pegas.
+
+## Etapa 5 — segurança do aplicativo (feita)
+
+Fora do escopo econômico, mas era o último item aberto: ver
+`docs/auditoria-de-seguranca-do-aplicativo.md`. Sete achados corrigidos — dois de gravidade
+alta (CORS e WebSocket abertos a qualquer origem; nenhum limite de tentativas em lugar
+nenhum) — e três registrados em aberto com o caminho de cada um.
 

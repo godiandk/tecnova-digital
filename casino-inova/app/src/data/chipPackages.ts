@@ -1,16 +1,17 @@
 /**
- * Os pacotes de ficha da loja, como a tela mostra.
+ * ESTA LISTA NÃO EXISTE MAIS, e o arquivo ficou só para dizer por quê.
  *
- * O preço e o rótulo vivem aqui porque quem cobra é a App Store / Play Store — o
- * servidor só sabe quantas fichas cada pacote entrega (ver store.service.ts), e os
- * `id` daqui precisam bater com os de lá.
+ * Eram quatro pacotes escritos no aplicativo — 5.000, 15.000, 40.000 e 120.000 fichas —
+ * que a tela da loja mostrava sem nunca perguntar nada ao servidor. Dois problemas, e o
+ * segundo é o grave:
  *
- * O jogador mockado que morava neste arquivo não existe mais: agora vem do servidor,
- * via `usePlayer()`.
+ * 1. Os números eram FIXOS enquanto a mesa em que a pessoa joga multiplica por dez a cada
+ *    degrau. O maior pacote comprava uma banca inteira no Bronze e nem uma aposta no Rubi.
+ * 2. E eram uma SEGUNDA VERDADE sobre o mesmo fato. A loja de verdade sempre esteve no
+ *    servidor; esta lista era uma cópia que ninguém atualizava junto, então a tela podia
+ *    anunciar um pacote e a compra creditar outro.
+ *
+ * Agora a tela pergunta: `/store/minha` para quem está logado (com o pacote do degrau e do
+ * nível dela) e `/store/pacotes` para a vitrine pública. Ver `src/api/store.ts`.
  */
-export const chipPackages = [
-  { id: 'bronze', chips: 5000, priceLabel: 'R$ 9,90', bonusLabel: undefined },
-  { id: 'prata', chips: 15000, priceLabel: 'R$ 24,90', bonusLabel: '+10% bônus' },
-  { id: 'ouro', chips: 40000, priceLabel: 'R$ 59,90', bonusLabel: '+25% bônus' },
-  { id: 'diamante', chips: 120000, priceLabel: 'R$ 149,90', bonusLabel: '+50% bônus' },
-] as const;
+export {};

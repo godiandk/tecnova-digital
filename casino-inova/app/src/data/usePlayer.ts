@@ -41,9 +41,14 @@ interface UsuarioDto {
  * diferentes pro mesmo XP, sem nenhuma das duas ser a verdade. Isto aqui sobrou só pro
  * chute do primeiro instante, antes de o `/users/me` responder, pra a barra não nascer
  * com denominador zero e aparecer cheia.
+ *
+ * Ele acompanha a curva do servidor (`197 × raiz(N)`, em `progressao/niveis.ts`) porque um
+ * chute com a curva ANTIGA — que era `500 + (N−1) × 250` — fazia a barra nascer num lugar e
+ * pular pra outro quando a resposta chegava. No nível 100 a diferença era de 25.250 pra
+ * 1.970: a barra aparecia praticamente vazia e saltava pra quase cheia.
  */
-function xpDoNivelProvisorio(nivel: number): number {
-  return 500 + (nivel - 1) * 250;
+export function xpDoNivelProvisorio(nivel: number): number {
+  return Math.round(197 * Math.sqrt(Math.max(1, nivel)));
 }
 
 /*

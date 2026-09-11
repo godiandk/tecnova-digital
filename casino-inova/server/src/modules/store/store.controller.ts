@@ -6,10 +6,14 @@ import {
   Get,
   Headers,
   Post,
+  Query,
   UnauthorizedException,
 } from '@nestjs/common';
-import { createHmac, timingSafeEqual } from 'crypto';
+
 import { StoreService } from './store.service';
+import { Promocoes } from './promocoes';
+import { PortaRevenueCat } from './porta-revenuecat';
+import { moedaValida } from './pacotes';
 import { UsuarioAtual } from '../auth/usuario-atual.decorator';
 import { Publico } from '../auth/auth.guard';
 
@@ -17,114 +21,103 @@ class FulfillPurchaseDto {
   packageId!: string;
 }
 
-/**
- * O corpo que a RevenueCat manda no webhook. Só interessam três campos; o resto do
- * payload dela é ignorado de propósito, pra a integração não quebrar quando ela
- * acrescentar coisa nova.
- */
-class WebhookDto {
-  event!: {
-    type?: string;
-    app_user_id?: string;
-    product_id?: string;
-    /** Id do evento — é o que impede creditar duas vezes se ela reenviar. */
-    id?: string;
-  };
-}
-
-/**
- * Tipos de evento que significam "entrou dinheiro". Consumível (nossos pacotes de
- * ficha) chega como NON_RENEWING_PURCHASE; os outros são de assinatura, e estão aqui
- * pra o dia em que existir um passe mensal.
- */
-const EVENTOS_DE_COMPRA = ['INITIAL_PURCHASE', 'NON_RENEWING_PURCHASE', 'RENEWAL'];
-
-/** Saiu dinheiro: a compra foi desfeita depois de já ter sido paga. */
-const EVENTOS_DE_ESTORNO = ['REFUND', 'CANCELLATION'];
-
 @Controller('store')
 export class StoreController {
-  constructor(private readonly storeService: StoreService) {}
+  /*
+   * A PORTA DA REVENUECAT É A ÚNICA IMPLEMENTADA. Pix e cartão estão declarados em
+   * `porta-de-pagamento.ts` e não têm implementação — não porque foram esquecidos, mas
+   * porque pagamento fora da loja de aplicativo depende de um adquirente e de uma decisão
+   * sobre as regras da Apple para bens digitais. Declarar sem implementar é melhor do que
+   * implementar pela metade: o dia em que existir, a porta já diz o que ela precisa
+   * entregar, e ninguém vai escrever uma quinta forma de creditar ficha num canto.
+   */
+  private readonly portas = [new PortaRevenueCat()];
 
+  constructor(
+    private readonly storeService: StoreService,
+    private readonly promocoes: Promocoes,
+  ) {}
+
+  /**
+   * A VITRINE PÚBLICA — a do Bronze, que é o que uma conta nova recebe de verdade.
+   *
+   * Continua pública porque a tela da loja precisa mostrar alguma coisa antes de a sessão
+   * carregar, e porque o preço não é segredo. Quem está logado recebe `/store/minha`, com
+   * o pacote do degrau dela.
+   */
   @Publico()
   @Get('pacotes')
-  listPackages() {
-    return this.storeService.listPackages();
+  listPackages(@Query('moeda') moeda?: string) {
+    return this.storeService.listPackages(moedaValida(moeda));
+  }
+
+  /** A loja desta pessoa: os mesmos preços, com o pacote do degrau e do nível dela. */
+  @Get('minha')
+  minhaLoja(@UsuarioAtual() usuarioLogado: string, @Query('moeda') moeda?: string) {
+    return this.storeService.lojaDe(usuarioLogado, moedaValida(moeda));
+  }
+
+  /** As promoções valendo hoje. Vazio quando não há — e isso não é escondido. */
+  @Get('promocoes')
+  promocoesDeHoje() {
+    return this.promocoes.valendoHoje();
+  }
+
+  @Get('minhas-compras')
+  minhasCompras(@UsuarioAtual() usuarioLogado: string) {
+    return this.storeService.historicoDe(usuarioLogado);
   }
 
   /**
-   * Caminho de PRODUÇÃO: a compra acontece na App Store / Play Store, a RevenueCat
-   * valida o recibo com a loja e chama este webhook. Só ela consegue chamar aqui,
-   * porque só ela tem o segredo compartilhado.
+   * Caminho de PRODUÇÃO: a compra acontece na App Store / Play Store, a RevenueCat valida
+   * o recibo com a loja e chama este webhook. Só ela consegue chamar aqui, porque só ela
+   * tem o segredo compartilhado.
    *
-   * A assinatura é conferida com `timingSafeEqual` em vez de `===`: comparação de
-   * string comum para no primeiro byte diferente, e o tempo que ela leva vaza quantos
-   * bytes iniciais o atacante já acertou — dá pra descobrir a assinatura byte a byte.
-   */
-  /*
-   * Público no sentido do guard de sessão — o provedor de pagamento não tem, e nunca
-   * vai ter, um token de jogador. Quem tranca esta porta é a assinatura HMAC logo
-   * abaixo. Sem este @Publico(), o guard global recusaria o webhook com 401 e nenhuma
+   * Público no sentido do guard de sessão — o provedor de pagamento não tem, e nunca vai
+   * ter, um token de jogador. Quem tranca esta porta é a assinatura HMAC, conferida dentro
+   * da porta. Sem este `@Publico()`, o guard global recusaria o webhook com 401 e nenhuma
    * compra seria creditada nunca.
    */
   @Publico()
   @Post('webhook/compra')
   async handlePurchaseWebhook(
     @Headers('authorization') authorization: string | undefined,
-    @Body() body: WebhookDto,
+    @Body() body: unknown,
   ) {
-    const segredo = process.env.PURCHASE_WEBHOOK_SECRET;
-    if (!segredo) {
-      throw new ForbiddenException('Webhook de compra não configurado neste servidor.');
-    }
-    if (!assinaturaConfere(authorization, body, segredo)) {
-      throw new UnauthorizedException('Assinatura inválida.');
+    const porta = this.portas.find((p) => p.configurada());
+    if (!porta) throw new ForbiddenException('Webhook de compra não configurado neste servidor.');
+
+    let evento;
+    try {
+      evento = porta.interpretar(body, { authorization });
+    } catch (erro) {
+      throw new UnauthorizedException(erro instanceof Error ? erro.message : 'Assinatura inválida.');
     }
 
-    const tipo = (body?.event?.type ?? '').toUpperCase();
-    const userId = body?.event?.app_user_id;
-    const packageId = body?.event?.product_id;
-    if (!userId || !packageId) {
-      throw new BadRequestException('Evento sem app_user_id ou product_id.');
+    if (evento.tipo === 'estorno') {
+      return this.storeService.registrarEstorno(evento.dados.eventoId, evento.dados.userId);
     }
-
-    /*
-     * O TIPO do evento decide o que fazer, e ignorar isso é caro.
-     *
-     * O provedor manda muito mais que "comprou": manda cancelamento, expiração,
-     * problema de cobrança, transferência de conta e ESTORNO. Se a gente creditasse em
-     * todo evento, bastaria comprar, receber as fichas, pedir o dinheiro de volta — e
-     * o evento de estorno creditaria as fichas outra vez. A pessoa ficaria com o
-     * dobro das fichas e sem ter pago nada.
-     */
-    if (EVENTOS_DE_ESTORNO.includes(tipo)) {
-      return this.storeService.registrarEstorno(body.event.id!, userId);
-    }
-
-    if (!EVENTOS_DE_COMPRA.includes(tipo)) {
+    if (evento.tipo === 'ignorado') {
       /*
-       * Tipo que não movimenta ficha (cancelamento de renovação, aviso de cobrança).
-       * Responde 200 assim mesmo: devolver erro faz o provedor reenviar o mesmo evento
-       * de novo e de novo, pra sempre, achando que a gente caiu.
+       * Responde 200 mesmo assim: devolver erro faz o provedor reenviar o mesmo evento de
+       * novo e de novo, para sempre, achando que caímos.
        */
-      return { ignorado: true, tipo };
+      return { ignorado: true, porque: evento.porque };
     }
-
-    return this.storeService.fulfillPurchase(userId, packageId, body.event.id);
+    return this.storeService.fulfillPurchase(evento.dados);
   }
 
   /**
    * Caminho de TESTE, e só isso.
    *
-   * Este endpoint credita ficha sem ninguém ter pago nada. Ele existe pra dar pra
-   * exercitar o resto do fluxo (carteira, loja, jogo) sem depender de loja de
-   * aplicativo — mas em produção seria fichas de graça pra quem descobrisse o
-   * endereço.
+   * Este endpoint credita ficha sem ninguém ter pago nada. Ele existe para dar para
+   * exercitar o resto do fluxo (carteira, loja, jogo) sem depender de loja de aplicativo —
+   * mas em produção seria fichas de graça para quem descobrisse o endereço.
    *
    * Por isso ele só responde quando `PERMITIR_COMPRA_DE_TESTE=true` está definida.
-   * Produção simplesmente não define, e aí a rota recusa. Deixar trancado por padrão
-   * (em vez de destrancado com um aviso no README) é o que garante que esquecer de
-   * configurar erra pro lado seguro.
+   * Produção simplesmente não define, e aí a rota recusa. Deixar trancado por padrão (em
+   * vez de destrancado com um aviso no README) é o que garante que esquecer de configurar
+   * erra para o lado seguro.
    */
   @Post('comprar')
   async fulfillPurchase(@UsuarioAtual() usuarioLogado: string, @Body() body: FulfillPurchaseDto) {
@@ -133,19 +126,16 @@ export class StoreController {
         'Compra de teste desligada. Em produção a ficha só entra pelo webhook de compra validada.',
       );
     }
-    if (!body?.packageId) {
-      throw new BadRequestException('Informe packageId.');
-    }
-    return this.storeService.fulfillPurchase(usuarioLogado, body.packageId);
-  }
-}
+    if (!body?.packageId) throw new BadRequestException('Informe packageId.');
 
-/** `Authorization: Bearer <hmac-sha256 do corpo, em hex>`. */
-function assinaturaConfere(authorization: string | undefined, body: unknown, segredo: string): boolean {
-  const recebida = authorization?.replace(/^Bearer\s+/i, '') ?? '';
-  const esperada = createHmac('sha256', segredo).update(JSON.stringify(body)).digest('hex');
-  const a = Buffer.from(recebida);
-  const b = Buffer.from(esperada);
-  // timingSafeEqual exige o mesmo tamanho — tamanho diferente já é assinatura errada.
-  return a.length === b.length && timingSafeEqual(a, b);
+    return this.storeService.fulfillPurchase({
+      /* Um id por chamada: sem ele, a segunda compra de teste seria tratada como reentrega. */
+      eventoId: `teste:${usuarioLogado}:${Date.now()}`,
+      userId: usuarioLogado,
+      pacoteId: body.packageId,
+      precoEmCentavos: 0,
+      moeda: '',
+      porta: 'revenuecat',
+    });
+  }
 }

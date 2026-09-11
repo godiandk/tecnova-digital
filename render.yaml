@@ -30,6 +30,23 @@ services:
       # tem que ser colado lá no painel dela — copie do painel do Render depois.
       - key: PURCHASE_WEBHOOK_SECRET
         generateValue: true
+      # Liga o HSTS (o navegador passa a recusar HTTP depois da primeira visita). Fica
+      # de fora em desenvolvimento de propósito: ligado, trancaria localhost no HTTPS.
+      - key: NODE_ENV
+        value: production
+      # O Render tem proxy na frente, então o IP de verdade vem em `x-forwarded-for` — e
+      # é dele que o limite de tentativas precisa. SÓ vale com proxy: sem um, o cabeçalho
+      # é escrito pelo cliente e qualquer um inventaria um IP a cada pedido.
+      - key: CONFIAR_NO_PROXY
+        value: "true"
+      # DE ONDE O NAVEGADOR PODE FALAR COM A API — o seu domínio, separado por vírgula.
+      #
+      # `sync: false` faz o Render PERGUNTAR na hora de criar, em vez de inventar um
+      # valor: ninguém além de você sabe qual é o domínio. Sem ela o servidor sobe em
+      # modo de desenvolvimento (só localhost), e o site publicado não consegue chamar a
+      # própria API — o erro aparece no primeiro acesso, não semanas depois.
+      - key: ORIGENS_PERMITIDAS
+        sync: false
 
 databases:
   - name: casino-inova-db

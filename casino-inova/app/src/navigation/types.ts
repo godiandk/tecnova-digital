@@ -23,6 +23,8 @@ export type RootStackParamList = {
   Domino: undefined;
   DominoMesa: undefined;
   Poker: undefined;
+  /** O calendário da recompensa diária, com o mês inteiro à vista. */
+  RecompensaDiaria: undefined;
   /** Painel de administração. A tela confere a permissão de novo — a rota existir não abre nada. */
   Painel: undefined;
 };

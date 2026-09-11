@@ -1,32 +1,41 @@
 /**
  * A RECOMPENSA DIÁRIA DÁ O QUE ELA DIZ QUE DÁ, UMA VEZ POR DIA.
  *
- * Duas partes, e as duas são lugares onde erro custa dinheiro de verdade:
+ *   npm run verify:recompensas
  *
- * 1. A REGRA DA SEQUÊNCIA, conferida sem banco: coletou hoje, coletou ontem, faltou. É
- *    conta de calendário, e conta de calendário erra em silêncio — na virada do mês, no
- *    ano bissexto, no dia 31 que o mês seguinte não tem.
+ * Cinco partes, e as duas últimas são onde erro custa dinheiro de verdade:
  *
- * 2. A COLETA EM SI, contra o banco de verdade: paga o valor certo, paga uma vez só
- *    mesmo com dez pedidos simultâneos, e deixa rastro no extrato.
+ * 1. O CALENDÁRIO: o mês de verdade, cada dia valendo mais que o anterior, e o marco de
+ *    fim de mês caindo no último dia SEJA ELE QUAL FOR.
+ * 2. A ÂNCORA: o prêmio sai do NÍVEL e não do saldo — e é isso que desmonta a catraca de
+ *    juros compostos que fazia um ano de coleta valer 102,3 quatrilhões de fichas.
+ * 3. A SEQUÊNCIA, sem banco: coletou hoje, coletou ontem, faltou. É conta de calendário,
+ *    e conta de calendário erra em silêncio — na virada do mês, no ano bissexto, no dia
+ *    31 que o mês seguinte não tem.
+ * 4. UM ANO INTEIRO percorrido dia a dia, atravessando fevereiro, bissexto e virada de ano.
+ * 5. A COLETA EM SI, contra o banco de verdade: paga o valor certo, paga uma vez só mesmo
+ *    com dez pedidos simultâneos, é idempotente por `claimId`, e não deixa nem marca sem
+ *    pagamento nem pagamento sem marca.
  *
- * O segundo é o que importa mais. A proteção contra pagar duas vezes não está num `if`
- * no meio do código — está na condição do UPDATE, e a única forma de saber se ela
+ * A parte 5 é a que importa mais. A proteção contra pagar duas vezes não está num `if` no
+ * meio do código — está num índice único do banco, e a única forma de saber se ela
  * funciona é disparar os pedidos ao mesmo tempo e contar o dinheiro depois.
  */
 import { DatabaseService } from '../../database/database.service';
 import { WalletService } from '../wallet/wallet.service';
 import { RecompensasService } from './recompensas.service';
 import {
-  DIAS_DO_CALENDARIO,
+  TETO_DO_BONUS,
+  bonusDeNivel,
   calendarioPara,
-  diasEntre,
+  casasDaGrade,
   ehMarco,
   estadoDaSequencia,
   multiplicadorDoDia,
   premioDoDia,
 } from './calendario';
-import { NIVEIS_DE_MESA, nivelPara } from '../games/shared/niveis-de-mesa';
+import { NIVEIS_DE_MESA } from '../games/shared/niveis-de-mesa';
+import { diaSeguinte, diasDoMes } from '../../comum/dia-do-servidor';
 
 let falhas = 0;
 function confere(titulo: string, ok: boolean, detalhe = '') {
@@ -37,101 +46,151 @@ function confere(titulo: string, ok: boolean, detalhe = '') {
   }
 }
 
-const dia = (iso: string) => new Date(`${iso}T12:00:00.000Z`);
+const BRONZE = NIVEIS_DE_MESA[0].minimo;
 
-console.log('--- 1. o calendário: trinta dias, cada um valendo mais que o anterior ---');
+console.log('--- 1. o calendário é o MÊS DE VERDADE, não trinta dias fixos ---');
 {
-  const c = calendarioPara(0);
-  confere('são trinta dias', c.length === DIAS_DO_CALENDARIO, `são ${c.length}`);
-  confere('numerados de 1 a 30', c[0].dia === 1 && c[29].dia === 30);
-
-  const marcos = c.filter((d) => d.marco).map((d) => d.dia);
-  confere('os marcos são 7, 14, 21 e 30', marcos.join(',') === '7,14,21,30', marcos.join(','));
-
-  // Todo dia paga mais que o anterior, ou é um marco (que paga muito mais).
-  const quedas = c.filter((d, i) => i > 0 && d.premio <= c[i - 1].premio && !d.marco && !c[i - 1].marco);
-  confere('o prêmio cresce todo dia', quedas.length === 0, `caiu nos dias ${quedas.map((d) => d.dia).join(',')}`);
-
-  confere('todo marco paga mais que o dia anterior', c.filter((d) => d.marco).every((d) => d.premio > c[d.dia - 2].premio));
-  confere('nenhum prêmio é fracionário', c.every((d) => Number.isInteger(d.premio)));
-  confere('o dia 30 é o maior de todos', c[29].premio === Math.max(...c.map((d) => d.premio)));
-}
-
-console.log('\n--- 2. o prêmio acompanha o degrau: sempre as mesmas rodadas ---');
-{
-  /*
-   * O ponto do prêmio ser múltiplo do mínimo da mesa é que ele vale a MESMA COISA EM
-   * RODADAS pra todo mundo. Isto confere exatamente isso, do Bronze ao último degrau.
-   */
-  for (const saldoDeTeste of [0, 10_000, 60_000, 6_000_000, 99_000_000_000]) {
-    const nivel = nivelPara(saldoDeTeste);
-    const rodadas = premioDoDia(1, saldoDeTeste) / nivel.minimo;
+  for (const [hoje, esperado] of [['2024-02-10', 29], ['2023-02-10', 28], ['2025-04-10', 30], ['2025-07-10', 31]] as const) {
+    const c = calendarioPara(1, hoje);
+    confere(`${hoje.slice(0, 7)} tem ${esperado} casas`, c.length === esperado, `tem ${c.length}`);
+    /*
+     * O MARCO DE FIM DE MÊS CAI NO ÚLTIMO DIA, seja ele 28, 29, 30 ou 31. Antes o marco
+     * era a chave `30` numa tabela à mão: em fevereiro nunca chegava, e em julho o dia 31
+     * caía de volta na reta e pagava 70 no lugar de 500.
+     */
     confere(
-      `com ${saldoDeTeste.toLocaleString('pt-BR')} (mesa ${nivel.nome}): o dia 1 paga ${rodadas} rodadas mínimas`,
-      rodadas === multiplicadorDoDia(1),
-      `deu ${rodadas}`,
+      `  e o marco de fim de mês cai no dia ${esperado}`,
+      c[esperado - 1].marco && c[esperado - 1].premio === Math.max(...c.map((d) => d.premio)),
+      `dia ${esperado} paga ${c[esperado - 1].premio}, o maior é ${Math.max(...c.map((d) => d.premio))}`,
     );
   }
-  const zerado = premioDoDia(1, 0);
+
+  const c = calendarioPara(1, '2025-07-10');
+  const marcos = c.filter((d) => d.marco).map((d) => d.dia);
+  confere('os marcos de julho são 7, 14, 21 e 31', marcos.join(',') === '7,14,21,31', marcos.join(','));
+
+  const quedas = c.filter((d, i) => i > 0 && d.premio <= c[i - 1].premio && !d.marco && !c[i - 1].marco);
+  confere('o prêmio cresce todo dia', quedas.length === 0, `caiu nos dias ${quedas.map((d) => d.dia).join(',')}`);
+  confere('todo marco paga mais que o dia anterior', c.filter((d) => d.marco).every((d) => d.premio > c[d.dia - 2].premio));
+  confere('nenhum prêmio é fracionário', c.every((d) => Number.isInteger(d.premio)));
+}
+
+console.log('\n--- 2. a âncora é o NÍVEL, e é isso que mata a catraca ---');
+{
+  /*
+   * A CATRACA, dita com número: o prêmio era `mínimo da mesa do SALDO ATUAL × multiplicador
+   * do dia`. Coletar aumenta o saldo, saldo maior sobe o degrau, degrau maior aumenta o
+   * prêmio do dia seguinte — juros compostos. Quem só coletasse, sem jogar UMA rodada,
+   * chegava ao Eclipse em 171 dias e a 102,3 quatrilhões de fichas em um ano.
+   *
+   * A conferência que fecha isso é estrutural: `premioDoDia` não recebe saldo. Não existe
+   * argumento pra passar, então não existe caminho pelo qual o saldo volte pra conta.
+   */
+  confere('premioDoDia não recebe saldo — o laço não tem por onde se fechar', premioDoDia.length === 3, `recebe ${premioDoDia.length} argumentos`);
+
+  const umAno = (nivel: number) => {
+    let total = 0;
+    for (let mes = 0; mes < 12; mes += 1) for (let d = 1; d <= 30; d += 1) total += premioDoDia(d, nivel, 30);
+    return total;
+  };
+  for (const nivel of [1, 100, 10_000]) {
+    const total = umAno(nivel);
+    console.log(`     um ano só coletando, nível ${nivel}: ${total.toLocaleString('pt-BR')} fichas`);
+    confere(`  nível ${nivel}: um ano de coleta não passa de 5 milhões de fichas`, total < 5_000_000, `deu ${total.toLocaleString('pt-BR')}`);
+  }
+
+  // O bônus de nível: meia vez a mais por década, com teto.
+  for (const [nivel, esperado] of [[1, 1], [10, 1.5], [100, 2], [1_000, 2.5], [10_000, 3]] as const) {
+    confere(`  nível ${nivel} vale ${esperado.toFixed(2)}x`, Math.abs(bonusDeNivel(nivel) - esperado) < 1e-9, `deu ${bonusDeNivel(nivel)}`);
+  }
+  confere('  o bônus tem teto, e nível absurdo não passa dele', bonusDeNivel(1e12) === TETO_DO_BONUS);
+  confere('  nível inválido cai no piso de 1x', bonusDeNivel(Number.NaN) === 1 && bonusDeNivel(-5) === 1 && bonusDeNivel(0) === 1);
+
+  /*
+   * O TETO DE 3x NÃO PODE ALCANÇAR A DISTÂNCIA ENTRE DEGRAUS, que é de 10x. Se
+   * alcançasse, o nível voltaria a mexer em QUAL MESA a pessoa joga — que é trabalho do
+   * `economicTier`, não da recompensa.
+   */
+  confere('o bônus máximo não chega perto de um degrau (10x)', TETO_DO_BONUS < 10);
+
+  // O piso pra quem quebrou continua funcionando: o dia 1 paga pra sentar numa mesa Bronze.
+  const primeiroDia = premioDoDia(1, 1, 30);
   confere(
-    `quem zerou a conta recebe ${zerado.toLocaleString('pt-BR')}, o bastante pra ${zerado / NIVEIS_DE_MESA[0].minimo} rodadas de Bronze`,
-    zerado >= NIVEIS_DE_MESA[0].minimo,
+    `quem zerou recebe ${primeiroDia.toLocaleString('pt-BR')} no dia 1 — ${primeiroDia / BRONZE} apostas mínimas de Bronze`,
+    primeiroDia >= BRONZE * 10,
   );
 }
 
 console.log('\n--- 3. a sequência: coletou hoje, coletou ontem, faltou ---');
 {
-  const nunca = estadoDaSequencia(null, 0, dia('2026-03-10'));
-  confere('quem nunca coletou começa no dia 1, aberto', nunca.diaAtual === 1 && nunca.podeColetar);
+  const nunca = estadoDaSequencia(null, 0, '2026-03-10');
+  confere('quem nunca coletou começa na casa 1, aberta', nunca.diaAtual === 1 && nunca.podeColetar);
 
-  const hoje = estadoDaSequencia(dia('2026-03-10'), 5, dia('2026-03-10'));
-  confere('coletou hoje: fechado, ainda no dia 5', !hoje.podeColetar && hoje.diaAtual === 5);
-  confere(
-    'e a próxima abertura é a meia-noite de amanhã',
-    hoje.proximaAbertura.toISOString() === '2026-03-11T00:00:00.000Z',
-    hoje.proximaAbertura.toISOString(),
-  );
+  const hoje = estadoDaSequencia('2026-03-10', 5, '2026-03-10');
+  confere('coletou hoje: fechado, ainda na casa 5', !hoje.podeColetar && hoje.diaAtual === 5);
+  confere('e a próxima abertura é amanhã', hoje.proximaAbertura === '2026-03-11', hoje.proximaAbertura);
 
-  const ontem = estadoDaSequencia(dia('2026-03-09'), 5, dia('2026-03-10'));
-  confere('coletou ontem: abre o dia 6', ontem.podeColetar && ontem.diaAtual === 6 && !ontem.sequenciaPerdida);
+  const ontem = estadoDaSequencia('2026-03-09', 5, '2026-03-10');
+  confere('coletou ontem: abre a casa 6', ontem.podeColetar && ontem.diaAtual === 6 && !ontem.sequenciaPerdida);
 
-  const faltou = estadoDaSequencia(dia('2026-03-08'), 5, dia('2026-03-10'));
-  confere('faltou um dia: volta pro dia 1 e avisa', faltou.podeColetar && faltou.diaAtual === 1 && faltou.sequenciaPerdida);
+  const faltou = estadoDaSequencia('2026-03-08', 5, '2026-03-10');
+  confere('faltou um dia: volta pra casa 1 e avisa', faltou.podeColetar && faltou.diaAtual === 1 && faltou.sequenciaPerdida);
 
-  const fechou = estadoDaSequencia(dia('2026-03-09'), 30, dia('2026-03-10'));
-  confere('depois do dia 30, o calendário recomeça no 1', fechou.diaAtual === 1 && !fechou.sequenciaPerdida);
+  /*
+   * A GRADE RECOMEÇA NO TAMANHO DO MÊS EM QUE SE ESTÁ. Março tem 31, então a casa 31 é a
+   * última — e a seguinte é a 1.
+   */
+  const fechou = estadoDaSequencia('2026-03-30', 31, '2026-03-31');
+  confere('fechada a grade de 31, a próxima casa é a 1', fechou.diaAtual === 1 && !fechou.sequenciaPerdida);
+
+  const fevereiro = estadoDaSequencia('2026-02-27', 28, '2026-02-28');
+  confere('em fevereiro a grade fecha na casa 28', fevereiro.diaAtual === 1 && !fevereiro.sequenciaPerdida);
 
   // As armadilhas de calendário: virada de mês, virada de ano, ano bissexto.
-  const viradaDeMes = estadoDaSequencia(dia('2026-03-31'), 9, dia('2026-04-01'));
-  confere('31 de março -> 1º de abril conta como o dia seguinte', viradaDeMes.diaAtual === 10 && !viradaDeMes.sequenciaPerdida);
+  confere('31 de março -> 1º de abril é o dia seguinte', estadoDaSequencia('2026-03-31', 9, '2026-04-01').diaAtual === 10);
+  confere('31 de dezembro -> 1º de janeiro é o dia seguinte', estadoDaSequencia('2026-12-31', 2, '2027-01-01').diaAtual === 3);
+  confere('28 -> 29 de fevereiro em ano bissexto é o dia seguinte', estadoDaSequencia('2028-02-28', 4, '2028-02-29').diaAtual === 5);
+  confere('28 de fevereiro -> 1º de março em ano comum é o dia seguinte', estadoDaSequencia('2027-02-28', 4, '2027-03-01').diaAtual === 5);
 
-  const viradaDeAno = estadoDaSequencia(dia('2026-12-31'), 2, dia('2027-01-01'));
-  confere('31 de dezembro -> 1º de janeiro conta como o dia seguinte', viradaDeAno.diaAtual === 3 && !viradaDeAno.sequenciaPerdida);
-
-  const bissexto = estadoDaSequencia(dia('2028-02-28'), 4, dia('2028-02-29'));
-  confere('28 -> 29 de fevereiro num ano bissexto conta como o dia seguinte', bissexto.diaAtual === 5);
-
-  const puloBissexto = estadoDaSequencia(dia('2027-02-28'), 4, dia('2027-03-01'));
-  confere('28 de fevereiro -> 1º de março num ano comum conta como o dia seguinte', puloBissexto.diaAtual === 5);
-
-  confere('diasEntre ignora a hora do dia', diasEntre(new Date('2026-03-09T23:59:00Z'), new Date('2026-03-10T00:01:00Z')) === 1);
+  /*
+   * O RELÓGIO ANDANDO PRA TRÁS não pode pagar de novo. Acontece em ajuste de NTP e em
+   * migração de máquina, e a resposta segura é não pagar.
+   */
+  const futuro = estadoDaSequencia('2026-03-12', 5, '2026-03-10');
+  confere('última coleta no futuro (relógio pra trás): não paga', !futuro.podeColetar);
 }
 
-console.log('\n--- 4. trinta dias seguidos: a sequência anda até o fim e recomeça ---');
+console.log('\n--- 4. um ano inteiro, dia a dia ---');
 {
-  let ultima: Date | null = null;
+  /*
+   * Percorre 2024 (bissexto) inteiro coletando todo dia, e exige que a casa ande de 1 em
+   * 1 sem buraco, que a grade recomece exatamente no tamanho de cada mês, e que a virada
+   * do mês NUNCA quebre a sequência. É a conferência que pega o erro que só aparece em
+   * fevereiro — o tipo que chega ao ar e some por onze meses.
+   */
+  let ultima: string | null = null;
   let ultimoDia = 0;
-  const percorridos: number[] = [];
-  for (let i = 0; i < 32; i += 1) {
-    const hoje = new Date(Date.UTC(2026, 4, 1 + i, 12));
-    const e = estadoDaSequencia(ultima, ultimoDia, hoje);
-    percorridos.push(e.diaAtual);
-    ultima = hoje;
+  let dia = '2024-01-01';
+  let quebras = 0;
+  let saltos = 0;
+  const casasVistas = new Set<number>();
+  for (let i = 0; i < 366; i += 1) {
+    const e = estadoDaSequencia(ultima, ultimoDia, dia);
+    if (e.sequenciaPerdida) quebras += 1;
+    if (ultimoDia > 0 && e.diaAtual !== 1 && e.diaAtual !== ultimoDia + 1) saltos += 1;
+    casasVistas.add(e.diaAtual);
+    ultima = dia;
     ultimoDia = e.diaAtual;
+    dia = diaSeguinte(dia);
   }
-  const esperado = [...Array.from({ length: 30 }, (_, i) => i + 1), 1, 2];
-  confere('trinta e dois dias seguidos percorrem 1..30 e voltam ao 1 e 2', percorridos.join(',') === esperado.join(','), percorridos.join(','));
-  confere('nenhum marco foi pulado', [7, 14, 21, 30].every((d) => percorridos.includes(d) && ehMarco(d)));
+  confere('366 dias seguidos: a sequência nunca quebra', quebras === 0, `${quebras} quebras`);
+  confere('e a casa nunca salta', saltos === 0, `${saltos} saltos`);
+  confere('as casas de 1 a 31 foram todas visitadas', [...casasVistas].sort((a, b) => a - b).join(',') === Array.from({ length: 31 }, (_, i) => i + 1).join(','));
+
+  // E o marco de fim de mês existe em todo mês do ano, com o número certo de casas.
+  const semMarco = ['2024-01-15', '2024-02-15', '2024-04-15', '2024-12-15']
+    .filter((d) => !ehMarco(diasDoMes(d), diasDoMes(d)) || casasDaGrade(d) !== diasDoMes(d));
+  confere('todo mês tem marco no último dia', semMarco.length === 0, semMarco.join(','));
 }
 
 // --- 5. contra o banco de verdade ---
@@ -143,18 +202,19 @@ async function contraOBanco() {
   const servico = new RecompensasService(db, wallet);
 
   const id = `teste-recompensa-${Date.now()}`;
-  await db.query(
-    `INSERT INTO users (id, name, level, xp, vip_tier, role)
-     VALUES ($1, 'Teste Recompensa', 1, 0, 'bronze', 'jogador')`,
-    [id],
-  );
+  await db.query(`INSERT INTO users (id, name, level) VALUES ($1, 'Teste Recompensa', 100)`, [id]);
+
+  const HOJE = '2026-05-10';
+  /* O dia seguinte: é nele que a corrida de dez pedidos acontece. */
+  const AMANHA = '2026-05-11';
 
   try {
-    const antes = await servico.calendarioDe(id);
-    confere('quem nunca coletou pode coletar, no dia 1', antes.podeColetar && antes.diaAtual === 1);
+    const antes = await servico.calendarioDe(id, HOJE);
+    confere('quem nunca coletou pode coletar, na casa 1', antes.podeColetar && antes.diaAtual === 1);
+    confere('o calendário já sai com o nível da pessoa', antes.nivel === 100 && antes.bonusDeNivel === 2);
 
     const saldoAntes = await wallet.balanceOf(id);
-    const r = await servico.coletar(id);
+    const r = await servico.coletar(id, HOJE, 'claim-1');
     const saldoDepois = await wallet.balanceOf(id);
     confere(
       `pagou ${r.premio.toLocaleString('pt-BR')} e o saldo subiu exatamente isso`,
@@ -162,20 +222,32 @@ async function contraOBanco() {
       `subiu ${saldoDepois - saldoAntes}`,
     );
     confere('o prêmio pago é o que o calendário anunciava', r.premio === antes.premioDeHoje, `anunciou ${antes.premioDeHoje}, pagou ${r.premio}`);
-    confere('e ficou marcado como dia 1, sequência 1', r.dia === 1 && r.diasSeguidos === 1);
+    confere('e ficou marcado como casa 1, sequência 1', r.dia === 1 && r.diasSeguidos === 1);
 
-    const depois = await servico.calendarioDe(id);
-    confere('agora não dá mais pra coletar hoje', !depois.podeColetar);
+    /*
+     * IDEMPOTÊNCIA POR claimId: o MESMO pedido repetido devolve o MESMO resultado, e não
+     * um erro. Do ponto de vista de quem tocou o botão duas vezes, a coleta deu certo —
+     * mostrar "você já coletou" seria transformar um retry em uma má notícia.
+     */
+    const repetido = await servico.coletar(id, HOJE, 'claim-1').catch((e) => e as Error);
+    confere(
+      'o mesmo claimId devolve o mesmo prêmio, e não um erro',
+      !(repetido instanceof Error) && repetido.premio === r.premio && repetido.repetida,
+      repetido instanceof Error ? `lançou "${repetido.message}"` : '',
+    );
+    confere('e o saldo não mudou com o repetido', (await wallet.balanceOf(id)) === saldoDepois);
 
+    // Um claimId DIFERENTE no mesmo dia é outra intenção — e essa tem que ser recusada.
     let recusou = false;
-    await servico.coletar(id).catch(() => { recusou = true; });
-    confere('a segunda tentativa no mesmo dia é recusada', recusou);
+    await servico.coletar(id, HOJE, 'claim-2').catch(() => { recusou = true; });
+    confere('um claimId novo no mesmo dia é recusado', recusou);
     confere('e o saldo não mudou com a recusa', (await wallet.balanceOf(id)) === saldoDepois);
 
-    // Dez pedidos AO MESMO TEMPO: é aqui que um `if` no meio do código deixaria passar.
-    await db.query('UPDATE daily_rewards SET last_claim_on = CURRENT_DATE - 1 WHERE user_id = $1', [id]);
+    // Dez pedidos AO MESMO TEMPO, cada um com sua chave: é aqui que um `if` deixaria passar.
     const saldoAntesDaCorrida = await wallet.balanceOf(id);
-    const resultados = await Promise.allSettled(Array.from({ length: 10 }, () => servico.coletar(id)));
+    const resultados = await Promise.allSettled(
+      Array.from({ length: 10 }, (_, i) => servico.coletar(id, AMANHA, `corrida-${i}`)),
+    );
     const pagaram = resultados.filter((x) => x.status === 'fulfilled');
     const creditado = (await wallet.balanceOf(id)) - saldoAntesDaCorrida;
     confere('dez coletas simultâneas: só uma foi aceita', pagaram.length === 1, `${pagaram.length} aceitas`);
@@ -185,17 +257,55 @@ async function contraOBanco() {
       `subiu ${creditado}`,
     );
 
-    const extrato = await db.query<{ n: string }>(
-      `SELECT COUNT(*)::text AS n FROM ledger_entries WHERE user_id = $1 AND origin = 'recompensa-diaria'`,
+    /*
+     * NEM MARCA SEM PAGAMENTO, NEM PAGAMENTO SEM MARCA. É a janela que existia: a linha
+     * era marcada antes do crédito, fora de transação, e morrer no meio deixava a pessoa
+     * marcada e sem receber. Agora as duas contagens têm que bater sempre.
+     */
+    const coletas = await db.query<{ n: string; soma: string }>(
+      'SELECT COUNT(*)::text AS n, COALESCE(SUM(chips),0)::text AS soma FROM daily_reward_claims WHERE user_id = $1',
       [id],
     );
-    confere('o extrato tem exatamente dois presentes, um por coleta aceita', extrato[0].n === '2', `tem ${extrato[0].n}`);
+    const extrato = await db.query<{ n: string; soma: string }>(
+      `SELECT COUNT(*)::text AS n, COALESCE(SUM(amount),0)::text AS soma
+         FROM ledger_entries WHERE user_id = $1 AND origin = 'recompensa-diaria'`,
+      [id],
+    );
+    confere('uma linha de coleta para cada presente no extrato', coletas[0].n === extrato[0].n, `${coletas[0].n} coletas, ${extrato[0].n} presentes`);
+    confere('e a soma das duas bate', coletas[0].soma === extrato[0].soma, `${coletas[0].soma} vs ${extrato[0].soma}`);
 
-    // A sequência caiu: volta pro dia 1 mesmo tendo coletado o dia 2.
-    await db.query('UPDATE daily_rewards SET last_claim_on = CURRENT_DATE - 3 WHERE user_id = $1', [id]);
-    const perdida = await servico.calendarioDe(id);
-    confere('depois de três dias sem coletar, volta pro dia 1 e avisa', perdida.diaAtual === 1 && perdida.sequenciaPerdida);
+    // O histórico guarda a conta, e não só o valor.
+    const historico = await servico.historicoDe(id);
+    confere('o histórico tem as duas coletas', historico.length === 2, `tem ${historico.length}`);
+    confere(
+      'e guarda nível, multiplicador e bônus de cada uma',
+      historico.every((h) => h.nivel === 100 && h.bonusDeNivel === 2 && h.multiplicadorDoDia > 0),
+    );
+    confere(
+      'o prêmio guardado é exatamente nível x multiplicador x âncora',
+      historico.every((h) => h.premio === Math.round(BRONZE * h.multiplicadorDoDia * h.bonusDeNivel)),
+    );
+
+    /*
+     * A MESMA CHAVE EM OUTRO DIA É OUTRO PEDIDO. Um cliente com uma chave fixa escrita no
+     * código dele bateria na chave primária no segundo dia — e a transação inteira cairia,
+     * entregando erro no lugar do prêmio. Compondo a chave guardada com o dia, o retry de
+     * hoje continua sendo o mesmo pedido e o de amanhã é outro.
+     */
+    const doisDiasDepois = '2026-05-12';
+    const comChaveReusada = await servico.coletar(id, doisDiasDepois, 'claim-1').catch((e) => e as Error);
+    confere(
+      'a mesma chave em outro dia coleta normalmente, e não estoura',
+      !(comChaveReusada instanceof Error) && comChaveReusada.premio > 0 && !comChaveReusada.repetida,
+      comChaveReusada instanceof Error ? `lançou "${comChaveReusada.message}"` : '',
+    );
+
+    // A sequência caiu: volta pra casa 1 mesmo tendo coletado a casa 2.
+    const perdida = await servico.calendarioDe(id, '2026-05-20');
+    confere('depois de dez dias sem coletar, volta pra casa 1 e avisa', perdida.diaAtual === 1 && perdida.sequenciaPerdida);
+    confere('e a sequência mostrada zera', perdida.diasSeguidos === 0, `mostrou ${perdida.diasSeguidos}`);
   } finally {
+    await db.query('DELETE FROM daily_reward_claims WHERE user_id = $1', [id]);
     await db.query('DELETE FROM ledger_entries WHERE user_id = $1', [id]);
     await db.query('DELETE FROM daily_rewards WHERE user_id = $1', [id]);
     await db.query('DELETE FROM users WHERE id = $1', [id]);
@@ -208,7 +318,7 @@ contraOBanco()
     console.log(falhas === 0 ? '\nOK: a recompensa diária paga o que anuncia, uma vez por dia.' : `\n${falhas} FALHA(S)`);
     process.exit(falhas === 0 ? 0 : 1);
   })
-  .catch((e) => {
-    console.log('ERRO:', e.message);
+  .catch((erro) => {
+    console.error('ERRO:', erro instanceof Error ? erro.message : erro);
     process.exit(1);
   });

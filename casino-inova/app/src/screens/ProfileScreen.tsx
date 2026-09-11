@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../navigation/types';
-import { usePlayer, perfilMudou } from '../data/usePlayer';
+import { usePlayer, perfilMudou, xpDoNivelProvisorio } from '../data/usePlayer';
 import { useJanela } from '../theme/useJanela';
 import { atualizarPerfil, fetchAvatares, formatarCodigo } from '../api/perfil';
 import { AVATARES_PADRAO, avatarEscolhido } from '../data/artePorTela';
@@ -152,7 +152,7 @@ export function ProfileScreen() {
         <LevelBar
           level={jogador?.level ?? 1}
           xp={jogador?.xp ?? 0}
-          xpToNextLevel={jogador?.xpToNextLevel ?? 500}
+          xpToNextLevel={jogador?.xpToNextLevel ?? xpDoNivelProvisorio(jogador?.level ?? 1)}
           width={larguraDaBarra(janela.width)}
         />
         {/*
@@ -211,6 +211,25 @@ export function ProfileScreen() {
         * um jogador comum que descubra a rota leva 403. Isto aqui é só não mostrar uma
         * porta que não abre.
         */}
+      {/*
+        A PORTA DA RECOMPENSA DIÁRIA. O aviso do salão aparece uma vez por dia e dá pra
+        fechar — sem uma entrada permanente, quem fechasse não teria como voltar, e o
+        calendário do mês (que é onde a regra do reset está escrita) ficaria inalcançável.
+      */}
+      <Pressable
+        onPress={() => navigation.navigate('RecompensaDiaria')}
+        style={styles.painelBotao}
+        accessibilityRole="button"
+        accessibilityLabel="Abrir o calendário da recompensa diária"
+      >
+        <Ionicons name="calendar" size={20} color={colors.goldBright} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.painelTitulo}>Recompensa diária</Text>
+          <Text style={styles.painelSubtitulo}>O calendário do mês, a sequência e o prêmio de hoje</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+      </Pressable>
+
       {(jogador?.role === 'admin' || jogador?.role === 'moderador') && (
         <Pressable
           onPress={() => navigation.navigate('Painel')}

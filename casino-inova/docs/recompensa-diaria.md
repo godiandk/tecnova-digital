@@ -1,8 +1,11 @@
 # Recompensa diária — o que existe, o que falta, e o que conflita
 
-Especificação registrada a pedido do produto. **Nada aqui foi implementado ainda** — este
-documento existe para que a implementação não recrie o que já está no ar e não passe por
-cima de decisões que já foram tomadas com motivo.
+Especificação registrada a pedido do produto.
+
+> **ESTADO: IMPLEMENTADO.** Os quatro conflitos do §2 foram resolvidos, tudo do §3 foi
+> construído, a proposta econômica do §4 foi aprovada (`docs/economia.md`) e os testes do
+> §5 estão em `npm run verify:recompensas`. O §6, no fim, é o registro do que ficou.
+> As seções 1 a 5 ficam como estavam, porque são o registro do que foi decidido e por quê.
 
 ---
 
@@ -159,3 +162,83 @@ perda de um dia · reset correto · extrato · saldo · reconstrução após rei
 Vale a mesma regra das outras conferências do projeto: cada uma tem que **falhar quando o
 código quebra**. Conferência que passa sempre não prova nada, e as deste projeto são
 testadas por mutação antes de contarem como prova.
+
+---
+
+# 6. O que foi implementado, e onde a implementação divergiu
+
+## Os quatro conflitos do §2
+
+| | Como ficou |
+|---|---|
+| **2.1** prêmio do saldo → do nível | Âncora fixa no **Bronze** (50 fichas) × `bonusDeNivel(L)`. O piso foi preservado: o dia 1 paga 10 apostas mínimas de Bronze, o bastante para sentar e jogar |
+| **2.2** 30 dias fixos → mês real | `diasDoMes()` do calendário de verdade. O `CHECK (1..30)` do banco caiu; o marco de fim de mês passou a ser **o último dia, seja ele 28, 29, 30 ou 31** |
+| **2.3** janela entre marcar e pagar | A coleta virou **uma transação só**: histórico, carteira e sequência, ou as três ou nenhuma |
+| **2.4** duas definições de "dia" | `CURRENT_DATE` saiu de cena. A régua é `comum/dia-do-servidor.ts`, em UTC, passada como parâmetro ao SQL |
+
+## O bônus de nível, congelado
+
+`bonusDeNivel(L) = min(3,0 ; 1 + 0,5 × log10(L))` — meia vez a mais por **década** de nível.
+
+| Nível | 1 | 10 | 100 | 1.000 | 10.000 |
+|---|---|---|---|---|---|
+| Bônus | 1,00× | 1,50× | 2,00× | 2,50× | **3,00×** |
+
+O teto de 3× não é enfeite: sem ele o bônus alcançaria a distância entre degraus (10×) e o
+nível voltaria a mexer em *qual mesa* a pessoa joga — trabalho do `economicTier`, não da
+recompensa.
+
+## A catraca, medida antes e depois
+
+| | Antes (âncora no saldo) | Depois (âncora no Bronze × nível) |
+|---|---|---|
+| Um ano só coletando, sem jogar | **102,3 quatrilhões** | **1,1 milhão** (nível 1) a **3,4 milhões** (nível 10.000) |
+| Degrau alcançado sem jogar | Eclipse em 171 dias | Bronze, para sempre |
+
+## Um número que mudou em relação ao §4
+
+O §4 registrou *"recompensa de hoje, 30 dias: 1.874 × o mínimo da mesa do saldo"*. O
+múltiplo **continua 1.874** — o que mudou é de que mesa ele é múltiplo: agora é sempre do
+**Bronze**, e não do degrau de quem coleta. É isso, e só isso, que desmonta a catraca.
+
+## Uma decisão que a especificação não tinha tomado
+
+**A casa do calendário é a posição na SEQUÊNCIA, não a data do mês.** Se fosse a data,
+quem criasse a conta no dia 21 coletaria o marco de 200× na primeira vez que abrisse o
+jogo, e quem entrasse no dia 1º levaria três semanas para chegar lá. A grade tem o tamanho
+do mês (para parecer um calendário e para "fechar o mês" significar algo), mas quem anda
+nela é a sequência. Por isso a tela mostra **dois números**: a casa da grade e os dias
+seguidos de verdade, que atravessam a virada do mês sem quebrar.
+
+## O que a tela diz, e por quê
+
+- o calendário **inteiro**, com o valor de cada dia, inclusive os que não abriram — sem
+  prêmio surpresa e sem caixa que pode vir vazia;
+- **a regra do reset antes de ela morder** — uma regra que só aparece quando custa é
+  pegadinha;
+- **quando o dia vira, com hora**: meia-noite UTC, 21h em Brasília;
+- o brilho da coleta **só depois do toque** — ele celebra uma coisa que aconteceu;
+- o modal **não coleta sozinho e dá para fechar**. Prêmio que cai sozinho vira ruído, e
+  modal que só fecha aceitando é propaganda.
+
+## Os testes (§5)
+
+`npm run verify:recompensas` — o mês real em quatro tamanhos, o marco no último dia de
+cada um, a âncora estrutural (`premioDoDia` não recebe saldo — não há por onde o laço se
+fechar), o bônus e seu teto, a sequência em todas as viradas (mês, ano, bissexto, relógio
+para trás), **um ano inteiro dia a dia**, e contra o banco: valor certo, `claimId`
+idempotente, dez coletas simultâneas, e *nem marca sem pagamento nem pagamento sem marca*.
+
+**Sete mutações deliberadas, sete pegas.** A que mais importa: desligando por completo a
+checagem em código (`podeColetar` sempre verdadeiro), os testes de pagamento duplo
+**continuam passando** — o que prova que quem protege é o índice único do banco, e não o
+`if`.
+
+## O que ficou de fora, de propósito
+
+- **Notificação push**: a arquitetura está compatível (o servidor sabe quem pode coletar e
+  desde quando), mas nada de push foi implementado — era o pedido do item 27.
+- **`daily_reward_config`**: a tabela existe e está **vazia**. Sem linha, valem os valores
+  do código, que são os aprovados. Ela existe para corrigir um número sem soltar versão
+  nova do servidor — não para esconder os números num banco onde ninguém os lê junto com a
+  regra. O carregador ainda não lê a tabela; hoje ela é só o lugar preparado.
