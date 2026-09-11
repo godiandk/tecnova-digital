@@ -32,6 +32,8 @@
  * problema de novo. Esse degrau custa pouco e evita o único jeito de isto ficar
  * injusto: alguém preso num mínimo que não cabe no bolso dele.
  */
+import { apostaMaximaSegura, problemaComOTeto } from '../../../comum/teto-de-fichas';
+
 export interface NivelDeMesa {
   /**
    * O identificador do degrau. É texto livre porque a escada é GERADA: travar num
@@ -146,7 +148,7 @@ function degrau(indice: number): NivelDeMesa {
 }
 
 /**
- * Doze degraus: do zero até uma entrada de 500 quatrilhões.
+ * Doze degraus: do zero até uma entrada de 500 trilhões.
  *
  * O teto é absurdo de propósito. Ele não é uma promessa de que alguém vai chegar lá —
  * é a garantia de que ninguém fica preso no último degrau, que foi exatamente o que
@@ -195,6 +197,38 @@ export function degrauDoNivel(nivel: number): NivelDeMesa {
  * escada e não sobre o mínimo em fichas: dá a mesma resposta hoje, e dá a resposta certa
  * no dia em que alguém mexer na escada e ela deixar de ser crescente.
  */
+/**
+ * O DEGRAU MAIS ALTO QUE AINDA CABE NA CONTA EXATA, para um jogo que paga até tanto.
+ *
+ * A CONFERÊNCIA DE PRECISÃO ENCONTROU ISTO, e é um defeito de produto, não de conta: no
+ * Eclipse a aposta mínima é 5 trilhões, e o caça-níqueis pode pagar 80.000x a aposta. Oito
+ * vezes dez elevado a dezesseis não cabe em ficha exata — então a mesa mais alta do jogo
+ * mais popular ficava impossível de jogar: o mínimo era MAIOR que o máximo aritmético, e
+ * nenhuma aposta era legal. A tela mostraria fichas, e o servidor recusaria todas.
+ *
+ * TRÊS SAÍDAS EXISTIAM, E DUAS ERAM RUINS. Encurtar a escada mexe na economia, que não é
+ * decisão de quem conserta aritmética. Baixar o prêmio máximo do caça-níqueis mexe no
+ * pagamento, que é promessa publicada ao jogador. A terceira é esta: o TRILHO de fichas
+ * daquele jogo para de subir onde a conta para de ser exata, e desce pro degrau mais alto
+ * que cabe inteiro — com as fichas redondas da própria escada, sem inventar denominação.
+ *
+ * O QUE O JOGADOR VÊ: no caça-níqueis as fichas dele param em 100 bilhões, e não em 100
+ * trilhões. Na banca francesa, na roleta e no blackjack elas não param — esses jogos pagam
+ * pouco o bastante pra escada inteira caber. A diferença é explicada pela mesma frase que
+ * `problemaComOTeto` escreve: é o prêmio máximo da mesa que manda no tamanho da ficha.
+ *
+ * Sem `maiorMultiplicador`, devolve o degrau como está: quem não diz quanto paga não tem
+ * como ter teto calculado.
+ */
+export function degrauQueCabeNaConta(degrau: NivelDeMesa, maiorMultiplicador?: number): NivelDeMesa {
+  if (maiorMultiplicador === undefined) return degrau;
+  const maximoSeguro = apostaMaximaSegura(maiorMultiplicador);
+  let i = NIVEIS_DE_MESA.indexOf(degrau);
+  if (i < 0) return degrau;
+  while (i > 0 && NIVEIS_DE_MESA[i].maximo > maximoSeguro) i -= 1;
+  return NIVEIS_DE_MESA[i];
+}
+
 export function degrauEconomico(saldo: number, nivel: number): NivelDeMesa {
   const porSaldo = NIVEIS_DE_MESA.indexOf(nivelPara(saldo));
   const porNivel = NIVEIS_DE_MESA.indexOf(degrauDoNivel(nivel));
@@ -214,8 +248,13 @@ export function degrauEconomico(saldo: number, nivel: number): NivelDeMesa {
  * conferida, e nenhum dos seis a lia. Quem tinha cem milhões continuava limitado a
  * cinco mil por aposta em todas as mesas.
  */
-export function problemaComAAposta(valor: number, saldo: number, nivelDoJogador: number): string | null {
-  const nivel = degrauEconomico(saldo, nivelDoJogador);
+export function problemaComAAposta(
+  valor: number,
+  saldo: number,
+  nivelDoJogador: number,
+  maiorMultiplicador?: number,
+): string | null {
+  const nivel = degrauQueCabeNaConta(degrauEconomico(saldo, nivelDoJogador), maiorMultiplicador);
   if (!Number.isFinite(valor) || !Number.isInteger(valor)) {
     return 'Ficha não se parte — a aposta precisa ser um número inteiro.';
   }
@@ -242,6 +281,23 @@ export function problemaComAAposta(valor: number, saldo: number, nivelDoJogador:
    */
   if (valor > saldo) {
     return `Você tem ${saldo.toLocaleString('pt-BR')} fichas — a aposta não pode passar disso.`;
+  }
+  /*
+   * O ÚNICO TETO QUE EXISTE, e ele não é de negócio: é de aritmética.
+   *
+   * Ficha é inteiro em ponto flutuante de 64 bits, exata até 2^53 − 1. Uma aposta
+   * gigante numa mesa que paga muito calcularia um prêmio acima dessa linha — e aí a
+   * conta erra em silêncio, ou a carteira recusa o crédito DEPOIS de a aposta já ter
+   * sido debitada. As duas saídas são a mesma cena: "você ganhou" na tela e o saldo
+   * parado. Recusar a aposta ANTES é a única que não machuca ninguém.
+   *
+   * Ver `comum/teto-de-fichas.ts` pra representação escolhida e pro porquê de não ser
+   * BigInt. Onde o limite morde depende do jogo: no caça-níqueis, que paga até 80.000x, ele
+   * aparece em 112 bilhões; na roleta, que paga 36x, só perto de 250 trilhões.
+   */
+  if (maiorMultiplicador !== undefined) {
+    const teto = problemaComOTeto(valor, maiorMultiplicador);
+    if (teto) return teto;
   }
   return null;
 }
@@ -324,8 +380,8 @@ export function mesasDeEntradaDisponiveis(saldo: number, nivelDoJogador: number)
  *
  * ESTES TRÊS JOGOS IGNORAVAM A ESCADA INTEIRA. O buy-in era `100 a 5.000`, escrito à mão
  * em três arquivos de configuração e conferido em cinco lugares, igual pra todo mundo: o
- * jogador Eclipse, com cinco quatrilhões no bolso, entrava numa partida de truco de cinco
- * mil fichas — 0,0000000001% da banca dele. Uma partida inteira que não muda nada é uma
+ * jogador Eclipse, com quinhentos trilhões no bolso, entrava numa partida de truco de
+ * cinco mil fichas — 0,000000001% da banca dele. Uma partida inteira que não muda nada é uma
  * partida que não vale a pena jogar, que é o mesmo defeito que a escada veio resolver nas
  * mesas contra a casa.
  *
@@ -371,8 +427,19 @@ export function problemaComAEntrada(buyIn: number, saldo: number, nivelDoJogador
   if (buyIn > saldo) {
     return `Você tem ${saldo.toLocaleString('pt-BR')} fichas — a entrada não pode passar disso.`;
   }
+  /*
+   * O TETO DA ARITMÉTICA numa mesa de entrada: o prêmio máximo é o bolo inteiro, que é a
+   * entrada vezes o número de jogadores. `MAIOR_MESA` é folgado de propósito — nenhuma
+   * mesa deste catálogo passa de seis lugares, e é melhor o teto sobrar do que faltar.
+   * Ver `comum/teto-de-fichas.ts`.
+   */
+  const teto = problemaComOTeto(buyIn, MAIOR_MESA);
+  if (teto) return teto;
   return null;
 }
+
+/** Quantos lugares a maior mesa de entrada tem. O bolo é a entrada vezes isto. */
+export const MAIOR_MESA = 10;
 
 /**
  * Como o bolo é dividido.

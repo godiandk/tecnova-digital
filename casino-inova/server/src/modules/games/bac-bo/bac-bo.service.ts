@@ -2,11 +2,12 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { BacBoBet, resolveBets, roll, theoreticalRtp } from './bac-bo.engine';
-import { SIDE_TOTAL_MULTIPLIER, TIE_PROFIT_ODDS, TIE_REFUND_MULTIPLIER } from './bac-bo.config';
+import { MAIOR_MULTIPLICADOR, SIDE_TOTAL_MULTIPLIER, TIE_PROFIT_ODDS, TIE_REFUND_MULTIPLIER } from './bac-bo.config';
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 import { MaquinaDeRodada } from '../core/maquina-de-rodada';
 import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
+import { FaixaDeAposta } from '../shared/faixa-de-aposta';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 const BET_TYPES: BacBoBet['type'][] = ['jogador', 'banca', 'empate'];
@@ -22,6 +23,7 @@ export class BacBoService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly faixas: FaixaDeAposta,
     private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
     private readonly roadmapService: RoadmapService,
@@ -34,10 +36,22 @@ export class BacBoService {
     return this.roadmapService.build(this.history);
   }
 
-  getConfig() {
+    /*
+   * A CONFIGURAÇÃO PASSOU A DEPENDER DE QUEM PERGUNTA.
+   *
+   * Ela publicava `NIVEIS_DE_MESA[0].minimo` — o mínimo do BRONZE — pra todo mundo. Na
+   * tela de quem tem bilhões isso virava "o mínimo é 500.000.000" ao lado de um trilho
+   * oferecendo fichas de 50: nenhuma combinação de fichas alcançava o mínimo, e a mesa
+   * ficava matematicamente inutilizável.
+   *
+   * Agora a faixa vem de `FaixaDeAposta`, que é a fonte única — ver o arquivo dela.
+   */
+  async getConfig(userId: string) {
+    const faixa = await this.faixas.de(userId, 3, MAIOR_MULTIPLICADOR);
     return {
-      minBet: NIVEIS_DE_MESA[0].minimo,
-      maxBet: NIVEIS_DE_MESA[0].maximo,
+      ...faixa,
+      minBet: faixa.minBet,
+      maxBet: faixa.maxBet,
       betTypes: BET_TYPES,
       sideTotalMultiplier: SIDE_TOTAL_MULTIPLIER,
       tieRefundMultiplier: TIE_REFUND_MULTIPLIER,
@@ -60,7 +74,7 @@ export class BacBoService {
         throw new BadRequestException(`Aposta em "${bet.type}" duplicada — some tudo numa aposta só.`);
       }
       seen.add(bet.type);
-      const problema = problemaComAAposta(bet.amount, saldo, nivelDoJogador);
+      const problema = problemaComAAposta(bet.amount, saldo, nivelDoJogador, MAIOR_MULTIPLICADOR);
       if (problema) throw new BadRequestException(problema);
     }
   }

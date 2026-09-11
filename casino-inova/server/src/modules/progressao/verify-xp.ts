@@ -34,7 +34,7 @@ let problemas = 0;
 const falhar = (m: string) => { problemas += 1; console.log(`FALHOU: ${m}`); };
 
 const BRONZE = NIVEIS_DE_MESA[0].minimo;      // 50
-const ECLIPSE = NIVEIS_DE_MESA[11].minimo;    // 5 quatrilhões
+const ECLIPSE = NIVEIS_DE_MESA[11].minimo;    // 5 trilhões
 
 // --- 1. nível não se compra: a mesma aposta RELATIVA vale o mesmo em todo degrau ---
 {
@@ -53,8 +53,8 @@ const ECLIPSE = NIVEIS_DE_MESA[11].minimo;    // 5 quatrilhões
   }
 
   /*
-   * A prova com número absurdo: o Eclipse aposta 5 quatrilhões de fichas — cem trilhões
-   * de vezes o que o Bronze aposta — e a barra dos dois anda igual.
+   * A prova com número absurdo: o Eclipse aposta 5 trilhões de fichas — cem bilhões de
+   * vezes o que o Bronze aposta — e a barra dos dois anda igual.
    */
   const bronze = xpDaRodada(BRONZE, BRONZE);
   const eclipse = xpDaRodada(ECLIPSE, ECLIPSE);

@@ -28,10 +28,16 @@ export class BancaFrancesaController {
     return this.bancaFrancesaService.getPlacar();
   }
 
-  @Publico()
+  /**
+   * A configuração DESTA mesa pra QUEM pergunta.
+   *
+   * Deixou de ser pública quando passou a responder o mínimo do degrau do jogador: sem
+   * saber quem pergunta, ela só sabia responder o Bronze — e era isso que punha "o mínimo
+   * em Grande é 500.000.000" ao lado de fichas de 50.
+   */
   @Get('config')
-  getConfig() {
-    return this.bancaFrancesaService.getConfig();
+  getConfig(@UsuarioAtual() usuarioLogado: string) {
+    return this.bancaFrancesaService.getConfig(usuarioLogado);
   }
 
   /**

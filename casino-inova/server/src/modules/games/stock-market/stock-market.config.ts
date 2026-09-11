@@ -28,3 +28,10 @@ export const MAX_BET = 5000;
 
 /** Quantos passos a cotação dá durante a rodada (é o que o gráfico desenha). */
 export const TICKS_PER_ROUND = 30;
+
+/**
+ * O MAIOR RETORNO DE UMA ORDEM, em múltiplos dela. O mercado paga no máximo 2x o valor
+ * aplicado — é um jogo de duas pontas, e as duas somadas fecham em 2. Ver
+ * `comum/teto-de-fichas.ts`.
+ */
+export const MAIOR_MULTIPLICADOR = 2;

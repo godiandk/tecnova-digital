@@ -163,7 +163,26 @@ export class PokerService {
     return this.publicView(match);
   }
 
-  act(userId: string, action: PokerAction) {
+  /**
+   * O jogador age.
+   *
+   * PASSOU A SER `async`, E ISSO NÃO É COSMÉTICO. A liquidação (`settleHand`) credita a
+   * carteira, e ela era chamada SEM `await` de dentro de uma cadeia síncrona: `act` ->
+   * `applyAction` -> `settleHand`. Na prática, `act` respondia o resultado da mão e o
+   * `newBalance` ANTES de o crédito ter acontecido — as duas idas ao banco saíam em
+   * conexões diferentes, sem ordem garantida entre elas.
+   *
+   * Dois estragos, e o segundo é pior:
+   *
+   *   1. a tela recebia "você ganhou" com o saldo de antes do prêmio. É literalmente o
+   *      "ganhei e o saldo não subiu" que foi relatado jogando;
+   *   2. se o processo caísse entre a resposta e o crédito, o prêmio SUMIA. Não havia
+   *      nada segurando a promessa — ninguém estava esperando por ela.
+   *
+   * Agora a cadeia inteira espera: nenhum jogador recebe o resultado de uma mão antes de
+   * a ficha ter se mexido de verdade.
+   */
+  async act(userId: string, action: PokerAction) {
     const match = this.requireHand(userId);
     if (match.toAct !== 'jogador') {
       throw new BadRequestException('Não é sua vez.');
@@ -173,8 +192,8 @@ export class PokerService {
       throw new BadRequestException(`Ação inválida agora — pode: ${legal.join(', ')}.`);
     }
 
-    this.applyAction(match, 'jogador', action);
-    this.runBotIfNeeded(match);
+    await this.applyAction(match, 'jogador', action);
+    await this.runBotIfNeeded(match);
     return this.publicView(match);
   }
 
@@ -191,10 +210,10 @@ export class PokerService {
     return actions;
   }
 
-  private applyAction(match: PokerHand, actor: 'jogador' | 'bot', action: PokerAction) {
+  private async applyAction(match: PokerHand, actor: 'jogador' | 'bot', action: PokerAction) {
     if (action === 'desistir') {
       match.lastEvent = actor === 'jogador' ? 'Você desistiu da mão.' : 'O bot desistiu da mão.';
-      this.settleHand(match, actor === 'jogador' ? 'bot' : 'jogador');
+      await this.settleHand(match, actor === 'jogador' ? 'bot' : 'jogador');
       return;
     }
 
@@ -229,7 +248,7 @@ export class PokerService {
     }
 
     if (this.isStreetComplete(match)) {
-      this.advanceStreet(match);
+      await this.advanceStreet(match);
     } else {
       match.toAct = isPlayer ? 'bot' : 'jogador';
     }
@@ -239,7 +258,7 @@ export class PokerService {
     return match.streetActionCount >= 2 && match.playerBetThisStreet === match.botBetThisStreet;
   }
 
-  private advanceStreet(match: PokerHand) {
+  private async advanceStreet(match: PokerHand) {
     match.streetActionCount = 0;
     match.raisesThisStreet = 0;
     match.playerBetThisStreet = 0;
@@ -255,20 +274,20 @@ export class PokerService {
       match.board.push(...match.deck.splice(0, 1));
       match.street = 'river';
     } else {
-      this.goToShowdown(match);
+      await this.goToShowdown(match);
       return;
     }
 
     match.toAct = 'bot'; // pós-flop, quem não é o botão (o bot) age primeiro
   }
 
-  private goToShowdown(match: PokerHand) {
+  private async goToShowdown(match: PokerHand) {
     match.street = 'showdown';
     const playerValue = bestHandOf([...match.playerHole, ...match.board]);
     const botValue = bestHandOf([...match.botHole, ...match.board]);
     const comparison = compareHandValues(playerValue, botValue);
     const winner = comparison > 0 ? 'jogador' : comparison < 0 ? 'bot' : 'empate';
-    this.settleHand(match, winner, handLabel(playerValue), handLabel(botValue));
+    await this.settleHand(match, winner, handLabel(playerValue), handLabel(botValue));
   }
 
   private async settleHand(match: PokerHand, winner: 'jogador' | 'bot' | 'empate', playerHandLabel?: string, botHandLabel?: string) {
@@ -323,7 +342,7 @@ export class PokerService {
     }
   }
 
-  private runBotIfNeeded(match: PokerHand, depth = 0) {
+  private async runBotIfNeeded(match: PokerHand, depth = 0): Promise<void> {
     if (match.finished || match.toAct !== 'bot' || depth > 10) return;
 
     const legal = this.legalActions(match, 'bot');
@@ -334,8 +353,8 @@ export class PokerService {
       suggestion = legal.includes('pagar') ? 'pagar' : legal.includes('passar') ? 'passar' : 'desistir';
     }
 
-    this.applyAction(match, 'bot', suggestion);
-    this.runBotIfNeeded(match, depth + 1);
+    await this.applyAction(match, 'bot', suggestion);
+    await this.runBotIfNeeded(match, depth + 1);
   }
 
   private requireHand(userId: string): PokerHand {

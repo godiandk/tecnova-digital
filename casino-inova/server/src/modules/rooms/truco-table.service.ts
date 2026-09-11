@@ -124,7 +124,7 @@ export class TrucoTableService {
     if (style !== 'sujo' && style !== 'limpo') throw new BadRequestException('Estilo inválido.');
     /*
      * A ENTRADA CABE NO DEGRAU DE QUEM ABRE A MESA. Era `100 a 5.000` pra todo mundo, de
-     * quem acabou de criar a conta a quem tem cinco quatrilhões.
+     * quem acabou de criar a conta a quem tem quinhentos trilhões.
      */
     const anfitriao = await this.degraus.de(hostUserId);
     const problemaDaEntrada = problemaComAEntrada(buyIn, anfitriao.saldo, anfitriao.nivel);
@@ -227,7 +227,7 @@ export class TrucoTableService {
     }
 
     table.started = true;
-    this.dealNewHand(table);
+    await this.dealNewHand(table);
     table.lastEvent = 'Partida começou!';
     return table;
   }
@@ -298,7 +298,8 @@ export class TrucoTableService {
       const winner = table.pendingRaise.byTeam;
       table.pendingRaise = null;
       table.lastEvent = `${seat.name} correu do ${label}.`;
-      this.awardHand(table, winner);
+      /* Espera o crédito do pote: a mesa não responde "correu" antes de a ficha se mexer. */
+      await this.awardHand(table, winner);
       return table;
     }
 
@@ -563,7 +564,7 @@ export class TrucoTableService {
       return;
     }
 
-    this.dealNewHand(table);
+    await this.dealNewHand(table);
   }
 
   private async dealNewHand(table: TrucoOnlineTable) {

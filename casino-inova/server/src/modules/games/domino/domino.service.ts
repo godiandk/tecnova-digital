@@ -125,7 +125,19 @@ export class DominoService {
     return this.publicView(userId, match);
   }
 
-  playTile(userId: string, tile: Tile, end?: BoardEnd) {
+  /*
+   * OS MÉTODOS DE JOGADA VIRARAM `async`, E ISSO NÃO É COSMÉTICO.
+   *
+   * `awardMatch` credita a carteira, e era chamada SEM `await` de dentro de uma cadeia
+   * síncrona. A jogada respondia o resultado da partida e o `newBalance` ANTES de o
+   * crédito ter acontecido — duas idas ao banco em conexões diferentes, sem ordem
+   * garantida entre elas. E se o processo caísse no meio, o prêmio sumia, porque ninguém
+   * estava esperando aquela promessa.
+   *
+   * É o mesmo defeito que estava no pôquer e no truco, e a mesma correção: a cadeia
+   * inteira espera, e ninguém vê "você bateu" antes de a ficha ter se mexido.
+   */
+  async playTile(userId: string, tile: Tile, end?: BoardEnd) {
     const match = this.requireMatch(userId);
     const handIndex = match.playerHand.findIndex((item) => item.a === tile.a && item.b === tile.b);
     if (handIndex === -1) {
@@ -161,15 +173,15 @@ export class DominoService {
 
     if (match.playerHand.length === 0) {
       match.lastEvent = 'Você bateu — ficou sem peças!';
-      this.awardMatch(userId, match, 'jogador');
+      await this.awardMatch(userId, match, 'jogador');
       return this.publicView(userId, match);
     }
 
-    this.runBotTurn(userId, match);
+    await this.runBotTurn(userId, match);
     return this.publicView(userId, match);
   }
 
-  passTurn(userId: string) {
+  async passTurn(userId: string) {
     const match = this.requireMatch(userId);
     if (canPlay(match.playerHand, match.leftEnd, match.rightEnd)) {
       throw new BadRequestException('Você tem uma peça jogável — não pode passar.');
@@ -179,15 +191,15 @@ export class DominoService {
     match.lastEvent = 'Você passou a vez.';
 
     if (match.consecutivePasses >= 2) {
-      this.resolveBlockedGame(userId, match);
+      await this.resolveBlockedGame(userId, match);
       return this.publicView(userId, match);
     }
 
-    this.runBotTurn(userId, match);
+    await this.runBotTurn(userId, match);
     return this.publicView(userId, match);
   }
 
-  private runBotTurn(userId: string, match: DominoMatch) {
+  private async runBotTurn(userId: string, match: DominoMatch) {
     if (match.finished) return;
 
     const move = match.leftEnd === null ? null : chooseBotMove(match.botHand, match.leftEnd, match.rightEnd!);
@@ -195,7 +207,7 @@ export class DominoService {
       match.consecutivePasses += 1;
       match.lastEvent = (match.lastEvent ? match.lastEvent + ' ' : '') + 'O bot passou a vez.';
       if (match.consecutivePasses >= 2) {
-        this.resolveBlockedGame(userId, match);
+        await this.resolveBlockedGame(userId, match);
       }
       return;
     }
@@ -211,20 +223,20 @@ export class DominoService {
 
     if (match.botHand.length === 0) {
       match.lastEvent = (match.lastEvent ? match.lastEvent + ' ' : '') + 'O bot bateu — ficou sem peças.';
-      this.awardMatch(userId, match, 'bot');
+      await this.awardMatch(userId, match, 'bot');
     }
   }
 
-  private resolveBlockedGame(userId: string, match: DominoMatch) {
+  private async resolveBlockedGame(userId: string, match: DominoMatch) {
     const playerSum = tileSum(match.playerHand);
     const botSum = tileSum(match.botHand);
     match.lastEvent =
       (match.lastEvent ? match.lastEvent + ' ' : '') +
       `Jogo travou — você ficou com ${playerSum} pontos na mão, o bot com ${botSum}.`;
 
-    if (playerSum < botSum) this.awardMatch(userId, match, 'jogador');
-    else if (botSum < playerSum) this.awardMatch(userId, match, 'bot');
-    else this.awardMatch(userId, match, 'empate');
+    if (playerSum < botSum) await this.awardMatch(userId, match, 'jogador');
+    else if (botSum < playerSum) await this.awardMatch(userId, match, 'bot');
+    else await this.awardMatch(userId, match, 'empate');
   }
 
   private async awardMatch(userId: string, match: DominoMatch, winner: 'jogador' | 'bot' | 'empate') {

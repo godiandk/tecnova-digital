@@ -72,3 +72,10 @@ export const TOTAL_MULTIPLIER: Record<RouletteBetType, number> = {
  * casas de fora dão 49; cem deixa folga pra qualquer jogada humana.
  */
 export const MAXIMO_DE_APOSTAS_POR_RODADA = 100;
+
+/**
+ * O MAIOR RETORNO DE UMA APOSTA, em múltiplos dela: o pleno, que paga 36x o total
+ * apostado (a notação de mesa "35 para 1" é só o lucro). Nenhuma outra casa da roleta
+ * paga mais que isso. Ver `comum/teto-de-fichas.ts`.
+ */
+export const MAIOR_MULTIPLICADOR = 36;

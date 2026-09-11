@@ -43,3 +43,10 @@ export const TIE_PROFIT_ODDS: Record<number, number> = {
 
 export const MIN_BET = 50;
 export const MAX_BET = 5000;
+
+/**
+ * O MAIOR RETORNO DE UMA APOSTA, em múltiplos dela: o empate em 2 ou em 12, que paga 88
+ * de lucro — 89 de retorno total. Calculado da tabela pra não envelhecer sozinho.
+ * Ver `comum/teto-de-fichas.ts`.
+ */
+export const MAIOR_MULTIPLICADOR = Math.max(...Object.values(TIE_PROFIT_ODDS)) + 1;

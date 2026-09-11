@@ -23,7 +23,7 @@ import {
   DominoTile,
   DominoEnd,
 } from '../../api/domino';
-import { usePlayer } from '../../data/usePlayer';
+import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
 import { SeletorDeEntrada } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
@@ -55,14 +55,23 @@ export function DominoScreen({ navigation }: Props) {
   const [tutorialVisible, setTutorialVisible] = useState(true);
   const [config, setConfig] = useState<DominoConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
-  const [balance, setBalance] = useState(0);
   const { jogador } = usePlayer();
 
-  // Semeia o saldo com a carteira de verdade; a partir da primeira aposta quem manda é
-  // o `newBalance` que o servidor devolve.
-  useEffect(() => {
-    if (jogador) setBalance(jogador.chipBalance);
-  }, [jogador]);
+  /*
+   * O SALDO NÃO TEM CÓPIA NESTA TELA, e isso conserta um defeito que fazia o número ANDAR
+   * PARA TRÁS depois de uma vitória.
+   *
+   * Era uma cópia local (`useState`) sincronizada com o estado compartilhado por um efeito.
+   * Como o efeito roda a cada mudança do objeto `jogador`, uma busca de saldo disparada
+   * ANTES da aposta — e que voltava DEPOIS dela — reescrevia o saldo velho por cima do
+   * novo. A pessoa via o prêmio na tela e o número voltava ao que era.
+   *
+   * Agora existe uma fonte só: o estado compartilhado. O `newBalance` que o servidor
+   * devolve entra nele por `saldoChegouDeFora`, e toda tela montada (inclusive o salão,
+   * que fica embaixo) vê o mesmo número no mesmo instante.
+   */
+  const balance = jogador?.chipBalance ?? 0;
+
   const [buyIn, setBuyIn] = useState(200);
   const [match, setMatch] = useState<DominoMatchState | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -87,7 +96,7 @@ export function DominoScreen({ navigation }: Props) {
     try {
       const result = await action();
       setMatch(result);
-      setBalance(result.newBalance);
+      saldoChegouDeFora(result.newBalance);
       setSelectedIndex(null);
     } catch (error) {
       setActionError(mensagemParaOJogador(error, 'Não foi possível completar a ação agora.'));

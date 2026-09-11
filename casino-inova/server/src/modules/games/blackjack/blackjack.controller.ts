@@ -1,7 +1,6 @@
 import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common';
 import { BlackjackService } from './blackjack.service';
 import { UsuarioAtual } from '../../auth/usuario-atual.decorator';
-import { Publico } from '../../auth/auth.guard';
 
 class UserIdDto {
 }
@@ -20,10 +19,13 @@ class SeguroDto extends UserIdDto {
 export class BlackjackController {
   constructor(private readonly blackjackService: BlackjackService) {}
 
-  @Publico()
+  /*
+   * DEIXOU DE SER PÚBLICO: a faixa de aposta é do degrau de quem pergunta, e degrau
+   * depende de saldo e nível — dois dados que só existem com alguém identificado.
+   */
   @Get('config')
-  getConfig() {
-    return this.blackjackService.getConfig();
+  getConfig(@UsuarioAtual() usuarioLogado: string) {
+    return this.blackjackService.getConfig(usuarioLogado);
   }
 
   @Post('apostar')

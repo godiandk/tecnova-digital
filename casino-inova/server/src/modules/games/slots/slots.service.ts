@@ -2,10 +2,11 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { spin, theoreticalRtp } from './slots.engine';
-import { MIN_MATCH, PAYLINES, REELS, ROWS, SLOT_SYMBOLS } from './slots.config';
+import { MAIOR_MULTIPLICADOR, MIN_MATCH, PAYLINES, REELS, ROWS, SLOT_SYMBOLS } from './slots.config';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 import { MaquinaDeRodada } from '../core/maquina-de-rodada';
 import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
+import { FaixaDeAposta } from '../shared/faixa-de-aposta';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 /** Id deste jogo no catálogo — usado no extrato e na pontuação de torneio. */
@@ -15,22 +16,35 @@ const GAME_ID = 'slots';
 export class SlotsService {
   constructor(
     private readonly walletService: WalletService,
+    private readonly faixas: FaixaDeAposta,
     private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
     private readonly acoes: AcoesRepetidas,
     private readonly maquina: MaquinaDeRodada,
   ) {}
 
-  getConfig() {
+    /*
+   * A CONFIGURAÇÃO PASSOU A DEPENDER DE QUEM PERGUNTA.
+   *
+   * Ela publicava `NIVEIS_DE_MESA[0].minimo` — o mínimo do BRONZE — pra todo mundo. Na
+   * tela de quem tem bilhões isso virava "o mínimo é 500.000.000" ao lado de um trilho
+   * oferecendo fichas de 50: nenhuma combinação de fichas alcançava o mínimo, e a mesa
+   * ficava matematicamente inutilizável.
+   *
+   * Agora a faixa vem de `FaixaDeAposta`, que é a fonte única — ver o arquivo dela.
+   */
+  async getConfig(userId: string) {
+    const faixa = await this.faixas.de(userId, 1, MAIOR_MULTIPLICADOR);
     return {
+      ...faixa,
       symbols: SLOT_SYMBOLS,
       /** Formato da grade e linhas vão junto: a tela desenha a partir daqui, sem cópia própria. */
       reels: REELS,
       rows: ROWS,
       paylines: PAYLINES,
       minMatch: MIN_MATCH,
-      minBet: NIVEIS_DE_MESA[0].minimo,
-      maxBet: NIVEIS_DE_MESA[0].maximo,
+      minBet: faixa.minBet,
+      maxBet: faixa.maxBet,
       theoreticalRtp: theoreticalRtp(),
     };
   }
@@ -47,7 +61,7 @@ export class SlotsService {
      * mais rodadas na mesa dela, não passagem pra mesa de cima.
      */
     const quem = await this.degraus.de(userId);
-    const problema = problemaComAAposta(bet, quem.saldo, quem.nivel);
+    const problema = problemaComAAposta(bet, quem.saldo, quem.nivel, MAIOR_MULTIPLICADOR);
     if (problema) throw new BadRequestException(problema);
 
     /*

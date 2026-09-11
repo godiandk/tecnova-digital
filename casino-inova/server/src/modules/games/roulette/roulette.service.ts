@@ -4,6 +4,7 @@ import { TournamentsService } from '../../tournaments/tournaments.service';
 import { ApostaComValor, resolverApostas, spinWheel, theoreticalRtp } from './roulette.engine';
 import {
   colorOf,
+  MAIOR_MULTIPLICADOR,
   MAXIMO_DE_APOSTAS_POR_RODADA,
   RED_NUMBERS,
   TOTAL_MULTIPLIER,
@@ -11,6 +12,7 @@ import {
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 import { MaquinaDeRodada } from '../core/maquina-de-rodada';
 import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
+import { FaixaDeAposta } from '../shared/faixa-de-aposta';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 /** Quantos números o painel da mesa guarda — mesa real costuma mostrar os últimos ~20. */
@@ -25,6 +27,7 @@ export class RouletteService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly faixas: FaixaDeAposta,
     private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
     private readonly acoes: AcoesRepetidas,
@@ -59,15 +62,27 @@ export class RouletteService {
     };
   }
 
-  getConfig() {
+    /*
+   * A CONFIGURAÇÃO PASSOU A DEPENDER DE QUEM PERGUNTA.
+   *
+   * Ela publicava `NIVEIS_DE_MESA[0].minimo` — o mínimo do BRONZE — pra todo mundo. Na
+   * tela de quem tem bilhões isso virava "o mínimo é 500.000.000" ao lado de um trilho
+   * oferecendo fichas de 50: nenhuma combinação de fichas alcançava o mínimo, e a mesa
+   * ficava matematicamente inutilizável.
+   *
+   * Agora a faixa vem de `FaixaDeAposta`, que é a fonte única — ver o arquivo dela.
+   */
+  async getConfig(userId: string) {
+    const faixa = await this.faixas.de(userId, 6, MAIOR_MULTIPLICADOR);
     return {
+      ...faixa,
       /*
        * O mínimo do degrau de entrada, e SÓ o mínimo: não existe mais aposta máxima
        * (ver `problemaComAAposta`). O campo `maxBet` saiu daqui porque a tela o usava
        * como teto de um − / + — e com noventa e nove bilhões no bolso, aquele teto de
        * mil obrigava a pessoa a apertar o "mais" para sempre.
        */
-      minBet: NIVEIS_DE_MESA[0].minimo,
+      minBet: faixa.minBet,
       redNumbers: Array.from(RED_NUMBERS),
       totalMultiplier: TOTAL_MULTIPLIER,
       theoreticalRtp: theoreticalRtp(),
@@ -108,7 +123,7 @@ export class RouletteService {
       ) {
         throw new BadRequestException('Aposta em número exato precisa de um número entre 0 e 36.');
       }
-      const problema = problemaComAAposta(aposta.amount, quem.saldo, quem.nivel);
+      const problema = problemaComAAposta(aposta.amount, quem.saldo, quem.nivel, MAIOR_MULTIPLICADOR);
       if (problema) throw new BadRequestException(problema);
       total += aposta.amount;
     }

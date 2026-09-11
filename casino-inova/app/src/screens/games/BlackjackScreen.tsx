@@ -26,7 +26,7 @@ import {
   BlackjackHandResponse,
   MaoDeBlackjack,
 } from '../../api/blackjack';
-import { usePlayer } from '../../data/usePlayer';
+import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
 import { SeletorDeAposta, ajustar, apostaInicial, useFaixaDeAposta } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing, useJanela } from '../../theme';
 
@@ -106,12 +106,23 @@ export function BlackjackScreen({ navigation }: Props) {
   const [tutorialVisible, setTutorialVisible] = useState(true);
   const [config, setConfig] = useState<BlackjackConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
-  const [balance, setBalance] = useState(0);
   const { jogador } = usePlayer();
 
-  useEffect(() => {
-    if (jogador) setBalance(jogador.chipBalance);
-  }, [jogador]);
+  /*
+   * O SALDO NÃO TEM CÓPIA NESTA TELA, e isso conserta um defeito que fazia o número ANDAR
+   * PARA TRÁS depois de uma vitória.
+   *
+   * Era uma cópia local (`useState`) sincronizada com o estado compartilhado por um efeito.
+   * Como o efeito roda a cada mudança do objeto `jogador`, uma busca de saldo disparada
+   * ANTES da aposta — e que voltava DEPOIS dela — reescrevia o saldo velho por cima do
+   * novo. A pessoa via o prêmio na tela e o número voltava ao que era.
+   *
+   * Agora existe uma fonte só: o estado compartilhado. O `newBalance` que o servidor
+   * devolve entra nele por `saldoChegouDeFora`, e toda tela montada (inclusive o salão,
+   * que fica embaixo) vê o mesmo número no mesmo instante.
+   */
+  const balance = jogador?.chipBalance ?? 0;
+
 
   /* Abre em ZERO: quem decide o valor inicial é o degrau da mesa, não um número fixo. */
   const [bet, setBet] = useState(0);
@@ -148,7 +159,7 @@ export function BlackjackScreen({ navigation }: Props) {
     try {
       const resultado = await acao();
       setHand(resultado);
-      setBalance(resultado.newBalance);
+      saldoChegouDeFora(resultado.newBalance);
     } catch (erro) {
       setActionError(mensagemParaOJogador(erro, 'Não foi possível completar a ação agora.'));
     } finally {

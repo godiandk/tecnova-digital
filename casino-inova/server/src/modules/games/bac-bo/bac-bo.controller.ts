@@ -13,10 +13,13 @@ class PlayDto extends AcaoDto {
 export class BacBoController {
   constructor(private readonly bacBoService: BacBoService) {}
 
-  @Publico()
+  /*
+   * DEIXOU DE SER PÚBLICO: a faixa de aposta é do degrau de quem pergunta, e degrau
+   * depende de saldo e nível — dois dados que só existem com alguém identificado.
+   */
   @Get('config')
-  getConfig() {
-    return this.bacBoService.getConfig();
+  getConfig(@UsuarioAtual() usuarioLogado: string) {
+    return this.bacBoService.getConfig(usuarioLogado);
   }
 
   @Publico()

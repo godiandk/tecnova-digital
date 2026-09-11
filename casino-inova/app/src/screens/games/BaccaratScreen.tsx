@@ -17,7 +17,7 @@ import { RoadmapPanel } from '../../components/RoadmapPanel';
 import { ApiError, mensagemParaOJogador } from '../../api/client';
 import { Roadmap } from '../../api/roadmap';
 import { fetchBaccaratConfig, fetchBaccaratRoadmap, playBaccaratRound, BaccaratConfig, BaccaratBetType, BaccaratRoundResponse } from '../../api/baccarat';
-import { usePlayer } from '../../data/usePlayer';
+import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
 import { SeletorDeAposta, ajustar, apostaInicial, useFaixaDeAposta } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
@@ -59,14 +59,23 @@ export function BaccaratScreen({ navigation }: Props) {
   const [tutorialVisible, setTutorialVisible] = useState(true);
   const [config, setConfig] = useState<BaccaratConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
-  const [balance, setBalance] = useState(0);
   const { jogador } = usePlayer();
 
-  // Semeia o saldo com a carteira de verdade; a partir da primeira aposta quem manda é
-  // o `newBalance` que o servidor devolve.
-  useEffect(() => {
-    if (jogador) setBalance(jogador.chipBalance);
-  }, [jogador]);
+  /*
+   * O SALDO NÃO TEM CÓPIA NESTA TELA, e isso conserta um defeito que fazia o número ANDAR
+   * PARA TRÁS depois de uma vitória.
+   *
+   * Era uma cópia local (`useState`) sincronizada com o estado compartilhado por um efeito.
+   * Como o efeito roda a cada mudança do objeto `jogador`, uma busca de saldo disparada
+   * ANTES da aposta — e que voltava DEPOIS dela — reescrevia o saldo velho por cima do
+   * novo. A pessoa via o prêmio na tela e o número voltava ao que era.
+   *
+   * Agora existe uma fonte só: o estado compartilhado. O `newBalance` que o servidor
+   * devolve entra nele por `saldoChegouDeFora`, e toda tela montada (inclusive o salão,
+   * que fica embaixo) vê o mesmo número no mesmo instante.
+   */
+  const balance = jogador?.chipBalance ?? 0;
+
   /* Abre em ZERO: quem decide o valor inicial é o degrau da mesa, não um número fixo. */
   const [amount, setAmount] = useState(0);
   const [betType, setBetType] = useState<BaccaratBetType>('banca');
@@ -104,7 +113,7 @@ export function BaccaratScreen({ navigation }: Props) {
     try {
       const result = await playBaccaratRound(betType, amount);
       setRound(result);
-      setBalance(result.newBalance);
+      saldoChegouDeFora(result.newBalance);
       setRoadmap(result.roadmap);
     } catch (error) {
       setPlayError(mensagemParaOJogador(error, 'Não foi possível apostar agora.'));

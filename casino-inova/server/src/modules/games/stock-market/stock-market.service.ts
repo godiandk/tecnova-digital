@@ -2,10 +2,11 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { resolveBet, runRound, StockBet, theoreticalRtp } from './stock-market.engine';
-import { COMMISSION, MAX_CHANGE_PERCENT, StockDirection, TICKS_PER_ROUND } from './stock-market.config';
+import { COMMISSION, MAIOR_MULTIPLICADOR, MAX_CHANGE_PERCENT, StockDirection, TICKS_PER_ROUND } from './stock-market.config';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 import { MaquinaDeRodada } from '../core/maquina-de-rodada';
 import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
+import { FaixaDeAposta } from '../shared/faixa-de-aposta';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 const DIRECTIONS: StockDirection[] = ['alta', 'baixa'];
@@ -20,16 +21,29 @@ export class StockMarketService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly faixas: FaixaDeAposta,
     private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
     private readonly acoes: AcoesRepetidas,
     private readonly maquina: MaquinaDeRodada,
   ) {}
 
-  getConfig() {
+    /*
+   * A CONFIGURAÇÃO PASSOU A DEPENDER DE QUEM PERGUNTA.
+   *
+   * Ela publicava `NIVEIS_DE_MESA[0].minimo` — o mínimo do BRONZE — pra todo mundo. Na
+   * tela de quem tem bilhões isso virava "o mínimo é 500.000.000" ao lado de um trilho
+   * oferecendo fichas de 50: nenhuma combinação de fichas alcançava o mínimo, e a mesa
+   * ficava matematicamente inutilizável.
+   *
+   * Agora a faixa vem de `FaixaDeAposta`, que é a fonte única — ver o arquivo dela.
+   */
+  async getConfig(userId: string) {
+    const faixa = await this.faixas.de(userId, 1, MAIOR_MULTIPLICADOR);
     return {
-      minBet: NIVEIS_DE_MESA[0].minimo,
-      maxBet: NIVEIS_DE_MESA[0].maximo,
+      ...faixa,
+      minBet: faixa.minBet,
+      maxBet: faixa.maxBet,
       directions: DIRECTIONS,
       maxChangePercent: MAX_CHANGE_PERCENT,
       ticksPerRound: TICKS_PER_ROUND,
@@ -52,7 +66,7 @@ export class StockMarketService {
      * mais rodadas na mesa dela, não passagem pra mesa de cima.
      */
     const quem = await this.degraus.de(userId);
-    const problema = problemaComAAposta(bet.amount, quem.saldo, quem.nivel);
+    const problema = problemaComAAposta(bet.amount, quem.saldo, quem.nivel, MAIOR_MULTIPLICADOR);
     if (problema) throw new BadRequestException(problema);
 
     /*

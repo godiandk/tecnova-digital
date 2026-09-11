@@ -32,3 +32,17 @@ export const MAX_HANDS = 4;
 
 export const MIN_BET = 50;
 export const MAX_BET = 5000;
+
+/**
+ * O MAIOR RETORNO DE UMA MÃO, em múltiplos da aposta INICIAL.
+ *
+ * A conta é a pior hipótese honesta, e ela não é 2,5x: o jogador pode dividir até quatro
+ * mãos e dobrar cada uma, e cada divisão/dobra é ficha NOVA saindo do saldo. Quatro mãos
+ * dobradas apostam 8x a inicial e podem devolver 2x disso — 16x. O seguro é meia aposta
+ * a mais, pagando 3x: mais 1,5x. Dá 17,5x, e aqui vai arredondado pra cima.
+ *
+ * Serve pra recusar, ANTES de cobrar, uma aposta cujo prêmio máximo não caberia na conta
+ * exata de fichas. Ver `comum/teto-de-fichas.ts`.
+ */
+export const MAIOR_MULTIPLICADOR =
+  MAX_HANDS * 2 * WIN_PAYOUT_MULTIPLIER + INSURANCE_MAX_FRACTION * INSURANCE_PAYOUT_MULTIPLIER;

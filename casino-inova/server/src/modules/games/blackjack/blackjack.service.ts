@@ -18,6 +18,7 @@ import {
   DEALER_STANDS_ON,
   INSURANCE_MAX_FRACTION,
   INSURANCE_PAYOUT_MULTIPLIER,
+  MAIOR_MULTIPLICADOR,
   MAX_HANDS,
   Rank,
   RANKS,
@@ -26,6 +27,7 @@ import { CartaComNaipe, nomeDaCarta } from '../shared/naipes';
 import { Sapata } from '../shared/sapata';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
+import { FaixaDeAposta } from '../shared/faixa-de-aposta';
 
 type Carta = CartaComNaipe<Rank>;
 
@@ -99,15 +101,28 @@ export class BlackjackService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly faixas: FaixaDeAposta,
     private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
   private readonly maquina: MaquinaDeRodada,
   ) {}
 
-  getConfig() {
+    /*
+   * A CONFIGURAÇÃO PASSOU A DEPENDER DE QUEM PERGUNTA.
+   *
+   * Ela publicava `NIVEIS_DE_MESA[0].minimo` — o mínimo do BRONZE — pra todo mundo. Na
+   * tela de quem tem bilhões isso virava "o mínimo é 500.000.000" ao lado de um trilho
+   * oferecendo fichas de 50: nenhuma combinação de fichas alcançava o mínimo, e a mesa
+   * ficava matematicamente inutilizável.
+   *
+   * Agora a faixa vem de `FaixaDeAposta`, que é a fonte única — ver o arquivo dela.
+   */
+  async getConfig(userId: string) {
+    const faixa = await this.faixas.de(userId, 1, MAIOR_MULTIPLICADOR);
     return {
-      minBet: NIVEIS_DE_MESA[0].minimo,
-      maxBet: NIVEIS_DE_MESA[0].maximo,
+      ...faixa,
+      minBet: faixa.minBet,
+      maxBet: faixa.maxBet,
       blackjackPayoutMultiplier: BLACKJACK_PAYOUT_MULTIPLIER,
       dealerStandsOn: DEALER_STANDS_ON,
       maxHands: MAX_HANDS,
@@ -137,7 +152,7 @@ export class BlackjackService {
      * mais rodadas na mesa dela, não passagem pra mesa de cima.
      */
     const quem = await this.degraus.de(userId);
-    const problema = problemaComAAposta(bet, quem.saldo, quem.nivel);
+    const problema = problemaComAAposta(bet, quem.saldo, quem.nivel, MAIOR_MULTIPLICADOR);
     if (problema) throw new BadRequestException(problema);
 
     /*
@@ -242,7 +257,14 @@ export class BlackjackService {
     return this.aposDistribuir(userId, mesa);
   }
 
-  hit(userId: string) {
+  /*
+   * `async` PORQUE ELAS TERMINAM EM CRÉDITO. `hit` e `stand` podiam acabar em
+   * `encerrarTudo`, que paga — então às vezes devolviam promessa e às vezes lançavam
+   * na hora. Um chamador que escrevesse `.catch()` pegava a recusa da promessa mas não
+   * a lançada direto: foi exatamente assim que a conferência de pagamento explodiu no
+   * meio de quarenta rodadas. Um contrato só, sempre promessa, fecha esse buraco.
+   */
+  async hit(userId: string) {
     const mesa = this.requireMesa(userId);
     const mao = this.maoEmJogo(mesa);
     mao.cartas.push(this.sapataDe(userId).comprar());
@@ -255,7 +277,7 @@ export class BlackjackService {
     return this.publicView(userId, mesa);
   }
 
-  stand(userId: string) {
+  async stand(userId: string) {
     const mesa = this.requireMesa(userId);
     this.maoEmJogo(mesa).encerrada = true;
     return this.avancar(userId, mesa);
@@ -339,7 +361,7 @@ export class BlackjackService {
   }
 
   /** Passa pra próxima mão aberta; se não tem mais nenhuma, é a vez do dealer. */
-  private avancar(userId: string, mesa: EstadoDaMesa) {
+  private async avancar(userId: string, mesa: EstadoDaMesa) {
     const proxima = mesa.maos.findIndex((mao, indice) => indice > mesa.maoAtual && !mao.encerrada);
     if (proxima !== -1) {
       mesa.maoAtual = proxima;

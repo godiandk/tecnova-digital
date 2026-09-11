@@ -106,3 +106,17 @@ export const MIN_MATCH = 3;
 
 export const MIN_BET = 50;
 export const MAX_BET = 5000;
+
+/**
+ * O MAIOR RETORNO QUE UM GIRO PODE PAGAR, em múltiplos da aposta.
+ *
+ * Ele é CALCULADO da tabela, e não digitado: quem mexer num pagamento não precisa
+ * lembrar de vir aqui, e o número nunca fica desatualizado em relação à mesa. A conta é
+ * a pior hipótese honesta — a grade inteira sai no símbolo mais caro, e as cinco linhas
+ * pagam cinco de uma vez.
+ *
+ * Serve pra recusar, ANTES de cobrar, uma aposta cujo prêmio máximo não caberia na conta
+ * exata de fichas. Ver `comum/teto-de-fichas.ts`.
+ */
+export const MAIOR_MULTIPLICADOR =
+  PAYLINES.length * Math.max(...SLOT_SYMBOLS.map((s) => s.payout[5]));

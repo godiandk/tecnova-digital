@@ -2,13 +2,14 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { WalletService } from '../../wallet/wallet.service';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { playRound as playBaccaratRound, resolveBet } from './baccarat.engine';
-import { BaccaratBetType, RANKS, Rank } from './baccarat.config';
+import { BaccaratBetType, MAIOR_MULTIPLICADOR, RANKS, Rank } from './baccarat.config';
 import { RoadmapService, RoundRecord } from '../../roadmap/roadmap.service';
 import { CartaComNaipe, nomeDaCarta } from '../shared/naipes';
 import { Sapata } from '../shared/sapata';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 import { MaquinaDeRodada } from '../core/maquina-de-rodada';
 import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
+import { FaixaDeAposta } from '../shared/faixa-de-aposta';
 import { NIVEIS_DE_MESA, problemaComAAposta } from '../shared/niveis-de-mesa';
 
 const VALID_BET_TYPES: BaccaratBetType[] = ['jogador', 'banca', 'empate'];
@@ -30,6 +31,7 @@ export class BaccaratService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly faixas: FaixaDeAposta,
     private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
     private readonly roadmapService: RoadmapService,
@@ -37,8 +39,20 @@ export class BaccaratService {
     private readonly maquina: MaquinaDeRodada,
   ) {}
 
-  getConfig() {
-    return { minBet: NIVEIS_DE_MESA[0].minimo, maxBet: NIVEIS_DE_MESA[0].maximo };
+    /*
+   * A CONFIGURAÇÃO PASSOU A DEPENDER DE QUEM PERGUNTA.
+   *
+   * Ela publicava `NIVEIS_DE_MESA[0].minimo` — o mínimo do BRONZE — pra todo mundo. Na
+   * tela de quem tem bilhões isso virava "o mínimo é 500.000.000" ao lado de um trilho
+   * oferecendo fichas de 50: nenhuma combinação de fichas alcançava o mínimo, e a mesa
+   * ficava matematicamente inutilizável.
+   *
+   * Agora a faixa vem de `FaixaDeAposta`, que é a fonte única — ver o arquivo dela.
+   */
+  async getConfig(userId: string) {
+    const faixa = await this.faixas.de(userId, 1, MAIOR_MULTIPLICADOR);
+    return {
+      ...faixa, minBet: faixa.minBet, maxBet: NIVEIS_DE_MESA[0].maximo };
   }
 
   /**
@@ -61,7 +75,7 @@ export class BaccaratService {
      * mais rodadas na mesa dela, não passagem pra mesa de cima.
      */
     const quem = await this.degraus.de(userId);
-    const problema = problemaComAAposta(amount, quem.saldo, quem.nivel);
+    const problema = problemaComAAposta(amount, quem.saldo, quem.nivel, MAIOR_MULTIPLICADOR);
     if (problema) throw new BadRequestException(problema);
     if (!VALID_BET_TYPES.includes(betType)) {
       throw new BadRequestException('Tipo de aposta inválido — use jogador, banca ou empate.');

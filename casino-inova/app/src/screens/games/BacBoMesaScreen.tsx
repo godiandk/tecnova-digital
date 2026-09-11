@@ -44,7 +44,7 @@ import {
   BacBoConfig,
   BacBoRoundResponse,
 } from '../../api/bacBo';
-import { usePlayer } from '../../data/usePlayer';
+import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
 import { PlayerColor } from '../../data/chipImages';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
@@ -74,8 +74,15 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
   const [erroDeConfig, setErroDeConfig] = useState<string | null>(null);
   const [placar, setPlacar] = useState<Roadmap | null>(null);
   const [placarAberto, setPlacarAberto] = useState(false);
-  const [saldo, setSaldo] = useState(0);
   const { jogador } = usePlayer();
+
+  /*
+   * Uma fonte só pro saldo. Esta tela guardava uma cópia com OUTRO NOME (`saldo` em vez de
+   * `balance`), e foi justamente isso que a escondeu da primeira varredura — a conferência
+   * `verifica-saldo-na-tela` a achou procurando pelo que importa (quem recebe `newBalance`
+   * e não o entrega ao estado compartilhado), e não pelo nome da variável.
+   */
+  const saldo = jogador?.chipBalance ?? 0;
   /*
    * A SUA cor de ficha. Numa mesa compartilhada quem dá a cor é o servidor, que sabe
    * quem já sentou e não repete; aqui, jogando sozinho contra a casa, ela sai do seu
@@ -83,9 +90,6 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
    */
   const minhaCor = corDoJogador(jogador?.id);
 
-  useEffect(() => {
-    if (jogador) setSaldo(jogador.chipBalance);
-  }, [jogador]);
 
   /* Começa na ficha mínima da mesa; o valor certo chega com o nível e substitui este. */
   const [ficha, setFicha] = useState(50);
@@ -247,7 +251,7 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
       setTimeout(() => {
         setRodada(resultado);
         setPlacar(resultado.roadmap);
-        setSaldo(resultado.newBalance);
+        saldoChegouDeFora(resultado.newBalance);
         setAnterior(montagem);
         setRolando(false);
       }, TEMPO_DOS_DADOS);

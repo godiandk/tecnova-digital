@@ -168,7 +168,25 @@ export class TrucoService {
     return this.publicView(userId, match);
   }
 
-  playCard(userId: string, card: Card) {
+  /*
+   * OS MÉTODOS DE JOGADA VIRARAM `async`, E ISSO NÃO É COSMÉTICO.
+   *
+   * `awardHand` credita a carteira, e era chamada SEM `await` de dentro de uma cadeia
+   * síncrona. Na prática, a jogada respondia o resultado da mão e o `newBalance` ANTES de
+   * o crédito ter acontecido — as duas idas ao banco saíam em conexões diferentes, sem
+   * ordem garantida entre elas.
+   *
+   * Dois estragos, e o segundo é pior:
+   *
+   *   1. a tela recebia "você ganhou" com o saldo de antes do prêmio. É literalmente o
+   *      "ganhei e o saldo não subiu" que foi relatado jogando;
+   *   2. se o processo caísse entre a resposta e o crédito, o prêmio SUMIA — ninguém
+   *      estava esperando por aquela promessa.
+   *
+   * Agora a cadeia inteira espera: ninguém recebe o resultado de uma mão antes de a ficha
+   * ter se mexido de verdade.
+   */
+  async playCard(userId: string, card: Card) {
     const match = this.requireMatch(userId);
     if (match.pendingTruco) {
       throw new BadRequestException('Tem um pedido de truco esperando resposta — responda antes de jogar.');
@@ -188,12 +206,12 @@ export class TrucoService {
     const comparison = compareCards(playedCard, botCard, this.contextOf(match));
     match.roundResults.push(comparison > 0 ? 'jogador' : comparison < 0 ? 'bot' : 'empate');
 
-    this.settleOrContinueHand(userId, match);
+    await this.settleOrContinueHand(userId, match);
     return this.publicView(userId, match);
   }
 
   /** Pede o próximo degrau da escada (truco → seis → nove → doze) e já resolve a resposta do bot. */
-  callTruco(userId: string) {
+  async callTruco(userId: string) {
     const match = this.requireMatch(userId);
     if (match.pendingTruco) {
       throw new BadRequestException('Já tem um pedido esperando resposta.');
@@ -208,11 +226,11 @@ export class TrucoService {
     }
 
     match.lastRaiseBy = 'jogador';
-    this.resolveBotResponseToRaise(userId, match, target);
+    await this.resolveBotResponseToRaise(userId, match, target);
     return this.publicView(userId, match);
   }
 
-  respondTruco(userId: string, response: TrucoResponse) {
+  async respondTruco(userId: string, response: TrucoResponse) {
     const match = this.requireMatch(userId);
     if (match.pendingTruco !== 'bot' || match.pendingHandValue === null) {
       throw new BadRequestException('Não tem pedido do bot esperando resposta.');
@@ -225,7 +243,7 @@ export class TrucoService {
       // Correr entrega ao adversário o valor do degrau anterior, não o valor pedido.
       match.pendingTruco = null;
       match.pendingHandValue = null;
-      this.awardHand(userId, match, 'bot');
+      await this.awardHand(userId, match, 'bot');
       match.lastEvent = `Você correu do ${askedLabel} — o bot fica com a mão. ` + (match.lastEvent ?? '');
       return this.publicView(userId, match);
     }
@@ -248,7 +266,7 @@ export class TrucoService {
     match.pendingTruco = null;
     match.pendingHandValue = null;
     match.lastRaiseBy = 'jogador';
-    this.resolveBotResponseToRaise(userId, match, target);
+    await this.resolveBotResponseToRaise(userId, match, target);
     return this.publicView(userId, match);
   }
 
@@ -256,12 +274,12 @@ export class TrucoService {
    * O bot responde a um pedido do jogador: corre, aceita, ou devolve subindo mais um
    * degrau (só devolve com mão forte, e nunca acima de doze).
    */
-  private resolveBotResponseToRaise(userId: string, match: TrucoMatch, target: number) {
+  private async resolveBotResponseToRaise(userId: string, match: TrucoMatch, target: number) {
     const label = this.labelFor(match, target);
 
     if (!botTrucoDecision(match.botHand, this.contextOf(match))) {
       // Corre: o jogador leva o valor de ANTES do pedido.
-      this.awardHand(userId, match, 'jogador');
+      await this.awardHand(userId, match, 'jogador');
       match.lastEvent = `O bot correu do ${label} — você fica com a mão. ` + (match.lastEvent ?? '');
       return;
     }
@@ -313,7 +331,7 @@ export class TrucoService {
     return { signal, sentTo: 'parceiro', note: 'Numa mesa 2x2 este sinal aparece só pro seu parceiro.' };
   }
 
-  private settleOrContinueHand(userId: string, match: TrucoMatch) {
+  private async settleOrContinueHand(userId: string, match: TrucoMatch) {
     const outcome = resolveHand(match.roundResults);
     if (outcome === 'pendente') {
       const target = nextHandValue(match.variant, match.handValue);
@@ -326,7 +344,7 @@ export class TrucoService {
       }
       return;
     }
-    this.awardHand(userId, match, outcome === 'ninguem' ? null : outcome);
+    await this.awardHand(userId, match, outcome === 'ninguem' ? null : outcome);
   }
 
   private async awardHand(userId: string, match: TrucoMatch, winner: 'jogador' | 'bot' | null) {

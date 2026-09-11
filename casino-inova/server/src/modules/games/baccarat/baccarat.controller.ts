@@ -20,10 +20,13 @@ export class BaccaratController {
     return this.baccaratService.getRoadmap();
   }
 
-  @Publico()
+  /*
+   * DEIXOU DE SER PÚBLICO: a faixa de aposta é do degrau de quem pergunta, e degrau
+   * depende de saldo e nível — dois dados que só existem com alguém identificado.
+   */
   @Get('config')
-  getConfig() {
-    return this.baccaratService.getConfig();
+  getConfig(@UsuarioAtual() usuarioLogado: string) {
+    return this.baccaratService.getConfig(usuarioLogado);
   }
 
   @Post('apostar')

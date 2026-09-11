@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { AcoesRepetidas } from './acoes-repetidas.service';
 import { DegrauDoJogador } from './degrau-do-jogador.service';
+import { FaixaDeAposta } from './faixa-de-aposta';
 import { NiveisController } from './niveis.controller';
 import { WalletModule } from '../../wallet/wallet.module';
 
@@ -18,7 +19,7 @@ import { WalletModule } from '../../wallet/wallet.module';
    */
   imports: [WalletModule],
   controllers: [NiveisController],
-  providers: [AcoesRepetidas, DegrauDoJogador],
-  exports: [AcoesRepetidas, DegrauDoJogador],
+  providers: [AcoesRepetidas, DegrauDoJogador, FaixaDeAposta],
+  exports: [AcoesRepetidas, DegrauDoJogador, FaixaDeAposta],
 })
 export class SharedGamesModule {}

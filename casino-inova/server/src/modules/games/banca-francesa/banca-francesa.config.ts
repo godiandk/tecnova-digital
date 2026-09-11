@@ -1,3 +1,4 @@
+import { problemaComOTeto } from '../../../comum/teto-de-fichas';
 /**
  * Banca Francesa "de verdade" (também chamada "Grande e Pequena", jogo tradicional
  * dos casinos portugueses): 3 dados de 6 faces, aposta-se na SOMA dos 3 dados, não
@@ -210,6 +211,14 @@ export function problemaComApostaDaBanca(
   if (ehApostaDeLinha(tipo) && !apostaDeLinhaEhValida(valor)) {
     return `A aposta em ${nome} é dividida ao meio, então precisa ser um valor par.`;
   }
+  /*
+   * O TETO DA ARITMÉTICA. Esta mesa já tem teto por casa (`limitesDaCasa`), então na
+   * prática ela nunca chega aqui — a conferência guarda isso por escrito. Fica assim
+   * mesmo: o dia em que alguém afrouxar o teto por casa, esta linha é quem impede o
+   * prêmio de sair de uma conta que deixou de ser exata.
+   */
+  const teto = problemaComOTeto(valor, MAIOR_MULTIPLICADOR);
+  if (teto) return teto;
   return null;
 }
 
@@ -221,3 +230,9 @@ export const NOME_DA_CASA: Record<BancaFrancesaBetType, string> = {
   'linha-pequeno': 'Linha do Pequeno',
   'linha-grande': 'Linha do Grande',
 };
+
+/**
+ * O MAIOR RETORNO DE UMA APOSTA, em múltiplos dela: as Ases, que pagam 62x o total.
+ * Calculado da tabela. Ver `comum/teto-de-fichas.ts`.
+ */
+export const MAIOR_MULTIPLICADOR = Math.max(...Object.values(TOTAL_RETURN_MULTIPLIER));

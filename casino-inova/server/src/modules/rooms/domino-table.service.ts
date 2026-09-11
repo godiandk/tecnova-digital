@@ -105,7 +105,7 @@ export class DominoTableService {
     const { visibility, buyIn } = options;
     /*
      * A ENTRADA CABE NO DEGRAU DE QUEM ABRE A MESA. Era `100 a 5.000` pra todo mundo, de
-     * quem acabou de criar a conta a quem tem cinco quatrilhões.
+     * quem acabou de criar a conta a quem tem quinhentos trilhões.
      */
     const anfitriao = await this.degraus.de(hostUserId);
     const problema = problemaComAEntrada(buyIn, anfitriao.saldo, anfitriao.nivel);
@@ -199,7 +199,7 @@ export class DominoTableService {
     }
 
     table.started = true;
-    this.dealNewHand(table);
+    await this.dealNewHand(table);
     return table;
   }
 
@@ -214,7 +214,7 @@ export class DominoTableService {
     const index = seat.hand.findIndex((item) => item.a === tile.a && item.b === tile.b);
     if (index === -1) throw new BadRequestException('Essa peça não está na sua mão.');
 
-    this.placeTile(table, seat, index, end);
+    await this.placeTile(table, seat, index, end);
     if (table.finished) return table;
 
     this.advanceTurn(table);
@@ -476,7 +476,7 @@ export class DominoTableService {
       return;
     }
 
-    this.dealNewHand(table);
+    await this.dealNewHand(table);
   }
 
   private async dealNewHand(table: DominoOnlineTable) {
@@ -573,7 +573,7 @@ export class DominoTableService {
       });
 
       if (bestIndex === -1) return;
-      this.placeTile(table, seat, bestIndex, bestEnd);
+      await this.placeTile(table, seat, bestIndex, bestEnd);
       if (table.finished) return;
       this.advanceTurn(table);
       guard += 1;

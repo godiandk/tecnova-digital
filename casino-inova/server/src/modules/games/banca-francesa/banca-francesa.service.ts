@@ -5,6 +5,7 @@ import { TournamentsService } from '../../tournaments/tournaments.service';
 import { BancaFrancesaBet, lancar, resolveBets, theoreticalRtp } from './banca-francesa.engine';
 import {
   BET_TYPES,
+  MAIOR_MULTIPLICADOR,
   MAX_SIMULTANEOUS_BETS,
   NOME_DA_CASA,
   PISO_EM_MINIMOS,
@@ -16,6 +17,7 @@ import {
   riscoDaAposta,
 } from './banca-francesa.config';
 import { NIVEIS_DE_MESA, nivelPara } from '../shared/niveis-de-mesa';
+import { FaixaDeAposta } from '../shared/faixa-de-aposta';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 import { RodadasRepository } from '../core/rodadas.repository';
 import { LANCAMENTOS_GUARDADOS, LancamentoNoPlacar, montarPlacar } from './placar-da-banca';
@@ -41,6 +43,7 @@ export class BancaFrancesaService {
 
   constructor(
     private readonly walletService: WalletService,
+    private readonly faixas: FaixaDeAposta,
     private readonly tournaments: TournamentsService,
     private readonly acoes: AcoesRepetidas,
     private readonly rodadasGuardadas: RodadasRepository,
@@ -76,13 +79,15 @@ export class BancaFrancesaService {
   /**
    * A configuração do jogo, com os limites do nível de entrada (Bronze).
    *
-   * Quem quiser saber o PRÓPRIO limite pergunta em `/niveis/meu` mais o multiplicador
-   * daqui — esta rota é pública e não sabe quem está perguntando.
+   * ELA PASSOU A SABER QUEM PERGUNTA, e isso conserta o que se via na tela: publicando o
+   * mínimo do BRONZE pra todo mundo, a mesa dizia "o mínimo em Grande é 500.000.000
+   * fichas" ao lado de um trilho oferecendo fichas de 50. Nenhuma combinação dessas fichas
+   * alcançava o mínimo — a mesa ficava matematicamente inutilizável.
    */
-  getConfig() {
-    const minimoDeEntrada = NIVEIS_DE_MESA[0].minimo;
+  async getConfig(userId: string) {
+    const faixa = await this.faixas.de(userId, MAX_SIMULTANEOUS_BETS, MAIOR_MULTIPLICADOR);
     return {
-      minBet: minimoDeEntrada,
+      ...faixa,
       maxSimultaneousBets: MAX_SIMULTANEOUS_BETS,
       betTypes: BET_TYPES,
       nomeDaCasa: NOME_DA_CASA,
@@ -104,9 +109,15 @@ export class BancaFrancesaService {
        */
       pisoEmMinimos: PISO_EM_MINIMOS,
       tetoEmMinimos: TETO_EM_MINIMOS,
-      /** Os limites já em fichas, pro nível de entrada — pra tela pública mostrar algo. */
-      limitesNoNivelDeEntrada: Object.fromEntries(
-        BET_TYPES.map((t) => [t, limitesDaCasa(t, minimoDeEntrada)]),
+      /**
+       * Os limites já em fichas, NA MESA DESTE JOGADOR.
+       *
+       * Eram os do nível de entrada, publicados pra todo mundo — a mesma constante de
+       * Bronze que fazia a tela oferecer fichas que o servidor recusava. Agora saem do
+       * mínimo de quem pergunta, e batem com o trilho que vem logo ao lado.
+       */
+      limitesDaMinhaMesa: Object.fromEntries(
+        BET_TYPES.map((t) => [t, limitesDaCasa(t, faixa.minBet)]),
       ),
     };
   }

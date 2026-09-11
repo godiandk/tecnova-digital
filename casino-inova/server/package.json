@@ -45,12 +45,16 @@
     "verify:fases": "ts-node src/modules/games/core/verifica-fases-dos-jogos.ts",
     "verify:registro": "ts-node src/observabilidade/verifica-registro.ts",
     "verify:registro-http": "node verificacao/verifica-registro-http.mjs  # sobe o próprio servidor",
-    "verify:tudo": "npm run verify:bac-bo && npm run verify:bacara && npm run verify:bacara-regras && npm run verify:banca-francesa && npm run verify:banca-216 && npm run verify:propriedades && npm run verify:domino-abertura && npm run verify:blackjack && npm run verify:nucleo && npm run verify:replay && npm run verify:fases && npm run verify:registro && npm run verify:rng && npm run verify:recompensas && npm run verify:corrente && npm run verify:idempotencia && npm run verify:sapata && npm run verify:slots && npm run verify:persistencia && npm run verify:placar && npm run verify:poker-hands && npm run verify:roleta && npm run verify:stock-market && npm run verify:torneios && npm run verify:xp && npm run verify:dia && npm run verify:loja && npm run verify:seguranca",
+    "verify:tudo": "npm run verify:bac-bo && npm run verify:bacara && npm run verify:bacara-regras && npm run verify:banca-francesa && npm run verify:banca-216 && npm run verify:propriedades && npm run verify:domino-abertura && npm run verify:blackjack && npm run verify:nucleo && npm run verify:replay && npm run verify:fases && npm run verify:registro && npm run verify:rng && npm run verify:recompensas && npm run verify:corrente && npm run verify:idempotencia && npm run verify:sapata && npm run verify:slots && npm run verify:persistencia && npm run verify:placar && npm run verify:poker-hands && npm run verify:roleta && npm run verify:stock-market && npm run verify:torneios && npm run verify:xp && npm run verify:dia && npm run verify:loja && npm run verify:seguranca && npm run verify:pagamento && npm run verify:liquidacao && npm run verify:precisao && npm run verify:devolucao",
     "verify:banca-nulos": "node verificacao/verifica-banca-nulos.mjs  # precisa do servidor no ar",
     "verify:xp": "ts-node src/modules/progressao/verify-xp.ts",
     "verify:dia": "ts-node src/comum/verifica-dia-do-servidor.ts",
     "verify:loja": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" ts-node src/modules/store/verifica-loja.ts",
-    "verify:seguranca": "ts-node src/comum/verifica-seguranca.ts"
+    "verify:seguranca": "ts-node src/comum/verifica-seguranca.ts",
+    "verify:liquidacao": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" JWT_SECRET=\"${JWT_SECRET:-conferencia}\" ts-node src/modules/wallet/verifica-liquidacao.ts",
+    "verify:pagamento": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" JWT_SECRET=\"${JWT_SECRET:-conferencia}\" ts-node src/modules/wallet/verifica-pagamento-dos-jogos.ts",
+    "verify:precisao": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" JWT_SECRET=\"${JWT_SECRET:-conferencia}\" ts-node src/modules/wallet/verifica-precisao.ts",
+    "verify:devolucao": "DATABASE_URL=\"${TEST_DATABASE_URL:-postgres://postgres@localhost:5432/casino_inova_test}\" JWT_SECRET=\"${JWT_SECRET:-conferencia}\" ts-node src/modules/wallet/verifica-devolucao.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PoolClient } from 'pg';
 import { DatabaseService } from '../../database/database.service';
+import { TETO_DE_FICHAS } from '../../comum/teto-de-fichas';
 
 export type LedgerEntryType = 'compra' | 'aposta' | 'premio' | 'presente' | 'ajuste' | 'cupom' | 'suporte';
 
@@ -195,6 +196,23 @@ export class WalletService {
 
       if (depois < 0) {
         throw new BadRequestException('Saldo de fichas insuficiente.');
+      }
+      /*
+       * O SALDO TAMBÉM TEM TETO, e ele é o da conta exata — não é regra de negócio.
+       *
+       * Cada movimento já é conferido um a um (`exigirFichaInteira`), mas uma SOMA de
+       * movimentos válidos pode passar de 2^53 − 1, e a partir dali somar deixa de
+       * funcionar em silêncio: o saldo pararia de subir sem erro nenhum. Melhor recusar o
+       * crédito e deixar rastro do que guardar um número que mente.
+       *
+       * O banco não perde nada disso — `amount` é BIGINT e aguenta mil vezes mais. Quem
+       * não aguenta é o `number` do servidor e o da tela. Ver `comum/teto-de-fichas.ts`.
+       */
+      if (depois > TETO_DE_FICHAS) {
+        throw new BadRequestException(
+          `Este crédito passaria do teto de ${TETO_DE_FICHAS.toLocaleString('pt-BR')} fichas, ` +
+            'que é até onde a conta das fichas é exata.',
+        );
       }
 
       const inserido = await client.query<LinhaLedger>(

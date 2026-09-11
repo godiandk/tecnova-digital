@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../navigation/types';
-import { usePlayer, perfilMudou, xpDoNivelProvisorio } from '../data/usePlayer';
+import { usePlayer, perfilMudou, xpDoNivelProvisorio, saldoChegouDeFora } from '../data/usePlayer';
 import { useJanela } from '../theme/useJanela';
 import { atualizarPerfil, fetchAvatares, formatarCodigo } from '../api/perfil';
 import { AVATARES_PADRAO, avatarEscolhido } from '../data/artePorTela';
@@ -50,12 +50,14 @@ const larguraDaBarra = (larguraDaJanela: number) =>
 export function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { jogador, recarregar } = usePlayer();
+
+  /* Uma fonte só pro saldo — ver a explicação em qualquer tela de jogo. */
+  const balance = jogador?.chipBalance ?? 0;
   const janela = useJanela();
   const [totalAmigos, setTotalAmigos] = useState(0);
   const [editando, setEditando] = useState(false);
   const [copiado, setCopiado] = useState(false);
 
-  const [balance, setBalance] = useState(jogador?.chipBalance ?? 0);
   const [couponCode, setCouponCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
   const [couponMessage, setCouponMessage] = useState<{ text: string; ok: boolean } | null>(null);
@@ -66,9 +68,6 @@ export function ProfileScreen() {
       .catch(() => undefined);
   }, []);
 
-  useEffect(() => {
-    if (jogador) setBalance(jogador.chipBalance);
-  }, [jogador]);
 
   /*
    * Copiar sem dependência nova.
@@ -97,7 +96,7 @@ export function ProfileScreen() {
     setCouponMessage(null);
     try {
       const result = await redeemCoupon(couponCode.trim());
-      setBalance(result.newBalance);
+      saldoChegouDeFora(result.newBalance);
       setCouponMessage({ text: `Cupom resgatado — +${result.chips.toLocaleString('pt-BR')} fichas!`, ok: true });
       setCouponCode('');
     } catch (error) {

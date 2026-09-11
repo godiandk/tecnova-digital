@@ -42,7 +42,8 @@ export interface BancaFrancesaConfig {
   /** Os limites em MÚLTIPLOS do mínimo — a tela multiplica pelo mínimo do degrau dela. */
   pisoEmMinimos: Record<BancaFrancesaBetType, number>;
   tetoEmMinimos: Record<BancaFrancesaBetType, number>;
-  limitesNoNivelDeEntrada: Record<BancaFrancesaBetType, LimitesDaCasa>;
+  /** Os limites já em fichas, na mesa DESTE jogador — o servidor sabe quem pergunta. */
+  limitesDaMinhaMesa: Record<BancaFrancesaBetType, LimitesDaCasa>;
 }
 
 /** Um lançamento, com os três dados na ordem em que saem do copo: azul, verde, vermelho. */

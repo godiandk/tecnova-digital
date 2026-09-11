@@ -19,3 +19,9 @@ export const PUSH_TOTAL_MULTIPLIER = 1;
 
 export const MIN_BET = 50;
 export const MAX_BET = 5000;
+
+/**
+ * O MAIOR RETORNO DE UMA APOSTA, em múltiplos dela: o empate, que paga 9x o total.
+ * Ver `comum/teto-de-fichas.ts`.
+ */
+export const MAIOR_MULTIPLICADOR = TIE_TOTAL_MULTIPLIER;
