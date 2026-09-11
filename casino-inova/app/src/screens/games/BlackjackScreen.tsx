@@ -145,7 +145,7 @@ export function BlackjackScreen({ navigation }: Props) {
    * configuração é sempre o do Bronze, enquanto o servidor valida a aposta contra o degrau
    * de verdade. Quem tinha saldo de mesa alta tomava 400 em toda aposta.
    */
-  const faixa = useFaixaDeAposta(balance);
+  const faixa = useFaixaDeAposta(balance, config?.maiorMultiplicador);
 
   /* Quando o saldo muda de degrau, a aposta é reancorada na faixa nova. */
   useEffect(() => {

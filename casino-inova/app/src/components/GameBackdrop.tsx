@@ -71,13 +71,29 @@ export function GameBackdrop({ source, children, apagarAMesa }: GameBackdropProp
 
   const mesa = (
     <Fundo source={source} style={styles.mesa} resizeMode="cover">
+      {/*
+        O DEGRADÊ NÃO PODE MATAR A MESA — e era o que ele fazia.
+        
+        Ele ia de 25% de preto no topo até COR SÓLIDA em 80% da altura. Da linha dos 80%
+        pra baixo a foto simplesmente não existia: era uma laje preta. E é exatamente ali
+        que ficam os controles de TODAS as dez telas. O retrato de celular mostra o
+        resultado — um quinto da tela em preto chapado, embaixo da mesa, sem nada.
+        
+        Foi essa laje que produziu a leitura de "componentes React por cima de uma
+        fotografia": a foto era enfeite no topo, e o jogo acontecia num painel escuro
+        colado embaixo dela.
+        
+        Agora o escurecimento acompanha a tela inteira e termina em 92% — forte o bastante
+        pra o texto do controle ficar legível sobre qualquer foto, e transparente o
+        bastante pra o pano continuar lá embaixo. A mesa deixa de acabar no meio.
+      */}
       <LinearGradient
         colors={
           apagarAMesa
             ? ['rgba(11,15,13,0.84)', 'rgba(11,15,13,0.96)']
-            : ['rgba(11,15,13,0.25)', colors.background]
+            : ['rgba(11,15,13,0.15)', 'rgba(11,15,13,0.45)', 'rgba(11,15,13,0.92)']
         }
-        locations={apagarAMesa ? [0, 1] : [0, 0.8]}
+        locations={apagarAMesa ? [0, 1] : [0, 0.55, 1]}
         style={StyleSheet.absoluteFillObject}
       />
       {children}

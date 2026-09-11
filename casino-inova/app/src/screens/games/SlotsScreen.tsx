@@ -92,14 +92,20 @@ export function SlotsScreen({ navigation }: Props) {
   }, []);
 
   /*
-   * A faixa de aposta vem do DEGRAU da pessoa, não da configuração do jogo.
+   * A faixa de aposta vem do DEGRAU da pessoa, recalculado a cada giro.
    *
-   * `fetchSlotsConfig()` devolve `minBet` do Bronze pra todo mundo — é a configuração da
-   * REGRA do jogo, e não da mesa em que esta pessoa senta. Quem tinha saldo de mesa alta
-   * via um seletor de 50 a 1.000 e tomava 400 do servidor em toda aposta, porque lá a
-   * validação usa o degrau de verdade.
+   * O `/config` hoje já responde o degrau de quem pergunta — ele deixou de publicar o
+   * mínimo do Bronze pra todo mundo, que era o defeito que fazia esta tela oferecer
+   * fichas de 50 a quem o servidor exigia 500 milhões. Mas ele é buscado UMA vez, e o
+   * saldo muda a cada giro: é o gancho que mantém o trilho em dia entre uma rodada e
+   * outra, sem uma requisição por rodada.
+   *
+   * O MULTIPLICADOR VAI JUNTO porque este jogo é o que paga mais alto do catálogo
+   * (80.000x, cinco linhas de jackpot). É ele que faz o trilho parar no Platina pra quem
+   * está no topo da escada — acima disso o prêmio não caberia em ficha exata, e a aposta
+   * seria recusada depois de montada. Ver `degrauQueCabeNaConta`.
    */
-  const faixa = useFaixaDeAposta(balance);
+  const faixa = useFaixaDeAposta(balance, config?.maiorMultiplicador);
 
   /*
    * Quando a faixa chega (ou o saldo muda de degrau), a aposta é reancorada: se ainda

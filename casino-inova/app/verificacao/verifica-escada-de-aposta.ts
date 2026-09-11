@@ -18,14 +18,38 @@ import {
   ajustar, apostaInicial, atalhos, dobrar, metade, movimentosDe, podeApostar,
   toquesPara, tudo, type FaixaDeAposta,
 } from '../src/aposta/escada';
-import { degrauEconomicoPara, degrauPara, faixaPara } from '../src/aposta/degrau';
+import {
+  degrauEconomicoPara,
+  degrauPara,
+  degrauQueCabeNaConta,
+  faixaPara,
+} from '../src/aposta/degrau';
 /* O servidor, de verdade: é contra ELE que a conta do cliente é comparada. */
 import {
   NIVEIS_DE_MESA,
   NIVEL_PARA_ABRIR_O_DEGRAU,
   degrauEconomico,
+  degrauQueCabeNaConta as degrauQueCabeNoServidor,
   problemaComAAposta,
 } from '../../server/src/modules/games/shared/niveis-de-mesa';
+/* Os multiplicadores de verdade dos jogos: é contra ELES que o trilho é conferido. */
+import { MAIOR_MULTIPLICADOR as SLOTS } from '../../server/src/modules/games/slots/slots.config';
+import { MAIOR_MULTIPLICADOR as ROLETA } from '../../server/src/modules/games/roulette/roulette.config';
+import { MAIOR_MULTIPLICADOR as BACARA } from '../../server/src/modules/games/baccarat/baccarat.config';
+import { MAIOR_MULTIPLICADOR as BACBO } from '../../server/src/modules/games/bac-bo/bac-bo.config';
+import { MAIOR_MULTIPLICADOR as BLACKJACK } from '../../server/src/modules/games/blackjack/blackjack.config';
+import { MAIOR_MULTIPLICADOR as BOLSA } from '../../server/src/modules/games/stock-market/stock-market.config';
+import { MAIOR_MULTIPLICADOR as BANCA } from '../../server/src/modules/games/banca-francesa/banca-francesa.config';
+
+const JOGOS: Array<[string, number]> = [
+  ['caça-níqueis', SLOTS],
+  ['roleta', ROLETA],
+  ['bacará', BACARA],
+  ['bac bo', BACBO],
+  ['blackjack', BLACKJACK],
+  ['stock market', BOLSA],
+  ['banca francesa', BANCA],
+];
 
 let passaram = 0;
 let falharam = 0;
@@ -284,6 +308,136 @@ confere('o degrau do aplicativo é o mesmo do servidor, em saldo e nível', () =
     }
   }
   assert.ok(comparados >= 300, `só ${comparados} combinações comparadas`);
+});
+
+
+console.log('\nO trilho respeita o teto da conta exata');
+
+confere('o trilho que o aplicativo desenha é o MESMO que o servidor valida, jogo a jogo', () => {
+  /*
+   * A METADE NOVA DO MESMO CICLO. O aplicativo desenha o trilho entre uma rodada e outra
+   * sem perguntar (o saldo muda a cada giro); o servidor valida a aposta. Desde que o
+   * trilho passou a parar onde a conta de fichas para de ser exata, as duas contas
+   * precisam parar no MESMO degrau — senão a tela volta a oferecer ficha recusada, que é
+   * o defeito inteiro que esta engine existe pra matar.
+   */
+  for (const [nome, multiplicador] of JOGOS) {
+    for (const degrau of NIVEIS_DE_MESA) {
+      const doServidor = degrauQueCabeNoServidor(degrau, multiplicador);
+      const doAplicativo = degrauQueCabeNaConta(escadaComNivel, escadaComNivel[NIVEIS_DE_MESA.indexOf(degrau)], multiplicador);
+      assert.equal(
+        doAplicativo?.id,
+        doServidor.id,
+        `${nome}, degrau ${degrau.id}: aplicativo diz ${doAplicativo?.id}, servidor diz ${doServidor.id}`,
+      );
+    }
+  }
+});
+
+confere('no caça-níqueis o trilho PARA — e nos outros seis não para', () => {
+  /*
+   * Esta conferência é sobre o número, e não sobre o mecanismo. O caça-níqueis paga até
+   * 80.000x (cinco linhas de jackpot), e é o único do catálogo que faz o trilho descer no
+   * topo da escada. Se um dia outro jogo passar a descer também, é porque alguém mexeu
+   * numa tabela de pagamento — e isso tem que aparecer aqui, e não numa reclamação.
+   */
+  const topo = NIVEIS_DE_MESA[NIVEIS_DE_MESA.length - 1];
+  assert.notEqual(
+    degrauQueCabeNoServidor(topo, SLOTS).id,
+    topo.id,
+    'o caça-níqueis deveria fazer o trilho descer no topo da escada',
+  );
+  for (const [nome, multiplicador] of JOGOS) {
+    if (multiplicador === SLOTS) continue;
+    assert.equal(
+      degrauQueCabeNoServidor(topo, multiplicador).id,
+      topo.id,
+      `${nome} passou a fazer o trilho descer — alguém mexeu no pagamento dele`,
+    );
+  }
+});
+
+confere('toda aposta do seletor é aceita TAMBÉM com o multiplicador do jogo', () => {
+  /*
+   * A mesma prova de antes, agora com o teto da conta no caminho. No topo da escada o
+   * caça-níqueis é o caso que interessa: sem o trilho descer, o seletor ofereceria fichas
+   * de cinco trilhões e TODAS seriam recusadas, porque cinco trilhões vezes oitenta mil
+   * não cabe em ficha exata. A mesa mais alta do jogo mais popular ficaria inutilizável.
+   */
+  for (const [nome, multiplicador] of JOGOS) {
+    for (const saldo of [50, 5_000, 5_000_000, 146_000_000_000, 5e14, 9e15]) {
+      for (const level of [1, 50, 400, 2_000, 10_000]) {
+        const faixa = faixaPara(escadaComNivel, saldo, level, multiplicador);
+        if (!podeApostar(faixa)) continue;
+        let valor = apostaInicial(faixa);
+        const vistos = new Set([valor, tudo(faixa)]);
+        for (const movimento of movimentosDe(faixa)) {
+          const alvo = movimento.tipo === 'ficha' ? ajustar(faixa, movimento.valor)
+            : movimento.tipo === 'dobrar' ? dobrar(faixa, valor)
+            : movimento.tipo === 'metade' ? metade(faixa, valor)
+            : tudo(faixa);
+          vistos.add(alvo);
+          vistos.add(dobrar(faixa, alvo));
+          vistos.add(metade(faixa, alvo));
+        }
+        for (const v of vistos) {
+          const problema = problemaComAAposta(v, saldo, level, multiplicador);
+          assert.equal(problema, null, `${nome}, saldo ${saldo}, nível ${level}, aposta ${v}: ${problema}`);
+        }
+      }
+    }
+  }
+});
+
+console.log('\nTrês jogadores, três escalas');
+
+confere('10 mil, 5 milhões e 146 bilhões recebem trilhos DIFERENTES', () => {
+  /*
+   * O PEDIDO, em uma frase: a aposta tem que ser proporcional a quem aposta. Quem tem
+   * dez mil fichas e quem tem cento e quarenta e seis bilhões não podem ver o mesmo
+   * seletor — era isso que a tela fazia, e era por isso que a mesa ficava sem sentido pra
+   * quem tinha banca grande.
+   */
+  const perfis: Array<[string, number]> = [
+    ['pé de chinelo', 10_000],
+    ['jogador médio', 5_000_000],
+    ['baleia', 146_000_000_000],
+  ];
+  const trilhos = perfis.map(([nome, saldo]) => {
+    const faixa = faixaPara(escadaComNivel, saldo, 10_000);
+    return { nome, saldo, minimo: faixa.minimo, fichas: faixa.fichas };
+  });
+  for (const t of trilhos) {
+    console.log(
+      `         ${t.nome.padEnd(14)} ${t.saldo.toLocaleString('pt-BR').padStart(19)} fichas  ` +
+        `→ mínimo ${t.minimo.toLocaleString('pt-BR')}, trilho ${t.fichas.map((f) => f.toLocaleString('pt-BR')).join(' · ')}`,
+    );
+  }
+  const minimos = trilhos.map((t) => t.minimo);
+  assert.equal(new Set(minimos).size, 3, `os três mínimos deveriam ser diferentes: ${minimos.join(', ')}`);
+  for (let i = 1; i < minimos.length; i += 1) {
+    assert.ok(minimos[i] > minimos[i - 1], 'o mínimo tem que crescer com o saldo');
+  }
+  /* E a proporção se mantém: a aposta mínima pesa o mesmo no bolso dos três. */
+  const pesos = trilhos.map((t) => t.minimo / t.saldo);
+  for (const peso of pesos) {
+    assert.ok(peso > 0 && peso <= 0.05, `a aposta mínima pesa ${(peso * 100).toFixed(2)}% do saldo`);
+  }
+});
+
+confere('metade, dobro e tudo nunca montam aposta ilegal, nos três perfis', () => {
+  for (const saldo of [10_000, 5_000_000, 146_000_000_000]) {
+    const faixa = faixaPara(escadaComNivel, saldo, 10_000);
+    assert.ok(podeApostar(faixa), `saldo ${saldo} deveria poder apostar`);
+    let valor = apostaInicial(faixa);
+    /* Uma caminhada longa: dobra até o teto, corta pela metade até o piso, e pega tudo. */
+    for (let passo = 0; passo < 40; passo += 1) {
+      valor = passo % 3 === 0 ? dobrar(faixa, valor) : passo % 3 === 1 ? metade(faixa, valor) : tudo(faixa);
+      const problema = problemaComAAposta(valor, saldo, 10_000);
+      assert.equal(problema, null, `saldo ${saldo}, passo ${passo}, aposta ${valor}: ${problema}`);
+      assert.ok(Number.isSafeInteger(valor), `aposta ${valor} deixou de ser ficha exata`);
+    }
+  }
 });
 
 console.log(`\n${passaram} passaram, ${falharam} falharam\n`);

@@ -66,7 +66,12 @@ export function esquecerNivelEmCache(): void {
   buscandoNivel = null;
 }
 
-export function useFaixaDeAposta(saldo: number): FaixaDeAposta | null {
+/**
+ * @param maiorMultiplicador o maior retorno que a mesa sabe pagar, em múltiplos da aposta.
+ *   Vem no `/config` do jogo. Sem ele, o trilho é o do degrau puro — o que serve pra jogo
+ *   que paga pouco e é errado pra caça-níqueis no topo da escada.
+ */
+export function useFaixaDeAposta(saldo: number, maiorMultiplicador?: number): FaixaDeAposta | null {
   const [escada, setEscada] = useState<NivelDeMesa[] | null>(escadaEmCache);
   const [level, setLevel] = useState<number | null>(nivelEmCache);
 
@@ -90,5 +95,5 @@ export function useFaixaDeAposta(saldo: number): FaixaDeAposta | null {
    * comportamento que já existia pra escada, e pelo mesmo motivo: oferecer fichas de uma
    * mesa adivinhada é oferecer uma aposta que o servidor vai recusar.
    */
-  return escada && level !== null ? faixaPara(escada, saldo, level) : null;
+  return escada && level !== null ? faixaPara(escada, saldo, level, maiorMultiplicador) : null;
 }

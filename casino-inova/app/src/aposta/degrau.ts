@@ -61,12 +61,63 @@ export function degrauEconomicoPara(escada: NivelDeMesa[], saldo: number, level:
   return escada.indexOf(porSaldo) <= escada.indexOf(porNivel) ? porSaldo : porNivel;
 }
 
-/** A faixa que o seletor de aposta usa: mínimo do degrau, saldo, e as fichas do degrau. */
-export function faixaPara(escada: NivelDeMesa[], saldo: number, level: number): FaixaDeAposta {
-  const degrau = degrauEconomicoPara(escada, saldo, level);
+/** Até onde a conta de fichas é exata: 2^53 − 1, o mesmo teto do servidor. */
+export const TETO_DE_FICHAS = Number.MAX_SAFE_INTEGER;
+
+/**
+ * O DEGRAU MAIS ALTO QUE AINDA CABE NA CONTA EXATA, pra um jogo que paga até tanto.
+ *
+ * Espelha `degrauQueCabeNaConta` do servidor, e existe pelo mesmo motivo que todo o resto
+ * deste arquivo: o trilho desenhado na tela não pode oferecer ficha que o servidor recusa.
+ * No caça-níqueis, que paga até 80.000x a aposta, o trilho de quem está no topo da escada
+ * para no Platina — cinco trilhões vezes oitenta mil não cabe em ficha exata, e uma aposta
+ * assim seria recusada depois de montada.
+ *
+ * Sem `maiorMultiplicador` (jogo que não publica quanto paga), devolve o degrau como está:
+ * inventar um teto seria pior que não ter, e o servidor continua sendo quem valida.
+ */
+export function degrauQueCabeNaConta(
+  escada: NivelDeMesa[],
+  degrau: NivelDeMesa | null,
+  maiorMultiplicador?: number,
+): NivelDeMesa | null {
+  if (!degrau || maiorMultiplicador === undefined) return degrau;
+  if (!Number.isFinite(maiorMultiplicador) || maiorMultiplicador <= 0) return degrau;
+  const maximoSeguro = Math.floor(TETO_DE_FICHAS / maiorMultiplicador);
+  let i = escada.indexOf(degrau);
+  if (i < 0) return degrau;
+  while (i > 0 && escada[i].maximo > maximoSeguro) i -= 1;
+  return escada[i];
+}
+
+/**
+ * A faixa que o seletor de aposta usa: mínimo do degrau, saldo, e as fichas do degrau.
+ *
+ * @param maiorMultiplicador o maior retorno que ESTE jogo sabe pagar, em múltiplos da
+ *   aposta — vem do `/config` dele. Faz o trilho parar onde a conta para de ser exata.
+ */
+export function faixaPara(
+  escada: NivelDeMesa[],
+  saldo: number,
+  level: number,
+  maiorMultiplicador?: number,
+): FaixaDeAposta {
+  const degrau = degrauQueCabeNaConta(
+    escada,
+    degrauEconomicoPara(escada, saldo, level),
+    maiorMultiplicador,
+  );
   return {
     minimo: degrau?.minimo ?? 0,
     saldo: Math.max(0, Math.floor(saldo)),
     fichas: degrau?.fichas ?? [],
+    /*
+     * O teto da conta, quando o jogo diz quanto paga. Sem ele, "tudo" de quem tem 146
+     * bilhões monta 146 bilhões no caça-níqueis — e o servidor recusa em 112,6 bilhões.
+     */
+    maximo:
+      maiorMultiplicador !== undefined && Number.isFinite(maiorMultiplicador) && maiorMultiplicador > 0
+        ? Math.floor(TETO_DE_FICHAS / maiorMultiplicador)
+        : undefined,
   };
 }

@@ -32,12 +32,29 @@ export interface FaixaDeAposta {
   saldo: number;
   /** As fichas do degrau, do menor pro maior. A menor é o próprio mínimo. */
   fichas: number[];
+  /**
+   * O teto da ARITMÉTICA desta mesa, quando ela tem um. Não é aposta máxima de negócio —
+   * não existe aposta máxima neste jogo —, é até onde o prêmio máximo ainda cabe em ficha
+   * exata.
+   *
+   * NÃO BASTA O TRILHO PARAR NO DEGRAU CERTO, e foi a conferência que mostrou: quem tem
+   * 146 bilhões e toca "tudo" no caça-níqueis monta uma aposta de 146 bilhões, e o
+   * servidor recusa em 112,6 bilhões (80.000x acima disso não cabe). O degrau estava
+   * certo; quem estourava era o saldo. Como todo caminho do seletor passa por `ajustar`,
+   * o teto mora aqui e vale pra ficha, dobro, metade e tudo de uma vez.
+   *
+   * Ausente = sem teto de aritmética; o saldo continua sendo o único limite.
+   */
+  maximo?: number;
 }
 
 /** Dá pra apostar nesta mesa? Falso quando o saldo não cobre nem o mínimo. */
 export function podeApostar(faixa: FaixaDeAposta): boolean {
-  return Number.isFinite(faixa.saldo) && Number.isFinite(faixa.minimo)
-    && faixa.minimo > 0 && faixa.saldo >= faixa.minimo;
+  if (!Number.isFinite(faixa.saldo) || !Number.isFinite(faixa.minimo)) return false;
+  if (faixa.minimo <= 0 || faixa.saldo < faixa.minimo) return false;
+  /* O mínimo também precisa caber no teto da conta — senão não existe aposta legal. */
+  const teto = faixa.maximo;
+  return teto === undefined || !Number.isFinite(teto) || faixa.minimo <= teto;
 }
 
 /**
@@ -50,7 +67,15 @@ export function podeApostar(faixa: FaixaDeAposta): boolean {
 export function ajustar(faixa: FaixaDeAposta, valor: number): number {
   if (!podeApostar(faixa)) return 0;
   if (!Number.isFinite(valor)) return faixa.minimo;
-  return Math.max(faixa.minimo, Math.min(faixa.saldo, Math.floor(valor)));
+  return Math.max(faixa.minimo, Math.min(tetoDaMesa(faixa), Math.floor(valor)));
+}
+
+/** O maior valor que esta mesa aceita: o saldo, ou o teto da conta exata se houver. */
+function tetoDaMesa(faixa: FaixaDeAposta): number {
+  const teto = faixa.maximo;
+  return teto !== undefined && Number.isFinite(teto) && teto > 0
+    ? Math.min(faixa.saldo, teto)
+    : faixa.saldo;
 }
 
 /** Onde o seletor abre: o mínimo da mesa. Nunca um número inventado. */
@@ -81,7 +106,7 @@ export function tudo(faixa: FaixaDeAposta): number {
 export function atalhos(faixa: FaixaDeAposta): number[] {
   if (!podeApostar(faixa)) return [];
   const cabem = faixa.fichas
-    .filter((f) => Number.isFinite(f) && f >= faixa.minimo && f <= faixa.saldo)
+    .filter((f) => Number.isFinite(f) && f >= faixa.minimo && f <= tetoDaMesa(faixa))
     .map((f) => Math.floor(f));
   /* O mínimo sempre aparece, mesmo que o degrau venha sem fichas declaradas. */
   const comOMinimo = cabem.includes(faixa.minimo) ? cabem : [faixa.minimo, ...cabem];

@@ -68,6 +68,15 @@ export interface FaixaPublicada {
   degrau: { id: string; nome: string; minimo: number; maximo: number };
   /** Dá pra apostar? Falso quando o saldo não cobre nem a aposta mínima da mesa. */
   podeApostar: boolean;
+  /**
+   * O maior retorno que esta mesa sabe pagar, em múltiplos da aposta.
+   *
+   * VAI PRA TELA porque a tela também desenha o trilho entre uma rodada e outra, sem
+   * perguntar de novo — o saldo muda a cada giro e o degrau muda junto. Sem este número,
+   * ela desenharia o degrau puro e voltaria a oferecer ficha que o servidor recusa, que é
+   * exatamente o defeito que esta engine existe pra matar.
+   */
+  maiorMultiplicador?: number;
 }
 
 function publicar(
@@ -107,5 +116,6 @@ function publicar(
     saldo: quem.saldo,
     degrau: { id: degrau.id, nome: degrau.nome, minimo: degrau.minimo, maximo: degrau.maximo },
     podeApostar: cabe(degrau.minimo),
+    maiorMultiplicador,
   };
 }

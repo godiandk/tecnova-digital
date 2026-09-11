@@ -20,7 +20,7 @@
  * um seletor que diz não.
  */
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
 import { ALVO_DE_TOQUE } from '../theme/medidasDaMesa';
@@ -72,16 +72,23 @@ export function SeletorDeAposta({ faixa, valor, aoMudar, travado = false }: Prop
       </View>
 
       {/*
-        O trilho rola de lado quando as fichas não cabem — e é a MESMA gaveta que a
-        conferência de tamanhos aceita: o que sai da tela continua alcançável, e a
-        própria gaveta cabe. Sem isso, num celular estreito a ficha maior sumiria.
+        AS CINCO FICHAS CABEM, TODAS, SEM ROLAR — e isto foi corrigido olhando o retrato.
+        
+        O trilho era uma gaveta horizontal. Num iPhone de 390 pontos as cinco fichas somam
+        mais que a largura, então a quinta aparecia CORTADA na borda direita, sem barra de
+        rolagem (ela estava desligada) e sem sombra de continuação: do lado do jogador, a
+        maior ficha da mesa parecia um erro de desenho. O retrato de três jogos diferentes
+        mostra a mesma ficha cortada no mesmo lugar.
+        
+        Agora cada ficha divide a largura em partes iguais (`flex: 1`). São sempre cinco —
+        o degrau publica cinco —, então dividir é suficiente e não precisa rolar. O rótulo
+        já é curto por construção ("50 mil", "1 mi", "2,5 bi"), e encolhe uma vez se
+        precisar, em vez de vazar.
+        
+        E some um `ScrollView` de dentro da área de jogo, que é o gesto de documento que o
+        diagnóstico pediu pra tirar das mesas.
       */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={estilos.trilho}
-        contentContainerStyle={estilos.trilhoDentro}
-      >
+      <View style={estilos.trilho}>
         {fichas.map((ficha) => {
           const escolhida = ficha === valor;
           return (
@@ -94,13 +101,18 @@ export function SeletorDeAposta({ faixa, valor, aoMudar, travado = false }: Prop
               accessibilityLabel={`Apostar ${ficha.toLocaleString('pt-BR')} fichas`}
               style={[estilos.ficha, escolhida && estilos.fichaEscolhida, travado && estilos.travado]}
             >
-              <Text style={[estilos.fichaTexto, escolhida && estilos.fichaTextoEscolhido]}>
+              <Text
+                style={[estilos.fichaTexto, escolhida && estilos.fichaTextoEscolhido]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
                 {curto(ficha)}
               </Text>
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
 
       <View style={estilos.linhaDeAtalhos}>
         <Atalho rotulo="½" descricao="Metade da aposta" travado={travado}
@@ -138,14 +150,23 @@ const estilos = StyleSheet.create({
   valor: { fontFamily: fontFamily.displayBold, fontSize: fontSize.xl, color: colors.textPrimary },
   minimo: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
 
-  /* `minWidth: 0` deixa o trilho encolher; sem ele o RN não encolhe e a linha vaza. */
-  trilho: { alignSelf: 'stretch', minWidth: 0 },
-  trilhoDentro: { gap: spacing.sm, paddingHorizontal: spacing.xs, alignItems: 'center' },
+  /*
+   * A linha das cinco fichas. `minWidth: 0` deixa cada uma encolher — sem ele o React
+   * Native respeita a largura do texto e a linha vaza pela borda, que era o defeito.
+   */
+  trilho: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    gap: spacing.xs,
+    alignItems: 'center',
+    minWidth: 0,
+  },
 
   ficha: {
-    minWidth: 64,
+    flex: 1,
+    minWidth: 0,
     minHeight: ALVO_DE_TOQUE,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.xs,
     borderRadius: radius.pill,
     backgroundColor: colors.backgroundElevated,
     borderWidth: 1,

@@ -5,6 +5,15 @@ export type BaccaratBetType = 'jogador' | 'banca' | 'empate';
 
 export interface BaccaratConfig {
   minBet: number;
+  /**
+   * O maior retorno que esta mesa sabe pagar, em múltiplos da aposta.
+   *
+   * Faz o trilho de fichas parar onde a conta deixa de ser exata — ver
+   * `degrauQueCabeNaConta`. Opcional porque um servidor mais velho que este aplicativo
+   * não manda o campo, e trancar a mesa por falta dele seria pior que desenhar o degrau
+   * puro (o servidor continua sendo quem valida a aposta).
+   */
+  maiorMultiplicador?: number;
   maxBet: number;
 }
 
