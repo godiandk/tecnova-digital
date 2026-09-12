@@ -1,7 +1,6 @@
 import { StyleSheet, Pressable, Text, View } from 'react-native';
 
-import { Ficha } from './Ficha';
-import { FICHAS_VISIVEIS_NA_PILHA, PASSO_DA_PILHA } from '../theme/medidasDaMesa';
+import { PilhaDeFichas } from './PilhaDeFichas';
 import { colors, fontFamily } from '../theme';
 
 export type ZonaDoBacara = 'jogador' | 'banca' | 'empate';
@@ -76,7 +75,7 @@ export function PanoDoBacara({ escolhida, valor, venceu, travado, onEncostar }: 
     >
       <Text style={estilos.nome}>{NOME[zona]}</Text>
       <Text style={estilos.pagamento}>{PAGAMENTO[zona]}</Text>
-      {escolhida === zona && valor > 0 && <PilhaNaCasa valor={valor} />}
+      {escolhida === zona && valor > 0 && <PilhaDeFichas valor={valor} />}
     </Pressable>
   );
 
@@ -87,32 +86,6 @@ export function PanoDoBacara({ escolhida, valor, venceu, travado, onEncostar }: 
         {casa('jogador', estilos.metade)}
         {casa('banca', estilos.metade)}
       </View>
-    </View>
-  );
-}
-
-/**
- * A pilha de fichas dentro da casa.
- *
- * Quantas fichas aparecem não é a quantidade apostada — é a ALTURA da pilha, que cresce
- * com a aposta e para em cinco. Uma pilha de mil fichas desenhadas seria uma torre saindo
- * da mesa; cinco fichas com o valor gravado na de cima é como uma mesa de verdade mostra
- * qualquer aposta.
- */
-function PilhaNaCasa({ valor }: { valor: number }) {
-  const quantas = Math.max(1, Math.min(FICHAS_VISIVEIS_NA_PILHA, Math.ceil(Math.log10(Math.max(10, valor)))));
-  const TAMANHO = 30;
-  return (
-    <View style={[estilos.pilha, { height: TAMANHO + (quantas - 1) * PASSO_DA_PILHA * TAMANHO }]}>
-      {Array.from({ length: quantas }, (_, i) => (
-        <View
-          key={i}
-          style={[estilos.fichaDaPilha, { bottom: i * PASSO_DA_PILHA * TAMANHO }]}
-          pointerEvents="none"
-        >
-          <Ficha valor={valor} cor={undefined} tamanho={TAMANHO} mostrarValor={i === quantas - 1} />
-        </View>
-      ))}
     </View>
   );
 }
@@ -158,6 +131,4 @@ const estilos = StyleSheet.create({
   nome: { fontFamily: fontFamily.displayBold, fontSize: 15, letterSpacing: 1.5, color: colors.goldBright },
   pagamento: { fontFamily: fontFamily.body, fontSize: 10, letterSpacing: 1, color: colors.textFaint },
 
-  pilha: { marginTop: 4, width: 30, alignItems: 'center', justifyContent: 'flex-end' },
-  fichaDaPilha: { position: 'absolute' },
 });

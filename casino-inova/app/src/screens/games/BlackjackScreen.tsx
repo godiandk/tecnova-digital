@@ -11,6 +11,7 @@ import { DEALER_IMAGES } from '../../data/dealerImages';
 import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
+import { PilhaDeFichas } from '../../components/PilhaDeFichas';
 import { ChipStack } from '../../components/ChipStack';
 import { Carta } from '../../components/Carta';
 import { ApiError, novaAcao, mensagemParaOJogador } from '../../api/client';
@@ -205,6 +206,12 @@ export function BlackjackScreen({ navigation }: Props) {
         <View style={styles.titleRow}>
           <DealerBadge source={DEALER_IMAGES.blackjack} />
           <Text style={styles.title}>Blackjack</Text>
+          {/*
+            A PLACA DA MESA, que numa mesa de verdade fica no canto: quantos baralhos a
+            sapata tem. É a única regra desta mesa que o feltro NÃO traz impressa — "paga
+            3 por 2" e "dealer para em 17" estão lá, em arco no meio do pano.
+          */}
+          {config && <Text style={styles.placaDaMesa}>{config.baralhos} baralhos</Text>}
         </View>
 
         {!config && !configError && <ActivityIndicator color={colors.goldBright} style={styles.loading} />}
@@ -222,9 +229,15 @@ export function BlackjackScreen({ navigation }: Props) {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.corpo}
           >
-            <Text style={styles.regraDaMesa}>
-              Blackjack paga 3 por 2 · dealer para em 17 · {config.baralhos} baralhos
-            </Text>
+            {/*
+              A REGRA JÁ ESTÁ IMPRESSA NO FELTRO. A fotografia desta mesa traz, em arco no
+              meio do pano, "BLACKJACK PAGA 3 POR 2" e "O DEALER PARA EM 17" — e a tela
+              escrevia as duas de novo, em cinza, logo acima. Duas vezes a mesma regra, uma
+              delas apagando a outra.
+
+              O número de baralhos não está no feltro, e é o que sobra: ele vive no topo,
+              junto do nome da mesa, que é onde se lê a placa antes de sentar.
+            */}
 
             {/* --- Casa --- */}
             <View style={styles.bloco}>
@@ -235,7 +248,16 @@ export function BlackjackScreen({ navigation }: Props) {
                   {hand.totalDoDealer !== undefined && <SeloDoTotal total={hand.totalDoDealer} />}
                 </View>
               ) : (
-                <View style={[styles.vagaVazia, { height: carta * 1.5 }]} />
+                /*
+                  ESPAÇO RESERVADO, E INVISÍVEL. Era um retângulo com borda e fundo
+                  escuro desenhado por cima do feltro — dois deles, um pra casa e um pro
+                  jogador. A mesa já tem sete círculos de aposta pintados no pano; pôr uma
+                  caixa por cima é tapar a mesa com o desenho de uma mesa.
+
+                  A altura continua reservada pelo mesmo motivo de antes: sem ela a tela
+                  pula quando as cartas chegam.
+                */
+                <View style={{ height: carta * 1.5 }} />
               )}
             </View>
 
@@ -254,6 +276,14 @@ export function BlackjackScreen({ navigation }: Props) {
                     </View>
 
                     <View style={styles.linhaDaAposta}>
+                      {/*
+                        A APOSTA DESTA MÃO, EM FICHA. Era só um número ao lado das cartas;
+                        numa mesa a aposta é uma pilha no círculo do jogador, e é ela que
+                        se olha pra saber quanto está em jogo. O número continua ao lado
+                        porque com fichas grandes a pilha não diz o valor exato — mas quem
+                        manda na leitura agora é a pilha.
+                      */}
+                      <PilhaDeFichas valor={mao.aposta} tamanho={26} />
                       <Text style={styles.apostaDaMao}>
                         {mao.aposta.toLocaleString('pt-BR')}
                         {mao.dobrada ? ' · dobrada' : ''}
@@ -275,7 +305,8 @@ export function BlackjackScreen({ navigation }: Props) {
                   </View>
                 ))
               ) : (
-                <View style={[styles.vagaVazia, { height: carta * 1.5 }]} />
+                /* Espaço reservado e invisível — ver o bloco da casa, acima. */
+                <View style={{ height: carta * 1.5 }} />
               )}
             </View>
 
@@ -411,6 +442,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(11,15,13,0.55)',
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, marginTop: spacing.sm },
+  placaDaMesa: {
+    fontFamily: fontFamily.body,
+    fontSize: fontSize.xs,
+    color: colors.textFaint,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.feltLine,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
   title: { fontFamily: fontFamily.displayBold, fontSize: fontSize.xl, color: colors.textPrimary },
 
   loading: { marginTop: spacing.xxxl },
@@ -432,14 +473,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
 
-  /* As regras da mesa ficam escritas, como no feltro de uma mesa de verdade. */
-  regraDaMesa: {
-    fontFamily: fontFamily.bodyMedium,
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-  },
 
   bloco: { gap: spacing.xs },
   rotuloDoBloco: {
@@ -450,13 +483,6 @@ const styles = StyleSheet.create({
   },
   linhaDaMao: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   mao: { flexDirection: 'row', alignItems: 'center' },
-  /* Espaço reservado antes de distribuir: a mesa não "pula" quando as cartas chegam. */
-  vagaVazia: {
-    borderRadius: radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.feltLine,
-    backgroundColor: 'rgba(11,15,13,0.35)',
-  },
 
   suaMao: {
     padding: spacing.sm,
@@ -470,7 +496,8 @@ const styles = StyleSheet.create({
   },
   /* A mão da vez fica acesa: dividindo, é o que diz de qual mão são os botões. */
   suaMaoAtiva: { borderColor: colors.goldBright, backgroundColor: 'rgba(40,34,16,0.80)' },
-  linhaDaAposta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  /* `flex-end` alinha a pilha pela BASE, que é onde a ficha encosta no pano. */
+  linhaDaAposta: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: spacing.sm },
   apostaDaMao: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.xs, color: colors.textSecondary },
   resultadoDaMao: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.xs, flexShrink: 1, textAlign: 'right' },
   ganhou: { color: colors.success },

@@ -157,15 +157,19 @@ for (const [arquivo, rotulo] of JOGOS) {
     /*
      * ENTRA NA PARTIDA, quando o jogo tem uma porta antes da mesa.
      *
-     * Truco, dominó e pôquer abrem numa tela de entrada — escolher o buy-in e começar. O
-     * retrato dessa tela é o retrato do vestíbulo, não do jogo: as peças de dominó, as
-     * cartas e a corrente só existem depois. Um toque em "Começar partida" põe a mesa em
-     * jogo, que é o que precisa ser olhado.
+     * Truco, dominó e pôquer abrem numa tela de entrada; as mesas contra a casa abrem com
+     * a mesa vazia. O retrato disso é o retrato do vestíbulo, não do jogo: as peças, as
+     * cartas, os rolos e o resultado só existem depois de UM toque. Aqui a conferência dá
+     * esse toque — começar a partida, distribuir, girar ou apostar, o que a mesa oferecer
+     * —, porque é a mesa EM JOGO que precisa ser olhada.
      */
-    const comecar = pagina.getByText('Começar partida', { exact: false }).first();
-    if ((await comecar.count()) > 0 && (await comecar.isVisible().catch(() => false))) {
-      await comecar.click().catch(() => undefined);
-      await pagina.waitForTimeout(4000);
+    for (const porta of ['Começar partida', 'Distribuir', 'Girar', 'Apostar']) {
+      const botao = pagina.getByText(porta, { exact: false }).first();
+      if ((await botao.count()) > 0 && (await botao.isVisible().catch(() => false))) {
+        await botao.click().catch(() => undefined);
+        await pagina.waitForTimeout(4500);
+        break;
+      }
     }
 
     await pagina.screenshot({ path: `${SAIDA}/${arquivo}.png` });
