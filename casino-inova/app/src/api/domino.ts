@@ -44,6 +44,16 @@ export function fetchDominoConfig(): Promise<DominoConfig> {
   return apiRequest<DominoConfig>('/games/domino/config');
 }
 
+/**
+ * A partida aberta deste jogador, ou `null`.
+ *
+ * A tela pede ao abrir: a partida vive na memória do servidor, e sem isto quem recarregava
+ * a página ficava com a entrada debitada e sem caminho de volta pra mesa.
+ */
+export function fetchDominoMatch(): Promise<DominoMatchState | null> {
+  return apiRequest<DominoMatchState | null>('/games/domino/partida');
+}
+
 export function newDominoMatch(buyIn: number): Promise<DominoMatchState> {
   return apiRequest<DominoMatchState>('/games/domino/nova-partida', { method: 'POST', body: { buyIn } });
 }

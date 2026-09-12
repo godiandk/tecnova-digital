@@ -14,7 +14,7 @@ import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
 import { Carta } from '../../components/Carta';
 import { ApiError, mensagemParaOJogador } from '../../api/client';
-import { fetchPokerConfig, newPokerHand, actPoker, PokerConfig, PokerHandState, PokerCard, PokerAction } from '../../api/poker';
+import { fetchPokerConfig, fetchPokerHand, newPokerHand, actPoker, PokerConfig, PokerHandState, PokerCard, PokerAction } from '../../api/poker';
 import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
 import { SeletorDeEntrada } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
@@ -92,6 +92,21 @@ export function PokerScreen({ navigation }: Props) {
       .catch((error: unknown) => {
         setConfigError(mensagemParaOJogador(error, 'Não foi possível falar com o servidor.'));
       });
+  }, []);
+
+
+  /*
+   * RETOMA A MÃO ABERTA, se houver.
+   *
+   * A partida vive na memória do servidor e a entrada já foi debitada. Sem este pedido, a
+   * tela abria no "Começar partida" e o servidor recusava com "você já tem uma partida em
+   * andamento" — a pessoa ficava trancada do lado de fora de uma mesa que é dela, e do
+   * dinheiro que já pagou. Basta recarregar a página pra cair nisso.
+   */
+  useEffect(() => {
+    fetchPokerHand()
+      .then((aberta) => { if (aberta) setHand(aberta); })
+      .catch(() => { /* sem partida aberta o jogo começa do zero, que é o caso normal */ });
   }, []);
 
   const run = async (action: () => Promise<PokerHandState>) => {

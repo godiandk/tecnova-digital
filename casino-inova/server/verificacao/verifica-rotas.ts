@@ -23,16 +23,32 @@ const BASE = process.env.API_URL ?? 'http://localhost:3000';
  * @Controller/@Get de verdade antes de sair mexendo na ordem dos módulos.
  */
 const ROTAS: { caminho: string; publica?: boolean }[] = [
-  { caminho: '/games/slots/config', publica: true },
-  { caminho: '/games/roleta/config', publica: true },
-  { caminho: '/games/blackjack/config', publica: true },
-  { caminho: '/games/bacara/config', publica: true },
-  { caminho: '/games/banca-francesa/config', publica: true },
-  { caminho: '/games/bac-bo/config', publica: true },
-  { caminho: '/games/stock-market/config', publica: true },
-  { caminho: '/games/truco/config', publica: true },
-  { caminho: '/games/domino/config', publica: true },
-  { caminho: '/games/poker/config', publica: true },
+  /*
+   * O `/config` DE TODO JOGO DEIXOU DE SER PÚBLICO, e isso é regra e não descuido.
+   *
+   * Ele passou a responder o degrau de QUEM PERGUNTA — mínimo, fichas do trilho e limites
+   * da mesa. Público, ele só sabia responder o Bronze, e era isso que punha "o mínimo em
+   * Grande é 500.000.000 fichas" ao lado de um trilho oferecendo fichas de 50: a mesa
+   * ficava matematicamente impossível de jogar. Ver `FaixaDeAposta`.
+   *
+   * O que continua público é placar e histórico — eles não têm dado de ninguém.
+   */
+  { caminho: '/games/slots/config' },
+  { caminho: '/games/roleta/config' },
+  { caminho: '/games/blackjack/config' },
+  { caminho: '/games/bacara/config' },
+  { caminho: '/games/banca-francesa/config' },
+  { caminho: '/games/bac-bo/config' },
+  { caminho: '/games/stock-market/config' },
+  { caminho: '/games/truco/config' },
+  { caminho: '/games/domino/config' },
+  { caminho: '/games/poker/config' },
+  { caminho: '/games/banca-francesa/placar', publica: true },
+  { caminho: '/games/roleta/historico', publica: true },
+  /* As rotas de retomar partida: privadas, porque a partida é de uma pessoa só. */
+  { caminho: '/games/domino/partida' },
+  { caminho: '/games/truco/partida' },
+  { caminho: '/games/poker/partida' },
   { caminho: '/wallet/saldo' },
   { caminho: '/wallet/historico' },
   { caminho: '/lobby/ganhos-recentes' },

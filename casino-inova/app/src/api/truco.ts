@@ -80,6 +80,11 @@ export function fetchTrucoConfig(): Promise<TrucoConfig> {
   return apiRequest<TrucoConfig>('/games/truco/config');
 }
 
+/** A partida aberta deste jogador, ou `null`. Ver `fetchDominoMatch`. */
+export function fetchTrucoMatch(): Promise<TrucoMatchState | null> {
+  return apiRequest<TrucoMatchState | null>('/games/truco/partida');
+}
+
 export function newTrucoMatch(buyIn: number, variant: TrucoVariant = 'paulista', style: TrucoStyle = 'sujo'): Promise<TrucoMatchState> {
   return apiRequest<TrucoMatchState>('/games/truco/nova-partida', {
     method: 'POST',

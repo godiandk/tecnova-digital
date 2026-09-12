@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -15,6 +15,7 @@ import { ChipStack } from '../../components/ChipStack';
 import { ApiError, mensagemParaOJogador } from '../../api/client';
 import {
   fetchDominoConfig,
+  fetchDominoMatch,
   newDominoMatch,
   playDominoTile,
   passDominoTurn,
@@ -26,15 +27,34 @@ import {
 import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
 import { SeletorDeEntrada } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
+import { PecaDeDomino } from '../../components/PecaDeDomino';
+import { CorrenteDeDomino } from '../../components/CorrenteDeDomino';
+
+/**
+ * A LARGURA DA PEÇA SAI DA MÃO MEDIDA, e não de um número fixo.
+ *
+ * Com 38 fixos, o retrato mostrou a sétima peça saindo pela borda direita: a mão tem
+ * sempre sete peças no começo, mas o espaço muda com o aparelho e com o vão entre elas.
+ * Medindo a fileira e dividindo, as sete cabem em qualquer tela — e num tablet elas
+ * crescem em vez de ficarem miúdas num canto.
+ *
+ * Os limites existem pelas duas pontas: abaixo de 26 os pontos da peça não se leem e o
+ * dedo não acerta; acima de 48 sete peças viram um paredão que come a mesa.
+ */
+const LARGURA_MINIMA_DA_PECA = 26;
+const LARGURA_MAXIMA_DA_PECA = 48;
+const VAO_ENTRE_PECAS = 4;
+
+function larguraDaPeca(larguraDaMao: number, quantas: number): number {
+  if (larguraDaMao <= 0 || quantas <= 0) return LARGURA_MINIMA_DA_PECA;
+  const util = larguraDaMao - VAO_ENTRE_PECAS * (quantas - 1);
+  return Math.max(LARGURA_MINIMA_DA_PECA, Math.min(LARGURA_MAXIMA_DA_PECA, Math.floor(util / quantas)));
+}
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Domino'>;
 
 /** Dominó double-six: todas as combinações de 0 a 6, sem repetir — 28 peças. */
 const TOTAL_DE_PECAS = 28;
-
-function tileLabel(tile: DominoTile): string {
-  return `${tile.a}|${tile.b}`;
-}
 
 function tileMatches(tile: DominoTile, value: number): boolean {
   return tile.a === value || tile.b === value;
@@ -75,6 +95,8 @@ export function DominoScreen({ navigation }: Props) {
   const [buyIn, setBuyIn] = useState(200);
   const [match, setMatch] = useState<DominoMatchState | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  /* A largura real da fileira da mão, medida no layout — ver `larguraDaPeca`. */
+  const [larguraDaMao, setLarguraDaMao] = useState(0);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -88,6 +110,21 @@ export function DominoScreen({ navigation }: Props) {
       .catch((error: unknown) => {
         setConfigError(mensagemParaOJogador(error, 'Não foi possível falar com o servidor.'));
       });
+  }, []);
+
+
+  /*
+   * RETOMA A PARTIDA ABERTA, se houver.
+   *
+   * A partida vive na memória do servidor e a entrada já foi debitada. Sem este pedido, a
+   * tela abria no "Começar partida" e o servidor recusava com "você já tem uma partida em
+   * andamento" — a pessoa ficava trancada do lado de fora de uma mesa que é dela, e do
+   * dinheiro que já pagou. Basta recarregar a página pra cair nisso.
+   */
+  useEffect(() => {
+    fetchDominoMatch()
+      .then((aberta) => { if (aberta) setMatch(aberta); })
+      .catch(() => { /* sem partida aberta o jogo começa do zero, que é o caso normal */ });
   }, []);
 
   const run = async (action: () => Promise<DominoMatchState>) => {
@@ -182,15 +219,30 @@ export function DominoScreen({ navigation }: Props) {
               {boardEmpty ? 'Mesa vazia — escolha uma peça pra abrir' : `Pontas: ${match.leftEnd} — ${match.rightEnd}`}
             </Text>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.boardScroll} contentContainerStyle={styles.boardRow}>
-              {match.boardTiles.map((tile, index) => (
-                <View key={index} style={styles.boardTile}>
-                  <Text style={styles.boardTileLabel}>{tileLabel(tile)}</Text>
-                </View>
-              ))}
-            </ScrollView>
+            {/*
+              A MESA, com as peças de verdade e a corrente dobrando esquina.
 
-            {match.lastEvent && <Text style={styles.eventText}>{match.lastEvent}</Text>}
+              Era uma gaveta horizontal de botões escritos "3|5" que rolava de lado — a
+              mesa sumia assim que a partida andava, porque um tabuleiro que é barra de
+              rolagem não é um tabuleiro. `CorrenteDeDomino` já fazia certo na mesa
+              online: a corrente vira quando chega na borda e continua na linha de baixo,
+              e a carroça entra atravessada.
+            */}
+            <View style={styles.mesa}>
+              {match.boardTiles.length > 0 && <CorrenteDeDomino pecas={match.boardTiles} />}
+            </View>
+
+            {/*
+              O RECADO DA MESA, sem repetir o que o aviso da abertura já diz.
+
+              Com a regra da carroça em pé, a tela mostrava duas frases seguidas dizendo a
+              mesma coisa: "Você tem a maior peça (5-5) — a partida abre com ela." vindo do
+              evento, e "Você tem a maior peça: abra com esta." logo abaixo, junto da peça.
+              A segunda é melhor (mostra a peça), então a primeira cala nesse caso.
+            */}
+            {match.lastEvent && !match.aberturaObrigatoria && (
+              <Text style={styles.eventText}>{match.lastEvent}</Text>
+            )}
             {actionError && <Text style={styles.errorText}>{actionError}</Text>}
 
             {selectedTile && !boardEmpty && (
@@ -215,12 +267,13 @@ export function DominoScreen({ navigation }: Props) {
               — a regra fica visível antes do erro, não depois.
             */}
             {match.aberturaObrigatoria && (
-              <Text style={styles.aviso}>
-                Você tem a maior peça: abra com o {tileLabel(match.aberturaObrigatoria)}.
-              </Text>
+              <View style={styles.avisoDaAbertura}>
+                <Text style={styles.aviso}>Você tem a maior peça: abra com esta.</Text>
+                <PecaDeDomino peca={match.aberturaObrigatoria} largura={26} />
+              </View>
             )}
 
-            <View style={styles.handRow}>
+            <View style={styles.handRow} onLayout={(e) => setLarguraDaMao(e.nativeEvent.layout.width)}>
               {match.playerHand.map((tile, index) => {
                 const ehAbertura =
                   !match.aberturaObrigatoria ||
@@ -232,13 +285,14 @@ export function DominoScreen({ navigation }: Props) {
                     disabled={busy || !ehAbertura}
                     accessibilityRole="button"
                     accessibilityLabel={`Peça ${tile.a} ${tile.b}${ehAbertura ? '' : ' — não é a peça de abertura'}`}
-                    style={[
-                      styles.card,
-                      index === selectedIndex && styles.cardSelected,
-                      !ehAbertura && styles.cardApagada,
-                    ]}
+                    style={styles.lugarDaPeca}
                   >
-                    <Text style={styles.cardLabel}>{tileLabel(tile)}</Text>
+                    <PecaDeDomino
+                      peca={tile}
+                      largura={larguraDaPeca(larguraDaMao, match.playerHand.length)}
+                      escolhida={index === selectedIndex}
+                      apagada={!ehAbertura}
+                    />
                   </Pressable>
                 );
               })}
@@ -292,7 +346,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   /* Peça que não pode abrir: apagada, mas ainda legível — some do toque, não da vista. */
-  cardApagada: { opacity: 0.35 },
   resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, textAlign: 'center', maxWidth: 280 },
   resultWin: { color: colors.goldBright },
   resultLoss: { color: colors.textFaint },
@@ -300,36 +353,31 @@ const styles = StyleSheet.create({
   matchBlock: { width: '100%', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md },
   score: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.textSecondary },
   boardEnds: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, color: colors.textPrimary },
-  boardScroll: { width: '100%', maxHeight: 60, marginTop: spacing.xs },
-  boardRow: { gap: spacing.xs, paddingHorizontal: spacing.md },
-  boardTile: {
-    minWidth: 44,
-    height: 44,
-    borderRadius: radius.sm,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xs,
-  },
-  boardTileLabel: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.xs, color: colors.textSecondary },
+  /*
+   * A MESA TEM ALTURA RESERVADA. Sem `minHeight`, o tampo nasce com zero e a tela inteira
+   * pula pra baixo quando a primeira peça é assentada — e volta a pular a cada dobra da
+   * corrente. Mesa que muda de tamanho no meio da partida é mesa que se perde de vista.
+   */
+  mesa: { width: '100%', minHeight: 150, marginTop: spacing.sm, alignItems: 'center', justifyContent: 'center' },
   eventText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.goldBright, textAlign: 'center', maxWidth: 300 },
   endRow: { flexDirection: 'row', gap: spacing.md },
-  handRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center', marginTop: spacing.md },
-  card: {
-    minWidth: 52,
-    height: 52,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.sm,
-    backgroundColor: colors.textPrimary,
-    alignItems: 'center',
+  /*
+   * A MÃO NÃO QUEBRA LINHA. São sempre sete peças, e sete peças de 38 cabem numa tela de
+   * celular — `flexWrap` só serviria pra mandar a sétima pra uma segunda fileira em
+   * telas apertadas, o que não é como ninguém segura dominó.
+   */
+  handRow: {
+    flexDirection: 'row',
+    gap: VAO_ENTRE_PECAS,
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    alignItems: 'flex-end',
+    marginTop: spacing.lg,
+    alignSelf: 'stretch',
   },
-  cardSelected: { borderColor: colors.goldBright },
-  cardLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.sm, color: colors.background },
+  /* O aviso mostra A PEÇA, e não o nome dela: "abra com o 6|6" é código, 6|6 é a peça. */
+  avisoDaAbertura: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm },
+  /* O lugar da peça na mão: área de toque confortável em volta da arte. */
+  lugarDaPeca: { paddingVertical: 6 },
   primaryButton: {
     backgroundColor: colors.goldBright,
     borderRadius: radius.pill,

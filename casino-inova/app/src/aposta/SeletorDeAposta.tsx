@@ -45,6 +45,23 @@ function curto(n: number): string {
   return n.toLocaleString('pt-BR');
 }
 
+/**
+ * O CORPO DA LETRA SAI DO RÓTULO MAIS LONGO DO TRILHO.
+ *
+ * `adjustsFontSizeToFit` existe no iOS e NÃO existe no react-native-web — e o jogo chega
+ * pelo navegador. No retrato de celular dá pra ver o resultado: com as cinco fichas
+ * dividindo a largura, "100 mil" virava "100 …". Encolher só a última não resolve (as
+ * cinco têm que ficar iguais), e cortar o texto é pior que letra menor.
+ *
+ * Então o tamanho é escolhido uma vez, pelo rótulo mais comprido, e vale pras cinco.
+ */
+function corpoDoTrilho(rotulos: string[]): number {
+  const maior = rotulos.reduce((n, r) => Math.max(n, r.length), 0);
+  if (maior <= 5) return 15;   // "50", "1 mi"
+  if (maior <= 7) return 13;   // "100 mil", "2,5 bi"
+  return 11;                   // "500 mil", "100 tri"
+}
+
 export function SeletorDeAposta({ faixa, valor, aoMudar, travado = false }: Props) {
   if (!podeApostar(faixa)) {
     return (
@@ -59,6 +76,7 @@ export function SeletorDeAposta({ faixa, valor, aoMudar, travado = false }: Prop
   }
 
   const fichas = atalhos(faixa);
+  const corpo = corpoDoTrilho(fichas.map(curto));
   const mudar = (novo: number) => { if (!travado) aoMudar(novo); };
 
   return (
@@ -102,10 +120,8 @@ export function SeletorDeAposta({ faixa, valor, aoMudar, travado = false }: Prop
               style={[estilos.ficha, escolhida && estilos.fichaEscolhida, travado && estilos.travado]}
             >
               <Text
-                style={[estilos.fichaTexto, escolhida && estilos.fichaTextoEscolhido]}
+                style={[estilos.fichaTexto, { fontSize: corpo }, escolhida && estilos.fichaTextoEscolhido]}
                 numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.75}
               >
                 {curto(ficha)}
               </Text>

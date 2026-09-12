@@ -16,6 +16,7 @@ import { Carta } from '../../components/Carta';
 import { ApiError, mensagemParaOJogador } from '../../api/client';
 import {
   fetchTrucoConfig,
+  fetchTrucoMatch,
   newTrucoMatch,
   playTrucoCard,
   callTruco,
@@ -99,6 +100,21 @@ export function TrucoScreen({ navigation, route }: Props) {
       .catch((error: unknown) => {
         setConfigError(mensagemParaOJogador(error, 'Não foi possível falar com o servidor.'));
       });
+  }, []);
+
+
+  /*
+   * RETOMA A PARTIDA ABERTA, se houver.
+   *
+   * A partida vive na memória do servidor e a entrada já foi debitada. Sem este pedido, a
+   * tela abria no "Começar partida" e o servidor recusava com "você já tem uma partida em
+   * andamento" — a pessoa ficava trancada do lado de fora de uma mesa que é dela, e do
+   * dinheiro que já pagou. Basta recarregar a página pra cair nisso.
+   */
+  useEffect(() => {
+    fetchTrucoMatch()
+      .then((aberta) => { if (aberta) setMatch(aberta); })
+      .catch(() => { /* sem partida aberta o jogo começa do zero, que é o caso normal */ });
   }, []);
 
   const run = async (action: () => Promise<TrucoMatchState>) => {

@@ -114,6 +114,22 @@ export class TrucoService {
     };
   }
 
+  /**
+   * A PARTIDA ABERTA DESTE JOGADOR, se houver.
+   *
+   * Mesmo defeito do dominó, mesmo conserto: a partida vive na memória e a tela só a
+   * conhecia como resposta de uma jogada. Recarregar a página deixava a entrada debitada,
+   * a partida viva e a tela sem caminho de volta — "Você já tem uma partida em andamento"
+   * até o servidor reiniciar.
+   *
+   * Devolve `null` quando não há nada aberto.
+   */
+  async partidaAberta(userId: string) {
+    const match = this.matches.get(userId);
+    if (!match || match.finished) return null;
+    return this.publicView(userId, match);
+  }
+
   async newMatch(userId: string, buyIn: number, variant: TrucoVariant = 'paulista', style: TrucoStyle = 'sujo', actionId?: string) {
     const existing = this.matches.get(userId);
     if (existing && !existing.finished) {

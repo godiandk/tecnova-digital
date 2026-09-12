@@ -210,11 +210,33 @@ for (const [nomeDaTela, largura, altura, celular] of telas) {
       await pagina.locator('input').nth(1).fill(process.env.SENHA || 'senha-de-teste-123');
       await pagina.getByText('Entrar', { exact: true }).last().click();
       await pagina.waitForTimeout(5000);
+
+      /*
+       * A RECOMPENSA DIÁRIA ABRE POR CIMA DO SALÃO no primeiro acesso do dia, e ela cobre
+       * os cartões dos jogos. Sem fechar, TODO jogo falhava com "não consegui abrir" — o
+       * clique acertava o modal. Fechar com "Agora não" é o que um jogador faz.
+       */
+      const agoraNao = pagina.getByText('Agora não', { exact: false }).first();
+      if ((await agoraNao.count()) > 0 && (await agoraNao.isVisible().catch(() => false))) {
+        await agoraNao.click().catch(() => undefined);
+        await pagina.waitForTimeout(1500);
+      }
+
       await pagina.getByLabel(jogo.rotulo).click({ timeout: 15000 });
       await pagina.waitForTimeout(1800);
       if (jogo.sozinho) {
-        await pagina.getByLabel(/^Sozinho/).first().click({ timeout: 10000 });
-        await pagina.waitForTimeout(4000);
+        /*
+         * O PRIMEIRO MODO DA LISTA. Era só `/^Sozinho/`, e o dominó chama os modos de
+         * "1 x 1" e "2 x 2" — lá a medição parava na tela de modo em vez de medir a mesa.
+         */
+        for (const modo of [/^Sozinho/, /^Contra o computador/, /^1 x 1/, /^Cara a cara/, /^Contra a casa/]) {
+          const opcao = pagina.getByLabel(modo).first();
+          if ((await opcao.count()) > 0 && (await opcao.isVisible().catch(() => false))) {
+            await opcao.click({ timeout: 10000 }).catch(() => undefined);
+            await pagina.waitForTimeout(4000);
+            break;
+          }
+        }
       } else {
         await pagina.waitForTimeout(3000);
       }

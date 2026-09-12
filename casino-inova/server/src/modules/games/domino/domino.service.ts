@@ -68,6 +68,24 @@ export class DominoService {
     return { minBuyIn: faixa.minimo, maxBuyIn: faixa.maximo, handSize: HAND_SIZE, degrau: quem.degrau, entradas };
   }
 
+
+  /**
+   * A PARTIDA ABERTA DESTE JOGADOR, se houver.
+   *
+   * O DEFEITO QUE ISTO CONSERTA, visto no retrato: a partida vive na memória do servidor e
+   * a tela só a conhecia como resposta de uma jogada. Bastava recarregar a página — ou
+   * sair pro salão e voltar — pra a tela abrir no "Começar partida" e o servidor recusar
+   * com "Você já tem uma partida em andamento". A entrada estava debitada, a partida
+   * existia, e não havia caminho de volta pra ela. Ficava assim até o servidor reiniciar.
+   *
+   * Devolve `null` quando não há partida aberta, que é o caso normal de quem chega.
+   */
+  async partidaAberta(userId: string) {
+    const match = this.matches.get(userId);
+    if (!match || match.finished) return null;
+    return this.publicView(userId, match);
+  }
+
   async newMatch(userId: string, buyIn: number, actionId?: string) {
     const existing = this.matches.get(userId);
     if (existing && !existing.finished) {

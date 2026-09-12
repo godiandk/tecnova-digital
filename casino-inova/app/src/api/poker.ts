@@ -58,6 +58,11 @@ export function fetchPokerConfig(): Promise<PokerConfig> {
   return apiRequest<PokerConfig>('/games/poker/config');
 }
 
+/** A mão aberta deste jogador, ou `null`. Ver `fetchDominoMatch`. */
+export function fetchPokerHand(): Promise<PokerHandState | null> {
+  return apiRequest<PokerHandState | null>('/games/poker/partida');
+}
+
 export function newPokerHand(buyIn: number): Promise<PokerHandState> {
   return apiRequest<PokerHandState>('/games/poker/nova-mao', { method: 'POST', body: { buyIn } });
 }

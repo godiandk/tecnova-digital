@@ -15,7 +15,7 @@
  * um seletor vazio nem um botão que toma erro do servidor depois de apertado.
  */
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
 import { ALVO_DE_TOQUE } from '../theme/medidasDaMesa';
@@ -45,6 +45,23 @@ function curto(n: number): string {
   return n.toLocaleString('pt-BR');
 }
 
+/**
+ * O CORPO DA LETRA SAI DO RÓTULO MAIS LONGO DO TRILHO.
+ *
+ * `adjustsFontSizeToFit` existe no iOS e NÃO existe no react-native-web — e o jogo chega
+ * pelo navegador. No retrato de celular dá pra ver o resultado: com as cinco fichas
+ * dividindo a largura, "100 mil" virava "100 …". Encolher só a última não resolve (as
+ * cinco têm que ficar iguais), e cortar o texto é pior que letra menor.
+ *
+ * Então o tamanho é escolhido uma vez, pelo rótulo mais comprido, e vale pras cinco.
+ */
+function corpoDoTrilho(rotulos: string[]): number {
+  const maior = rotulos.reduce((n, r) => Math.max(n, r.length), 0);
+  if (maior <= 5) return 15;   // "50", "1 mi"
+  if (maior <= 7) return 13;   // "100 mil", "2,5 bi"
+  return 11;                   // "500 mil", "100 tri"
+}
+
 export function SeletorDeEntrada({ opcoes, valor, aoMudar, legenda, travado = false }: Props) {
   if (opcoes.length === 0) {
     return (
@@ -58,6 +75,7 @@ export function SeletorDeEntrada({ opcoes, valor, aoMudar, legenda, travado = fa
   }
 
   const escolhida = opcoes.find((o) => o.entrada === valor) ?? opcoes[0];
+  const corpo = corpoDoTrilho(opcoes.map((o) => curto(o.entrada)));
 
   return (
     <View>
@@ -70,7 +88,14 @@ export function SeletorDeEntrada({ opcoes, valor, aoMudar, legenda, travado = fa
           cegas {escolhida.smallBlind?.toLocaleString('pt-BR')}/{escolhida.bigBlind.toLocaleString('pt-BR')}
         </Text>
       )}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={estilos.trilho}>
+      {/*
+        AS ENTRADAS CABEM, TODAS, SEM ROLAR — o mesmo conserto do trilho de aposta, feito
+        aqui pelo mesmo motivo e com a mesma evidência: no retrato de celular do dominó, a
+        quinta entrada aparece PARTIDA na borda direita, sem barra de rolagem (ela está
+        desligada) e sem sombra de continuação. São sempre cinco (as fichas do degrau), e
+        cinco dividem a largura sem sobra.
+      */}
+      <View style={estilos.trilho}>
         {opcoes.map((opcao) => {
           const ativa = opcao.entrada === escolhida.entrada;
           return (
@@ -83,25 +108,37 @@ export function SeletorDeEntrada({ opcoes, valor, aoMudar, legenda, travado = fa
               accessibilityLabel={`Entrada de ${opcao.entrada.toLocaleString('pt-BR')} fichas`}
               style={[estilos.ficha, ativa && estilos.fichaAtiva, travado && estilos.travada]}
             >
-              <Text style={[estilos.fichaTexto, ativa && estilos.fichaTextoAtivo]}>{curto(opcao.entrada)}</Text>
+              <Text
+                style={[estilos.fichaTexto, { fontSize: corpo }, ativa && estilos.fichaTextoAtivo]}
+                numberOfLines={1}
+              >
+                {curto(opcao.entrada)}
+              </Text>
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
     </View>
   );
 }
 
 const estilos = StyleSheet.create({
   cabecalho: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  rotulo: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
+  /*
+   * O RÓTULO ERA ILEGÍVEL SOBRE A MESA. `textFaint` é um cinza pensado pra fundo de
+   * painel; por cima da fotografia escura da mesa de dominó ele desaparecia — no retrato
+   * dá pra ver "Entrada (paga ×2 se ganhar)" sumindo dentro da madeira. Texto de controle
+   * fica no tom de leitura, não no de rodapé.
+   */
+  rotulo: { fontFamily: fontFamily.body, fontSize: fontSize.sm, color: colors.textSecondary },
   valor: { fontFamily: fontFamily.displayBold, fontSize: fontSize.xl, color: colors.textPrimary },
   cegas: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, marginTop: 2 },
-  trilho: { gap: spacing.sm, paddingVertical: spacing.sm },
+  trilho: { flexDirection: 'row', gap: spacing.xs, paddingVertical: spacing.sm, alignItems: 'center' },
   ficha: {
-    minWidth: ALVO_DE_TOQUE * 1.4,
+    flex: 1,
+    minWidth: 0,
     minHeight: ALVO_DE_TOQUE,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.xs,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: radius.md,

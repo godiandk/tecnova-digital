@@ -18,6 +18,19 @@ interface GameBackdropProps {
    * mesas na mesma tela.
    */
   apagarAMesa?: boolean;
+  /**
+   * A tela desenha o PRÓPRIO pano por cima da foto, e o pano impresso tem que recuar.
+   *
+   * Diferente de `apagarAMesa`, que apaga quase tudo: aqui a mesa da foto continua sendo
+   * mesa — a borda de couro, o brilho do salão, a madeira —, só as linhas do pano dela é
+   * que somem atrás de um véu. É o que o bacará precisa: as casas da foto são doze
+   * PLAYER/BANKER/TIE do tamanho de um selo, e elas atravessavam as três casas
+   * desenhadas. Duas mesas de bacará na mesma tela não é riqueza, é ruído.
+   *
+   * `apagarAMesa` continua existindo pro caso da roleta, onde o pano impresso está ERRADO
+   * (faltam o 27, o 28 e o 29) e precisa sumir de verdade.
+   */
+  panoProprio?: boolean;
 }
 
 /**
@@ -65,7 +78,7 @@ const LIMITE_ESTREITO = 700;
  * tamanho certo. Reusar a foto em vez de pedir uma arte de fundo mantém a cor e a luz
  * de cada jogo diferentes entre si, de graça.
  */
-export function GameBackdrop({ source, children, apagarAMesa }: GameBackdropProps) {
+export function GameBackdrop({ source, children, apagarAMesa, panoProprio }: GameBackdropProps) {
   const janela = useJanela();
   const largo = janela.width > LIMITE_ESTREITO;
 
@@ -91,7 +104,9 @@ export function GameBackdrop({ source, children, apagarAMesa }: GameBackdropProp
         colors={
           apagarAMesa
             ? ['rgba(11,15,13,0.84)', 'rgba(11,15,13,0.96)']
-            : ['rgba(11,15,13,0.15)', 'rgba(11,15,13,0.45)', 'rgba(11,15,13,0.92)']
+            : panoProprio
+              ? ['rgba(11,15,13,0.42)', 'rgba(11,15,13,0.62)', 'rgba(11,15,13,0.92)']
+              : ['rgba(11,15,13,0.15)', 'rgba(11,15,13,0.45)', 'rgba(11,15,13,0.92)']
         }
         locations={apagarAMesa ? [0, 1] : [0, 0.55, 1]}
         style={StyleSheet.absoluteFillObject}

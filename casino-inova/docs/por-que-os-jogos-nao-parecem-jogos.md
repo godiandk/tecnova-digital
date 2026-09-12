@@ -49,7 +49,8 @@ visualmente — é um painel escuro com widgets. A foto só se vê no topo, onde
 
 ### 2. O jogo rola. Mesa de cassino não rola.
 
-`ScrollView` envolvendo a área de jogo em **sete das dez telas**:
+`ScrollView` envolvendo a área de jogo em **nove das dezesseis telas** da pasta de jogos
+(a conferência `verify:apresentacao` conta e guarda esse orçamento — ele só pode cair):
 
 | Tela | Onde |
 |---|---|
@@ -60,6 +61,9 @@ visualmente — é um painel escuro com widgets. A foto só se vê no topo, onde
 | DominoScreen | linha 185 (a corrente rola de lado) |
 | BancaFrancesaMesaScreen | linhas 295 e 368 |
 | BacBoMesaScreen | linha 421 |
+| BacBoScreen | linha 142 |
+| DominoMesaScreen | linha 177 |
+| TrucoMesaScreen | linha 174 |
 
 Rolagem é o gesto de um documento. Uma mesa cabe na tela ou não é uma mesa: o que não cabe
 tem que ser resolvido por disposição — encolher, sobrepor, esconder atrás de um toque —, e

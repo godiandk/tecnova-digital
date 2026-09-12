@@ -23,8 +23,9 @@
     "verify:tamanhos": "node verificacao/verifica-tamanhos.mjs  # precisa do servidor no ar e do playwright",
     "verify:arcos-da-banca": "node verificacao/verifica-arcos-da-banca.mjs",
     "verify:sons": "node verificacao/verifica-sons.mjs",
-    "verify:tudo": "npm run typecheck && npm run verify:barra-de-nivel && npm run verify:palco && npm run verify:face-do-dado && npm run verify:medidor-de-quadros && npm run verify:comparador && npm run verify:mistura && npm run verify:escada-de-aposta && npm run verify:arcos-da-banca && npm run verify:saldo-na-tela && npm run verify:sons",
-    "verify:saldo-na-tela": "cd ../server && npx ts-node ../app/verificacao/verifica-saldo-na-tela.ts  # o ts-node mora no servidor"
+    "verify:tudo": "npm run typecheck && npm run verify:barra-de-nivel && npm run verify:palco && npm run verify:face-do-dado && npm run verify:medidor-de-quadros && npm run verify:comparador && npm run verify:mistura && npm run verify:escada-de-aposta && npm run verify:arcos-da-banca && npm run verify:saldo-na-tela && npm run verify:apresentacao && npm run verify:sons",
+    "verify:saldo-na-tela": "cd ../server && npx ts-node ../app/verificacao/verifica-saldo-na-tela.ts  # o ts-node mora no servidor",
+    "verify:apresentacao": "cd ../server && npx ts-node ../app/verificacao/verifica-apresentacao.ts  # o ts-node mora no servidor"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",

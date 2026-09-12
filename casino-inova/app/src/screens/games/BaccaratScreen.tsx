@@ -14,6 +14,7 @@ import { DealerBadge } from '../../components/DealerBadge';
 import { ChipStack } from '../../components/ChipStack';
 import { Carta } from '../../components/Carta';
 import { RoadmapPanel } from '../../components/RoadmapPanel';
+import { PanoDoBacara } from '../../components/PanoDoBacara';
 import { ApiError, mensagemParaOJogador } from '../../api/client';
 import { Roadmap } from '../../api/roadmap';
 import { fetchBaccaratConfig, fetchBaccaratRoadmap, playBaccaratRound, BaccaratConfig, BaccaratBetType, BaccaratRoundResponse } from '../../api/baccarat';
@@ -25,12 +26,6 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Baccarat'>;
 
 /** Largura da carta. Três por lado, que é o máximo no bacará. */
 const LARGURA_DA_CARTA = 58;
-
-const BET_OPTIONS: { type: BaccaratBetType; label: string; multiplier: string }[] = [
-  { type: 'jogador', label: 'Jogador', multiplier: '×2' },
-  { type: 'banca', label: 'Banca', multiplier: '×1,95' },
-  { type: 'empate', label: 'Empate', multiplier: '×9' },
-];
 
 const OUTCOME_LABEL: Record<BaccaratBetType, string> = {
   jogador: 'Jogador venceu',
@@ -123,7 +118,15 @@ export function BaccaratScreen({ navigation }: Props) {
   };
 
   return (
-    <GameBackdrop source={TABLE_IMAGES.bacara}>
+    /*
+      O PANO IMPRESSO RECUA, a mesa fica. Com o pano desenhado por cima, a tela mostrava
+      DOIS bacarás: o nosso, com três casas no tamanho de quem vai tocar, e o da
+      fotografia, com PLAYER/BANKER/TIE impressos em doze lugares atravessando as nossas
+      casas. Não é que o de trás esteja errado — é que ninguém precisa de duas mesas na
+      mesma tela. `panoProprio` põe um véu nas linhas dele e mantém o couro, a madeira e a
+      luz do salão, que são o que fazem a tela parecer um cassino.
+    */
+    <GameBackdrop source={TABLE_IMAGES.bacara} panoProprio>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.iconButton} hitSlop={12}>
@@ -151,16 +154,33 @@ export function BaccaratScreen({ navigation }: Props) {
 
         {config && (
           <>
+            {/*
+              AS DUAS MÃOS FICAM NO PANO, e o espaço delas é reservado desde o começo.
+              Antes, sem rodada, este bloco era a frase "Escolha onde apostar e mande
+              jogar." — texto cinzento boiando no feltro. Agora o lugar das cartas é o
+              lugar das cartas: vazio antes de distribuir, com as cartas depois, e a mesa
+              não pula de altura quando a rodada sai.
+            */}
             <View style={styles.table}>
-              {round ? (
+              {round && (
                 <>
                   <Hand label="Banca" cards={round.bankerCards} total={round.bankerTotal} />
                   <Hand label="Jogador" cards={round.playerCards} total={round.playerTotal} />
                 </>
-              ) : (
-                <Text style={styles.placeholderText}>Escolha onde apostar e mande jogar.</Text>
               )}
             </View>
+
+            {/*
+              O PANO, no lugar das três pílulas de texto. A ficha encosta na casa; a casa
+              que ganhou acende. Ver `PanoDoBacara`.
+            */}
+            <PanoDoBacara
+              escolhida={betType}
+              valor={amount}
+              venceu={round ? round.winner : null}
+              travado={playing}
+              onEncostar={setBetType}
+            />
 
             {round && (
               <Text style={[styles.resultLabel, round.winner === round.betType ? styles.resultWin : styles.resultLoss]}>
@@ -170,22 +190,6 @@ export function BaccaratScreen({ navigation }: Props) {
             )}
 
             {playError && <Text style={styles.errorText}>{playError}</Text>}
-
-            <Text style={styles.sectionLabel}>Sua aposta</Text>
-            <View style={styles.betTypes}>
-              {BET_OPTIONS.map((option) => (
-                <Pressable
-                  key={option.type}
-                  onPress={() => setBetType(option.type)}
-                  style={[styles.betTypeChip, betType === option.type && styles.betTypeChipActive]}
-                  disabled={playing}
-                >
-                  <Text style={[styles.betTypeLabel, betType === option.type && styles.betTypeLabelActive]}>
-                    {option.label} · {option.multiplier}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
 
             {faixa && (
               <SeletorDeAposta faixa={faixa} valor={amount} aoMudar={setAmount} travado={playing} />
@@ -236,35 +240,12 @@ const styles = StyleSheet.create({
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
   errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
   table: { width: '100%', marginTop: spacing.xl, gap: spacing.xl, minHeight: 200, justifyContent: 'center' },
-  placeholderText: { fontFamily: fontFamily.body, fontSize: fontSize.base, color: colors.textFaint, textAlign: 'center' },
   handBlock: { gap: spacing.sm, alignItems: 'center' },
   handLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textSecondary },
   cardRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
   resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, marginTop: spacing.lg, textAlign: 'center' },
   resultWin: { color: colors.goldBright },
   resultLoss: { color: colors.textFaint },
-  sectionLabel: {
-    fontFamily: fontFamily.bodySemiBold,
-    fontSize: fontSize.xs,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    color: colors.textFaint,
-    marginTop: spacing.xl,
-    marginBottom: spacing.sm,
-    alignSelf: 'flex-start',
-  },
-  betTypes: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center' },
-  betTypeChip: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.pill,
-    backgroundColor: colors.backgroundElevated,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-  },
-  betTypeChipActive: { backgroundColor: colors.feltBright, borderColor: colors.feltBright },
-  betTypeLabel: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.textSecondary },
-  betTypeLabelActive: { color: colors.textPrimary },
   primaryButton: {
     backgroundColor: colors.goldBright,
     borderRadius: radius.pill,
