@@ -14,6 +14,7 @@ import { Rolo } from '../../components/Rolo';
 import { ApiError, novaAcao, mensagemParaOJogador } from '../../api/client';
 import { fetchSlotsConfig, spinSlots, SlotsConfig, WinningLineDto } from '../../api/slots';
 import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
+import { PagamentoNaMesa, type Pagamento } from '../../components/PagamentoNaMesa';
 import { SeletorDeAposta, apostaInicial, ajustar, useFaixaDeAposta } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
@@ -80,6 +81,9 @@ export function SlotsScreen({ navigation }: Props) {
   const [grid, setGrid] = useState<string[] | null>(null);
   const [winningLines, setWinningLines] = useState<WinningLineDto[]>([]);
   const [lastWin, setLastWin] = useState<number | null>(null);
+  /* O pagamento que vai voar até o saldo, e o contador que dispara o voo. */
+  const [pagamento, setPagamento] = useState<Pagamento | null>(null);
+  const [rodadasJogadas, setRodadasJogadas] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [spinError, setSpinError] = useState<string | null>(null);
 
@@ -133,6 +137,14 @@ export function SlotsScreen({ navigation }: Props) {
       setWinningLines(result.winningLines);
       setLastWin(result.totalWin);
       saldoChegouDeFora(result.newBalance);
+      /*
+       * AS FICHAS SÓ VOAM DEPOIS DE O SALDO JÁ TER CHEGADO. A linha acima é o crédito que
+       * o servidor já fez; o voo abaixo só conta essa história. O prêmio sai da GRADE, que
+       * é de onde a combinação saiu. Ver `PagamentoNaMesa`.
+       */
+      const proxima = rodadasJogadas + 1;
+      setRodadasJogadas(proxima);
+      setPagamento({ valor: result.totalWin, rodada: proxima });
     } catch (error) {
       setSpinError(mensagemParaOJogador(error, 'Não foi possível girar agora.'));
     } finally {
@@ -144,6 +156,9 @@ export function SlotsScreen({ navigation }: Props) {
 
   return (
     <GameBackdrop source={TABLE_IMAGES.slots}>
+      {/* O prêmio nasce na grade dos rolos, que fica no terço de cima da máquina. */}
+      <PagamentoNaMesa pagamento={pagamento} deOndeSai={{ x: 0.5, y: 0.38 }} />
+
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.iconButton} hitSlop={12}>

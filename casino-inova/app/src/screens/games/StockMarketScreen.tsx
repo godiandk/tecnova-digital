@@ -23,6 +23,7 @@ import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
 import { SeletorDeAposta, ajustar, apostaInicial, useFaixaDeAposta } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 import { PilhaDeFichas } from '../../components/PilhaDeFichas';
+import { PagamentoNaMesa, type Pagamento } from '../../components/PagamentoNaMesa';
 
 /*
  * AS CORES DO PREGÃO, e não as do tema. Verde de compra e vinho de venda são a convenção
@@ -113,6 +114,9 @@ export function StockMarketScreen({ navigation }: Props) {
    * número do saldo e a marca no histórico, que de outro jeito contariam o fim antes.
    */
   const [pendente, setPendente] = useState<{ saldo: number; fechamento: number } | null>(null);
+  /* O pagamento que vai voar, e o contador que dispara o voo. */
+  const [pagamento, setPagamento] = useState<Pagamento | null>(null);
+  const [rodadasJogadas, setRodadasJogadas] = useState(0);
 
   useEffect(() => {
     fetchStockMarketConfig()
@@ -203,6 +207,15 @@ export function StockMarketScreen({ navigation }: Props) {
     saldoChegouDeFora(pendente.saldo);
     setHistory((current) => [...current, pendente.fechamento].slice(-30));
     setPendente(null);
+    /*
+     * O VOO ESPERA A COTAÇÃO TERMINAR DE ANDAR. Aqui é o instante do resultado — a linha
+     * chegou ao fim, o saldo mudou. Pagar antes disso seria contar o fim antes do meio.
+     */
+    setRodadasJogadas((n) => {
+      const proxima = n + 1;
+      if (round.totalReturn > 0) setPagamento({ valor: round.totalReturn, rodada: proxima });
+      return proxima;
+    });
   }, [pendente, round, tiqueVisivel]);
 
   const terminouDeDesenhar = !round || tiqueVisivel >= round.path.length;
@@ -210,6 +223,12 @@ export function StockMarketScreen({ navigation }: Props) {
 
   return (
     <GameBackdrop source={TABLE_IMAGES['stock-market']}>
+      {/* O pagamento sai da POSIÇÃO escolhida — alta à esquerda, baixa à direita. */}
+      <PagamentoNaMesa
+        pagamento={pagamento}
+        deOndeSai={round?.direction === 'baixa' ? { x: 0.72, y: 0.48 } : { x: 0.28, y: 0.48 }}
+      />
+
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.iconButton} hitSlop={12}>

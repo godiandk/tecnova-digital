@@ -174,6 +174,37 @@ apontado como estilo padrão de interação.
   parede de telas, e sumia. Ganhou tarja escura, como a placa de acrílico atrás do número
   da regra numa mesa de verdade.
 
+### 8. A cena conta o resultado: o prêmio vira ficha voando até o saldo
+
+Era uma frase. *"Banca venceu — +9.750 fichas"*, em texto, embaixo do pano. O jogador
+ganhava e a tela **contava** pra ele, como um extrato conta. Num jogo, pagar é um
+acontecimento com lugar e direção: o crupiê empurra as fichas da casa vencedora até quem
+ganhou. Era isso que o olho procurava e não achava.
+
+`PagamentoNaMesa`: as fichas partem de onde a aposta estava — a casa vencedora no bacará,
+a grade no caça-níqueis, a posição no stock market — e sobem até o saldo, no topo. O voo
+não é reto: uma ficha empurrada na mesa sobe, cruza o feltro e assenta; reta é como se
+copia um arquivo, não como anda uma ficha.
+
+**A regra que não se quebra, e esta é a camada onde seria mais fácil quebrar sem ninguém
+ver: a animação conta o que JÁ aconteceu.** O servidor resolve a rodada, credita o ledger e
+devolve o saldo novo antes de qualquer ficha se mexer. Se o aparelho travar no meio do voo,
+o dinheiro está lá do mesmo jeito. Nada ali decide, sorteia, arredonda ou "quase" paga.
+
+Duas conferências guardam isso (`verify:apresentacao`), e as duas são sobre ordem:
+
+1. o componente do voo **não calcula prêmio** — ele recebe o valor pago;
+2. em toda tela que paga, `saldoChegouDeFora` vem **antes** de disparar o voo. Provado por
+   mutação: trocando a ordem no caça-níqueis, a conferência reprova pelo nome da tela.
+
+**E o voo tem retrato.** Uma animação de um segundo não aparece num retrato parado:
+`npm run verify:pagamento-voando` gira até sair prêmio e fotografa DURANTE o voo
+(`retratos-depois/caca-niqueis-pagamento.png`), depois confere que o céu limpa sozinho.
+
+A primeira versão dessa conferência media 1,5 s depois do toque e via zero — não porque o
+voo não acontecia, mas porque ele já tinha acabado. Uma coisa que dura um segundo não se
+fotografa com uma amostra só: observa-se de 80 em 80 ms até aparecer.
+
 ## O que continua na fila
 
 Pela ordem do diagnóstico, o que ainda não foi feito:
@@ -182,8 +213,9 @@ Pela ordem do diagnóstico, o que ainda não foi feito:
 2. **Tirar a rolagem** das sete telas que ainda rolam na mesa (o orçamento está em
    `verify:apresentacao` e só pode cair). Nenhuma delas transborda hoje — são dívida
    potencial, não defeito visível.
-3. **A cena contar o resultado** em vez do texto: a ficha empilha na casa vencedora, o
-   pagamento desliza até a pilha do jogador. Hoje o resultado ainda é uma frase.
+3. **A cena contando o resultado nos outros sete jogos** — feito em caça-níqueis, bacará
+   e stock market; falta roleta, blackjack, banca francesa, bac bo, truco, dominó e
+   pôquer.
 4. **O que depende de renderer** — reel engine do caça-níqueis, roda da roleta com
    física, shakers do bac bo — continua esperando a medição em aparelho
    (`RENDERING_STRATEGY.md` §6). Nada disso é pré-requisito dos três itens acima.

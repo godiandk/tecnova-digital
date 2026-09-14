@@ -15,6 +15,7 @@ import { ChipStack } from '../../components/ChipStack';
 import { Carta } from '../../components/Carta';
 import { RoadmapPanel } from '../../components/RoadmapPanel';
 import { PanoDoBacara } from '../../components/PanoDoBacara';
+import { PagamentoNaMesa, type Pagamento } from '../../components/PagamentoNaMesa';
 import { ApiError, mensagemParaOJogador } from '../../api/client';
 import { Roadmap } from '../../api/roadmap';
 import { fetchBaccaratConfig, fetchBaccaratRoadmap, playBaccaratRound, BaccaratConfig, BaccaratBetType, BaccaratRoundResponse } from '../../api/baccarat';
@@ -53,6 +54,12 @@ export function BaccaratScreen({ navigation }: Props) {
 
   const [tutorialVisible, setTutorialVisible] = useState(true);
   const [placarAberto, setPlacarAberto] = useState(false);
+  /*
+   * O PAGAMENTO QUE VAI VOAR. `rodada` é o contador que dispara o voo — sem ele, mudar
+   * qualquer outro estado da tela faria as fichas saírem de novo.
+   */
+  const [pagamento, setPagamento] = useState<Pagamento | null>(null);
+  const [rodadasJogadas, setRodadasJogadas] = useState(0);
   const [config, setConfig] = useState<BaccaratConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
   const { jogador } = usePlayer();
@@ -111,6 +118,14 @@ export function BaccaratScreen({ navigation }: Props) {
       setRound(result);
       saldoChegouDeFora(result.newBalance);
       setRoadmap(result.roadmap);
+      /*
+       * AS FICHAS SÓ VOAM DEPOIS DE O SALDO JÁ TER CHEGADO. `saldoChegouDeFora` acima é o
+       * crédito que o servidor já fez; o voo abaixo só conta essa história. Se o aparelho
+       * travar no meio do caminho, o dinheiro está lá do mesmo jeito.
+       */
+      const proxima = rodadasJogadas + 1;
+      setRodadasJogadas(proxima);
+      setPagamento({ valor: result.totalReturn, rodada: proxima });
     } catch (error) {
       setPlayError(mensagemParaOJogador(error, 'Não foi possível apostar agora.'));
     } finally {
@@ -168,6 +183,22 @@ export function BaccaratScreen({ navigation }: Props) {
           atrás do botão no topo. Sem ele, a mesa cabe: rolar é gesto de documento, e uma
           mesa cabe na tela ou não é uma mesa.
         */}
+        {/*
+          O PAGAMENTO SAI DA CASA VENCEDORA. As três casas ficam na metade de baixo do
+          pano: empate em cima (y≈0.52), jogador e banca embaixo (y≈0.66), à esquerda e à
+          direita. Daí a ficha sobe até o saldo.
+        */}
+        <PagamentoNaMesa
+          pagamento={pagamento}
+          deOndeSai={
+            round?.winner === 'empate'
+              ? { x: 0.5, y: 0.52 }
+              : round?.winner === 'jogador'
+                ? { x: 0.28, y: 0.66 }
+                : { x: 0.72, y: 0.66 }
+          }
+        />
+
         <View style={styles.mesa}>
         <View style={styles.titleRow}>
           <DealerBadge source={DEALER_IMAGES.bacara} />

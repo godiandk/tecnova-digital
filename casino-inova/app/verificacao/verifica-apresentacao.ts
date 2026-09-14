@@ -148,7 +148,40 @@ confere(
   /BET_OPTIONS/.test(bacara) ? 'BET_OPTIONS voltou — a aposta virou formulário de novo' : null,
 );
 
-console.log('\n--- 5. erro técnico não chega no jogador ---\n');
+console.log('\n--- 5. a animação conta o que já aconteceu ---\n');
+
+/*
+ * A REGRA MAIS IMPORTANTE DESTA BASE, e esta é a camada onde seria mais fácil quebrá-la
+ * sem ninguém notar: a animação NÃO DECIDE NADA. O servidor resolve a rodada, credita o
+ * ledger e devolve o saldo novo; só depois a ficha voa. Se o aparelho travar no meio do
+ * voo, o dinheiro está lá do mesmo jeito.
+ *
+ * Duas coisas são conferidas, e as duas são sobre ordem:
+ *   1. o componente do voo não calcula prêmio — ele RECEBE o valor pago;
+ *   2. em toda tela, o crédito (`saldoChegouDeFora`) vem ANTES de disparar o voo.
+ */
+const voo = ler(COMPONENTES, 'PagamentoNaMesa.tsx');
+confere(
+  'o voo do pagamento não calcula prêmio — ele recebe o valor',
+  /multiplicador|payout|Math\.random|rtp/i.test(voo)
+    ? 'PagamentoNaMesa menciona cálculo de prêmio; ele só pode receber `valor`'
+    : null,
+);
+
+const foraDeOrdem: string[] = [];
+for (const nome of telas) {
+  const fonte = ler(TELAS, nome);
+  if (!/setPagamento\(/.test(fonte)) continue;
+  const credito = fonte.indexOf('saldoChegouDeFora(');
+  const disparo = fonte.indexOf('setPagamento({');
+  if (credito === -1 || disparo === -1 || credito > disparo) foraDeOrdem.push(nome);
+}
+confere(
+  'o crédito chega antes de a ficha voar, em toda tela que paga',
+  foraDeOrdem.length === 0 ? null : `${foraDeOrdem.join(', ')} — dispara o voo antes de creditar`,
+);
+
+console.log('\n--- 6. erro técnico não chega no jogador ---\n');
 
 /*
  * `mensagemParaOJogador` separa a frase escrita pra ser lida do detalhe que só serve pro
