@@ -12,6 +12,7 @@ import { TutorialModal } from '../../components/TutorialModal';
 import { GameBackdrop } from '../../components/GameBackdrop';
 import { DealerBadge } from '../../components/DealerBadge';
 import { PilhaDeFichas } from '../../components/PilhaDeFichas';
+import { PagamentoNaMesa, type Pagamento } from '../../components/PagamentoNaMesa';
 import { ChipStack } from '../../components/ChipStack';
 import { Carta } from '../../components/Carta';
 import { ApiError, novaAcao, mensagemParaOJogador } from '../../api/client';
@@ -128,6 +129,9 @@ export function BlackjackScreen({ navigation }: Props) {
   /* Abre em ZERO: quem decide o valor inicial é o degrau da mesa, não um número fixo. */
   const [bet, setBet] = useState(0);
   const [hand, setHand] = useState<BlackjackHandResponse | null>(null);
+  /* O pagamento que vai voar até o saldo, e o contador que dispara o voo. */
+  const [pagamento, setPagamento] = useState<Pagamento | null>(null);
+  const [rodadasJogadas, setRodadasJogadas] = useState(0);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -161,6 +165,21 @@ export function BlackjackScreen({ navigation }: Props) {
       const resultado = await acao();
       setHand(resultado);
       saldoChegouDeFora(resultado.newBalance);
+      /*
+       * O PRÊMIO SÓ VOA QUANDO A MÃO ACABA, e é a soma do que TODAS as mãos receberam —
+       * um split paga duas vezes, e duas animações separadas contariam a mesma história
+       * pela metade. O crédito é a linha de cima; o voo só conta.
+       */
+      if (resultado.finished) {
+        const pago =
+          resultado.maos.reduce((total, mao) => total + (mao.totalReturn ?? 0), 0) +
+          (resultado.seguroPago ?? 0);
+        setRodadasJogadas((n) => {
+          const proxima = n + 1;
+          if (pago > 0) setPagamento({ valor: pago, rodada: proxima });
+          return proxima;
+        });
+      }
     } catch (erro) {
       setActionError(mensagemParaOJogador(erro, 'Não foi possível completar a ação agora.'));
     } finally {
@@ -180,6 +199,9 @@ export function BlackjackScreen({ navigation }: Props) {
 
   return (
     <GameBackdrop source={TABLE_IMAGES.blackjack}>
+      {/* O prêmio sai do círculo do jogador, logo abaixo das cartas dele. */}
+      <PagamentoNaMesa pagamento={pagamento} deOndeSai={{ x: 0.5, y: 0.58 }} />
+
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable

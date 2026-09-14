@@ -27,6 +27,7 @@ import {
   TrucoVariantRules,
 } from '../../api/truco';
 import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
+import { PagamentoNaMesa, type Pagamento } from '../../components/PagamentoNaMesa';
 import { SeletorDeEntrada } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
@@ -88,6 +89,9 @@ export function TrucoScreen({ navigation, route }: Props) {
   const [buyIn, setBuyIn] = useState(200);
   const [match, setMatch] = useState<TrucoMatchState | null>(null);
   const [busy, setBusy] = useState(false);
+  /* O pagamento que vai voar até o saldo, e o contador que dispara o voo. */
+  const [pagamento, setPagamento] = useState<Pagamento | null>(null);
+  const [rodadasJogadas, setRodadasJogadas] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -124,6 +128,17 @@ export function TrucoScreen({ navigation, route }: Props) {
       const result = await action();
       setMatch(result);
       saldoChegouDeFora(result.newBalance);
+      /*
+       * O PRÊMIO SÓ VOA QUANDO A PARTIDA ACABA, e o valor vem do SERVIDOR (`retorno`), não
+       * de uma conta com o saldo. O crédito é a linha de cima; o voo só conta a história.
+       */
+      if (result.finished && (result.retorno ?? 0) > 0) {
+        setRodadasJogadas((n) => {
+          const proxima = n + 1;
+          setPagamento({ valor: result.retorno!, rodada: proxima });
+          return proxima;
+        });
+      }
     } catch (error) {
       setActionError(mensagemParaOJogador(error, 'Não foi possível completar a ação agora.'));
     } finally {
@@ -138,6 +153,9 @@ export function TrucoScreen({ navigation, route }: Props) {
 
   return (
     <GameBackdrop source={TABLE_IMAGES.truco}>
+      {/* O prêmio sai do meio da mesa, onde as cartas foram jogadas. */}
+      <PagamentoNaMesa pagamento={pagamento} deOndeSai={{ x: 0.5, y: 0.5 }} />
+
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.iconButton} hitSlop={12}>

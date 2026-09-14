@@ -60,6 +60,17 @@ interface TrucoMatch {
   pendingTruco: 'jogador' | 'bot' | null;
   finished: boolean;
   matchOutcome?: 'jogador' | 'bot';
+  /**
+   * O QUE A PARTIDA PAGOU, em fichas — publicado, e não deduzido pela tela.
+   *
+   * A tela precisa disto pra o prêmio voar até o saldo (`PagamentoNaMesa`). Ela PODERIA
+   * calcular a diferença entre o saldo de antes e o de agora, e é justamente por isso que
+   * o campo existe: valor que o jogador vê tem que sair do servidor, nunca de uma conta
+   * feita no cliente.
+   *
+   * Indefinido enquanto a partida não acabou.
+   */
+  retorno?: number;
   lastEvent?: string;
 }
 
@@ -379,6 +390,7 @@ export class TrucoService {
       match.finished = true;
       match.matchOutcome = match.playerScore >= target ? 'jogador' : 'bot';
       const retorno = match.matchOutcome === 'jogador' ? match.buyIn * MATCH_WIN_TOTAL_MULTIPLIER : 0;
+      match.retorno = retorno;
       if (retorno > 0) {
         await this.walletService.credit(
           userId,
@@ -459,6 +471,7 @@ export class TrucoService {
       pendingTruco: match.pendingTruco,
       finished: match.finished,
       matchOutcome: match.matchOutcome,
+      retorno: match.retorno,
       lastEvent: match.lastEvent,
       newBalance: await this.walletService.balanceOf(userId),
     };

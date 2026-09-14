@@ -182,7 +182,15 @@ acontecimento com lugar e direção: o crupiê empurra as fichas da casa vencedo
 ganhou. Era isso que o olho procurava e não achava.
 
 `PagamentoNaMesa`: as fichas partem de onde a aposta estava — a casa vencedora no bacará,
-a grade no caça-níqueis, a posição no stock market — e sobem até o saldo, no topo. O voo
+a grade no caça-níqueis, a posição no stock market, o pano na roleta e no bac bo, o círculo
+do jogador no blackjack, o pote no pôquer, a mesa no truco e no dominó — e sobem até o
+saldo, no topo. Nove dos dez jogos.
+
+**E o valor vem do servidor, sempre.** Truco e dominó não publicavam quanto a partida tinha
+pago: a tela PODERIA ter subtraído o saldo de antes do de agora, e é exatamente por isso
+que o campo `retorno` passou a existir nos dois. Valor que o jogador vê sai do servidor,
+nunca de uma conta feita no cliente — a mesma regra que já vale pra multiplicador,
+resultado e prêmio. No pôquer o campo já existia: o que a mão paga é o stack que sobrou. O voo
 não é reto: uma ficha empurrada na mesa sobe, cruza o feltro e assenta; reta é como se
 copia um arquivo, não como anda uma ficha.
 
@@ -213,9 +221,11 @@ Pela ordem do diagnóstico, o que ainda não foi feito:
 2. **Tirar a rolagem** das sete telas que ainda rolam na mesa (o orçamento está em
    `verify:apresentacao` e só pode cair). Nenhuma delas transborda hoje — são dívida
    potencial, não defeito visível.
-3. **A cena contando o resultado nos outros sete jogos** — feito em caça-níqueis, bacará
-   e stock market; falta roleta, blackjack, banca francesa, bac bo, truco, dominó e
-   pôquer.
+3. **A cena contando o resultado na banca francesa online.** Nove dos dez jogos já pagam
+   com a ficha voando. A banca francesa de mesa é a exceção e o motivo é de arquitetura,
+   não de descuido: lá o crédito não chega como resposta de uma rodada — chega como
+   atualização do assento pelo socket. Ligar o voo ali exige um evento que carregue o
+   valor pago, e isso é mudança de protocolo, não de tela.
 4. **O que depende de renderer** — reel engine do caça-níqueis, roda da roleta com
    física, shakers do bac bo — continua esperando a medição em aparelho
    (`RENDERING_STRATEGY.md` §6). Nada disso é pré-requisito dos três itens acima.

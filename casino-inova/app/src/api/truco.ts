@@ -72,6 +72,13 @@ export interface TrucoMatchState {
   pendingTruco: 'jogador' | 'bot' | null;
   finished: boolean;
   matchOutcome?: 'jogador' | 'bot';
+  /**
+   * O que a partida pagou, em fichas — vem do servidor, e a tela não calcula.
+   *
+   * Indefinido enquanto a partida não acabou. É com ele que o prêmio voa até o saldo.
+   */
+  retorno?: number;
+
   lastEvent?: string;
   newBalance: number;
 }

@@ -26,6 +26,17 @@ interface DominoMatch {
   aberturaObrigatoria?: Tile;
   finished: boolean;
   matchOutcome?: 'jogador' | 'bot' | 'empate';
+  /**
+   * O QUE A PARTIDA PAGOU, em fichas — publicado, e não deduzido pela tela.
+   *
+   * A tela precisa disto pra o prêmio voar até o saldo (`PagamentoNaMesa`). Ela PODERIA
+   * calcular a diferença entre o saldo de antes e o de agora, e é justamente por isso que
+   * o campo existe: valor que o jogador vê tem que sair do servidor, nunca de uma conta
+   * feita no cliente. É a mesma regra que vale pra multiplicador, resultado e prêmio.
+   *
+   * Indefinido enquanto a partida não acabou.
+   */
+  retorno?: number;
   lastEvent?: string;
 }
 
@@ -263,6 +274,7 @@ export class DominoService {
     // Empate devolve o buy-in: 0 ponto de torneio, que é exatamente o certo.
     const retorno =
       winner === 'jogador' ? match.buyIn * MATCH_WIN_TOTAL_MULTIPLIER : winner === 'empate' ? match.buyIn : 0;
+    match.retorno = retorno;
     if (winner === 'jogador') {
       await this.walletService.credit(
         userId,
@@ -310,6 +322,7 @@ export class DominoService {
       aberturaObrigatoria: match.aberturaObrigatoria,
       finished: match.finished,
       matchOutcome: match.matchOutcome,
+      retorno: match.retorno,
       lastEvent: match.lastEvent,
       newBalance: await this.walletService.balanceOf(userId),
     };

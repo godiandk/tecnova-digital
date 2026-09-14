@@ -25,6 +25,7 @@ import {
   DominoEnd,
 } from '../../api/domino';
 import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
+import { PagamentoNaMesa, type Pagamento } from '../../components/PagamentoNaMesa';
 import { SeletorDeEntrada } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 import { PecaDeDomino } from '../../components/PecaDeDomino';
@@ -97,6 +98,9 @@ export function DominoScreen({ navigation }: Props) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   /* A largura real da fileira da mão, medida no layout — ver `larguraDaPeca`. */
   const [larguraDaMao, setLarguraDaMao] = useState(0);
+  /* O pagamento que vai voar até o saldo, e o contador que dispara o voo. */
+  const [pagamento, setPagamento] = useState<Pagamento | null>(null);
+  const [rodadasJogadas, setRodadasJogadas] = useState(0);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -134,6 +138,17 @@ export function DominoScreen({ navigation }: Props) {
       const result = await action();
       setMatch(result);
       saldoChegouDeFora(result.newBalance);
+      /*
+       * O PRÊMIO SÓ VOA QUANDO A PARTIDA ACABA, e o valor vem do SERVIDOR (`retorno`), não
+       * de uma conta com o saldo. O crédito é a linha de cima; o voo só conta a história.
+       */
+      if (result.finished && (result.retorno ?? 0) > 0) {
+        setRodadasJogadas((n) => {
+          const proxima = n + 1;
+          setPagamento({ valor: result.retorno!, rodada: proxima });
+          return proxima;
+        });
+      }
       setSelectedIndex(null);
     } catch (error) {
       setActionError(mensagemParaOJogador(error, 'Não foi possível completar a ação agora.'));
@@ -155,6 +170,9 @@ export function DominoScreen({ navigation }: Props) {
 
   return (
     <GameBackdrop source={TABLE_IMAGES.domino}>
+      {/* O prêmio sai da MESA, onde a corrente foi assentada. */}
+      <PagamentoNaMesa pagamento={pagamento} deOndeSai={{ x: 0.5, y: 0.55 }} />
+
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.iconButton} hitSlop={12}>

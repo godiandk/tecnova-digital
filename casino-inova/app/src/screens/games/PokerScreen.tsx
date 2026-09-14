@@ -16,6 +16,7 @@ import { Carta } from '../../components/Carta';
 import { ApiError, mensagemParaOJogador } from '../../api/client';
 import { fetchPokerConfig, fetchPokerHand, newPokerHand, actPoker, PokerConfig, PokerHandState, PokerCard, PokerAction } from '../../api/poker';
 import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
+import { PagamentoNaMesa, type Pagamento } from '../../components/PagamentoNaMesa';
 import { SeletorDeEntrada } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
 
@@ -79,6 +80,9 @@ export function PokerScreen({ navigation }: Props) {
 
   const [buyIn, setBuyIn] = useState(1000);
   const [hand, setHand] = useState<PokerHandState | null>(null);
+  /* O pagamento que vai voar até o saldo, e o contador que dispara o voo. */
+  const [pagamento, setPagamento] = useState<Pagamento | null>(null);
+  const [rodadasJogadas, setRodadasJogadas] = useState(0);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -116,6 +120,17 @@ export function PokerScreen({ navigation }: Props) {
       const result = await action();
       setHand(result);
       saldoChegouDeFora(result.newBalance);
+      /*
+       * NO PÔQUER O QUE A MÃO PAGA É O STACK QUE SOBROU — o buy-in virou fichas na mesa, e
+       * o que resta delas no fim é o crédito. É campo do servidor, não conta da tela.
+       */
+      if (result.finished && result.playerStack > 0) {
+        setRodadasJogadas((n) => {
+          const proxima = n + 1;
+          setPagamento({ valor: result.playerStack, rodada: proxima });
+          return proxima;
+        });
+      }
     } catch (error) {
       setActionError(mensagemParaOJogador(error, 'Não foi possível completar a ação agora.'));
     } finally {
@@ -127,6 +142,9 @@ export function PokerScreen({ navigation }: Props) {
 
   return (
     <GameBackdrop source={TABLE_IMAGES.poker}>
+      {/* O prêmio sai do pote, no meio da mesa. */}
+      <PagamentoNaMesa pagamento={pagamento} deOndeSai={{ x: 0.5, y: 0.5 }} />
+
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.iconButton} hitSlop={12}>

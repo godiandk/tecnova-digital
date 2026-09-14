@@ -27,6 +27,7 @@ import { fetchMeuNivel, MeuNivel } from '../../api/niveis';
 import { CASAS_POR_CHAVE, CasaDoPano } from '../../data/panoDaRoleta';
 import { chapaEmTexto, corDoJogador } from '../../data/fichasDeValor';
 import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
+import { PagamentoNaMesa, type Pagamento } from '../../components/PagamentoNaMesa';
 import { usuarioLogadoId } from '../../api/session';
 import { useJanela } from '../../theme/useJanela';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
@@ -99,6 +100,9 @@ export function RouletteScreen({ navigation }: Props) {
    * depois do número já estar escrito na tela.
    */
   const [rodando, setRodando] = useState(false);
+  /* O pagamento que vai voar até o saldo, e o contador que dispara o voo. */
+  const [pagamento, setPagamento] = useState<Pagamento | null>(null);
+  const [rodadasJogadas, setRodadasJogadas] = useState(0);
   const [rodada, setRodada] = useState<RouletteSpinResponse | null>(null);
   /** O resultado só é ESCRITO depois que a bola assenta. Antes disso a roda é que fala. */
   const [resultadoNaTela, setResultadoNaTela] = useState<RouletteSpinResponse | null>(null);
@@ -217,6 +221,15 @@ export function RouletteScreen({ navigation }: Props) {
         setApostas({});
         setOrdem([]);
         saldoChegouDeFora(r.newBalance);
+        /*
+         * O PRÊMIO SAI DO PANO, depois de a bola parar. O crédito é a linha de cima — o
+         * voo abaixo só conta o que já está no ledger. Ver `PagamentoNaMesa`.
+         */
+        setRodadasJogadas((n) => {
+          const proxima = n + 1;
+          if (r.totalReturn > 0) setPagamento({ valor: r.totalReturn, rodada: proxima });
+          return proxima;
+        });
         setRodando(false);
       }, ATE_A_BOLA_PARAR);
     } catch (e) {
@@ -235,6 +248,9 @@ export function RouletteScreen({ navigation }: Props) {
 
   return (
     <GameBackdrop source={TABLE_IMAGES.roleta} apagarAMesa>
+      {/* O prêmio sai do pano de apostas, na metade de baixo da mesa. */}
+      <PagamentoNaMesa pagamento={pagamento} deOndeSai={{ x: 0.5, y: 0.62 }} />
+
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.barraDeCima}>
           <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Sair da mesa" style={styles.botaoRedondo} hitSlop={12}>

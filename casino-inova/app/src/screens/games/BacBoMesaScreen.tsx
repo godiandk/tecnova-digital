@@ -33,6 +33,7 @@ import { corDoJogador, pilhaEmPalavras } from '../../data/fichasDeValor';
 import { Dado } from '../../components/Dado';
 import { ChipStack } from '../../components/ChipStack';
 import { RoadmapPanel, VocabularioDoPlacar } from '../../components/RoadmapPanel';
+import { PagamentoNaMesa, type Pagamento } from '../../components/PagamentoNaMesa';
 import { ApiError, novaAcao, mensagemParaOJogador } from '../../api/client';
 import { Roadmap } from '../../api/roadmap';
 import {
@@ -73,6 +74,9 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
   const [config, setConfig] = useState<BacBoConfig | null>(null);
   const [erroDeConfig, setErroDeConfig] = useState<string | null>(null);
   const [placar, setPlacar] = useState<Roadmap | null>(null);
+  /* O pagamento que vai voar até o saldo, e o contador que dispara o voo. */
+  const [pagamento, setPagamento] = useState<Pagamento | null>(null);
+  const [rodadasJogadas, setRodadasJogadas] = useState(0);
   const [placarAberto, setPlacarAberto] = useState(false);
   const { jogador } = usePlayer();
 
@@ -252,6 +256,12 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
         setRodada(resultado);
         setPlacar(resultado.roadmap);
         saldoChegouDeFora(resultado.newBalance);
+        /* O prêmio sai do pano, depois de os dados assentarem. Ver `PagamentoNaMesa`. */
+        setRodadasJogadas((n) => {
+          const proxima = n + 1;
+          if (resultado.totalReturn > 0) setPagamento({ valor: resultado.totalReturn, rodada: proxima });
+          return proxima;
+        });
         setAnterior(montagem);
         setRolando(false);
       }, TEMPO_DOS_DADOS);
@@ -309,6 +319,9 @@ export function BacBoMesaScreen({ navigation }: { navigation: { goBack: () => vo
         onEncostar={encostar}
       />
       {/* --- Os controles, fora do pano --- */}
+      {/* O prêmio sai do pano, que no tampo em pé fica no meio da tela. */}
+      <PagamentoNaMesa pagamento={pagamento} deOndeSai={{ x: 0.5, y: 0.5 }} />
+
       <SafeAreaView style={styles.frente} edges={['top', 'bottom']} pointerEvents="box-none">
         <View
           style={styles.barraDeCima}
