@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -52,6 +52,7 @@ export function BaccaratScreen({ navigation }: Props) {
   const tutorial = getTutorialByGameId('bacara');
 
   const [tutorialVisible, setTutorialVisible] = useState(true);
+  const [placarAberto, setPlacarAberto] = useState(false);
   const [config, setConfig] = useState<BaccaratConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
   const { jogador } = usePlayer();
@@ -133,12 +134,41 @@ export function BaccaratScreen({ navigation }: Props) {
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </Pressable>
           <ChipStack amount={balance} />
-          <Pressable onPress={() => setTutorialVisible(true)} accessibilityRole="button" accessibilityLabel="Como jogar" style={styles.iconButton} hitSlop={12}>
-            <Ionicons name="help-circle" size={24} color={colors.goldBright} />
-          </Pressable>
+          <View style={styles.acoesDoTopo}>
+            {/*
+              O PLACAR MORA ATRÁS DESTE BOTÃO, não empilhado embaixo da mesa — o mesmo
+              lugar em que o Bac Bo já o põe, e pelo mesmo motivo: numa casa de verdade o
+              histórico fica num monitor AO LADO da mesa, não sobre o feltro.
+
+              Aqui isso não é só arrumação. Medindo a tela em jogo (390 x 844), o bacará
+              era o ÚNICO dos dez jogos que transbordava — 559 pixels —, e o que
+              transbordava era exatamente este painel, que só aparece depois da primeira
+              rodada. Com ele atrás do botão, a mesa cabe e a rolagem sai.
+            */}
+            {roadmap && roadmap.totals.total > 0 && (
+              <Pressable
+                onPress={() => setPlacarAberto(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Histórico da mesa"
+                style={styles.iconButton}
+                hitSlop={12}
+              >
+                <Ionicons name="stats-chart" size={20} color={colors.textPrimary} />
+              </Pressable>
+            )}
+            <Pressable onPress={() => setTutorialVisible(true)} accessibilityRole="button" accessibilityLabel="Como jogar" style={styles.iconButton} hitSlop={12}>
+              <Ionicons name="help-circle" size={24} color={colors.goldBright} />
+            </Pressable>
+          </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/*
+          A MESA NÃO ROLA. Era um `ScrollView` de tela inteira, e a medição em 390 x 844
+          mostrou que o que transbordava (559 px) era o painel do placar — que agora mora
+          atrás do botão no topo. Sem ele, a mesa cabe: rolar é gesto de documento, e uma
+          mesa cabe na tela ou não é uma mesa.
+        */}
+        <View style={styles.mesa}>
         <View style={styles.titleRow}>
           <DealerBadge source={DEALER_IMAGES.bacara} />
           <Text style={styles.title}>Bacará</Text>
@@ -199,11 +229,27 @@ export function BaccaratScreen({ navigation }: Props) {
               {playing ? <ActivityIndicator color={colors.background} /> : <Text style={styles.primaryButtonLabel}>Apostar</Text>}
             </Pressable>
 
-            {roadmap && roadmap.totals.total > 0 && <RoadmapPanel roadmap={roadmap} />}
           </>
         )}
-        </ScrollView>
+        </View>
       </SafeAreaView>
+
+      <Modal visible={placarAberto} animationType="slide" transparent onRequestClose={() => setPlacarAberto(false)}>
+        <View style={styles.fundoDoPlacar}>
+          <SafeAreaView style={styles.folhaDoPlacar} edges={['bottom']}>
+            <View style={styles.topoDoPlacar}>
+              <Text style={styles.tituloDoPlacar}>Histórico da mesa</Text>
+              <Pressable onPress={() => setPlacarAberto(false)} accessibilityRole="button" accessibilityLabel="Fechar" hitSlop={12}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </Pressable>
+            </View>
+            {/* Aqui a rolagem é certa: é uma folha de histórico, e histórico é documento. */}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {roadmap && <RoadmapPanel roadmap={roadmap} />}
+            </ScrollView>
+          </SafeAreaView>
+        </View>
+      </Modal>
 
       <TutorialModal
         visible={tutorialVisible}
@@ -217,7 +263,45 @@ export function BaccaratScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, paddingHorizontal: spacing.xl },
-  scroll: { alignItems: 'center', paddingBottom: spacing.xxxl },
+  /*
+   * A MESA OCUPA A ALTURA LIVRE e centra o conteúdo nela. Era um `contentContainerStyle`
+   * de rolagem com um `paddingBottom` grande no fim — o padding existia justamente pra o
+   * último controle não colar na borda de um conteúdo que rolava. Sem rolagem, o que
+   * organiza é o `flex`.
+   */
+  /*
+   * A MESA OCUPA A ALTURA LIVRE, DE CIMA PRA BAIXO.
+   *
+   * `justifyContent: 'center'` era o que parecia certo e estava errado: quando o conteúdo
+   * passa da altura livre, o centro empurra a sobra PROS DOIS LADOS — o título subiu por
+   * cima do saldo e o botão "Apostar" saiu pela borda de baixo. Cortado dos dois lados é
+   * pior que rolando.
+   *
+   * Começando de cima, a sobra (quando houver) vai toda pra baixo, e é a mesa das cartas
+   * que encolhe primeiro — ela é quem tem folga. Os espaços entre os blocos são `gap`, e
+   * não `marginTop` empilhado: margem somada é o que fazia a conta estourar sem ninguém
+   * ver de onde vinha.
+   */
+  mesa: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', gap: spacing.sm, paddingBottom: spacing.md },
+  acoesDoTopo: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+
+  /* A folha do placar: sobe de baixo, cobre metade da tela, e fecha no X. */
+  fundoDoPlacar: { flex: 1, backgroundColor: 'rgba(4,6,5,0.72)', justifyContent: 'flex-end' },
+  folhaDoPlacar: {
+    maxHeight: '75%',
+    backgroundColor: colors.background,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  topoDoPlacar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  tituloDoPlacar: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, color: colors.textPrimary },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -233,17 +317,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.lg },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: { fontFamily: fontFamily.displayExtraBold, fontSize: fontSize.xl, color: colors.textPrimary },
   loading: { marginTop: spacing.xxxl },
   errorBox: { marginTop: spacing.xxxl, alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
   errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  table: { width: '100%', marginTop: spacing.xl, gap: spacing.xl, minHeight: 200, justifyContent: 'center' },
+  /*
+   * O lugar das cartas ENCOLHE antes de qualquer outra coisa: `flexShrink` com um mínimo
+   * que ainda mostra uma carta. As duas mãos cabem em 180 com as cartas de 58.
+   */
+  table: { width: '100%', flexShrink: 1, gap: spacing.md, minHeight: 180, justifyContent: 'center' },
   handBlock: { gap: spacing.sm, alignItems: 'center' },
   handLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.sm, color: colors.textSecondary },
   cardRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
-  resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, marginTop: spacing.lg, textAlign: 'center' },
+  resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, textAlign: 'center' },
   resultWin: { color: colors.goldBright },
   resultLoss: { color: colors.textFaint },
   primaryButton: {
@@ -251,8 +339,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xxxl,
-    marginTop: spacing.xl,
-    marginBottom: spacing.xl,
+    marginTop: spacing.sm,
     minWidth: 180,
     alignItems: 'center',
   },

@@ -125,12 +125,63 @@ pro jogador — `verify:devolucao`.)
 
 ---
 
+### 6. Bacará: o placar saiu de baixo da mesa, e a mesa parou de rolar
+
+Medindo os dez jogos com a mesa em jogo (`npm run verify:cabe-na-tela`, 390 × 844), o
+bacará era o **único** que transbordava: 559 pixels. E o que transbordava era o painel de
+histórico, que só aparece depois da primeira rodada.
+
+Ele foi pro mesmo lugar em que o Bac Bo já o põe — atrás de um botão no topo, numa folha
+que sobe de baixo. Numa casa de verdade o histórico fica num monitor AO LADO da mesa, não
+sobre o feltro. Sem ele empilhado, a mesa cabe e a rolagem saiu.
+
+**Dois enganos no caminho, que valem mais escritos que escondidos:**
+
+- Tirar a rolagem e centrar o conteúdo (`justifyContent: 'center'`) deixou a tela PIOR: com
+  o conteúdo passando da altura livre, o centro empurra a sobra pros dois lados — o título
+  subiu por cima do saldo e o "Apostar" saiu pela borda de baixo. Cortado dos dois lados é
+  pior que rolando. A mesa passou a começar de cima, e quem encolhe primeiro é o lugar das
+  cartas, que é quem tem folga.
+- A medida que aprovou isso só olhava transbordo. **"Não rola" não é "cabe".** Ela passou a
+  medir também o que é tocável e está fora da janela — e, junto, a ignorar o que está
+  dentro de uma gaveta com setas, senão acusava três jogos por fazerem a coisa certa.
+
+Hoje: **10 de 10 cabem, sem rolar e sem cortar.**
+
+### 7. Stock Market: os dois blocos verdes viraram posições na mesa
+
+A tela era a definição do problema em miniatura: uma fotografia de pregão — parede de
+telas com cotações verdes e vermelhas — coberta por uma moldura de gráfico VAZIA (borda,
+fundo escuro, grade e as marcas +100% / 0 / −100% em volta de nada) e, embaixo, dois
+retângulos escuros translúcidos escritos ALTA e BAIXA. É o "bloco verde transparente"
+apontado como estilo padrão de interação.
+
+**Agora:**
+
+- **ALTA e BAIXA são posições, com superfície própria** — verde de compra e vinho de
+  venda, as cores do pregão e não as do tema, que qualquer pessoa que já viu uma tela de
+  bolsa reconhece antes de ler a palavra. O que a posição paga vem escrito nela, e a ficha
+  apostada fica em cima da posição escolhida (`PilhaDeFichas`, o mesmo do bacará e do
+  blackjack).
+- **Sem cotação, sem painel de cotação.** Na primeira visita não existe fechamento nenhum
+  pra mostrar, e a tela desenhava a moldura inteira mesmo assim. Escala de um gráfico que
+  não existe é enfeite fingindo ser informação — e era o que mais fazia a tela parecer
+  corretora. Com dados, a moldura volta: aí ela está medindo alguma coisa.
+- **Uma instrução, não duas.** "Escolha um lado e invista pra ver a cotação andar." ficava
+  em cinza no meio da arte, dizendo o que o botão lá embaixo já diz ("Escolha alta ou
+  baixa"). Saiu.
+- **O RTP virou legível.** É promessa publicada; estava em cinza de rodapé por cima da
+  parede de telas, e sumia. Ganhou tarja escura, como a placa de acrílico atrás do número
+  da regra numa mesa de verdade.
+
 ## O que continua na fila
 
 Pela ordem do diagnóstico, o que ainda não foi feito:
 
 1. **Zonas no pano para blackjack e bac bo** — a técnica está pronta no bacará.
-2. **Tirar a rolagem** das nove telas listadas no orçamento.
+2. **Tirar a rolagem** das sete telas que ainda rolam na mesa (o orçamento está em
+   `verify:apresentacao` e só pode cair). Nenhuma delas transborda hoje — são dívida
+   potencial, não defeito visível.
 3. **A cena contar o resultado** em vez do texto: a ficha empilha na casa vencedora, o
    pagamento desliza até a pilha do jogador. Hoje o resultado ainda é uma frase.
 4. **O que depende de renderer** — reel engine do caça-níqueis, roda da roleta com

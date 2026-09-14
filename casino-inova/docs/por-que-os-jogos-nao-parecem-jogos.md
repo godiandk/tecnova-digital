@@ -49,18 +49,26 @@ visualmente — é um painel escuro com widgets. A foto só se vê no topo, onde
 
 ### 2. O jogo rola. Mesa de cassino não rola.
 
-`ScrollView` envolvendo a área de jogo em **nove das dezesseis telas** da pasta de jogos
+> **Correção medida, depois de escrito.** Este item estava certo na direção e errado no
+> número. Contei `<ScrollView` no código, e código não é comportamento: medindo os dez
+> jogos num navegador de 390 × 844 com a mesa EM JOGO (`npm run verify:cabe-na-tela`),
+> **nove dos dez já cabiam sem rolar**. Só o bacará transbordava — 559 px —, e o que
+> transbordava era o painel do placar, que só aparece depois da primeira rodada. Hoje ele
+> mora atrás de um botão no topo e os dez cabem.
+>
+> A lição fica: `ScrollView` no arquivo é dívida potencial, não defeito. O defeito é o que
+> o jogador vê, e isso se mede em pixels.
+
+`ScrollView` envolvendo a área de jogo em **sete das dezesseis telas** da pasta de jogos
 (a conferência `verify:apresentacao` conta e guarda esse orçamento — ele só pode cair):
 
 | Tela | Onde |
 |---|---|
 | RouletteScreen | linha 263 |
 | BlackjackScreen | linha 220 |
-| BaccaratScreen | linha 138 |
 | StockMarketScreen | linha 214 |
 | DominoScreen | linha 185 (a corrente rola de lado) |
 | BancaFrancesaMesaScreen | linhas 295 e 368 |
-| BacBoMesaScreen | linha 421 |
 | BacBoScreen | linha 142 |
 | DominoMesaScreen | linha 177 |
 | TrucoMesaScreen | linha 174 |

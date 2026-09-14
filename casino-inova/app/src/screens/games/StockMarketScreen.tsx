@@ -22,6 +22,16 @@ import {
 import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
 import { SeletorDeAposta, ajustar, apostaInicial, useFaixaDeAposta } from '../../aposta';
 import { colors, fontFamily, fontSize, radius, spacing } from '../../theme';
+import { PilhaDeFichas } from '../../components/PilhaDeFichas';
+
+/*
+ * AS CORES DO PREGÃO, e não as do tema. Verde de compra e vinho de venda são a convenção
+ * que qualquer pessoa que já viu uma tela de bolsa reconhece antes de ler a palavra —
+ * exatamente como o vermelho e o preto da roleta. Escuras o bastante pra a letra clara ler
+ * por cima, e opacas pra a posição ser superfície e não vidro.
+ */
+const FUNDO_DA_ALTA = '#0C3A28';
+const FUNDO_DA_BAIXA = '#3A0F1B';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'StockMarket'>;
 
@@ -243,10 +253,7 @@ export function StockMarketScreen({ navigation }: Props) {
                   legenda=""
                 />
               ) : (
-                <Cotacao
-                  caminho={history}
-                  legenda="Escolha um lado e invista pra ver a cotação andar."
-                />
+                <Cotacao caminho={history} legenda="" />
               )}
 
               {!round && history.length > 0 && (
@@ -263,19 +270,25 @@ export function StockMarketScreen({ navigation }: Props) {
               )}
 
               <View style={styles.directionRow}>
-                <DirectionButton
+                <LadoDaMesa
                   label="ALTA"
+                  legenda="PAGA 2 : 1"
                   icon="trending-up"
                   active={direction === 'alta'}
                   accent={colors.success}
+                  fundo={FUNDO_DA_ALTA}
+                  valor={amount}
                   onPress={() => setDirection('alta')}
                   disabled={playing}
                 />
-                <DirectionButton
+                <LadoDaMesa
                   label="BAIXA"
+                  legenda="PAGA 2 : 1"
                   icon="trending-down"
                   active={direction === 'baixa'}
                   accent={colors.ruby}
+                  fundo={FUNDO_DA_BAIXA}
+                  valor={amount}
                   onPress={() => setDirection('baixa')}
                   disabled={playing}
                 />
@@ -383,21 +396,43 @@ function Cotacao({
 }) {
   const pontos = ateOTique === undefined ? caminho : caminho.slice(0, Math.max(1, ateOTique));
   const metade = CHART_HEIGHT / 2;
+  /*
+   * SEM COTAÇÃO, SEM PAINEL DE COTAÇÃO.
+   *
+   * Na primeira visita não existe fechamento nenhum pra mostrar — e a tela desenhava,
+   * mesmo assim, a moldura inteira: borda, fundo escuro, grade e as marcas +100% / 0 /
+   * −100% em volta do vazio, com uma frase cinzenta no meio. Escala de um gráfico que não
+   * existe é enfeite fingindo ser informação, e é o que mais fazia esta tela parecer
+   * painel de corretora.
+   *
+   * Com dados, a moldura volta inteira: aí ela está medindo alguma coisa.
+   */
+  const temCotacao = caminho.length > 0;
 
   return (
-    <View style={styles.chart}>
-      {/* Grade discreta: só o zero e as metades da escala. O jogo vai de -100% a +100%. */}
-      <View style={[styles.linhaDaGrade, { top: metade * 0.5 }]} />
-      <View style={[styles.linhaDaGrade, { top: metade * 1.5 }]} />
-      <View style={styles.chartZeroLine} />
+    <View style={[styles.chart, temCotacao ? styles.chartComDados : styles.chartVazio]}>
+      {temCotacao && (
+        <>
+          {/* Grade discreta: só o zero e as metades da escala. O jogo vai de -100% a +100%. */}
+          <View style={[styles.linhaDaGrade, { top: metade * 0.5 }]} />
+          <View style={[styles.linhaDaGrade, { top: metade * 1.5 }]} />
+          <View style={styles.chartZeroLine} />
 
-      <Text style={[styles.marcaDaEscala, { top: 2 }]}>+100%</Text>
-      <Text style={[styles.marcaDaEscala, { top: metade - 7 }]}>0</Text>
-      <Text style={[styles.marcaDaEscala, { bottom: 2 }]}>−100%</Text>
+          <Text style={[styles.marcaDaEscala, { top: 2 }]}>+100%</Text>
+          <Text style={[styles.marcaDaEscala, { top: metade - 7 }]}>0</Text>
+          <Text style={[styles.marcaDaEscala, { bottom: 2 }]}>−100%</Text>
+        </>
+      )}
 
       <View style={styles.chartBars}>
         {caminho.length === 0 ? (
-          <Text style={styles.chartEmpty}>{legenda}</Text>
+          /*
+            NADA. A frase "Escolha um lado e invista pra ver a cotação andar." ficava aqui,
+            em cinza, no meio da parede de telas do pregão — ilegível por cima da arte e
+            dizendo o que o botão lá embaixo já diz com todas as letras ("Escolha alta ou
+            baixa"). Duas instruções pro mesmo gesto, uma delas apagada.
+          */
+          null
         ) : (
           pontos.map((valor, indice) => {
             const altura = Math.max(1, (Math.min(Math.abs(valor), 100) / 100) * metade);
@@ -427,18 +462,38 @@ function Cotacao({
   );
 }
 
-function DirectionButton({
+/**
+ * UM LADO DA MESA — e não um botão de formulário.
+ *
+ * O QUE ELE ERA: dois retângulos de fundo escuro translúcido com borda verde, um escrito
+ * ALTA e outro BAIXA, flutuando por cima da arte de um pregão. É o "bloco verde
+ * transparente" que o dono apontou como estilo padrão de interação — e era mesmo: a mesma
+ * caixa servia de botão, de painel e de moldura de gráfico na tela inteira.
+ *
+ * O QUE ELE É AGORA: uma posição, com superfície própria. Verde pra quem compra alta,
+ * vinho pra quem vende baixa — as cores do pregão, e não a cor do tema. O que a posição
+ * paga vem escrito nela, como a placa de uma casa de aposta. E a ficha apostada fica EM
+ * CIMA da posição escolhida, do mesmo jeito que no pano do bacará: a aposta é uma pilha
+ * num lugar, nunca um número num painel.
+ */
+function LadoDaMesa({
   label,
+  legenda,
   icon,
   active,
   accent,
+  fundo,
+  valor,
   onPress,
   disabled,
 }: {
   label: string;
+  legenda: string;
   icon: keyof typeof Ionicons.glyphMap;
   active: boolean;
   accent: string;
+  fundo: string;
+  valor: number;
   onPress: () => void;
   disabled?: boolean;
 }) {
@@ -446,10 +501,24 @@ function DirectionButton({
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={[styles.directionButton, active && { borderColor: accent, backgroundColor: colors.felt }]}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active, disabled }}
+      accessibilityLabel={
+        active && valor > 0
+          ? `${label}, ${legenda}, com ${valor.toLocaleString('pt-BR')} fichas suas`
+          : `Apostar em ${label}, ${legenda}`
+      }
+      style={[
+        styles.ladoDaMesa,
+        { backgroundColor: fundo },
+        active && { borderColor: accent, borderWidth: 2 },
+        disabled && styles.ladoTravado,
+      ]}
     >
-      <Ionicons name={icon} size={28} color={active ? accent : colors.textFaint} />
-      <Text style={[styles.directionLabel, active && { color: accent }]}>{label}</Text>
+      <Ionicons name={icon} size={26} color={accent} />
+      <Text style={[styles.ladoNome, { color: accent }]}>{label}</Text>
+      <Text style={styles.ladoLegenda}>{legenda}</Text>
+      {active && valor > 0 && <PilhaDeFichas valor={valor} tamanho={26} />}
     </Pressable>
   );
 }
@@ -477,16 +546,35 @@ const styles = StyleSheet.create({
   errorBox: { marginTop: spacing.xxxl, alignItems: 'center', gap: spacing.xs },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
   errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  rtpLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
+  /*
+   * O RTP É PROMESSA PUBLICADA, e promessa publicada tem que ser LEGÍVEL.
+   *
+   * Era `textFaint` — um cinza pensado pra fundo de painel — escrito por cima da parede de
+   * telas do pregão, que é clara e cheia de verde e vermelho. No retrato de celular a
+   * linha some no meio da arte. Uma tarja escura por trás resolve sem clarear a letra:
+   * é a mesma placa de acrílico que uma mesa de verdade põe atrás do número da regra.
+   */
+  rtpLabel: {
+    fontFamily: fontFamily.body,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    backgroundColor: 'rgba(4,6,5,0.72)',
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
+    overflow: 'hidden',
+  },
   chart: {
     height: CHART_HEIGHT,
     borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.feltLine,
-    backgroundColor: colors.overlay,
     overflow: 'hidden',
     justifyContent: 'center',
   },
+  /* Com cotação, a moldura existe: ela está medindo alguma coisa. */
+  chartComDados: { borderWidth: 1, borderColor: colors.feltLine, backgroundColor: colors.overlay },
+  /* Sem cotação, o espaço fica reservado e a arte do pregão aparece por ele. */
+  chartVazio: {},
   /* Grade recessiva: marca a escala sem competir com a cotação. */
   linhaDaGrade: {
     position: 'absolute',
@@ -541,17 +629,23 @@ const styles = StyleSheet.create({
   },
   closeLabel: { fontFamily: fontFamily.displayBold, fontSize: fontSize.lg, textAlign: 'center' },
   directionRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xs },
-  directionButton: {
+  /*
+   * A posição tem SUPERFÍCIE, não transparência. Ver `LadoDaMesa`: era um bloco escuro
+   * translúcido, e dois deles lado a lado por cima de uma fotografia é o que faz a tela
+   * ler como formulário em vez de mesa.
+   */
+  ladoDaMesa: {
     flex: 1,
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
-    borderWidth: 2,
-    borderColor: colors.feltLine,
-    backgroundColor: colors.backgroundElevated,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
   },
-  directionLabel: { fontFamily: fontFamily.displaySemiBold, fontSize: fontSize.sm, color: colors.textFaint },
+  ladoTravado: { opacity: 0.7 },
+  ladoNome: { fontFamily: fontFamily.displaySemiBold, fontSize: fontSize.sm, letterSpacing: 1.2 },
+  ladoLegenda: { fontFamily: fontFamily.body, fontSize: 10, letterSpacing: 1, color: colors.textFaint },
   receipt: {
     backgroundColor: colors.backgroundCard,
     borderRadius: radius.md,

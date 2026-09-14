@@ -52,19 +52,42 @@ console.log('--- 1. a mesa não rola ---\n');
 const AINDA_ROLAM = new Set([
   'RouletteScreen.tsx',          // o pano de 37 casas mais o histórico
   'BlackjackScreen.tsx',         // mãos divididas empilham até quatro
-  'BaccaratScreen.tsx',          // o placar (roadmap) embaixo do pano
   'StockMarketScreen.tsx',       // o gráfico, as ordens e o extrato da rodada
   'BancaFrancesaMesaScreen.tsx', // a lista de mesas públicas antes de sentar
-  'BacBoMesaScreen.tsx',         // idem
   'BacBoScreen.tsx',             // a versão sem mesa, que o lobby não abre mais
   'DominoMesaScreen.tsx',        // a sala: lista de mesas, amigos e código de entrada
   'TrucoMesaScreen.tsx',         // idem
 ]);
 
-const rolandoAgora = telas.filter((nome) => /<ScrollView/.test(ler(TELAS, nome)));
+/**
+ * OS `ScrollView` QUE ESTÃO NA MESA — e não os que estão dentro de uma folha.
+ *
+ * A primeira versão desta conferência contava `<ScrollView` no arquivo inteiro, e por isso
+ * ela NÃO VIU o conserto do bacará: o painel do placar saiu de baixo da mesa e foi pra uma
+ * folha que sobe de baixo, onde rolar é certo — histórico é documento. O número de
+ * `ScrollView` no arquivo ficou igual, e a mesa deixou de rolar.
+ *
+ * Então a varredura passa a ignorar o que está dentro de um `<Modal>`. O limite disto está
+ * escrito aqui pra ninguém confiar demais: é leitura de texto, não de árvore. Um `Modal`
+ * montado por um componente de fora não é enxergado. A medida de verdade, em pixels, é
+ * `verificacao/mede-rolagem.mjs`, que abre os dez jogos num navegador — mas ela precisa do
+ * servidor no ar, e esta aqui roda em qualquer lugar.
+ */
+function rolaNaMesa(fonte: string): boolean {
+  let profundidadeDeModal = 0;
+  for (const linha of fonte.split('\n')) {
+    if (/^\s*(\*|\/\/)/.test(linha)) continue;
+    if (/<Modal[\s>]/.test(linha)) profundidadeDeModal += 1;
+    if (/<\/Modal>/.test(linha)) profundidadeDeModal = Math.max(0, profundidadeDeModal - 1);
+    if (profundidadeDeModal === 0 && /<ScrollView/.test(linha)) return true;
+  }
+  return false;
+}
+
+const rolandoAgora = telas.filter((nome) => rolaNaMesa(ler(TELAS, nome)));
 const novas = rolandoAgora.filter((nome) => !AINDA_ROLAM.has(nome));
 confere(
-  `nenhuma tela de jogo NOVA passou a rolar (${rolandoAgora.length} de ${telas.length} ainda rolam)`,
+  `nenhuma tela de jogo NOVA passou a rolar (${rolandoAgora.length} de ${telas.length} ainda rolam na mesa)`,
   novas.length === 0 ? null : `passaram a rolar: ${novas.join(', ')}`,
 );
 
