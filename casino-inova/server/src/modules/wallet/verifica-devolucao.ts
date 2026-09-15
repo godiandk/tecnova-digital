@@ -56,7 +56,39 @@ async function main() {
     console.log('\n=== O QUE FICOU PRESO VOLTA ===\n');
     console.log('--- 1. uma mão que não terminou segura a aposta ---\n');
 
-    await blackjack.startHand(id, APOSTA);
+    /*
+     * UMA MÃO QUE FICA ABERTA — e não é toda mão que fica.
+     *
+     * A primeira versão desta conferência dava um `startHand` e seguia. Ela passou muitas
+     * vezes e um dia reprovou com "esperado 950.000, real 1.075.000": a mão tinha saído
+     * BLACKJACK NATURAL, que liquida na hora e paga 2,5x. O saldo não baixou porque a mão
+     * nem chegou a existir aberta — não havia nada preso pra devolver.
+     *
+     * Falha intermitente é a pior espécie: ela some quando se olha e volta quando não se
+     * está olhando. Aqui a conferência PRECISA de uma mão presa, então ela distribui até
+     * conseguir uma, e desiste em voz alta se não conseguir.
+     *
+     * A sapata tem oito baralhos: a chance de vinte mãos seguidas saírem natural é de uma
+     * em 10^20. Se isso acontecer, o problema não é o teste.
+     */
+    let abriu = false;
+    for (let tentativa = 1; tentativa <= 20 && !abriu; tentativa += 1) {
+      const mao = await blackjack.startHand(id, APOSTA);
+      if (!mao.finished) {
+        abriu = true;
+        break;
+      }
+      /* Liquidou na hora (blackjack natural): devolve o saldo ao ponto de partida. */
+      const saldoAgora = await wallet.balanceOf(id);
+      if (saldoAgora !== SALDO) {
+        await db.query(
+          `INSERT INTO ledger_entries (user_id, type, amount, origin) VALUES ($1,'ajuste',$2,'teste')`,
+          [id, SALDO - saldoAgora],
+        );
+      }
+    }
+    confere('consegui abrir uma mão que fica em pé', abriu, 'vinte mãos seguidas liquidaram sozinhas');
+
     const saldoComAMaoAberta = await wallet.balanceOf(id);
     confere(
       'a aposta saiu do saldo assim que a mão abriu',

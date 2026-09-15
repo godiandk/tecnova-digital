@@ -14,7 +14,7 @@
  * QUEM NÃO TEM SALDO PRA NENHUMA ENTRADA recebe a frase que explica, com o número — e não
  * um seletor vazio nem um botão que toma erro do servidor depois de apertado.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
@@ -46,21 +46,32 @@ function curto(n: number): string {
 }
 
 /**
- * O CORPO DA LETRA SAI DO RÓTULO MAIS LONGO DO TRILHO.
+ * O CORPO DA LETRA SAI DA LARGURA MEDIDA, e não de uma contagem de caracteres.
  *
  * `adjustsFontSizeToFit` existe no iOS e NÃO existe no react-native-web — e o jogo chega
- * pelo navegador. No retrato de celular dá pra ver o resultado: com as cinco fichas
- * dividindo a largura, "100 mil" virava "100 …". Encolher só a última não resolve (as
- * cinco têm que ficar iguais), e cortar o texto é pior que letra menor.
+ * pelo navegador. A primeira tentativa escolheu o tamanho pelo número de letras do rótulo
+ * mais comprido: funcionou no dominó e continuou cortando no pôquer ("100 mil" virava
+ * "100 …"), porque as duas telas dão larguras diferentes ao trilho. Contar letra é chute;
+ * a largura é medida.
  *
- * Então o tamanho é escolhido uma vez, pelo rótulo mais comprido, e vale pras cinco.
+ * A conta: cada ficha recebe uma fatia igual da linha, menos o vão e o respiro interno. A
+ * largura de um dígito na fonte do trilho é ~0,58 do corpo — daí sai o corpo que faz o
+ * rótulo mais comprido caber. Os limites existem pelas duas pontas: abaixo de 10 não se lê,
+ * acima de 15 não fica melhor.
  */
-function corpoDoTrilho(rotulos: string[]): number {
+function corpoDoTrilho(rotulos: string[], larguraDaLinha: number, vao: number): number {
   const maior = rotulos.reduce((n, r) => Math.max(n, r.length), 0);
-  if (maior <= 5) return 15;   // "50", "1 mi"
-  if (maior <= 7) return 13;   // "100 mil", "2,5 bi"
-  return 11;                   // "500 mil", "100 tri"
+  if (maior === 0 || larguraDaLinha <= 0) return 13;
+  const porFicha = (larguraDaLinha - vao * (rotulos.length - 1)) / rotulos.length;
+  const util = porFicha - RESPIRO_DA_FICHA;
+  return Math.max(10, Math.min(15, Math.floor(util / (maior * 0.58))));
 }
+
+/** O que sobra de cada ficha pra borda e o respiro dos dois lados do texto. */
+const RESPIRO_DA_FICHA = 14;
+
+/** O vão entre uma ficha e a próxima. Constante porque a conta do corpo usa ele. */
+const VAO_DO_TRILHO = 6;
 
 export function SeletorDeEntrada({ opcoes, valor, aoMudar, legenda, travado = false }: Props) {
   if (opcoes.length === 0) {
@@ -75,10 +86,19 @@ export function SeletorDeEntrada({ opcoes, valor, aoMudar, legenda, travado = fa
   }
 
   const escolhida = opcoes.find((o) => o.entrada === valor) ?? opcoes[0];
-  const corpo = corpoDoTrilho(opcoes.map((o) => curto(o.entrada)));
+  const [larguraDoTrilho, setLarguraDoTrilho] = useState(0);
+  const corpo = corpoDoTrilho(opcoes.map((o) => curto(o.entrada)), larguraDoTrilho, VAO_DO_TRILHO);
 
   return (
-    <View>
+    /*
+     * O SELETOR SE ESTICA NA LARGURA DO BLOCO, e isto é dele e não de cada tela.
+     *
+     * Sem `alignSelf: 'stretch'`, um bloco com `alignItems: 'center'` encolhe o filho até a
+     * largura do conteúdo — foi o que aconteceu no pôquer: o trilho ficou com 238 pontos
+     * em vez de 342, e "100 mil" virou "100 …" mesmo com o corpo da letra já medido. Duas
+     * telas com o mesmo componente não podem depender de cada uma lembrar de esticá-lo.
+     */
+    <View style={estilos.raiz}>
       <View style={estilos.cabecalho}>
         <Text style={estilos.rotulo}>Entrada{legenda ? ` (${legenda})` : ''}</Text>
         <Text style={estilos.valor}>{escolhida.entrada.toLocaleString('pt-BR')}</Text>
@@ -95,7 +115,7 @@ export function SeletorDeEntrada({ opcoes, valor, aoMudar, legenda, travado = fa
         desligada) e sem sombra de continuação. São sempre cinco (as fichas do degrau), e
         cinco dividem a largura sem sobra.
       */}
-      <View style={estilos.trilho}>
+      <View style={estilos.trilho} onLayout={(e) => setLarguraDoTrilho(e.nativeEvent.layout.width)}>
         {opcoes.map((opcao) => {
           const ativa = opcao.entrada === escolhida.entrada;
           return (
@@ -123,6 +143,7 @@ export function SeletorDeEntrada({ opcoes, valor, aoMudar, legenda, travado = fa
 }
 
 const estilos = StyleSheet.create({
+  raiz: { alignSelf: 'stretch' },
   cabecalho: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   /*
    * O RÓTULO ERA ILEGÍVEL SOBRE A MESA. `textFaint` é um cinza pensado pra fundo de
@@ -133,7 +154,7 @@ const estilos = StyleSheet.create({
   rotulo: { fontFamily: fontFamily.body, fontSize: fontSize.sm, color: colors.textSecondary },
   valor: { fontFamily: fontFamily.displayBold, fontSize: fontSize.xl, color: colors.textPrimary },
   cegas: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, marginTop: 2 },
-  trilho: { flexDirection: 'row', gap: spacing.xs, paddingVertical: spacing.sm, alignItems: 'center' },
+  trilho: { flexDirection: 'row', gap: VAO_DO_TRILHO, paddingVertical: spacing.sm, alignItems: 'center' },
   ficha: {
     flex: 1,
     minWidth: 0,

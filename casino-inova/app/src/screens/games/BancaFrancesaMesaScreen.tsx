@@ -16,6 +16,7 @@ import { SocketError } from '../../api/socket';
 import { BancaFrancesaBet, BancaFrancesaConfig, fetchBancaFrancesaConfig } from '../../api/bancaFrancesa';
 import { MeuNivel, fetchMeuNivel } from '../../api/niveis';
 import { usePlayer, saldoChegouDeFora } from '../../data/usePlayer';
+import { PagamentoNaMesa, type Pagamento } from '../../components/PagamentoNaMesa';
 import { PanoDaBancaFrancesa } from './PanoDaBancaFrancesa';
 import { fetchFriends, Friend } from '../../api/friends';
 import {
@@ -51,6 +52,8 @@ function errorMessage(error: unknown): string {
 
 export function BancaFrancesaMesaScreen({ navigation }: Props) {
   const [table, setTable] = useState<TableView | null>(null);
+  /* O pagamento que vai voar até o saldo. Ver o efeito que o dispara, logo abaixo. */
+  const [pagamento, setPagamento] = useState<Pagamento | null>(null);
   const [publicTables, setPublicTables] = useState<PublicTableSummary[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [codeInput, setCodeInput] = useState('');
@@ -99,6 +102,28 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
   useEffect(() => {
     if (typeof meuSaldoNaMesa === 'number') saldoChegouDeFora(meuSaldoNaMesa);
   }, [meuSaldoNaMesa]);
+
+  /*
+   * O PRÊMIO VOA AQUI — e esta mesa precisou de um caminho próprio.
+   *
+   * Nos outros nove jogos o crédito chega como resposta de uma rodada, e o voo sai logo
+   * depois, na mesma linha de código. Aqui a mesa é de várias pessoas e o estado chega
+   * pelo socket: o que existe é `lastRound.bySeat[eu].totalReturn`, o que ESTA rodada me
+   * pagou, e `lastRound.at`, a hora em que ela fechou.
+   *
+   * `at` é o que serve de contador: ele muda uma vez por rodada e só quando a rodada
+   * fecha. Sem ele, qualquer atualização da mesa — alguém sentando, um bot apostando —
+   * faria as fichas saírem de novo.
+   *
+   * O valor continua vindo do servidor. A tela não subtrai saldo nenhum.
+   */
+  const rodadaQueFechou = table?.lastRound?.at;
+  const meuRetorno = table?.lastRound?.bySeat[usuarioLogadoId() ?? '']?.totalReturn ?? 0;
+  useEffect(() => {
+    if (!rodadaQueFechou || meuRetorno <= 0) return;
+    /* A hora vira número: é só uma marca de "rodada diferente", não uma medida de tempo. */
+    setPagamento({ valor: meuRetorno, rodada: Date.parse(rodadaQueFechou) });
+  }, [rodadaQueFechou]);
 
   useEffect(() => {
     fetchBancaFrancesaConfig().then(setConfig).catch(() => undefined);
@@ -253,6 +278,9 @@ export function BancaFrancesaMesaScreen({ navigation }: Props) {
   if (table) {
     return (
       <>
+        {/* O prêmio sai do pano, onde as fichas estavam encostadas. */}
+        <PagamentoNaMesa pagamento={pagamento} deOndeSai={{ x: 0.5, y: 0.6 }} />
+
         <PanoDaBancaFrancesa
           mesa={table}
           meuId={usuarioLogadoId()}

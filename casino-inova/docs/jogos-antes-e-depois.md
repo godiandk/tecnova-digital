@@ -184,7 +184,12 @@ ganhou. Era isso que o olho procurava e não achava.
 `PagamentoNaMesa`: as fichas partem de onde a aposta estava — a casa vencedora no bacará,
 a grade no caça-níqueis, a posição no stock market, o pano na roleta e no bac bo, o círculo
 do jogador no blackjack, o pote no pôquer, a mesa no truco e no dominó — e sobem até o
-saldo, no topo. Nove dos dez jogos.
+saldo, no topo. Os dez jogos.
+
+Na banca francesa de mesa o caminho é outro, porque a mesa é de várias pessoas e o estado
+chega pelo socket: o gatilho é `lastRound.at`, a hora em que a rodada fechou — ela muda uma
+vez por rodada e só quando a rodada fecha. Sem esse gatilho, qualquer atualização da mesa
+(alguém sentando, um bot apostando) faria as fichas saírem de novo.
 
 **E o valor vem do servidor, sempre.** Truco e dominó não publicavam quanto a partida tinha
 pago: a tela PODERIA ter subtraído o saldo de antes do de agora, e é exatamente por isso
@@ -221,11 +226,11 @@ Pela ordem do diagnóstico, o que ainda não foi feito:
 2. **Tirar a rolagem** das sete telas que ainda rolam na mesa (o orçamento está em
    `verify:apresentacao` e só pode cair). Nenhuma delas transborda hoje — são dívida
    potencial, não defeito visível.
-3. **A cena contando o resultado na banca francesa online.** Nove dos dez jogos já pagam
-   com a ficha voando. A banca francesa de mesa é a exceção e o motivo é de arquitetura,
-   não de descuido: lá o crédito não chega como resposta de uma rodada — chega como
-   atualização do assento pelo socket. Ligar o voo ali exige um evento que carregue o
-   valor pago, e isso é mudança de protocolo, não de tela.
+3. ~~A cena contando o resultado na banca francesa online.~~ **Feito — e eu tinha errado
+   o diagnóstico.** Escrevi que faltava um evento carregando o valor pago, e que isso era
+   mudança de protocolo. Não era: `lastRound.bySeat[eu].totalReturn` já vinha na mesa, e
+   `lastRound.at` já servia de marca de rodada. O que faltava era ler o que já estava lá.
+   Os dez jogos pagam com a ficha voando.
 4. **O que depende de renderer** — reel engine do caça-níqueis, roda da roleta com
    física, shakers do bac bo — continua esperando a medição em aparelho
    (`RENDERING_STRATEGY.md` §6). Nada disso é pré-requisito dos três itens acima.

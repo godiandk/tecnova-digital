@@ -356,7 +356,8 @@ const styles = StyleSheet.create({
   errorBox: { marginTop: spacing.xxxl, alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
   errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  startBlock: { alignItems: 'center', gap: spacing.md, marginTop: spacing.xxxl },
+  /* Estica na largura da tela: ver o mesmo conserto no pôquer, e o porquê. */
+  startBlock: { alignSelf: 'stretch', alignItems: 'center', gap: spacing.md, marginTop: spacing.xxxl },
   aviso: {
     fontFamily: fontFamily.bodySemiBold,
     fontSize: fontSize.sm,

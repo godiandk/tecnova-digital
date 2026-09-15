@@ -352,7 +352,8 @@ const styles = StyleSheet.create({
   errorBox: { marginTop: spacing.xxxl, alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
   errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  startBlock: { alignItems: 'center', gap: spacing.md, marginTop: spacing.xxxl },
+  /* Estica na largura da tela: ver o mesmo conserto no pôquer, e o porquê. */
+  startBlock: { alignSelf: 'stretch', alignItems: 'center', gap: spacing.md, marginTop: spacing.xxxl },
   resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, textAlign: 'center', maxWidth: 280 },
   resultWin: { color: colors.goldBright },
   resultLoss: { color: colors.textFaint },
@@ -368,14 +369,19 @@ const styles = StyleSheet.create({
     maxWidth: 300,
   },
   playedRow: { flexDirection: 'row', gap: spacing.xxxl, marginTop: spacing.sm },
-  /* A vaga da carta ainda não jogada: o mesmo tamanho da carta, só que vazia. */
+  /*
+   * A VAGA DA CARTA É ESPAÇO, E NÃO UM RETÂNGULO TRACEJADO.
+   *
+   * Eram dois retângulos de borda tracejada verde desenhados no meio do tampo, um pra cada
+   * lado — no retrato de celular eles são a coisa mais chamativa da mesa, mais que as
+   * cartas. Numa mesa de truco ninguém pinta o lugar onde a carta vai: a carta vai onde a
+   * mão alcança, e o lugar dela existe por estar vazio.
+   *
+   * A altura continua reservada, senão a mesa pula quando a primeira carta é jogada.
+   */
   vagaVazia: {
     width: LARGURA_DA_CARTA,
     height: Math.round(LARGURA_DA_CARTA * 1.5),
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: colors.feltLine,
   },
   playedSlot: { alignItems: 'center', gap: spacing.xs },
   playedLabel: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },

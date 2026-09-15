@@ -277,7 +277,16 @@ const styles = StyleSheet.create({
   errorBox: { marginTop: spacing.xxxl, alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg },
   errorText: { fontFamily: fontFamily.bodyMedium, fontSize: fontSize.sm, color: colors.danger, textAlign: 'center' },
   errorHint: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint, textAlign: 'center' },
-  startBlock: { alignItems: 'center', gap: spacing.md, marginTop: spacing.xl },
+  /*
+   * O BLOCO SE ESTICA NA LARGURA DA TELA.
+   *
+   * `safe` tem `alignItems: 'center'`, e isso faz todo filho encolher até a largura do
+   * conteúdo. O trilho de entradas ficava com 230 pontos em vez de 342, e "100 mil" virava
+   * "100 …" por falta de espaço, não por falta de ajuste de letra. O cabeçalho também
+   * colidia: "Entrada (o stack da mão)" e o valor são `space-between`, e numa caixa
+   * estreita eles se encostam.
+   */
+  startBlock: { alignSelf: 'stretch', alignItems: 'center', gap: spacing.md, marginTop: spacing.xl },
   showdownBlock: { alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   showdownHands: { flexDirection: 'row', gap: spacing.xxxl, marginTop: spacing.sm },
   resultLabel: { fontFamily: fontFamily.bodySemiBold, fontSize: fontSize.base, textAlign: 'center', maxWidth: 300 },

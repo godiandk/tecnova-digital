@@ -19,7 +19,7 @@
  * explica, com o número. Um seletor que aceita e depois toma 400 do servidor é pior que
  * um seletor que diz não.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, fontFamily, fontSize, radius, spacing } from '../theme';
@@ -46,21 +46,32 @@ function curto(n: number): string {
 }
 
 /**
- * O CORPO DA LETRA SAI DO RÓTULO MAIS LONGO DO TRILHO.
+ * O CORPO DA LETRA SAI DA LARGURA MEDIDA, e não de uma contagem de caracteres.
  *
  * `adjustsFontSizeToFit` existe no iOS e NÃO existe no react-native-web — e o jogo chega
- * pelo navegador. No retrato de celular dá pra ver o resultado: com as cinco fichas
- * dividindo a largura, "100 mil" virava "100 …". Encolher só a última não resolve (as
- * cinco têm que ficar iguais), e cortar o texto é pior que letra menor.
+ * pelo navegador. A primeira tentativa escolheu o tamanho pelo número de letras do rótulo
+ * mais comprido: funcionou no dominó e continuou cortando no pôquer ("100 mil" virava
+ * "100 …"), porque as duas telas dão larguras diferentes ao trilho. Contar letra é chute;
+ * a largura é medida.
  *
- * Então o tamanho é escolhido uma vez, pelo rótulo mais comprido, e vale pras cinco.
+ * A conta: cada ficha recebe uma fatia igual da linha, menos o vão e o respiro interno. A
+ * largura de um dígito na fonte do trilho é ~0,58 do corpo — daí sai o corpo que faz o
+ * rótulo mais comprido caber. Os limites existem pelas duas pontas: abaixo de 10 não se lê,
+ * acima de 15 não fica melhor.
  */
-function corpoDoTrilho(rotulos: string[]): number {
+function corpoDoTrilho(rotulos: string[], larguraDaLinha: number, vao: number): number {
   const maior = rotulos.reduce((n, r) => Math.max(n, r.length), 0);
-  if (maior <= 5) return 15;   // "50", "1 mi"
-  if (maior <= 7) return 13;   // "100 mil", "2,5 bi"
-  return 11;                   // "500 mil", "100 tri"
+  if (maior === 0 || larguraDaLinha <= 0) return 13;
+  const porFicha = (larguraDaLinha - vao * (rotulos.length - 1)) / rotulos.length;
+  const util = porFicha - RESPIRO_DA_FICHA;
+  return Math.max(10, Math.min(15, Math.floor(util / (maior * 0.58))));
 }
+
+/** O que sobra de cada ficha pra borda e o respiro dos dois lados do texto. */
+const RESPIRO_DA_FICHA = 14;
+
+/** O vão entre uma ficha e a próxima. Constante porque a conta do corpo usa ele. */
+const VAO_DO_TRILHO = 6;
 
 export function SeletorDeAposta({ faixa, valor, aoMudar, travado = false }: Props) {
   if (!podeApostar(faixa)) {
@@ -76,7 +87,8 @@ export function SeletorDeAposta({ faixa, valor, aoMudar, travado = false }: Prop
   }
 
   const fichas = atalhos(faixa);
-  const corpo = corpoDoTrilho(fichas.map(curto));
+  const [larguraDoTrilho, setLarguraDoTrilho] = useState(0);
+  const corpo = corpoDoTrilho(fichas.map(curto), larguraDoTrilho, VAO_DO_TRILHO);
   const mudar = (novo: number) => { if (!travado) aoMudar(novo); };
 
   return (
@@ -106,7 +118,7 @@ export function SeletorDeAposta({ faixa, valor, aoMudar, travado = false }: Prop
         E some um `ScrollView` de dentro da área de jogo, que é o gesto de documento que o
         diagnóstico pediu pra tirar das mesas.
       */}
-      <View style={estilos.trilho}>
+      <View style={estilos.trilho} onLayout={(e) => setLarguraDoTrilho(e.nativeEvent.layout.width)}>
         {fichas.map((ficha) => {
           const escolhida = ficha === valor;
           return (
@@ -160,7 +172,9 @@ function Atalho({ rotulo, descricao, aoTocar, travado, largo = false }: {
 }
 
 const estilos = StyleSheet.create({
-  caixa: { width: '100%', gap: spacing.sm, marginTop: spacing.lg },
+  /* `alignSelf: 'stretch'` pelo mesmo motivo do seletor de entrada: `width: '100%'` não
+   * basta dentro de um bloco com `alignItems: 'center'`, que encolhe o filho antes. */
+  caixa: { width: '100%', alignSelf: 'stretch', gap: spacing.sm, marginTop: spacing.lg },
   topo: { alignItems: 'center' },
   rotulo: { fontFamily: fontFamily.body, fontSize: fontSize.xs, color: colors.textFaint },
   valor: { fontFamily: fontFamily.displayBold, fontSize: fontSize.xl, color: colors.textPrimary },
@@ -173,7 +187,7 @@ const estilos = StyleSheet.create({
   trilho: {
     alignSelf: 'stretch',
     flexDirection: 'row',
-    gap: spacing.xs,
+    gap: VAO_DO_TRILHO,
     alignItems: 'center',
     minWidth: 0,
   },
