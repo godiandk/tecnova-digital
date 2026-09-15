@@ -11,7 +11,8 @@ import {
   problemaComApostaDaBanca,
   riscoDaAposta,
 } from '../games/banca-francesa/banca-francesa.config';
-import { NIVEIS_DE_MESA, nivelPara, problemaComAAposta } from '../games/shared/niveis-de-mesa';
+import { NIVEIS_DE_MESA, problemaComAAposta } from '../games/shared/niveis-de-mesa';
+import { DegrauDoJogador } from '../games/shared/degrau-do-jogador.service';
 import { MAX_SEATS, PLAYER_COLORS, PlayerColor } from './player-colors';
 import { generateTableCode } from './table-code';
 import { umDe } from '../games/shared/rng';
@@ -108,6 +109,7 @@ export class BancaFrancesaTableService {
     private readonly tournaments: TournamentsService,
     private readonly usersService: UsersService,
     private readonly eventos: RegistroDeEventos,
+    private readonly degraus: DegrauDoJogador,
   ) {}
 
   /**
@@ -235,7 +237,23 @@ export class BancaFrancesaTableService {
     // O saldo é lido ANTES de validar, porque é ele que decide o nível e, com o nível,
     // os limites desta pessoa. Cada um na mesa tem o limite do próprio bolso.
     const saldo = await this.walletService.balanceOf(userId);
-    this.validateBets(bets, saldo);
+    /*
+     * O DEGRAU VEM DO SALDO **E** DO NÍVEL — e este era o defeito que o dono fotografou.
+     *
+     * Aqui se lia `nivelPara(saldo)`: só o saldo. Com 146 bilhões isso dá Ônix, mínimo
+     * 500 milhões. Mas a TELA desenha o trilho com `/niveis/meu`, que devolve o degrau
+     * ECONÔMICO — `min(o que o saldo banca, o que o nível liberou)` — e com nível baixo
+     * isso dá Bronze, fichas de 50 a 1.000.
+     *
+     * Resultado na tela dele: "Mesa Bronze · Grande e Pequeno 50–10.000" embaixo, fichas
+     * de 50 no trilho, e em vermelho "O mínimo em Grande é 500.000.000 fichas". Duas
+     * regras diferentes pra mesma mesa, uma desenhando e outra recusando.
+     *
+     * A regra é UMA: a do degrau econômico, a mesma de `problemaComAAposta` e a mesma que
+     * a tela lê. Quem valida e quem desenha passaram a perguntar no mesmo lugar.
+     */
+    const quem = await this.degraus.de(userId);
+    this.validateBets(bets, quem.degrau.minimo);
 
     /*
      * Guarda em QUE ESTADO a mesa estava, porque a linha seguinte cede o controle (é
@@ -646,12 +664,11 @@ export class BancaFrancesaTableService {
    * A conferência é aqui, no servidor, e não só na tela: o trilho de fichas que o
    * aplicativo mostra é conveniência, e conveniência não é tranca.
    */
-  private validateBets(bets: BancaFrancesaBet[], saldo: number) {
+  private validateBets(bets: BancaFrancesaBet[], minimoDaMesa: number) {
     if (!Array.isArray(bets) || bets.length === 0 || bets.length > MAX_SIMULTANEOUS_BETS) {
       throw new BadRequestException(`Aposte em 1 a ${MAX_SIMULTANEOUS_BETS} tipos (ases, pequeno, grande, linha).`);
     }
 
-    const nivel = nivelPara(saldo);
     const seen = new Set<string>();
     for (const bet of bets) {
       if (!BET_TYPES.includes(bet.type)) {
@@ -671,7 +688,7 @@ export class BancaFrancesaTableService {
        * mais em lugar nenhum. Duas mesas com a mesma regra escrita duas vezes é a mesma
        * armadilha, um andar acima.
        */
-      const problema = problemaComApostaDaBanca(bet.type, bet.amount, nivel.minimo);
+      const problema = problemaComApostaDaBanca(bet.type, bet.amount, minimoDaMesa);
       if (problema) throw new BadRequestException(problema);
     }
   }

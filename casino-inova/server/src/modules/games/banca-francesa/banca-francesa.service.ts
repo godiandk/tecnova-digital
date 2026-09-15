@@ -16,7 +16,8 @@ import {
   problemaComApostaDaBanca,
   riscoDaAposta,
 } from './banca-francesa.config';
-import { NIVEIS_DE_MESA, nivelPara } from '../shared/niveis-de-mesa';
+import { NIVEIS_DE_MESA, type NivelDeMesa } from '../shared/niveis-de-mesa';
+import { DegrauDoJogador } from '../shared/degrau-do-jogador.service';
 import { FaixaDeAposta } from '../shared/faixa-de-aposta';
 import { AcoesRepetidas } from '../shared/acoes-repetidas.service';
 import { RodadasRepository } from '../core/rodadas.repository';
@@ -44,6 +45,7 @@ export class BancaFrancesaService {
   constructor(
     private readonly walletService: WalletService,
     private readonly faixas: FaixaDeAposta,
+    private readonly degraus: DegrauDoJogador,
     private readonly tournaments: TournamentsService,
     private readonly acoes: AcoesRepetidas,
     private readonly rodadasGuardadas: RodadasRepository,
@@ -140,7 +142,8 @@ export class BancaFrancesaService {
      * servidor recusava a aposta por estar abaixo do mínimo. O defeito só aparecia
      * jogando, porque a rodada em si estava certa; o que faltava era o que ela conta.
      */
-    return this.paraOCliente(this.rodadaDe(userId), await this.walletService.balanceOf(userId));
+    const quem = await this.degraus.de(userId);
+    return this.paraOCliente(this.rodadaDe(userId), quem.saldo, quem.degrau);
   }
 
   rodadaDe(userId: string): RodadaSolo {
@@ -164,8 +167,9 @@ export class BancaFrancesaService {
       throw new BadRequestException('Esta rodada já foi liquidada. Comece uma nova.');
     }
 
-    const saldo = await this.walletService.balanceOf(userId);
-    this.conferirApostas(bets, saldo);
+    const quem = await this.degraus.de(userId);
+    const saldo = quem.saldo;
+    this.conferirApostas(bets, saldo, quem.degrau.minimo);
 
     await this.garantirNoBanco(rodada);
     /*
@@ -187,7 +191,7 @@ export class BancaFrancesaService {
     rodada.estado = 'APOSTAS_CONFIRMADAS';
     /* Mexeu na aposta: o aviso do nulo sai da tela, porque a decisão já foi tomada. */
     rodada.esperandoDepoisDoNulo = false;
-    return this.paraOCliente(rodada, saldo);
+    return this.paraOCliente(rodada, saldo, quem.degrau);
   }
 
   /** Tira as fichas da mesa. Não custa nada — nenhuma ficha saiu do saldo ainda. */
@@ -206,7 +210,7 @@ export class BancaFrancesaService {
     rodada.apostas = [];
     rodada.estado = 'APOSTAS_ABERTAS';
     rodada.esperandoDepoisDoNulo = false;
-    return this.paraOCliente(rodada, await this.walletService.balanceOf(userId));
+    return this.paraOCliente(rodada, await this.walletService.balanceOf(userId), (await this.degraus.de(userId)).degrau);
   }
 
   /**
@@ -237,7 +241,7 @@ export class BancaFrancesaService {
      * saldo pode ter mudado desde então (outro jogo noutra aba, um prêmio de torneio,
      * uma compra). O que vale é o saldo de agora.
      */
-    this.conferirApostas(rodada.apostas, saldo);
+    this.conferirApostas(rodada.apostas, saldo, (await this.degraus.de(userId)).degrau.minimo);
 
     const { dice, sum, outcome } = lancar();
     const lancamento: LancamentoNoPlacar = {
@@ -281,7 +285,7 @@ export class BancaFrancesaService {
       return {
         lancamento,
         decidiu: false as const,
-        rodada: this.paraOCliente(rodada, saldo),
+        rodada: this.paraOCliente(rodada, saldo, (await this.degraus.de(userId)).degrau),
         placar: this.getPlacar(),
       };
     }
@@ -365,7 +369,7 @@ export class BancaFrancesaService {
         /** O que sobrou de verdade: retorno menos o que saiu. Pode ser negativo. */
         lucroLiquido: totalReturn - totalStake,
         newBalance: await this.walletService.balanceOf(userId),
-        rodada: this.paraOCliente(liquidada, await this.walletService.balanceOf(userId)),
+        rodada: this.paraOCliente(liquidada, await this.walletService.balanceOf(userId), (await this.degraus.de(userId)).degrau),
         placar: this.getPlacar(),
       };
     });
@@ -381,7 +385,7 @@ export class BancaFrancesaService {
    * RISCOS contra o saldo. O risco, e não o valor cheio: quem põe 100 na linha só pode
    * perder 50, então exigir 100 de saldo recusaria uma aposta que cabe.
    */
-  private conferirApostas(bets: BancaFrancesaBet[], saldo: number) {
+  private conferirApostas(bets: BancaFrancesaBet[], saldo: number, minimoDaMesa: number) {
     if (!Array.isArray(bets) || bets.length === 0) {
       throw new BadRequestException('Encoste pelo menos uma ficha no pano.');
     }
@@ -389,7 +393,7 @@ export class BancaFrancesaService {
       throw new BadRequestException(`Só existem ${MAX_SIMULTANEOUS_BETS} lugares na mesa.`);
     }
 
-    const minimoDaMesa = nivelPara(saldo).minimo;
+
     const vistos = new Set<string>();
     for (const bet of bets) {
       if (!BET_TYPES.includes(bet.type)) {
@@ -424,8 +428,7 @@ export class BancaFrancesaService {
    * mesma razão de sempre — número que o cliente calcula é número que o cliente pode
    * calcular errado, e este em particular é o que a pessoa olha antes de decidir.
    */
-  private paraOCliente(rodada: RodadaSolo, saldo: number) {
-    const nivel = nivelPara(saldo);
+  private paraOCliente(rodada: RodadaSolo, saldo: number, nivel: NivelDeMesa) {
     const minimoDaMesa = nivel.minimo;
     const totalApostado = rodada.apostas.reduce((t, b) => t + b.amount, 0);
     const risco = rodada.apostas.reduce((t, b) => t + riscoDaAposta(b.type, b.amount), 0);

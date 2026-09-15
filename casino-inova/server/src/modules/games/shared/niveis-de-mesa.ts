@@ -191,13 +191,6 @@ export function degrauDoNivel(nivel: number): NivelDeMesa {
 }
 
 /**
- * O DEGRAU ECONÔMICO — o único que manda. Mesa, aposta, recompensa e loja saem daqui.
- *
- * `min(o que o saldo banca, o que o nível liberou)`, e o `min` é sobre a POSIÇÃO na
- * escada e não sobre o mínimo em fichas: dá a mesma resposta hoje, e dá a resposta certa
- * no dia em que alguém mexer na escada e ela deixar de ser crescente.
- */
-/**
  * O DEGRAU MAIS ALTO QUE AINDA CABE NA CONTA EXATA, para um jogo que paga até tanto.
  *
  * A CONFERÊNCIA DE PRECISÃO ENCONTROU ISTO, e é um defeito de produto, não de conta: no
@@ -212,11 +205,6 @@ export function degrauDoNivel(nivel: number): NivelDeMesa {
  * daquele jogo para de subir onde a conta para de ser exata, e desce pro degrau mais alto
  * que cabe inteiro — com as fichas redondas da própria escada, sem inventar denominação.
  *
- * O QUE O JOGADOR VÊ: no caça-níqueis as fichas dele param em 100 bilhões, e não em 100
- * trilhões. Na banca francesa, na roleta e no blackjack elas não param — esses jogos pagam
- * pouco o bastante pra escada inteira caber. A diferença é explicada pela mesma frase que
- * `problemaComOTeto` escreve: é o prêmio máximo da mesa que manda no tamanho da ficha.
- *
  * Sem `maiorMultiplicador`, devolve o degrau como está: quem não diz quanto paga não tem
  * como ter teto calculado.
  */
@@ -229,10 +217,36 @@ export function degrauQueCabeNaConta(degrau: NivelDeMesa, maiorMultiplicador?: n
   return NIVEIS_DE_MESA[i];
 }
 
-export function degrauEconomico(saldo: number, nivel: number): NivelDeMesa {
-  const porSaldo = NIVEIS_DE_MESA.indexOf(nivelPara(saldo));
-  const porNivel = NIVEIS_DE_MESA.indexOf(degrauDoNivel(nivel));
-  return NIVEIS_DE_MESA[Math.min(porSaldo, porNivel)];
+/**
+ * O DEGRAU ECONÔMICO — QUEM MANDA É O SALDO. Ponto.
+ *
+ * ISTO JÁ FOI `min(saldo, nível)` E ESTAVA ERRADO. A ideia era impedir que comprar fichas
+ * virasse passagem pra mesa de cima. O efeito real, dito pelo dono do jogo com o caso na
+ * mão: alguém acaba de criar a conta, compra dez mil reais em fichas, entra na mesa — e
+ * fica preso apostando CINQUENTA, porque o nível dele é 1. Comprou e não pode usar.
+ *
+ * Não existe defesa que valha isso. Quem tem a ficha aposta a ficha: é dinheiro dele,
+ * gasto de verdade, e a mesa que combina com o bolso dele é a mesa dele. Um jogo que
+ * recebe o pagamento e depois tranca a mesa não é cauteloso, é quebrado.
+ *
+ * E O PAY-TO-LEVEL? Continua barrado, só que onde ele mora de verdade:
+ *
+ *   • O XP DA RODADA sai da aposta EM UNIDADES DA MESA (`progressao/niveis.ts`), então
+ *     apostar um milhão na mesa de um milhão rende o mesmo XP que apostar cinquenta na
+ *     mesa de cinquenta. Mesa alta não compra nível.
+ *   • A RECOMPENSA DIÁRIA é ancorada no BRONZE vezes o bônus de nível
+ *     (`recompensas/calendario.ts`), e não no degrau de quem coleta. Comprar fichas não
+ *     aumenta o prêmio diário.
+ *
+ * Ou seja: comprar fichas dá mais rodada e mesa maior — que é exatamente o que a pessoa
+ * pagou pra ter. O que ela não compra é PROGRESSÃO, e isso continua verdade.
+ *
+ * O parâmetro `nivel` fica na assinatura de propósito: `/niveis/meu` ainda publica o nível
+ * e o que ele abre, pra tela poder contar a história da progressão. Ele só não decide mais
+ * em que mesa a pessoa pode apostar.
+ */
+export function degrauEconomico(saldo: number, _nivel?: number): NivelDeMesa {
+  return nivelPara(saldo);
 }
 
 /**

@@ -8,6 +8,40 @@ Tudo abaixo sai das constantes reais do projeto: `niveis-de-mesa.ts`, `progressa
 
 ---
 
+## A mesa é a do saldo — e por quê essa regra mudou
+
+Isto já foi `degrauEconomico = min(saldo, nível)`. A ideia era impedir que comprar fichas
+virasse passagem para a mesa de cima. **A regra saiu**, e o motivo é o caso que ela
+produzia:
+
+> Alguém acaba de criar a conta, compra dez mil reais em fichas, entra na mesa — e fica
+> preso apostando **cinquenta**, porque o nível dele é 1. Comprou e não pode usar.
+
+Não existe defesa que valha isso. Quem tem a ficha aposta a ficha: é dinheiro dele, gasto
+de verdade, e a mesa que combina com o bolso dele é a mesa dele. Um jogo que recebe o
+pagamento e depois tranca a mesa não é cauteloso, é quebrado.
+
+### O pay-to-level continua barrado — onde ele mora de verdade
+
+- **O XP da rodada sai da aposta em unidades da mesa** (`progressao/niveis.ts`): apostar um
+  milhão na mesa de um milhão rende o mesmo XP que apostar cinquenta na mesa de cinquenta.
+  Mesa alta não compra nível.
+- **A recompensa diária é ancorada no Bronze** vezes o bônus de nível
+  (`recompensas/calendario.ts`), e não no degrau de quem coleta. Comprar fichas não aumenta
+  o prêmio diário.
+
+Comprar fichas dá **mais rodada e mesa maior** — que é exatamente o que a pessoa pagou para
+ter. O que ela não compra é **progressão**, e isso continua verdade.
+
+### A conferência
+
+`npm run verify:mesa-do-comprador` varre **os doze degraus da escada com nível 1** — a conta
+mais nova possível — e prova, degrau por degrau e nos dez jogos, que a mesa oferecida é a
+que combina com o saldo, que a menor ficha do trilho alcança o mínimo publicado, e que ela
+cabe no bolso de quem acabou de comprar.
+
+Conferida por mutação: devolvendo a trava de nível, ela reprova em onze dos doze degraus.
+
 ## O achado que muda tudo, antes da proposta
 
 **A recompensa diária de hoje é uma catraca de juros compostos. Ela leva qualquer conta ao

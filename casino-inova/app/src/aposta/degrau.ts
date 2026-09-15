@@ -48,17 +48,23 @@ export function degrauDoNivel(escada: NivelDeMesa[], level: number): NivelDeMesa
 }
 
 /**
- * O DEGRAU ECONÔMICO — `min(o que o saldo banca, o que o nível liberou)`.
+ * O DEGRAU ECONÔMICO — QUEM MANDA É O SALDO. Ponto.
  *
- * É o mesmo `degrauEconomico` do servidor, e é o que faz comprar fichas dar mais rodadas
- * na mesa da pessoa em vez de passagem pra mesa de cima. O `min` é sobre a POSIÇÃO na
- * escada, igual lá.
+ * ISTO JÁ FOI `min(saldo, nível)` E ESTAVA ERRADO, aqui e no servidor. A ideia era impedir
+ * que comprar fichas virasse passagem pra mesa de cima; o efeito real era outro: quem
+ * criava a conta, comprava dez mil reais em fichas e entrava na mesa ficava preso apostando
+ * CINQUENTA, porque o nível era 1. Comprou e não pôde usar.
+ *
+ * Quem tem a ficha aposta a ficha. O pay-to-level continua barrado onde ele mora de
+ * verdade: o XP sai da aposta em unidades da mesa, e a recompensa diária é ancorada no
+ * Bronze — mesa alta não compra nível.
+ *
+ * `level` fica na assinatura porque a tela ainda conta a história da progressão; ele só
+ * não decide mais em que mesa a pessoa aposta. A conferência `verify:escada-de-aposta`
+ * compara esta conta com a do servidor em toda faixa de saldo e de nível.
  */
-export function degrauEconomicoPara(escada: NivelDeMesa[], saldo: number, level: number): NivelDeMesa | null {
-  const porSaldo = degrauPara(escada, saldo);
-  const porNivel = degrauDoNivel(escada, level);
-  if (!porSaldo || !porNivel) return porSaldo ?? porNivel;
-  return escada.indexOf(porSaldo) <= escada.indexOf(porNivel) ? porSaldo : porNivel;
+export function degrauEconomicoPara(escada: NivelDeMesa[], saldo: number, _level?: number): NivelDeMesa | null {
+  return degrauPara(escada, saldo);
 }
 
 /** Até onde a conta de fichas é exata: 2^53 − 1, o mesmo teto do servidor. */

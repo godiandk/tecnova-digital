@@ -256,5 +256,44 @@ console.log('\n--- 7. limite de tentativas nas portas que custam caro ---');
   confere('os cabeçalhos de segurança estão postos', main.includes('X-Content-Type-Options') && main.includes('X-Frame-Options'));
 }
 
-console.log(falhas === 0 ? '\nOK: a segurança do aplicativo passou nas conferências que dá pra fazer aqui.' : `\n${falhas} FALHA(S)`);
+console.log('\n--- UMA REGRA SÓ PRA QUAL MESA A PESSOA JOGA ---');
+{
+  /*
+   * O DEFEITO QUE ESTA CONFERÊNCIA GUARDA, fotografado pelo dono na mesa dele:
+   *
+   *   saldo 146,89 bi · "Mesa Bronze · Grande e Pequeno 50–10.000" no rodapé ·
+   *   fichas de 50, 100, 250, 500 e 1k no trilho · e em vermelho, por cima de tudo:
+   *   "O mínimo em Grande é 500.000.000 fichas."
+   *
+   * Eram DUAS REGRAS na mesma mesa. Quem VALIDA a aposta usava `nivelPara(saldo)` — só o
+   * saldo, que com 146 bilhões dá Ônix e mínimo de 500 milhões. Quem DESENHA o trilho lê
+   * `/niveis/meu`, que devolve o degrau ECONÔMICO: `min(o que o saldo banca, o que o nível
+   * liberou)` — e com nível baixo isso dá Bronze, fichas de 50.
+   *
+   * A mesa ficava impossível: ela oferecia ficha que ela mesma recusava.
+   *
+   * A regra é UMA, e é a econômica. `nivelPara` continua existindo e tem um uso legítimo —
+   * `/niveis/meu` o manda junto, separado, pra a tela poder dizer "seu saldo alcança a mesa
+   * Ouro; ela abre no nível 50". O que não pode é ele DECIDIR limite de aposta.
+   */
+  const servicos = todosOsArquivos(join(RAIZ, 'modules'))
+    .filter((caminho) => /\.(service|gateway)\.ts$/.test(caminho));
+  const comRegraSoDeSaldo: string[] = [];
+  for (const caminho of servicos) {
+    for (const [i, linha] of ler(caminho).split('\n').entries()) {
+      if (/^\s*(\*|\/\/)/.test(linha)) continue;
+      if (/\bnivelPara\s*\(/.test(linha)) {
+        comRegraSoDeSaldo.push(`${caminho.split('/').slice(-2).join('/')}:${i + 1}`);
+      }
+    }
+  }
+  confere(
+    'nenhum serviço decide limite de aposta só pelo saldo',
+    comRegraSoDeSaldo.length === 0,
+    `${comRegraSoDeSaldo.join(', ')} — use DegrauDoJogador (o degrau econômico), não nivelPara`,
+  );
+}
+
+console.log(falhas === 0 ? '\nOK: a segurança do aplicativo passou nas conferências que dá pra fazer aqui.'
+ : `\n${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);
