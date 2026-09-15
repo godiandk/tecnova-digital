@@ -37,6 +37,37 @@ import { NIVEIS_DE_MESA } from '../games/shared/niveis-de-mesa';
 const ANCORA = NIVEIS_DE_MESA[0].minimo;
 
 /**
+ * A CONFIGURAÇÃO DA RECOMPENSA — os números que o calendário usa.
+ *
+ * Ela existe como OBJETO, e não como constantes soltas, por um motivo operacional: a
+ * tabela `daily_reward_config` promete, no comentário do esquema, que dá pra corrigir um
+ * número sem soltar versão nova do servidor. A promessa era falsa — a tabela existia e
+ * ninguém a lia. Com a configuração passando por parâmetro, quem lê o banco pode entregar
+ * outra, e o calendário continua sendo o mesmo código.
+ *
+ * O PADRÃO CONTINUA SENDO O CÓDIGO, e isso também é de propósito: sem linha no banco valem
+ * estes valores, que são os aprovados em `docs/economia.md`. O banco corrige; ele não é o
+ * lugar onde os números moram escondidos de quem lê a regra.
+ */
+export interface ConfiguracaoDaRecompensa {
+  /** A âncora em fichas: a aposta mínima da mesa de entrada. */
+  ancora: number;
+  /** Dia da sequência → quantas âncoras ele paga. Os dias fora daqui seguem a reta. */
+  marcos: Record<number, number>;
+  /** O marco do último dia do mês, seja ele 28, 29, 30 ou 31. */
+  marcoDoFimDoMes: number;
+  /** O teto do bônus de nível, em vezes. */
+  tetoDoBonus: number;
+}
+
+export const CONFIGURACAO_DO_CODIGO: ConfiguracaoDaRecompensa = {
+  ancora: ANCORA,
+  marcos: { 7: 60, 14: 120, 21: 200 },
+  marcoDoFimDoMes: 500,
+  tetoDoBonus: 3,
+};
+
+/**
  * O BÔNUS DE NÍVEL — o que a progressão vale na recompensa.
  *
  * `1 + 0,5 × log10(nível)`, com teto em 3×: meia vez a mais a cada DÉCADA de nível. Nível
@@ -52,12 +83,13 @@ const ANCORA = NIVEIS_DE_MESA[0].minimo;
  * de 10×) e o nível voltaria a mexer em QUAL MESA a pessoa joga — que é trabalho do
  * `economicTier`, não da recompensa.
  */
-export function bonusDeNivel(nivel: number): number {
+export function bonusDeNivel(nivel: number, config = CONFIGURACAO_DO_CODIGO): number {
   const n = Number.isFinite(nivel) ? Math.max(1, Math.floor(nivel)) : 1;
-  return Math.min(TETO_DO_BONUS, 1 + 0.5 * Math.log10(n));
+  return Math.min(config.tetoDoBonus, 1 + 0.5 * Math.log10(n));
 }
 
-export const TETO_DO_BONUS = 3;
+/** O teto do código. Quem precisa do teto EM VIGOR lê `config.tetoDoBonus`. */
+export const TETO_DO_BONUS = CONFIGURACAO_DO_CODIGO.tetoDoBonus;
 
 /**
  * Quantas vezes a âncora cada dia da SEQUÊNCIA paga.
@@ -75,19 +107,20 @@ export const TETO_DO_BONUS = 3;
  * Nada aqui é aleatório: o mesmo dia paga o mesmo múltiplo pra todo mundo, sempre, e o
  * calendário inteiro fica à vista antes de a pessoa decidir se vale a pena voltar.
  */
-export function multiplicadorDoDia(dia: number, diasDoMesAtual: number): number {
+export function multiplicadorDoDia(
+  dia: number,
+  diasDoMesAtual: number,
+  config = CONFIGURACAO_DO_CODIGO,
+): number {
   const total = Math.max(1, Math.round(diasDoMesAtual));
   const d = Math.max(1, Math.min(total, Math.round(dia)));
-  if (d >= total) return MARCO_DO_FIM_DO_MES;
-  return MARCOS[d] ?? 8 + 2 * d;
+  if (d >= total) return config.marcoDoFimDoMes;
+  return config.marcos[d] ?? 8 + 2 * d;
 }
 
-const MARCOS: Record<number, number> = { 7: 60, 14: 120, 21: 200 };
-const MARCO_DO_FIM_DO_MES = 500;
-
 /** Um marco é dia de semana fechada — a tela o desenha maior. */
-export function ehMarco(dia: number, diasDoMesAtual: number): boolean {
-  return dia >= diasDoMesAtual || MARCOS[dia] !== undefined;
+export function ehMarco(dia: number, diasDoMesAtual: number, config = CONFIGURACAO_DO_CODIGO): boolean {
+  return dia >= diasDoMesAtual || config.marcos[dia] !== undefined;
 }
 
 /**
@@ -95,8 +128,15 @@ export function ehMarco(dia: number, diasDoMesAtual: number): boolean {
  *
  * Sai sempre inteiro: ficha não se parte, e o livro-caixa é de inteiros.
  */
-export function premioDoDia(dia: number, nivelDoJogador: number, diasDoMesAtual: number): number {
-  return Math.round(ANCORA * multiplicadorDoDia(dia, diasDoMesAtual) * bonusDeNivel(nivelDoJogador));
+export function premioDoDia(
+  dia: number,
+  nivelDoJogador: number,
+  diasDoMesAtual: number,
+  config = CONFIGURACAO_DO_CODIGO,
+): number {
+  return Math.round(
+    config.ancora * multiplicadorDoDia(dia, diasDoMesAtual, config) * bonusDeNivel(nivelDoJogador, config),
+  );
 }
 
 export interface DiaDoCalendario {
@@ -106,12 +146,16 @@ export interface DiaDoCalendario {
 }
 
 /** O calendário inteiro do mês, pra quem está neste nível. */
-export function calendarioPara(nivelDoJogador: number, dia: string): DiaDoCalendario[] {
+export function calendarioPara(
+  nivelDoJogador: number,
+  dia: string,
+  config = CONFIGURACAO_DO_CODIGO,
+): DiaDoCalendario[] {
   const total = diasDoMes(dia);
   return Array.from({ length: total }, (_, i) => ({
     dia: i + 1,
-    premio: premioDoDia(i + 1, nivelDoJogador, total),
-    marco: ehMarco(i + 1, total),
+    premio: premioDoDia(i + 1, nivelDoJogador, total, config),
+    marco: ehMarco(i + 1, total, config),
   }));
 }
 

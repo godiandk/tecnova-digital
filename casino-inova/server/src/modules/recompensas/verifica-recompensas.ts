@@ -24,7 +24,9 @@
 import { DatabaseService } from '../../database/database.service';
 import { WalletService } from '../wallet/wallet.service';
 import { RecompensasService } from './recompensas.service';
+import { ConfiguracaoEmVigor } from './configuracao-em-vigor';
 import {
+  CONFIGURACAO_DO_CODIGO,
   TETO_DO_BONUS,
   bonusDeNivel,
   calendarioPara,
@@ -195,11 +197,76 @@ console.log('\n--- 4. um ano inteiro, dia a dia ---');
 
 // --- 5. contra o banco de verdade ---
 async function contraOBanco() {
+  console.log('\n--- 4b. a tabela de configuração É LIDA de verdade ---');
+  {
+    /*
+     * O ESQUEMA PROMETIA E NINGUÉM CUMPRIA. O comentário de `daily_reward_config` diz que
+     * a tabela "existe pra dar pra corrigir um número sem soltar versão nova do servidor"
+     * — e a tabela existia, vazia, sem uma linha de código que a lesse. Promessa escrita
+     * no banco e não cumprida no código é pior que promessa nenhuma: quem inserisse a
+     * linha veria nada mudar e não teria como saber se errou a linha ou se a leitura não
+     * existia.
+     *
+     * Esta seção prova as quatro partes da promessa, e cada uma pelo comportamento:
+     * sem linha vale o código; com linha vale a linha; linha do futuro não vale ainda;
+     * e linha quebrada cai pro código em vez de pagar `NaN`.
+     */
+    const banco = new DatabaseService();
+    await banco.onModuleInit();
+    const emVigor = new ConfiguracaoEmVigor(banco);
+    await banco.query('DELETE FROM daily_reward_config');
+
+    const semLinha = await emVigor.de('2026-06-15');
+    confere(
+      'sem linha no banco, valem os valores do código',
+      semLinha.ancora === CONFIGURACAO_DO_CODIGO.ancora
+        && semLinha.marcoDoFimDoMes === CONFIGURACAO_DO_CODIGO.marcoDoFimDoMes,
+    );
+
+    await banco.query(
+      `INSERT INTO daily_reward_config (versao, valida_de, ancora, marcos, marco_fim_mes, teto_do_bonus)
+       VALUES (1, '2026-01-01', 70, '{"7": 66}'::jsonb, 555, 4)`,
+    );
+    const comLinha = await emVigor.de('2026-06-15');
+    confere(`com linha, a âncora vem do banco (veio ${comLinha.ancora})`, comLinha.ancora === 70);
+    confere('e os marcos também', comLinha.marcos[7] === 66);
+    confere('e o marco de fim de mês', comLinha.marcoDoFimDoMes === 555);
+    confere(
+      `o prêmio do dia 7 passa a ser 70 x 66 (deu ${premioDoDia(7, 1, 30, comLinha)})`,
+      premioDoDia(7, 1, 30, comLinha) === 70 * 66,
+    );
+
+    /* Uma versão que só começa amanhã não manda em hoje. */
+    await banco.query(
+      `INSERT INTO daily_reward_config (versao, valida_de, ancora, marcos, marco_fim_mes, teto_do_bonus)
+       VALUES (2, '2026-12-01', 999, '{}'::jsonb, 1, 2)`,
+    );
+    const aindaNaoVale = await emVigor.de('2026-06-15');
+    confere('uma versão com `valida_de` no futuro ainda não vale', aindaNaoVale.ancora === 70);
+    const jaVale = await emVigor.de('2026-12-02');
+    confere('e passa a valer no dia em que ela começa', jaVale.ancora === 999);
+
+    /* Linha quebrada não paga NaN: cai pro código, com registro. */
+    await banco.query('DELETE FROM daily_reward_config');
+    await banco.query(
+      `INSERT INTO daily_reward_config (versao, valida_de, ancora, marcos, marco_fim_mes, teto_do_bonus)
+       VALUES (1, '2026-01-01', 50, '{"sete": "muito"}'::jsonb, 500, 3)`,
+    );
+    const comLixo = await emVigor.de('2026-06-15');
+    confere(
+      'marco inválido no JSON é descartado, e o resto continua servindo',
+      Object.keys(comLixo.marcos).length === 0 && Number.isSafeInteger(comLixo.ancora),
+    );
+
+    await banco.query('DELETE FROM daily_reward_config');
+    await banco.onModuleDestroy?.();
+  }
+
   console.log('\n--- 5. a coleta no banco: paga o valor certo, uma vez só ---');
   const db = new DatabaseService();
   await db.onModuleInit();
   const wallet = new WalletService(db);
-  const servico = new RecompensasService(db, wallet);
+  const servico = new RecompensasService(db, wallet, new ConfiguracaoEmVigor(db));
 
   const id = `teste-recompensa-${Date.now()}`;
   await db.query(`INSERT INTO users (id, name, level) VALUES ($1, 'Teste Recompensa', 100)`, [id]);

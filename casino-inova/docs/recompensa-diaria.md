@@ -238,7 +238,31 @@ checagem em código (`podeColetar` sempre verdadeiro), os testes de pagamento du
 
 - **Notificação push**: a arquitetura está compatível (o servidor sabe quem pode coletar e
   desde quando), mas nada de push foi implementado — era o pedido do item 27.
-- **`daily_reward_config`**: a tabela existe e está **vazia**. Sem linha, valem os valores
-  do código, que são os aprovados. Ela existe para corrigir um número sem soltar versão
-  nova do servidor — não para esconder os números num banco onde ninguém os lê junto com a
-  regra. O carregador ainda não lê a tabela; hoje ela é só o lugar preparado.
+- **`daily_reward_config`**: a tabela existe, está **vazia por padrão**, e agora é **lida
+  de verdade** (`ConfiguracaoEmVigor`). Antes ela era só o lugar preparado, e o comentário
+  do esquema prometia uma capacidade que não existia — promessa escrita no banco e não
+  cumprida no código é pior que promessa nenhuma: quem inserisse a linha veria nada mudar,
+  sem saber se errou a linha ou se a leitura não existia.
+
+  **A regra, que é a do próprio esquema:** vale a linha de maior `versao` entre as que já
+  começaram (`valida_de <= hoje`, no dia do servidor — nunca `CURRENT_DATE`). Sem linha,
+  valem os valores do código, que são os aprovados. O banco **corrige**; ele não é onde os
+  números moram escondidos de quem lê a regra.
+
+  ```sql
+  -- Dobrar o marco do dia 7 a partir de 1º de dezembro, sem tocar no resto.
+  INSERT INTO daily_reward_config (versao, valida_de, ancora, marcos, marco_fim_mes, teto_do_bonus)
+  VALUES (2, '2026-12-01', 50, '{"7": 120, "14": 120, "21": 200}'::jsonb, 500, 3);
+  ```
+
+  Nunca um `UPDATE`: cada correção é uma versão nova, e as anteriores ficam para explicar o
+  que foi pago quando.
+
+  **Linha quebrada não paga `NaN`.** `marcos` é JSONB e nada impede gravar
+  `{"sete": "muito"}`; o valor inválido é descartado, o problema vai pro registro, e a casa
+  continua pagando o que a regra publicada diz.
+
+  **O que a conferência prova** (`npm run verify:recompensas`, seção 4b), cada parte pelo
+  comportamento: sem linha vale o código; com linha vale a linha; linha com `valida_de` no
+  futuro não vale ainda e passa a valer no dia; linha quebrada cai pro código. Conferido
+  por mutação — invertendo a ordem por versão, ou tirando a trava de data, ela reprova.

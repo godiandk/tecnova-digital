@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 
 import { DatabaseService } from '../../database/database.service';
 import { WalletService } from '../wallet/wallet.service';
+import { ConfiguracaoEmVigor } from './configuracao-em-vigor';
 import { diaDoServidor } from '../../comum/dia-do-servidor';
 import {
   bonusDeNivel,
@@ -29,6 +30,7 @@ export class RecompensasService {
   constructor(
     private readonly db: DatabaseService,
     private readonly wallet: WalletService,
+    private readonly configuracao: ConfiguracaoEmVigor,
   ) {}
 
   /**
@@ -45,9 +47,14 @@ export class RecompensasService {
       hoje,
     );
     const casas = casasDaGrade(hoje);
+    /*
+     * A CONFIGURAÇÃO EM VIGOR, e não a do código direto. Sem linha no banco ela É a do
+     * código; com linha, é a corrigida. Ver `ConfiguracaoEmVigor`.
+     */
+    const config = await this.configuracao.de(hoje);
 
     return {
-      dias: calendarioPara(nivel, hoje),
+      dias: calendarioPara(nivel, hoje, config),
       diaAtual: estado.diaAtual,
       podeColetar: estado.podeColetar,
       /* Data absoluta, não contagem: a tela conta sozinha e continua certa. */
@@ -59,7 +66,7 @@ export class RecompensasService {
        * Quem fechou uma grade de 31 volta pra casa 1 com a sequência intacta.
        */
       diasSeguidos: estado.sequenciaPerdida ? 0 : linha?.streak_total ?? 0,
-      premioDeHoje: premioDoDia(estado.diaAtual, nivel, casas),
+      premioDeHoje: premioDoDia(estado.diaAtual, nivel, casas, config),
       totalDeDias: casas,
       /* Que dia do mês é hoje, pra a tela destacar a casa certa da grade. */
       diaDoMes: hojeNoMes(hoje),
@@ -135,9 +142,16 @@ export class RecompensasService {
 
     const casas = casasDaGrade(hoje);
     const seguidos = estado.sequenciaPerdida || !linha ? 1 : (linha.streak_total ?? 0) + 1;
-    const multiplicador = multiplicadorDoDia(estado.diaAtual, casas);
-    const bonus = bonusDeNivel(nivel);
-    const premio = premioDoDia(estado.diaAtual, nivel, casas);
+    /*
+     * A MESMA CONFIGURAÇÃO QUE O CALENDÁRIO MOSTROU. Ler aqui de novo é de propósito: a
+     * coleta acontece num pedido separado, e o que vale é o que está em vigor no momento
+     * de pagar. O calendário e o pagamento usam a mesma função de leitura, então uma
+     * correção publicada entre um e outro aparece nos dois — nunca só num.
+     */
+    const config = await this.configuracao.de(hoje);
+    const multiplicador = multiplicadorDoDia(estado.diaAtual, casas, config);
+    const bonus = bonusDeNivel(nivel, config);
+    const premio = premioDoDia(estado.diaAtual, nivel, casas, config);
 
     const coleta = await this.db.transaction(async (client) => {
       /*
