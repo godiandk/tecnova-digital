@@ -60,10 +60,10 @@ window.TECNOVA_LING = (function () {
 })(document);
 </script>
 <link rel="preload" as="image" href="img/splash/tecnova-mark.webp" type="image/webp">
-<link rel="stylesheet" href="css/tecnova-splash.css?v=65">
-<link rel="stylesheet" href="estilo.css?v=65">
-<link rel="stylesheet" href="assistente.css?v=65">
-<link rel="stylesheet" href="i18n.css?v=65">
+<link rel="stylesheet" href="css/tecnova-splash.css?v=66">
+<link rel="stylesheet" href="estilo.css?v=66">
+<link rel="stylesheet" href="assistente.css?v=66">
+<link rel="stylesheet" href="i18n.css?v=66">
 <style>
 .hero{
   min-height:100vh;display:flex;align-items:center;
@@ -645,6 +645,14 @@ window.TECNOVA_LING = (function () {
 <main>
 
 <section class="hero-slider" aria-label="Destaques TECNOVA Digital">
+  <!-- O <h1> vive aqui, no carrossel, e NAO dentro de um destaque.
+       Os titulos estao desenhados dentro dos cartazes, que o Google nao le,
+       por isso ha um titulo em texto, invisivel para quem ve e legivel para
+       o Google e para quem usa leitor de ecra. Esteve dentro do destaque da
+       campanha ate 2026-11-09; quando a campanha acabou, o campanha.js
+       removeu o destaque e levou o unico <h1> da pagina com ele. Fora dos
+       destaques, sobrevive a campanha. -->
+  <h1 class="hs-titulo-oculto">Sites e aplicações para negócios locais, com o preço à vista.</h1>
 
   <!-- Slide de entrada: fazer o pedido -->
   <!-- Este destaque tem "-40%" e "ate 30 de setembro" DESENHADOS dentro
@@ -684,10 +692,7 @@ window.TECNOVA_LING = (function () {
            sizes="100vw" width="3840" height="1920"
            alt="" aria-hidden="true" decoding="async" fetchpriority="high">
     </picture>
-    <!-- O titulo esta dentro do cartaz, que o Google nao le. Fica aqui,
-         invisivel para quem ve e legivel para o Google e para quem usa
-         leitor de ecra. -->
-    <h1 class="hs-titulo-oculto">Monte o seu site e veja o preço na hora.</h1>
+    <h2 class="hs-titulo-oculto">Monte o seu site e veja o preço na hora.</h2>
     <div class="hs-accoes">
         <a class="btn btn-gold btn-big" href="orcamento.html">Fazer o meu pedido agora →</a>
         <a class="btn btn-line" href="modelos.html">Ver modelos reais</a>
@@ -1055,11 +1060,11 @@ window.TECNOVA_LING = (function () {
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js?v=65"></script>
-<script src="campanha.js?v=65"></script>
-<script src="medir-config.js?v=65"></script>
-<script src="medir.js?v=65"></script>
-<script src="auth-nav.js?v=65"></script>
+<script src="firebase-config.js?v=66"></script>
+<script src="campanha.js?v=66"></script>
+<script src="medir-config.js?v=66"></script>
+<script src="medir.js?v=66"></script>
+<script src="auth-nav.js?v=66"></script>
 
 <script>
 const io=new IntersectionObserver(es=>{
@@ -1070,11 +1075,11 @@ if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
 }
 </script>
-<script src="site.js?v=65"></script>
-<script src="idiomas/en.js?v=65"></script>
-<script src="idiomas/es.js?v=65"></script>
-<script src="i18n.js?v=65"></script>
-<script src="assistente.js?v=65"></script>
-<script src="js/tecnova-splash.js?v=65"></script>
+<script src="site.js?v=66"></script>
+<script src="idiomas/en.js?v=66"></script>
+<script src="idiomas/es.js?v=66"></script>
+<script src="i18n.js?v=66"></script>
+<script src="assistente.js?v=66"></script>
+<script src="js/tecnova-splash.js?v=66"></script>
 </body>
 </html>

@@ -1,10 +1,13 @@
 # TECNOVA Digital
-# O painel e a página de pagamento não são para aparecer no Google:
-# um é privado, a outra só faz sentido com o orçamento de alguém.
+# Fora do Google: o painel e a conta sao privados, a pagina de pagamento so
+# faz sentido com o orcamento de alguem, e o folheto e para imprimir.
+# As paginas /modelo-*.html sao demonstracoes e ja trazem noindex proprio.
 
 User-agent: *
 Allow: /
 Disallow: /admin.html
 Disallow: /pagamento.html
+Disallow: /conta.html
+Disallow: /folheto.html
 
 Sitemap: https://tecnovadigital.pt/sitemap.xml

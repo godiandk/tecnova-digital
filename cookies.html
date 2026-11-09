@@ -28,9 +28,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=65">
-<link rel="stylesheet" href="assistente.css?v=65">
-<link rel="stylesheet" href="i18n.css?v=65">
+<link rel="stylesheet" href="estilo.css?v=66">
+<link rel="stylesheet" href="assistente.css?v=66">
+<link rel="stylesheet" href="i18n.css?v=66">
 <style>
 [hidden]{display:none!important}
 /* ------------------------------------------------------------
@@ -79,6 +79,9 @@
   .lg-tab th,.lg-tab td{padding:9px 10px}
 }
 </style>
+<!-- seo-extra:inicio -->
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://tecnovadigital.pt/"},{"@type":"ListItem","position":2,"name":"Cookies","item":"https://tecnovadigital.pt/cookies.html"}]}]}</script>
+<!-- seo-extra:fim -->
 </head>
 <body>
 
@@ -267,11 +270,11 @@ privacidade completa</a></p>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js?v=65"></script>
-<script src="campanha.js?v=65"></script>
-<script src="medir-config.js?v=65"></script>
-<script src="medir.js?v=65"></script>
-<script src="auth-nav.js?v=65"></script>
+<script src="firebase-config.js?v=66"></script>
+<script src="campanha.js?v=66"></script>
+<script src="medir-config.js?v=66"></script>
+<script src="medir.js?v=66"></script>
+<script src="auth-nav.js?v=66"></script>
 
 <script>
 /* ============================================================
@@ -287,6 +290,11 @@ privacidade completa</a></p>
 
   var EMAIL = 'wesley@tecnovadigital.pt';
   var $ = function (s) { return document.querySelector(s); };
+
+  /* As paginas legais partilham este rodape e este script, mas nao tem o
+     formulario. Sem esta guarda, a primeira procura de um elemento devolve
+     null, rebenta, e tudo o que vem a seguir neste bloco deixa de correr. */
+  if (!document.getElementById('ctForm')) return;
 
   /* ---------- copiar o endereço para a área de transferência ---------- */
   function copiar(texto, botao, feito) {
@@ -454,10 +462,10 @@ if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
 }
 </script>
-<script src="site.js?v=65"></script>
-<script src="idiomas/en.js?v=65"></script>
-<script src="idiomas/es.js?v=65"></script>
-<script src="i18n.js?v=65"></script>
-<script src="assistente.js?v=65"></script>
+<script src="site.js?v=66"></script>
+<script src="idiomas/en.js?v=66"></script>
+<script src="idiomas/es.js?v=66"></script>
+<script src="i18n.js?v=66"></script>
+<script src="assistente.js?v=66"></script>
 </body>
 </html>
